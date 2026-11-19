@@ -98,7 +98,7 @@ test("auto-VGL remains default-off and is captured before durable image finaliza
   assert.match(route, /fiboAutoVglAvailable: true/);
   assert.match(engine, /getGeneratedFiboCaption\(worker, row\.provider_job_id\)/);
   assert.match(engine, /parameters: \{ \.\.\.row\.parameters, generatedVgl, generatedVglSource:/);
-  assert.match(engine, /generatedVgl: row\.parameters\.generatedVgl/);
+  assert.match(engine, /generatedVgl \?\? row\.parameters\.generatedVgl/);
   assert.match(engine, /generation_vgl_invalid/);
   assert.match(engine, /generation_vgl_stalled/);
   assert.match(engine, /InvalidGeneratedFiboSidecarError/);

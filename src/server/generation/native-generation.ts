@@ -1,4 +1,11 @@
 import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
+import { parseFiboBatchSummary, summarizeFiboBatchSlots } from "@/lib/capabilities/fibo-batch";
+import {
+  createFiboBatchOutputSlots,
+  getFiboBatchOutputSlots,
+  patchFiboBatchOutputSlot,
+  type FiboBatchOutputRow,
+} from "@/server/generation/fibo-batch-output-store";
 import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { fiboMaskMaxBytes, fiboMaskUsage, persistFiboMaskInputs, splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
@@ -173,6 +180,7 @@ export function isNativeGenerationConfigured() {
 }
 
 export function toGenerationJob(row: JobRow): GenerationJob {
+  const batch = parseFiboBatchSummary(row.parameters.batchSummary);
   return {
     id: row.id,
     status: row.status,
@@ -180,6 +188,7 @@ export function toGenerationJob(row: JobRow): GenerationJob {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     outputAssetIds: row.output_asset_ids ?? [],
+    ...(batch ? { batch } : {}),
     ...(row.error_message
       ? { error: { code: row.error_code || "generation_failed", message: row.error_message } }
       : {}),
@@ -432,6 +441,51 @@ async function submitWorker(workflow: WorkflowConfig, request: GenerationRequest
   throw new Error("No configured generation worker is currently available.");
 }
 
+async function submitFiboBatch(
+  job: JobRow,
+  workflow: WorkflowConfig,
+  request: GenerationRequest,
+  sources: InputBytes[],
+  maskBytes: Buffer | undefined,
+) {
+  const count = request.batchCount ?? 1;
+  const slots = await createFiboBatchOutputSlots(
+    job.owner_id,
+    job.id,
+    count,
+    request.advanced?.seed ?? workflow.defaults.seed,
+  );
+  const accepted: Array<{ slot: FiboBatchOutputRow; submitted: Awaited<ReturnType<typeof submitWorker>> }> = [];
+  for (const slot of slots) {
+    try {
+      const slotRequest: GenerationRequest = {
+        ...request,
+        advanced: { ...request.advanced, seed: slot.seed },
+      };
+      const submitted = await submitWorker(workflow, slotRequest, sources, maskBytes);
+      const running = await patchFiboBatchOutputSlot(job.owner_id, job.id, slot.output_index, {
+        status: "running",
+        worker_id: submitted.worker.id,
+        provider_job_id: submitted.callId,
+        worker_state: submitted.workerState,
+        started_at: new Date().toISOString(),
+        error_code: null,
+        error_message: null,
+      });
+      accepted.push({ slot: running, submitted });
+    } catch (error) {
+      await patchFiboBatchOutputSlot(job.owner_id, job.id, slot.output_index, {
+        status: "failed",
+        error_code: "generation_submission_failed",
+        error_message: error instanceof Error ? error.message.slice(0, 500) : "FIBO slot submission failed.",
+        completed_at: new Date().toISOString(),
+      });
+    }
+  }
+  if (!accepted.length) throw new Error("No FIBO batch output could be submitted.");
+  return accepted;
+}
+
 export async function submitNativeGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
   if (!isNativeGenerationConfigured()) {
     return { ok: false, error: { code: "generation_backend_unavailable", message: "Native generation infrastructure is not configured." } };
@@ -443,6 +497,19 @@ export async function submitNativeGeneration(ownerId: string, request: Generatio
     job = await insertJob(ownerId, request, workflow);
     const sources = await resolveInputs(ownerId, request);
     const maskBytes = await resolveMaskBytes(ownerId, request);
+    if ((request.batchCount ?? 1) > 1) {
+      const accepted = await submitFiboBatch(job, workflow, request, sources, maskBytes);
+      const primary = accepted[0]!;
+      job = await patchJob(ownerId, job.id, {
+        status: "running",
+        worker_id: primary.submitted.worker.id,
+        provider_job_id: primary.submitted.callId,
+        worker_state: `batch:${accepted.length}/${request.batchCount}`,
+        failover_history: accepted.flatMap(({ submitted }) => submitted.failures),
+        started_at: new Date().toISOString(),
+      });
+      return { ok: true, job: toGenerationJob(job) };
+    }
     const submitted = await submitWorker(workflow, request, sources, maskBytes);
     job = await patchJob(ownerId, job.id, {
       status: "running",
@@ -525,6 +592,15 @@ async function completeJobWithAsset(row: JobRow, assetId: string) {
   });
 }
 
+function publicBatchSlot(row: FiboBatchOutputRow) {
+  return {
+    outputIndex: row.output_index,
+    status: row.status,
+    seed: row.seed,
+    outputAssetId: row.output_asset_id,
+  };
+}
+
 async function persistGeneratedMedia({
   row,
   outputIndex,
@@ -533,6 +609,7 @@ async function persistGeneratedMedia({
   storageKey,
   thumbnailStorageKey,
   upscaleMetadata,
+  generatedVgl,
 }: {
   row: JobRow;
   outputIndex: number;
@@ -541,6 +618,7 @@ async function persistGeneratedMedia({
   storageKey: string;
   thumbnailStorageKey: string | null;
   upscaleMetadata?: UpscaleOutputMetadata | null;
+  generatedVgl?: string | null;
 }) {
   try {
     await supabaseRest("media_assets", {
@@ -566,8 +644,8 @@ async function persistGeneratedMedia({
           workflowId: row.workflow_id,
           model: row.model,
           prompt: row.prompt,
-          ...(typeof row.parameters.generatedVgl === "string"
-            ? { generatedVgl: row.parameters.generatedVgl, vglSource: "fibo-public-qwen3vl" } : {}),
+          ...(typeof (generatedVgl ?? row.parameters.generatedVgl) === "string"
+            ? { generatedVgl: generatedVgl ?? row.parameters.generatedVgl, vglSource: "fibo-public-qwen3vl" } : {}),
         },
         metadata: { ecosystem: row.ecosystem, workerId: row.worker_id },
       }),
@@ -575,11 +653,11 @@ async function persistGeneratedMedia({
   } catch (error) {
     const raced = await getGeneratedOutput(row, outputIndex).catch(() => null);
     if (!raced) throw error;
-    return completeJobWithAsset(row, raced.id);
+    return raced.id;
   }
 
   injectGenerationFinalizationFault("after-media-insert");
-  return completeJobWithAsset(row, assetId);
+  return assetId;
 }
 
 export async function recoverPersistingResult(row: JobRow) {
@@ -628,7 +706,7 @@ export async function recoverPersistingResult(row: JobRow) {
     thumbnailStorageKey = thumbnail?.storageKey ?? null;
   }
 
-  return persistGeneratedMedia({
+  const recoveredAssetId = await persistGeneratedMedia({
     row,
     outputIndex,
     assetId,
@@ -637,12 +715,12 @@ export async function recoverPersistingResult(row: JobRow) {
     thumbnailStorageKey,
     upscaleMetadata,
   });
+  return completeJobWithAsset(row, recoveredAssetId);
 }
 
-export async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
-  const outputIndex = 0;
+async function persistResultSlot(row: JobRow, outputIndex: number, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null, generatedVgl?: string | null) {
   const existing = await getGeneratedOutput(row, outputIndex);
-  if (existing) return completeJobWithAsset(row, existing.id);
+  if (existing) return existing.id;
 
   const upscaleMetadata = row.operation === "upscale-image"
     ? await inspectUpscaleOutputMetadata(bytes, contentType)
@@ -686,7 +764,13 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
     storageKey,
     thumbnailStorageKey,
     upscaleMetadata,
+    generatedVgl,
   });
+}
+
+export async function persistResult(row: JobRow, bytes: Buffer, contentType: string, poster?: { bytes: Buffer; contentType: string } | null) {
+  const assetId = await persistResultSlot(row, 0, bytes, contentType, poster);
+  return completeJobWithAsset(row, assetId);
 }
 
 /** Same owner-assigned, signed native worker call as the PNG poll.
@@ -881,10 +965,160 @@ function providerFailureDiagnostic(
   };
 }
 
+async function recoverFiboBatchSlot(row: JobRow, slot: FiboBatchOutputRow) {
+  const existing = await getGeneratedOutput(row, slot.output_index);
+  if (existing) {
+    return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+      status: "succeeded",
+      output_asset_id: existing.id,
+      completed_at: new Date().toISOString(),
+      error_code: null,
+      error_message: null,
+    });
+  }
+  const assetId = deterministicGenerationAssetId(row.id, slot.output_index);
+  const primary = await findDurableObject(
+    generationOutputStoragePrefix(row, assetId),
+    possibleGenerationOutputExtensions("image"),
+    "image",
+  );
+  if (!primary) return null;
+  const object = await readR2Object(primary.storageKey);
+  const persistedId = await persistResultSlot(
+    row, slot.output_index, Buffer.from(object.bytes), primary.contentType, null, slot.generated_vgl,
+  );
+  return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+    status: "succeeded",
+    output_asset_id: persistedId,
+    completed_at: new Date().toISOString(),
+    error_code: null,
+    error_message: null,
+  });
+}
+
+async function pollFiboBatchSlot(row: JobRow, slot: FiboBatchOutputRow) {
+  if (["succeeded", "failed", "cancelled"].includes(slot.status)) return slot;
+  if (slot.status === "persisting") {
+    return await recoverFiboBatchSlot(row, slot) ?? slot;
+  }
+  if (!slot.worker_id || !slot.provider_job_id) {
+    return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+      status: "failed",
+      error_code: "generation_slot_unassigned",
+      error_message: "This batch output has no confirmed provider assignment.",
+      completed_at: new Date().toISOString(),
+    });
+  }
+  const worker = findWorker(slot.worker_id);
+  if (!worker) {
+    return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+      status: "failed",
+      error_code: "generation_worker_unavailable",
+      error_message: "The assigned worker is no longer available.",
+      completed_at: new Date().toISOString(),
+    });
+  }
+  const options = workerGatewayOptions(worker);
+  const headers = new Headers(options.headers);
+  headers.set("accept", "image/*, application/json");
+  const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(slot.provider_job_id)}`, {
+    ...options, method: "GET", headers, cache: "no-store",
+  });
+  if (response.status === 202) {
+    const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
+    return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+      status: "running",
+      worker_state: payload.worker_state || payload.workerState || "generating",
+    });
+  }
+  if (!response.ok) {
+    const body = await errorBody(response);
+    const failure = classifyWorkerFailure(response.status, body);
+    return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+      status: "failed",
+      error_code: failure.code.toLowerCase(),
+      error_message: String(body.error || body.detail || "FIBO batch output failed.").slice(0, 500),
+      completed_at: new Date().toISOString(),
+    });
+  }
+  const contentType = String(response.headers.get("content-type") || "image/png").split(";")[0]!.trim().toLowerCase();
+  if ((worker.policy?.resultMime && contentType !== worker.policy.resultMime) || !contentType.startsWith("image/")) {
+    return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+      status: "failed",
+      error_code: "generation_invalid_output",
+      error_message: "Worker returned an unexpected batch output format.",
+      completed_at: new Date().toISOString(),
+    });
+  }
+  let generatedVgl: string | null = null;
+  if (row.parameters.autoVgl === true) {
+    try {
+      generatedVgl = await getGeneratedFiboCaption(worker, slot.provider_job_id);
+    } catch (error) {
+      if (!(error instanceof InvalidGeneratedFiboSidecarError)) throw error;
+      return patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+        status: "failed",
+        error_code: "generation_vgl_invalid",
+        error_message: "Generated FIBO scene JSON could not be verified.",
+        completed_at: new Date().toISOString(),
+      });
+    }
+  }
+  const persisting = await patchFiboBatchOutputSlot(row.owner_id, row.id, slot.output_index, {
+    status: "persisting",
+    worker_state: "finalizing",
+    generated_vgl: generatedVgl,
+  });
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const assetId = await persistResultSlot(row, slot.output_index, bytes, contentType, null, generatedVgl);
+  return patchFiboBatchOutputSlot(row.owner_id, row.id, persisting.output_index, {
+    status: "succeeded",
+    output_asset_id: assetId,
+    completed_at: new Date().toISOString(),
+    error_code: null,
+    error_message: null,
+  });
+}
+
+async function pollFiboBatchGeneration(row: JobRow) {
+  const requested = row.parameters.batchCount;
+  if (typeof requested !== "number" || requested < 2 || requested > 4) {
+    throw new Error("Stored FIBO batch count is invalid.");
+  }
+  const before = await getFiboBatchOutputSlots(row.owner_id, row.id);
+  if (before.length !== requested) throw new Error("Stored FIBO batch slots are incomplete.");
+  for (const slot of before) await pollFiboBatchSlot(row, slot);
+  const slots = await getFiboBatchOutputSlots(row.owner_id, row.id);
+  const summary = summarizeFiboBatchSlots(slots.map(publicBatchSlot), requested);
+  if (!summary) throw new Error("Stored FIBO batch slots are invalid.");
+  const next = await patchJob(row.owner_id, row.id, {
+    status: summary.status,
+    worker_state: summary.terminal ? "batch-complete" : `batch:${summary.succeeded}/${summary.requested}`,
+    output_asset_ids: summary.outputAssetIds,
+    parameters: { ...row.parameters, batchSummary: {
+      requested: summary.requested,
+      succeeded: summary.succeeded,
+      failed: summary.failed,
+      cancelled: summary.cancelled,
+      partial: summary.partial,
+    } },
+    ...(summary.terminal ? { completed_at: new Date().toISOString() } : {}),
+    ...(summary.status === "failed" ? {
+      error_code: "generation_batch_failed",
+      error_message: "No requested FIBO batch output completed successfully.",
+    } : { error_code: null, error_message: null }),
+  });
+  return toGenerationJob(next);
+}
+
 export async function pollNativeGeneration(ownerId: string, jobId: string): Promise<GenerationJob | null> {
   const row = await getJobRow(ownerId, jobId);
   if (!row) return null;
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
+
+  if (typeof row.parameters.batchCount === "number" && row.parameters.batchCount > 1) {
+    return pollFiboBatchGeneration(row);
+  }
 
   const recovered = await recoverPersistingResult(row);
   if (recovered) {

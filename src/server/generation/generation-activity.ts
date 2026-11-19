@@ -7,6 +7,7 @@ import { supabaseRest } from "@/server/data/supabase-rest";
 import { isSupportedNativeCancellationWorker } from "@/server/generation/cancel-generation";
 import { pollGenerationJob } from "@/server/generation/poll-generation";
 import { reconstructAvailableGenerationRecipeRequest } from "@/server/generation/generation-recipe";
+import { parseFiboBatchSummary } from "@/lib/capabilities/fibo-batch";
 
 type GenerationActivityRow = {
   id: string;
@@ -28,6 +29,10 @@ type GenerationActivityRow = {
 };
 
 const cancellableStatuses = new Set<GenerationJobStatus>(["queued", "preparing", "running"]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
 
 function activityError(row: Pick<GenerationActivityRow, "status" | "error_code" | "error_message">) {
   if (row.status !== "failed" || !row.error_message) return null;
@@ -52,6 +57,7 @@ function activitySummary(row: GenerationActivityRow) {
 }
 
 function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationActivity {
+  const batch = isRecord(row.parameters) ? parseFiboBatchSummary(row.parameters.batchSummary) : undefined;
   return {
     id: row.id,
     status: row.status,
@@ -60,6 +66,7 @@ function publicGenerationActivity(row: GenerationActivityRow): PublicGenerationA
     prompt: row.prompt,
     summary: activitySummary(row),
     outputAssetIds: row.output_asset_ids ?? [],
+    ...(batch ? { batch } : {}),
     canCancel: canCancelActivity(row),
     canRunAgain: false,
     error: activityError(row),
@@ -114,6 +121,7 @@ export async function listGenerationActivity({
         status: refreshed.status,
         updatedAt: refreshed.updatedAt,
         outputAssetIds: refreshed.outputAssetIds,
+        ...(refreshed.batch ? { batch: refreshed.batch } : {}),
         canCancel: fallback.canCancel && cancellableStatuses.has(refreshed.status) && refreshed.outputAssetIds.length === 0,
         error: refreshed.status === "failed"
           ? activityError({

@@ -10,6 +10,14 @@ export type FiboBatchSlot = {
   outputAssetId: string | null;
 };
 
+export type FiboBatchSummary = {
+  requested: number;
+  succeeded: number;
+  failed: number;
+  cancelled: number;
+  partial: boolean;
+};
+
 const slotStatuses = new Set<FiboBatchSlotStatus>([
   "queued", "running", "persisting", "succeeded", "failed", "cancelled",
 ]);
@@ -54,4 +62,21 @@ export function summarizeFiboBatchSlots(slots: readonly FiboBatchSlot[], request
     status,
     outputAssetIds: ordered.flatMap((slot) => slot.outputAssetId ? [slot.outputAssetId] : []),
   } as const;
+}
+
+export function parseFiboBatchSummary(value: unknown): FiboBatchSummary | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  if (Object.keys(record).some((key) => !["requested", "succeeded", "failed", "cancelled", "partial"].includes(key))) {
+    return undefined;
+  }
+  const counts = [record.requested, record.succeeded, record.failed, record.cancelled];
+  if (!counts.every(Number.isInteger) || typeof record.partial !== "boolean") return undefined;
+  const [requested, succeeded, failed, cancelled] = counts as number[];
+  if (requested < 2 || requested > 4 || [succeeded, failed, cancelled].some((count) => count < 0)
+    || succeeded + failed + cancelled > requested
+    || record.partial !== (succeeded > 0 && succeeded + failed + cancelled === requested && succeeded < requested)) {
+    return undefined;
+  }
+  return { requested, succeeded, failed, cancelled, partial: record.partial };
 }

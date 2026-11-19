@@ -1,4 +1,5 @@
 import type { CreativeOperation, GenerationJobStatus, OutputKind } from "@/lib/capabilities/generation";
+import type { FiboBatchSummary } from "@/lib/capabilities/fibo-batch";
 
 export type PublicGenerationActivity = {
   id: string;
@@ -8,6 +9,7 @@ export type PublicGenerationActivity = {
   prompt: string | null;
   summary: string;
   outputAssetIds: string[];
+  batch?: FiboBatchSummary;
   canCancel: boolean;
   canRunAgain: boolean;
   error: { code: string; message: string } | null;

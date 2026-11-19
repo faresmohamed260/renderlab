@@ -241,6 +241,7 @@ export type GenerationJob = {
   createdAt: string;
   updatedAt: string;
   outputAssetIds: string[];
+  batch?: import("@/lib/capabilities/fibo-batch").FiboBatchSummary;
   error?: {
     code: string;
     message: string;

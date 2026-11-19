@@ -62,3 +62,20 @@ test("retry and recovery preserve count while Create recipe restore fails closed
   assert.match(recipe, /typeof row\.parameters\.batchCount === "number"/);
   assert.match(recipe, /\(request\.batchCount \?\? 1\) > 1/);
 });
+
+test("native batch orchestration owns dispatch, persistence, recovery, and public summary", () => {
+  const engine = fs.readFileSync("src/server/generation/native-generation.ts", "utf8");
+  const activity = fs.readFileSync("src/server/generation/generation-activity.ts", "utf8");
+  const publicContract = fs.readFileSync("src/lib/api/generation-activity-contract.ts", "utf8");
+  assert.match(engine, /createFiboBatchOutputSlots\([\s\S]*request\.advanced\?\.seed/);
+  assert.match(engine, /advanced: \{ \.\.\.request\.advanced, seed: slot\.seed \}/);
+  assert.match(engine, /worker_id: submitted\.worker\.id/);
+  assert.match(engine, /provider_job_id: submitted\.callId/);
+  assert.match(engine, /status: "persisting"[\s\S]*persistResultSlot\(row, slot\.output_index/);
+  assert.match(engine, /recoverFiboBatchSlot/);
+  assert.match(engine, /summarizeFiboBatchSlots/);
+  assert.match(engine, /output_asset_ids: summary\.outputAssetIds/);
+  assert.match(activity, /parseFiboBatchSummary/);
+  assert.match(publicContract, /batch\?: FiboBatchSummary/);
+  assert.doesNotMatch(publicContract, /providerJobId|workerId/);
+});

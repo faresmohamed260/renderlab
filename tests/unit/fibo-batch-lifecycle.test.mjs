@@ -11,7 +11,7 @@ registerHooks({
   },
 });
 
-const { fiboBatchSeeds, summarizeFiboBatchSlots } = await import("../../src/lib/capabilities/fibo-batch.ts");
+const { fiboBatchSeeds, parseFiboBatchSummary, summarizeFiboBatchSlots } = await import("../../src/lib/capabilities/fibo-batch.ts");
 
 const slot = (outputIndex, status, outputAssetId = null, seed = 42 + outputIndex) => ({
   outputIndex, status, outputAssetId, seed,
@@ -56,4 +56,16 @@ test("malformed, duplicate, missing, or mismatched durable slots fail closed", (
     [slot(0, "invented"), slot(1, "queued")],
     [slot(0, "queued", null, -1), slot(1, "queued")],
   ]) assert.equal(summarizeFiboBatchSlots(slots, 2), null);
+});
+
+test("only internally consistent batch summaries cross the public job boundary", () => {
+  const partial = { requested: 4, succeeded: 2, failed: 1, cancelled: 1, partial: true };
+  assert.deepEqual(parseFiboBatchSummary(partial), partial);
+  for (const value of [
+    null,
+    { ...partial, requested: 5 },
+    { ...partial, partial: false },
+    { ...partial, succeeded: 5 },
+    { ...partial, providerJobId: "leak" },
+  ]) assert.equal(parseFiboBatchSummary(value), undefined);
 });
