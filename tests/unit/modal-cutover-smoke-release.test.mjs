@@ -8,9 +8,9 @@ import {
   verifyModalCutoverSmokeRelease,
 } from "../../scripts/lib/production-live-state.mjs";
 
-const sha = "e93481466806b3a88f986cd547f11ef62e9543fb";
-const supersededSha = "bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba";
-const recoverySha = "4f8efb7f52e7c43f5425c7a4aa3375f2292992cb";
+const sha = "c3f92247b21b9761fde6cee610cce2c9084441f8";
+const supersededSha = "4f8efb7f52e7c43f5425c7a4aa3375f2292992cb";
+const recoverySha = "e93481466806b3a88f986cd547f11ef62e9543fb";
 const deploymentId = "dpl_test";
 const domain = "renderlab.faresuniform.uk";
 const base = { expectedSha: sha, deploymentId, scenario: "text-to-image", vercelToken: "test-token" };
@@ -77,7 +77,7 @@ test("cutover inputs are checked before any provider calls", async () => {
 test("cutover smoke and the runbook bind the same replacement and recovery SHAs", () => {
   const runbook = readFileSync("docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md", "utf8");
   assert.equal(runbook.match(/^\| Replacement application and Modal source \| `([a-f0-9]{40})`;/m)?.[1], sha);
-  assert.equal(runbook.match(/^\| Recovery application and combined Modal source \| `([a-f0-9]{40})` \|/m)?.[1], recoverySha);
+  assert.equal(runbook.match(/^\| Recovery application and Modal source \| `([a-f0-9]{40})` \|/m)?.[1], recoverySha);
 });
 
 test("the workflow keeps the routine manifest gate and uses the cutover gate before fixture work", () => {

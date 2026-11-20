@@ -165,8 +165,8 @@ export async function verifyProductionLiveState({
   });
 }
 
-const CUTOVER_REPLACEMENT_SHA = "e93481466806b3a88f986cd547f11ef62e9543fb";
-const CUTOVER_RECOVERY_SHA = "4f8efb7f52e7c43f5425c7a4aa3375f2292992cb";
+const CUTOVER_REPLACEMENT_SHA = "c3f92247b21b9761fde6cee610cce2c9084441f8";
+const CUTOVER_RECOVERY_SHA = "e93481466806b3a88f986cd547f11ef62e9543fb";
 const CUTOVER_DOMAIN = "renderlab.faresuniform.uk";
 
 // The transient cutover target is not the accepted release in the production manifest.
