@@ -10,6 +10,8 @@ test("ADR-005 lifecycle workflow is manual, serialized, exact-release bound and 
   assert.match(workflow, /cancel-in-progress: false/);
   assert.match(workflow, /confirm_two_disposable_provider_calls/);
   assert.match(workflow, /confirm_external_process_termination/);
+  assert.match(workflow, /run-owned ComfyUI subprocess/);
+  assert.doesNotMatch(workflow, /run-owned Modal worker container/);
   assert.match(workflow, /verify-production-live-state\.mjs/);
   assert.doesNotMatch(workflow, /schedule:/);
   assert.doesNotMatch(workflow, /modal deploy|supabase migration|vercel deploy/i);

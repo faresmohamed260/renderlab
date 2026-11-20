@@ -44,13 +44,14 @@
       "id": "modal-direct-cutover-baseline",
       "authority_path": "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md",
       "subject": "Direct production Modal cutover baseline and recovery anchors",
-      "claim": "Modal main has split gateway ap-UfrkwIijsdz6xiGiQwtMlB and private image worker ap-wS5WKruuipwssNGHf7Eo6k. The dispatcher schedule passed live read-back, durable heartbeat migration 20261120110737 is applied, and the worker scaled to zero after the final smoke. Supabase dispatch health has zero active, due, expired, or unresolved work. Vercel production and the verified immediate rollback pair are recorded in docs/production/current.json.",
-      "source": "Modal app and container read-back, Supabase dispatch and Library baseline queries, Vercel alias read-back, and the three protected-main FIBO smoke runs in the cutover runbook.",
+      "claim": "Modal main has split gateway ap-UfrkwIijsdz6xiGiQwtMlB and private image worker ap-wS5WKruuipwssNGHf7Eo6k. The dispatcher schedule passed live read-back, durable heartbeat migration 20261120110737 is applied, and the worker scaled to zero after the final smoke. Supabase dispatch health has zero active, due, expired, or unresolved work. Vercel production and the verified immediate rollback pair are recorded in docs/production/current.json. Modal reschedules an active Function input when its container crashes or is stopped, so the bounded process-exit checkpoint must terminate only its unambiguous run-owned ComfyUI child process, not the Modal Function container.",
+      "source": "Modal app and container read-back, Supabase dispatch and Library baseline queries, Vercel alias read-back, the three protected-main FIBO smoke runs in the cutover runbook, and the current official Modal failures/retries plus container CLI documentation.",
       "verified_at": "2026-11-20",
       "reverify_before_action": true,
       "action_contexts": [
         "applying migration 0030 or creating dispatcher/worker credentials",
         "stopping, deploying, rolling back, or retiring the production Modal gateway or image worker",
+        "injecting a production Modal worker-process or container failure",
         "deploying or moving the Vercel production alias for the direct cutover"
       ]
     },

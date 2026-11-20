@@ -35,7 +35,8 @@ function validateConfiguration() {
     "ADR-005 lifecycle scenario must be warm-queue, cancel-recovery, or process-exit-recovery.");
   assert(confirmed, "ADR-005 lifecycle verification requires explicit bounded provider-work confirmation.");
   if (scenario === "process-exit-recovery") {
-    assert(processTerminationConfirmed, "ADR-005 process-exit verification requires explicit worker-termination confirmation.");
+    assert(processTerminationConfirmed,
+      "ADR-005 process-exit verification requires explicit ComfyUI-subprocess termination confirmation.");
   }
   assert(/^[0-9a-f]{40}$/i.test(expectedSource), "Expected production source must be an exact Git SHA.");
   assert(baseUrl === "https://renderlab.faresuniform.uk", "ADR-005 lifecycle verification must target the production custom domain.");
