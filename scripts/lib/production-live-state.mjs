@@ -180,7 +180,9 @@ export async function verifyModalCutoverSmokeRelease({
   if (!/^dpl_[a-zA-Z0-9]+$/.test(deploymentId ?? "")) {
     throw new Error("Cutover smoke requires an exact Vercel deployment ID.");
   }
-  assertEqual(scenario, "text-to-image", "Cutover smoke scenario");
+  if (!["text-to-image", "reference-edit"].includes(scenario)) {
+    throw new Error("Cutover smoke scenario must be text-to-image or reference-edit.");
+  }
   if (!vercelToken) throw new Error("VERCEL_TOKEN is required for cutover verification.");
 
   const scope = `teamId=${RENDERLAB_VERCEL_TEAM_ID}`;

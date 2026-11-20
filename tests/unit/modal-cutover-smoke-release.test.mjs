@@ -40,6 +40,9 @@ test("direct provider verification accepts both exact runbook releases without r
       ...base, expectedSha: source, fetchImpl: mockProvider({ source }),
     }), { sha: source, deploymentId, domain });
   }
+  assert.deepEqual(await verifyModalCutoverSmokeRelease({
+    ...base, scenario: "reference-edit", fetchImpl: mockProvider(),
+  }), { sha, deploymentId, domain });
 });
 
 test("cutover verification rejects mismatched or unverified live deployment evidence", async () => {
@@ -65,7 +68,7 @@ test("cutover inputs are checked before any provider calls", async () => {
     [{ expectedSha: "a".repeat(40) }, /runbook source/],
     [{ expectedSha: supersededSha }, /runbook source/],
     [{ deploymentId: "dpl_test/other" }, /deployment ID/],
-    [{ scenario: "reference-edit" }, /scenario mismatch/],
+    [{ scenario: "video" }, /scenario must be/],
     [{ vercelToken: "" }, /VERCEL_TOKEN/],
   ]) {
     await assert.rejects(verifyModalCutoverSmokeRelease({
