@@ -2,6 +2,12 @@
 
 **Status:** The split gateway and private image worker are live in production. The three ordered smokes, recovery drill, cleanup and queue drain passed.
 
+## 2026-11-20 ADR-005 production continuation
+
+The owner directed completion of the accepted ADR-005 workload architecture in the existing production `main` environment without recreating a qualification environment. Exact protected-main source `c3f92247b21b9761fde6cee610cce2c9084441f8` passed all required checks. Hosted recovery migration `20261120050006` is applied over the original outbox migration, with zero active jobs, nonterminal attempts or unresolved attempts at rollout preflight. The original production gateway and image-worker app identities were redeployed from that source, and the three inactive workload shells were added as recorded below.
+
+The first bounded smoke, run `44678583907`, dispatched exactly one attempt and the image worker completed it. The still-live older Vercel application polled the new header-only gateway through the retired path-shaped contract, received 404 and marked the job failed before the worker result completed. Exact fixture cleanup passed and later read-back found no active or unresolved work. Matching Vercel deployment `dpl_ok8kLgcaYAqHZAk2f1m874jotpPp` then reached READY from `c3f92247b21b9761fde6cee610cce2c9084441f8` and received `renderlab.faresuniform.uk`. Run `44679165799` performed no provider work because the protected smoke allowlist still named the prior cutover pair. The allowlist update in this continuation binds the next bounded smoke to the matching release and preserves `e93481466806b3a88f986cd547f11ef62e9543fb` / `dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE` as rollback.
+
 ## 2026-11-20 execution and recovery checkpoint
 
 The owner confirmed prior Scope D and G approval for runtime `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. The earlier approval for superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` did not carry to the corrected source.
@@ -38,21 +44,21 @@ It does **not** waive exact-source CI, zero-in-flight verification, least privil
 
 | Boundary | Exact target |
 | --- | --- |
-| Replacement application and Modal source | `e93481466806b3a88f986cd547f11ef62e9543fb`; supersedes `bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba` |
-| Recovery application and combined Modal source | `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` |
+| Replacement application and Modal source | `c3f92247b21b9761fde6cee610cce2c9084441f8`; includes the post-#487 worker lifecycle and dispatch-recovery runtime |
+| Recovery application and Modal source | `e93481466806b3a88f986cd547f11ef62e9543fb` |
 | Modal workspace | `faresmohamed260` / `ac-88wJ5dCXYBOywnXXaGmUoV` |
 | Modal environment | existing `main`; no new environment |
-| Existing gateway at retry preflight | `renderlab-generation-gateway`, app `ap-RhZ9OtOWoaFzSvnIXL1FDs`, version `v1` |
-| Replacement worker | `renderlab-image-generation` |
+| Existing gateway at retry preflight | `renderlab-generation-gateway`, app `ap-UfrkwIijsdz6xiGiQwtMlB` |
+| Replacement worker | `renderlab-image-generation`, app `ap-wS5WKruuipwssNGHf7Eo6k` |
 | Preserved model volume | existing `renderlab-fibo-models` in `main` |
 | Preserved gateway secret | existing `renderlab-fibo-native-gateway` in `main` |
 | New dispatcher secret | `renderlab-generation-dispatcher` in `main` |
 | New worker secret | `renderlab-generation-worker` in `main` |
-| Shared database | Supabase project `rashyleshocuvpgcooxy`, migration `0030_modal_generation_dispatch_outbox.sql` |
-| Current Vercel recovery deployment | `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`, source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` |
+| Shared database | Supabase project `rashyleshocuvpgcooxy`; outbox migration `20261119230644` plus recovery migration `20261120050006` |
+| Current Vercel recovery deployment | `dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE`, source `e93481466806b3a88f986cd547f11ef62e9543fb` |
 | Production domain | `https://renderlab.faresuniform.uk` |
 
-The three inactive video/image-tools/video-tools shells are not deployed in this cutover. ComfyUI continues to start and stop per render. Container-level ComfyUI reuse is explicitly outside this operation so the worker split is tested independently.
+The three inactive CPU-only shells are deployed in production `main`: `renderlab-video-generation` (`ap-N4eknQ8llq21wpRalpJZX1`), `renderlab-image-tools` (`ap-V3BZK2LUEnnuU0DJEPTgoY`) and `renderlab-video-tools` (`ap-fT4zmpzFH5KD82jOvp9V8A`). Their deployed private readiness functions returned their own identity and `state: inactive`; they have no GPU, secrets, public endpoint or schedule. The replacement image worker includes container-level ComfyUI reuse and must be qualified by the bounded production continuation smoke before this release is closed.
 
 ## Preserved state
 
