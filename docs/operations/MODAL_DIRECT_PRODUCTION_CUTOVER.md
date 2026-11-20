@@ -19,6 +19,15 @@ The recovery Vercel release and combined Modal gateway are still live. The seven
 
 The owner subsequently directed the retry to use a fresh 15-A10-minute planning allowance. The prior recovery render remains historical usage and is not the in-sequence drill. The outage was also blocked by a separate release-verification conflict: the established production FIBO smoke workflow checks out protected main and requires its production manifest to match the exact requested live SHA before fixture work. The manifest records recovery source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb`; the replacement smoke requires `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. The cutover runbook records the new production manifest only after final smoke acceptance. The workflow change in this PR resolves that circular dependency once merged to protected main; it does not record release acceptance.
 
+
+### 2026-11-20 retry — recovery gateway restored
+
+After the cutover smoke workflow fix merged as `772549b`, the owner authorized the retry with a fresh 15-A10-minute planning allowance; the earlier recovery smoke remains recorded separately. The live alias still served recovery SHA `4f8efb7`. Both local source checkouts were pristine, the recovery gateway had zero tasks, and the database had zero active jobs and an empty outbox.
+
+The retry stopped recovery gateway `ap-n7OgOpn4QFu3B97PyoQG7E` but did not obtain successful verification from the database-login provisioning step. The exact database/client error was not established. Neither split app was deployed in this attempt. The combined recovery gateway was redeployed from the exact recovery source as `ap-IccrW86VuyQL9yZfVVShld` v1 at 02:20:09 Cairo time. The public site returned 200 and the gateway returned the expected unauthenticated 401; no new end-to-end render was run. The production alias did not move. Both candidate roles were verified back at `NOLOGIN` and the two candidate secrets were absent. Migration `0030`, the original gateway secret, and the model volume were left in place.
+
+Before another outage, establish a credential-provisioning path with sanitized, actionable diagnostics and verify how the exact TLS and RPC checks will be run. This attempt did not exercise the corrected smoke workflow and does not establish split-stack acceptance.
+
 ## Purpose and one-time exception
 
 This is the one-time operating exception to ADR-005's normal requirement to qualify the split Modal gateway and image worker in an isolated hosted environment before production cutover. RenderLab currently has one user, that user has accepted a planned outage, and the project owner explicitly rejected creating a `qualification` Modal environment for this rollout.
