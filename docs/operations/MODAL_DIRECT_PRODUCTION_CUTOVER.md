@@ -216,6 +216,14 @@ The production split and its closed-demo smoke evidence above apply to the recor
 - Run the Python worker and deployment-plan tests. Apply the recovery migration over `0030` in a disposable PostgreSQL database with the generation-job table and roles, then run `tests/sql/modal_dispatch_recovery.sql` using `psql -v ON_ERROR_STOP=1`. The fixture checks the restricted entry points, overlapping claims, a lost response, queued cancellation, and record replay across cleanup and rollback.
 - Verify the gateway, dispatcher and image worker in the same Modal environment and the same source revision. The updated server caller sends signed handles only in `X-RenderLab-Job-Handle` to the static status, caption and cancellation routes. Keep both halves of each release together when moving traffic. The signing format is unchanged and saved handles still refer to the original provider call. Drain active jobs through result saving before swapping the paired release. Keep the previous verified release and its matching worker available for rollback.
 
+### 2026-11-20 CPU readiness correction
+
+A read-only preflight found that Modal environment `renderlab-471-qualification` already contained three deployed dormant-workload readiness apps, an unqualified `renderlab-fibo-471-stage` app and volume `renderlab-471-models`, but no secrets. The readiness apps repeatedly failed during startup because their images did not contain the imported `workload_environment` module. Repository fix [#488](https://github.com/faresmohamed260/renderlab/pull/488) merged as exact source `87ba94b75af685e92141b8679a61bc246677f506` before any correction.
+
+Under a separately approved CPU-only corrective scope, the same three app identities were redeployed from that exact source as version `v2`: `renderlab-image-tools` (`ap-T31fjJ6VVMTFhE7i02AA7R`), `renderlab-video-generation` (`ap-ntHJkRTb1dtue8BxM17YaC`) and `renderlab-video-tools` (`ap-bjl07kZ250nKv95pwM4TIX`). Each private `readiness` function returned its own app name and `state: inactive`. All three returned to zero tasks after their idle window, and no stderr was emitted after the corrected deployments. The environment still had no secrets.
+
+This checkpoint closes only the dormant CPU readiness case. It did not invoke or modify `renderlab-fibo-471-stage`, modify `renderlab-471-models`, use a GPU, create credentials, apply a database migration, use production data, change routing or alter the production environment. Active gateway/worker qualification and every A10 case below remain unrun and require their own exact approval.
+
 ### Hosted evidence
 
 | Case | Evidence to record |
