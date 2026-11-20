@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** The combined recovery gateway is live and passed the rollback smoke. The first split-stack smoke reached the renderer but failed application reconciliation. A corrected source must be qualified and explicitly approved before another outage.
+**Status:** The combined recovery gateway is live and passed the rollback smoke. The corrected replacement source is on protected main and awaits exact-source production and GPU authorization.
 
 ## 2026-11-20 execution and recovery checkpoint
 
@@ -38,7 +38,7 @@ It does **not** waive exact-source CI, zero-in-flight verification, least privil
 
 | Boundary | Exact target |
 | --- | --- |
-| Replacement application and Modal source | `bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba`; supersedes `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2` |
+| Replacement application and Modal source | `e93481466806b3a88f986cd547f11ef62e9543fb`; supersedes `bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba` |
 | Recovery application and combined Modal source | `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` |
 | Modal workspace | `faresmohamed260` / `ac-88wJ5dCXYBOywnXXaGmUoV` |
 | Modal environment | existing `main`; no new environment |
@@ -116,6 +116,12 @@ Track a conservative A10 bound for each of the three authorized smoke renders. W
 - The alias returned to `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`, and the combined gateway republished as `ap-RhZ9OtOWoaFzSvnIXL1FDs` v1. [Recovery smoke 44653302341](https://github.com/faresmohamed260/renderlab/actions/runs/44653302341) completed a four-step render, saved its output, reopened it from Library and passed fixture cleanup. Both split apps stopped, their two secrets were removed and their database roles returned to `NOLOGIN`. Database read-back showed zero active jobs, an empty outbox, 70 jobs, two sources and 14 active media assets.
 - The two smoke runs used a conservative upper bound of 498 A10 seconds, measured from each GitHub generation step start through provider-observed zero containers (285 seconds split and 213 seconds recovery). The cut-forward smoke was not dispatched. The recovery run followed a failed split smoke and does not complete the ordered acceptance sequence.
 - Before another outage, qualify the corrected runtime and reconcile its exact source across the runbook and the protected-main smoke workflow. Obtain approval for the corrected source and reconcile the two consumed renders before allocating a new smoke sequence.
+
+## 2026-11-20 result reconciliation candidate
+
+[PR #483](https://github.com/faresmohamed260/renderlab/pull/483) merged as `e93481466806b3a88f986cd547f11ef62e9543fb`. It maps the durable backend key to the existing FIBO fleet route and signs durable Modal call handles with the same contract used by the gateway. The change reuses migration `0030` and the existing named gateway signing secret. The combined release and verified rollback evidence remain current. Prior authorization and GPU consumption recorded above belong to `bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba`.
+
+Before starting the new outage, record approval for both scopes on the exact replacement source, including the budget for all three ordered smoke renders. Reconfirm the previous render accounting, live recovery identities, required exact-source checks, zero in-flight work, and the staged Vercel deployment metadata.
 
 ## Cutover smoke invocation
 

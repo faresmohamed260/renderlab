@@ -8,8 +8,8 @@ import {
   verifyModalCutoverSmokeRelease,
 } from "../../scripts/lib/production-live-state.mjs";
 
-const sha = "bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba";
-const supersededSha = "68651d2d1e3c5602c2f840a0d066a0f6185a5cf2";
+const sha = "e93481466806b3a88f986cd547f11ef62e9543fb";
+const supersededSha = "bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba";
 const recoverySha = "4f8efb7f52e7c43f5425c7a4aa3375f2292992cb";
 const deploymentId = "dpl_test";
 const domain = "renderlab.faresuniform.uk";

@@ -165,7 +165,7 @@ export async function verifyProductionLiveState({
   });
 }
 
-const CUTOVER_REPLACEMENT_SHA = "bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba";
+const CUTOVER_REPLACEMENT_SHA = "e93481466806b3a88f986cd547f11ef62e9543fb";
 const CUTOVER_RECOVERY_SHA = "4f8efb7f52e7c43f5425c7a4aa3375f2292992cb";
 const CUTOVER_DOMAIN = "renderlab.faresuniform.uk";
 
