@@ -14,6 +14,10 @@ on:
         description: Exact 40-character Git SHA independently verified as production-live
         required: true
         type: string
+      cutover_deployment_id:
+        description: Exact live Vercel deployment ID for the approved Modal cutover only; leave blank for routine smoke
+        required: false
+        type: string
       confirm_bounded_fixture_provider_work:
         description: Confirm this run may dispatch exactly one FIBO generation owned by a disposable smoke fixture
         required: true
@@ -75,9 +79,14 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          RENDERLAB_CUTOVER_DEPLOYMENT_ID: ${{ inputs.cutover_deployment_id }}
         run: |
-          node scripts/verify-production-documentation-sync.mjs
-          node scripts/verify-production-live-state.mjs
+          if [ -n "$RENDERLAB_CUTOVER_DEPLOYMENT_ID" ]; then
+            node scripts/verify-modal-cutover-smoke-release.mjs
+          else
+            node scripts/verify-production-documentation-sync.mjs
+            node scripts/verify-production-live-state.mjs
+          fi
 
       - name: Validate shared-resource secrets
         shell: bash

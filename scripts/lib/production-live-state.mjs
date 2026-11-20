@@ -164,3 +164,39 @@ export async function verifyProductionLiveState({
     protectedChecks,
   });
 }
+
+const CUTOVER_REPLACEMENT_SHA = "68651d2d1e3c5602c2f840a0d066a0f6185a5cf2";
+const CUTOVER_RECOVERY_SHA = "4f8efb7f52e7c43f5425c7a4aa3375f2292992cb";
+const CUTOVER_DOMAIN = "renderlab.faresuniform.uk";
+
+// The transient cutover target is not the accepted release in the production manifest.
+export async function verifyModalCutoverSmokeRelease({
+  expectedSha, deploymentId, scenario, vercelToken, fetchImpl = fetch,
+} = {}) {
+  const sha = expectedSha?.toLowerCase();
+  if (![CUTOVER_REPLACEMENT_SHA, CUTOVER_RECOVERY_SHA].includes(sha)) {
+    throw new Error("Cutover smoke SHA must match an exact runbook source.");
+  }
+  if (!/^dpl_[a-zA-Z0-9]+$/.test(deploymentId ?? "")) {
+    throw new Error("Cutover smoke requires an exact Vercel deployment ID.");
+  }
+  assertEqual(scenario, "text-to-image", "Cutover smoke scenario");
+  if (!vercelToken) throw new Error("VERCEL_TOKEN is required for cutover verification.");
+
+  const scope = `teamId=${RENDERLAB_VERCEL_TEAM_ID}`;
+  const [alias, deployment] = await Promise.all([
+    fetchJson(`https://api.vercel.com/v4/aliases/${CUTOVER_DOMAIN}?projectId=${RENDERLAB_VERCEL_PROJECT_ID}&${scope}`,
+      { token: vercelToken, fetchImpl, label: "Vercel cutover alias" }),
+    fetchJson(`https://api.vercel.com/v13/deployments/${deploymentId}?withGitRepoInfo=true&${scope}`,
+      { token: vercelToken, fetchImpl, label: "Vercel cutover deployment" }),
+  ]);
+  assertEqual(alias?.alias, CUTOVER_DOMAIN, "Cutover domain");
+  assertEqual(alias?.projectId, RENDERLAB_VERCEL_PROJECT_ID, "Cutover alias project");
+  assertEqual(alias?.deploymentId || alias?.deployment?.id, deploymentId, "Cutover alias target");
+  assertEqual(deployment?.id, deploymentId, "Cutover deployment ID");
+  assertEqual(deployment?.project?.id, RENDERLAB_VERCEL_PROJECT_ID, "Cutover deployment project");
+  assertEqual(deploymentState(deployment), "READY", "Cutover deployment state");
+  assertEqual(deployment?.target, "production", "Cutover deployment target");
+  assertEqual(deploymentSha(deployment).toLowerCase(), sha, "Cutover deployment Git SHA");
+  return { sha, deploymentId, domain: CUTOVER_DOMAIN };
+}

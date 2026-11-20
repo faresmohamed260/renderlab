@@ -1,6 +1,23 @@
 # Modal direct-production cutover
 
-**Status:** Corrected implementation merged and exact-source verified; hosted execution awaits renewed approval. The earlier Scope D/G approval was bound to superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` and expired without any hosted mutation or GPU run when preflight found that Supabase API keys cannot assume custom PostgreSQL roles. The corrected least-privilege database-login implementation merged as `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. This runbook becomes executable only after this exact-source record merges and the project owner renews both scopes for that source.
+**Status:** Replacement gateway deployment stopped before the Vercel alias moved. The exact recovery gateway has been redeployed; the recovery smoke workflow passed. Do not resume at the replacement gateway as if the candidate worker and its credentials were still active.
+
+## 2026-11-20 execution and recovery checkpoint
+
+The owner confirmed prior Scope D and G approval for runtime `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. The earlier approval for superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` did not carry to the corrected source.
+
+- Supabase migration `0030` was applied as hosted version `20261119230644`. It remains in place for recovery. Before the gateway attempt, the outbox was empty and the database had 70 generation jobs, two sources, and zero active jobs.
+- The candidate image worker deployed as `ap-k9SzNTtsmQKGV1d7r1V7Yk` v1. Codex's deployment command used the candidate checkout, which was later read back clean at the exact approved SHA. The candidate gateway deployment exited nonzero before publication even though the CPU image built successfully, and Modal reported app `ap-om9ZYUJL5WyBiTbABEKMHm` stopped without an active replacement. Modal reported an unknown stop reason. An offline reproduction on the same Windows host with Modal CLI 1.4.2 showed its object-tree output raising `UnicodeEncodeError` on the checkmark under CP1256 before the publish boundary. With `PYTHONUTF8=1` the same output path passed. This is the leading explanation; the original client exception was not captured. Use UTF-8 and capture both streams on any future deployment attempt.
+- Recovery gateway `ap-n7OgOpn4QFu3B97PyoQG7E` v1 was deployed from clean source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb`. The Modal endpoint responded with the expected unauthenticated 401; this does not qualify rendering. Vercel remained at recovery deployment `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`; no alias movement occurred.
+- The separate candidate worker was stopped, the dispatcher and worker DB roles were restored to `NOLOGIN` with passwords cleared, and only the two candidate secrets were removed. The existing gateway secret and model volume were not modified.
+- One authorized recovery smoke was dispatched as [run 44639143236](https://github.com/faresmohamed260/renderlab/actions/runs/44639143236). The workflow completed successfully. Before closing recovery, independently reconcile fixture cleanup, queue drain, and A10 usage. Do not treat the candidate split or the three-smoke acceptance sequence as complete. Refresh the production and recovery identities, and reconcile approval and remaining GPU allowance before another cutover attempt.
+
+
+### Retry preflight — outage not started
+
+The recovery Vercel release and combined Modal gateway are still live. The seven corrected-source checks passed, the combined gateway had zero tasks, and Supabase had zero active jobs and an empty outbox (70 jobs and two sources total). The successful recovery smoke occurred before any replacement smoke, so it cannot establish the ordered recovery drill in this runbook. It is nevertheless one GPU render already performed. Modal CLI billing returned hourly app cost, not metered A10 time; it did not establish the remaining hard allowance. Do not start another outage until the runbook records an owner-approved retry sequence and a verifiable cumulative GPU budget. No production runtime changes were made during this preflight.
+
+The owner subsequently directed the retry to use a fresh 15-A10-minute planning allowance. The prior recovery render remains historical usage and is not the in-sequence drill. The outage was also blocked by a separate release-verification conflict: the established production FIBO smoke workflow checks out protected main and requires its production manifest to match the exact requested live SHA before fixture work. The manifest records recovery source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb`; the replacement smoke requires `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. The cutover runbook records the new production manifest only after final smoke acceptance. The workflow change in this PR resolves that circular dependency once merged to protected main; it does not record release acceptance.
 
 ## Purpose and one-time exception
 
@@ -72,6 +89,10 @@ All gates are fail-closed. Do not stop or deploy anything unless every gate pass
 8. Arm both recovery methods before outage: Modal rollback to captured combined-gateway version when history remains available, and source redeployment from exact recovery SHA when it does not. Arm Vercel alias restoration to `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`.
 
 Any nonzero active work, identity mismatch, missing preserved resource, dirty checkout, or unavailable recovery source aborts the operation without forced cancellation.
+
+## Cutover smoke invocation
+
+For each runbook render, dispatch `Production FIBO Smoke` from protected `main` with `scenario=text-to-image`, the exact current cutover or recovery SHA as `expected_production_sha`, the intended live Vercel deployment ID as `cutover_deployment_id`, and bounded fixture work explicitly confirmed. The cutover gate checks the live domain alias, RenderLab project, deployment readiness and production target, and exact provider-reported source before fixture work. Keep the domain stable until the run and fixture cleanup finish. Leave `cutover_deployment_id` blank for normal production audits; those still require manifest sync. Do not begin the outage until this workflow change is on protected main.
 
 ## Planned-outage execution
 
