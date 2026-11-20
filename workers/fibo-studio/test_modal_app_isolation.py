@@ -22,6 +22,8 @@ class ModalAppIsolationTest(unittest.TestCase):
                 self.assertNotIn("web_endpoint", attributes)
                 self.assertNotIn("Secret", attributes)
                 self.assertNotIn("Cron", attributes)
+                self.assertIn('add_local_python_source(\n    "workload_environment"\n)', source)
+                self.assertIn("@app.function(image=readiness_image)", source)
                 for call in (node for node in ast.walk(tree) if isinstance(node, ast.Call)):
                     self.assertFalse(any(keyword.arg in {"gpu", "schedule", "secrets"} for keyword in call.keywords))
 
