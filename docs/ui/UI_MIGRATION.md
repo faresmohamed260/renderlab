@@ -18,13 +18,13 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Preserve approved surfaces in Integration Mode unless the user explicitly reopens a named surface for redesign.
 
 ## Current production - 2026-11-20
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: e93481466806b3a88f986cd547f11ef62e9543fb -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: c3f92247b21b9761fde6cee610cce2c9084441f8 -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source e93481466806b3a88f986cd547f11ef62e9543fb from deployment dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE (https://renderlab-84jw07zig-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-20T01:52:14.049Z. FIBO generation now uses the private Modal image worker and the durable dispatcher. The split and cut-forward smokes 44655593284 and 44656743969 saved results, reopened them from Library and verified exact fixture cleanup.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source c3f92247b21b9761fde6cee610cce2c9084441f8 from deployment dpl_ok8kLgcaYAqHZAk2f1m874jotpPp (https://renderlab-80a9i2zvw-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-20T10:20:30.928Z. Production Modal `main` now has the private gateway, reusable image worker and all three inactive CPU-only workload shells. Recovery migration 20261120050006 is applied. Matched-release smokes 44679882865 and 44680785603 rendered text-to-image and reference-edit results, saved and reopened them from Library, and verified exact fixture cleanup.
 
-Exact-source CI completed at 2026-11-20T01:40:26.000Z: Deployment Readiness 44655251456; protected check runs 136017265106, 136017265451, 136017265276, 136017265183, 136017265568, 136017265234.
+Exact-source CI completed at 2026-11-20T05:28:58.000Z: Deployment Readiness 44681254741; protected check runs 136094442269, 136094442729, 136094442277, 136094442724, 136094442505, 136094442818.
 
-Rollback anchor: dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH at source 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb. Recovery smoke 44656168377 verified the combined gateway and its Vercel alias as a working pair. The combined gateway stopped after the drill. Restore its exact source together with the recovery alias. Automatic Git-to-production deployment remains disabled.
+Rollback anchor: dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE at source e93481466806b3a88f986cd547f11ef62e9543fb. Restore that application together with its compatible Modal release if the header-based gateway contract must be rolled back. Automatic Git-to-production deployment remains disabled. Warm reuse, active cancellation/fault recovery, replay-retention and alert delivery remain open hosted evidence in the ADR-005 runbook; this production pointer does not claim those gates complete.
 
 ## Current UI foundation
 
