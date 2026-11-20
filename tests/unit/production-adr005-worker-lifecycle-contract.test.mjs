@@ -4,6 +4,7 @@ import test from "node:test";
 
 const workflow = readFileSync(".github/workflows/production-adr005-worker-lifecycle.yml", "utf8");
 const verifier = readFileSync("scripts/verify-production-adr005-worker-lifecycle.mjs", "utf8");
+const runbook = readFileSync("docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md", "utf8");
 
 test("ADR-005 lifecycle workflow is manual, serialized, exact-release bound and two-call bounded", () => {
   assert.match(workflow, /workflow_dispatch:/);
@@ -15,6 +16,16 @@ test("ADR-005 lifecycle workflow is manual, serialized, exact-release bound and 
   assert.match(workflow, /verify-production-live-state\.mjs/);
   assert.doesNotMatch(workflow, /schedule:/);
   assert.doesNotMatch(workflow, /modal deploy|supabase migration|vercel deploy/i);
+});
+
+test("ADR-005 process-exit runbook identifies only the real ComfyUI child", () => {
+  assert.match(runbook, /working directory `\/opt\/ComfyUI`/);
+  assert.match(runbook, /exact command arguments `main\.py`/);
+  assert.match(runbook, /`--listen 127\.0\.0\.1`/);
+  assert.match(runbook, /`--port 8188`/);
+  assert.match(runbook, /`--disable-all-custom-nodes`/);
+  assert.match(runbook, /absolute-script-path match is incorrect/);
+  assert.doesNotMatch(runbook, /contains both `\/opt\/ComfyUI\/main\.py`/);
 });
 
 test("ADR-005 lifecycle verifier covers warm queue, cancellation, process exit, clean recovery and exact cleanup", () => {
