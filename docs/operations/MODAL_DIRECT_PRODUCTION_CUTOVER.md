@@ -23,6 +23,14 @@ Production audit [`ADR005_DURABLE_RECOVERY_PRODUCTION_2026-11-20.md`](../audits/
 
 All disposable Auth, generation, outbox and media rows were removed. Final read-back returned zero fixture residue, zero active jobs, zero incomplete dispatches, zero due age, zero expired claims and zero unresolved attempts. No application, Modal app, schema, route, secret, model volume, provider function or GPU allocation changed. This closes the hosted missed-wake, lost-response, overlap and replay-retention gates only.
 
+## Process-exit recovery checkpoint
+
+The remaining worker-failure exercise targets unchanged production application source `a450a95996329a4508883ab77996016cd27fbd86`, Modal workspace/environment `faresmohamed260` / `main`, gateway `ap-UfrkwIijsdz6xiGiQwtMlB`, image worker `ap-wS5WKruuipwssNGHf7Eo6k`, database project `rashyleshocuvpgcooxy`, and the current owner-scoped R2 bucket. It changes no deployment, route, secret, schema, app identity, model weight or owner data.
+
+The manual `process-exit-recovery` lifecycle scenario is limited to one run-owned account and two FIBO calls: one eight-step disposable render terminated externally only after its provider call is durably bound and running, followed by one four-step clean recovery render. Stop if the target differs, another production job is active, the first call cannot be identified unambiguously, termination is not observed within four minutes, a duplicate dispatch occurs, cleanup fails, or cumulative A10 allocation reaches 600 seconds. The first job must terminalize failed with no output or media row; the second must save one PNG, reopen it through Library, and use a distinct provider call. The workflow then deletes the exact Auth/database/R2 fixtures and proves zero residue, active jobs, incomplete dispatches, expired claims and unresolved attempts.
+
+Recovery is to stop the manual workflow, reconcile only its run-owned job to a truthful terminal state, stop its exact worker container if still present, and run the existing exact fixture cleanup. The production gateway, scheduled dispatcher and prior rollback release remain unchanged. This checkpoint does not authorize a deployment, performance experiment, additional rerun, ComfyUI change, or more than the two named provider calls.
+
 ## 2026-11-20 execution and recovery checkpoint
 
 The owner confirmed prior Scope D and G approval for runtime `68651d2d1e3c5602c2f840a0d066a0f6185a5cf2`. The earlier approval for superseded source `e47d3ae7e1928b563cec5adb14678cb712c3beaf` did not carry to the corrected source.

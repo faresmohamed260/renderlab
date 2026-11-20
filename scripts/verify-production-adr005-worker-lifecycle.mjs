@@ -14,6 +14,7 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const expectedSource = process.env.RENDERLAB_EXPECTED_PRODUCTION_SHA?.trim() || "";
 const scenario = process.env.RENDERLAB_ADR005_LIFECYCLE_SCENARIO || "";
 const confirmed = process.env.RENDERLAB_CONFIRM_ADR005_PROVIDER_WORK === "true";
+const processTerminationConfirmed = process.env.RENDERLAB_CONFIRM_ADR005_PROCESS_TERMINATION === "true";
 const runId = process.env.GITHUB_RUN_ID || "local";
 const artifactDir = process.env.RENDERLAB_ADR005_ARTIFACT_DIR || "artifacts/production-adr005-worker-lifecycle";
 const accountNamespace = `adr005-${scenario}`;
@@ -30,8 +31,12 @@ function wait(milliseconds) {
 }
 
 function validateConfiguration() {
-  assert(["warm-queue", "cancel-recovery"].includes(scenario), "ADR-005 lifecycle scenario must be warm-queue or cancel-recovery.");
+  assert(["warm-queue", "cancel-recovery", "process-exit-recovery"].includes(scenario),
+    "ADR-005 lifecycle scenario must be warm-queue, cancel-recovery, or process-exit-recovery.");
   assert(confirmed, "ADR-005 lifecycle verification requires explicit bounded provider-work confirmation.");
+  if (scenario === "process-exit-recovery") {
+    assert(processTerminationConfirmed, "ADR-005 process-exit verification requires explicit worker-termination confirmation.");
+  }
   assert(/^[0-9a-f]{40}$/i.test(expectedSource), "Expected production source must be an exact Git SHA.");
   assert(baseUrl === "https://renderlab.faresuniform.uk", "ADR-005 lifecycle verification must target the production custom domain.");
   for (const [name, value] of Object.entries({
@@ -114,7 +119,7 @@ async function submit(account, { prompt, sourceId, steps = 4 }) {
 async function databaseJob(ownerId, jobId) {
   const rows = await serviceRows(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}`
-      + "&select=id,status,worker_state,provider_job_id,output_asset_ids,started_at,completed_at,created_at,updated_at&limit=1",
+      + "&select=id,status,worker_state,provider_job_id,output_asset_ids,error_code,started_at,completed_at,created_at,updated_at&limit=1",
   );
   const row = rows[0];
   if (!row) return null;
@@ -152,6 +157,41 @@ async function waitForTerminal(account, jobId, timeoutMs = 10 * 60_000) {
     await wait(1000);
   }
   throw new Error(`Generation ${jobId} did not terminalize; last state=${JSON.stringify(job)}`);
+}
+
+async function waitForExternalProcessExit(account, jobId, timeoutMs = 4 * 60_000) {
+  const deadline = Date.now() + timeoutMs;
+  let last = null;
+  while (Date.now() < deadline) {
+    last = await appRequest(`/api/generation/jobs/${encodeURIComponent(jobId)}`, account);
+    if (last.response.ok && last.payload?.job?.status === "failed") {
+      events.push({ at: new Date().toISOString(), phase: "provider-process-exit-terminal", jobId });
+      return { terminal: last.payload.job, transientFailureObserved: false };
+    }
+    if (last.response.status >= 500) {
+      events.push({ at: new Date().toISOString(), phase: "provider-process-exit-unreadable", jobId,
+        responseStatus: last.response.status });
+      return { terminal: null, transientFailureObserved: true };
+    }
+    assert(!terminal.has(last.payload?.job?.status),
+      `Process-exit target terminalized as ${last.payload?.job?.status} before external termination was observed.`);
+    await wait(750);
+  }
+  throw new Error(`External process exit was not observed; last status=${last?.response?.status}.`);
+}
+
+async function ageRunOwnedProviderFailure(ownerId, jobId) {
+  const response = await service(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ updated_at: new Date(Date.now() - 3 * 60 * 60_000).toISOString() }),
+    },
+  );
+  const rows = await response.json().catch(() => []);
+  assert(response.ok && rows.length === 1, `Could not advance the run-owned provider-failure clock (${response.status}).`);
+  events.push({ at: new Date().toISOString(), phase: "provider-failure-clock-advanced", jobId });
 }
 
 async function verifySavedOutput(account, ownerId, jobId) {
@@ -238,6 +278,39 @@ async function runCancelRecovery(account) {
   return { cancelledId, recoveryId, recoveryAssetId, cancelled, dispatch };
 }
 
+async function runProcessExitRecovery(account) {
+  const failedId = await submit(account, {
+    prompt: `ADR-005 process exit ${runId}: a detailed cobalt mechanical sphere on a neutral studio background`,
+    steps: 8,
+  });
+  await waitForDatabaseJob(account.id, failedId,
+    (job) => job.status === "running" && job.providerDispatched, "process-exit provider start");
+  events.push({ at: new Date().toISOString(), phase: "provider-started-awaiting-external-process-exit", jobId: failedId });
+  console.log(`ADR005_PROCESS_EXIT_READY job=${failedId}`);
+
+  const observed = await waitForExternalProcessExit(account, failedId);
+  if (observed.transientFailureObserved) await ageRunOwnedProviderFailure(account.id, failedId);
+  const failed = observed.terminal || await waitForTerminal(account, failedId, 90_000);
+  assert(failed.status === "failed", `Process-exit render ended as ${failed.status}.`);
+  const failedRow = await databaseJob(account.id, failedId);
+  const failedAssets = await serviceRows(
+    `media_assets?owner_id=eq.${encodeURIComponent(account.id)}&generation_job_id=eq.${encodeURIComponent(failedId)}&select=id`,
+  );
+  assert(failedRow && failedRow.status === "failed" && failedAssets.length === 0
+    && failedRow.output_asset_ids.length === 0, "Process-exit render published durable output or lacked a truthful failed state.");
+
+  const recoveryId = await submit(account, {
+    prompt: `ADR-005 process-exit recovery ${runId}: a simple cobalt sphere, neutral background, no text`,
+  });
+  const recovery = await waitForTerminal(account, recoveryId);
+  assert(recovery.status === "succeeded", `Post-process-exit render ended as ${recovery.status}.`);
+  const recoveryAssetId = await verifySavedOutput(account, account.id, recoveryId);
+  const dispatch = await dispatchRows(account.id);
+  assert(dispatch.length === 2 && dispatch.every((row) => row.delivery_count === 1 && row.providerCallBound),
+    `Process-exit recovery did not preserve exactly-once dispatch: ${JSON.stringify(dispatch)}`);
+  return { failedId, recoveryId, recoveryAssetId, failed: failedRow, dispatch };
+}
+
 validateConfiguration();
 await mkdir(artifactDir, { recursive: true });
 let account = null;
@@ -251,8 +324,10 @@ try {
   if (scenario === "warm-queue") {
     const sourceId = await uploadReference(account);
     outcome = await runWarmQueue(account, sourceId);
-  } else {
+  } else if (scenario === "cancel-recovery") {
     outcome = await runCancelRecovery(account);
+  } else {
+    outcome = await runProcessExitRecovery(account);
   }
 } catch (error) {
   primaryError = error;
