@@ -224,6 +224,16 @@ Under a separately approved CPU-only corrective scope, the same three app identi
 
 This checkpoint closes only the dormant CPU readiness case. It did not invoke or modify `renderlab-fibo-471-stage`, modify `renderlab-471-models`, use a GPU, create credentials, apply a database migration, use production data, change routing or alter the production environment. Active gateway/worker qualification and every A10 case below remain unrun and require their own exact approval.
 
+### 2026-11-20 isolated non-GPU split provisioning
+
+Under a separately approved isolated, non-GPU scope, the split release was provisioned from exact merged source `32b86daf0472113fc3ab9b0ac598ab45522a7605` in Modal workspace `faresmohamed260`, environment `renderlab-471-qualification`. The private image worker is `renderlab-image-generation` (`ap-u6ROwtBnE2dAXSBxSUtrPo`) and the proxy-authenticated gateway/dispatcher is `renderlab-generation-gateway` (`ap-kN4vlrujjdMNKHq7CLKFvF`). Both use the existing private volume `renderlab-471-models`. Environment-local secrets are `renderlab-471-gateway`, `renderlab-471-dispatcher` and `renderlab-471-worker`; the gateway secret contains only the call-signing key, while each database secret contains only its own TLS-required connection URL.
+
+The empty Supabase project `renderlab-471-qualification` (`dpoqcnvckiodirhzjinw`, `eu-west-1`) has `0029` recorded as hosted version `20261120041351`, `0030` as `20261120041651`, and dispatch recovery as `20261120041657`. Dedicated `renderlab_modal_dispatcher` and `renderlab_modal_worker` logins use independent passwords, remain `NOINHERIT`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOREPLICATION` and `NOBYPASSRLS`, and retain connection limits four and two. Live TLS tests proved each allowed RPC and rejected cross-role RPCs and direct outbox reads. The outbox remained empty.
+
+A single bounded manual dispatcher pass returned zero claimed, dispatched, retried, failed and unresolved jobs. The scheduled CPU dispatcher then remained the only active task; the image worker stayed at zero tasks and emitted no runtime log, so no A10 container or render was started. Post-migration advisors reported no health findings, only expected informational server-only RLS notices and empty-project index notices. No production environment, route, credential, data or feature gate changed.
+
+This checkpoint does not qualify rendering. Test-only RenderLab application/account and R2 storage resources are not yet recorded, and every A10 case in [Hosted evidence](#hosted-evidence) remains unrun. GPU qualification still requires a separate exact-source approval naming those resources, fixtures, fault injection and spend ceiling.
+
 ### Hosted evidence
 
 | Case | Evidence to record |
