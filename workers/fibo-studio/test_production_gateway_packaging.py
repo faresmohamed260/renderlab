@@ -50,11 +50,15 @@ class GatewayPackagingTest(unittest.TestCase):
             "RENDERLAB_MODAL_ENVIRONMENT": "qualification",
             "RENDERLAB_MODAL_GATEWAY_SECRET": "qa-gateway",
             "RENDERLAB_MODAL_DISPATCHER_SECRET": "qa-dispatcher",
+            "RENDERLAB_MODAL_MONITOR_SECRET": "qa-monitor",
             "RENDERLAB_MODAL_WORKER_SECRET": "qa-worker",
             "RENDERLAB_MODAL_MODEL_VOLUME": "qa-models",
             "RENDERLAB_DISPATCH_DATABASE_URL": "must-not-be-forwarded",
         }
-        gateway_keys = {"RENDERLAB_MODAL_GATEWAY_SECRET", "RENDERLAB_MODAL_DISPATCHER_SECRET"}
+        gateway_keys = {
+            "RENDERLAB_MODAL_GATEWAY_SECRET", "RENDERLAB_MODAL_DISPATCHER_SECRET",
+            "RENDERLAB_MODAL_MONITOR_SECRET",
+        }
         worker_keys = {"RENDERLAB_MODAL_WORKER_SECRET", "RENDERLAB_MODAL_MODEL_VOLUME"}
         for module, resource_keys in (
             ("modal_native_production", gateway_keys),
@@ -72,7 +76,7 @@ class GatewayPackagingTest(unittest.TestCase):
                         name: deployment_env[name]
                         for name in resource_keys | {"RENDERLAB_MODAL_ENVIRONMENT"}
                     }
-                    self.assertEqual(1 if module == RENDERER else 2, function.call_count)
+                    self.assertEqual(1 if module == RENDERER else 3, function.call_count)
                     for declaration in tuple(function.call_args_list):
                         self.assertEqual(expected, declaration.kwargs["env"])
                         remote_env = {

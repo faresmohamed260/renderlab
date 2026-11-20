@@ -11,6 +11,7 @@ import {
 const diagnosticRetentionDays = 30;
 const diagnosticAdminMaxLimit = 100;
 const generationAlertWindowMs = 15 * 60 * 1000;
+export const generationDispatchHealthAlertKey = "generation-dispatch-health";
 
 export type StoredDiagnosticEventRow = {
   id: number | string;
@@ -120,6 +121,28 @@ export async function persistDiagnosticEvent(event: DiagnosticEvent) {
   const candidate = operationalAlertCandidateForEvent(event, recentCount);
   if (!candidate) return null;
   return recordOperationalAlert(candidate, event);
+}
+
+export async function recordGenerationDispatchHealthAlert(event: DiagnosticEvent) {
+  await supabaseRest("renderlab_diagnostic_events", {
+    method: "POST",
+    body: JSON.stringify(diagnosticInsert(event)),
+  });
+  return recordOperationalAlert({
+    alertKey: generationDispatchHealthAlertKey,
+    family: "generation-provider-degradation",
+    severity: "warning",
+  }, event);
+}
+
+export async function resolveGenerationDispatchHealthAlert(resolvedAt: string) {
+  return supabaseRest<boolean>("rpc/renderlab_resolve_operational_alert", {
+    method: "POST",
+    body: JSON.stringify({
+      p_alert_key: scopeObservabilityIdentifier(generationDispatchHealthAlertKey, 80),
+      p_resolved_at: resolvedAt,
+    }),
+  });
 }
 
 export async function pruneDiagnosticEvents(limit = 500) {

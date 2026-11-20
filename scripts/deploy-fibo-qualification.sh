@@ -10,7 +10,7 @@ fi
 "$cli" -m modal secret list -e main --json | python3 -c '
 import json, sys
 names = {item.get("name") for item in json.load(sys.stdin)}
-required = {"renderlab-fibo-native-gateway", "renderlab-generation-dispatcher", "renderlab-generation-worker"}
+required = {"renderlab-fibo-native-gateway", "renderlab-generation-dispatcher", "renderlab-generation-monitor", "renderlab-generation-worker"}
 if not required.issubset(names):
     sys.exit("The dedicated gateway and dispatcher secrets must be provisioned first.")
 '
@@ -18,6 +18,7 @@ export RENDERLAB_MODAL_ENVIRONMENT=main
 export RENDERLAB_MODAL_MODEL_VOLUME=renderlab-fibo-models
 export RENDERLAB_MODAL_GATEWAY_SECRET=renderlab-fibo-native-gateway
 export RENDERLAB_MODAL_DISPATCHER_SECRET=renderlab-generation-dispatcher
+export RENDERLAB_MODAL_MONITOR_SECRET=renderlab-generation-monitor
 export RENDERLAB_MODAL_WORKER_SECRET=renderlab-generation-worker
 "$cli" -m modal deploy -e main workers/fibo-studio/modal_native_renderer.py
 "$cli" -m modal deploy -e main workers/fibo-studio/modal_native_candidate.py

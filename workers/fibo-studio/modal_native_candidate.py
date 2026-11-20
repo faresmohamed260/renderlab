@@ -9,14 +9,15 @@ from workload_environment import APP_NAMES, workload_runtime_env
 app = modal.App("renderlab-generation-gateway-candidate")
 runtime_env = workload_runtime_env(
     "RENDERLAB_MODAL_DISPATCHER_SECRET", "RENDERLAB_MODAL_GATEWAY_SECRET",
+    "RENDERLAB_MODAL_MONITOR_SECRET",
 )
 environment = runtime_env["RENDERLAB_MODAL_ENVIRONMENT"]
 
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "fastapi==0.137.2", "psycopg[binary]==3.2.13", "Pillow==12.2.0"
+    "fastapi==0.137.2", "httpx==0.28.1", "psycopg[binary]==3.2.13", "Pillow==12.2.0"
 )
 gateway_image = gateway_image.add_local_python_source(
-    "dispatch_core", "dispatch_supabase", "modal_dispatch_backend", "native_gateway", "native_graph",
+    "dispatch_core", "dispatch_monitor", "dispatch_supabase", "modal_dispatch_backend", "native_gateway", "native_graph",
     "native_generated_vgl", "native_mask", "workload_contract", "workload_environment"
 )
 
@@ -36,6 +37,11 @@ dispatcher_secret = modal.Secret.from_name(
     environment_name=environment,
 )
 
+monitor_secret = modal.Secret.from_name(
+    runtime_env["RENDERLAB_MODAL_MONITOR_SECRET"],
+    environment_name=environment,
+)
+
 
 @app.function(image=gateway_image, env=runtime_env, secrets=[dispatcher_secret, gateway_secret])
 def dispatch_tick(trigger="manual"):
@@ -51,6 +57,18 @@ def dispatch_tick(trigger="manual"):
         trigger = "manual"
     store.record_heartbeat(environment=environment, trigger=trigger, summary=summary)
     print(json.dumps({"event": "renderlab.dispatch-tick", "trigger": trigger, **summary}), flush=True)
+    return summary
+
+
+@app.function(image=gateway_image, env=runtime_env, secrets=[monitor_secret])
+def monitor_tick():
+    from dispatch_monitor import monitor_dispatch_health
+
+    summary = monitor_dispatch_health(
+        os.environ.get("RENDERLAB_GENERATION_HEALTH_URL", ""),
+        os.environ.get("RENDERLAB_GENERATION_RECONCILER_SECRET", ""),
+    )
+    print(json.dumps(summary), flush=True)
     return summary
 
 

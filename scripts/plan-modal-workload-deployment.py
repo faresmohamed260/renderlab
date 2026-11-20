@@ -26,6 +26,7 @@ def parser():
     result.add_argument("--environment", required=True)
     result.add_argument("--gateway-secret", required=True)
     result.add_argument("--dispatcher-secret", required=True)
+    result.add_argument("--monitor-secret", required=True)
     result.add_argument("--worker-secret", required=True)
     result.add_argument("--model-volume", required=True)
     result.add_argument("--isolated", action="store_true", help="Require an isolated environment and provider read-back")
@@ -41,12 +42,15 @@ def parser():
 def plan(values):
     if values.workspace_id != WORKSPACE_ID:
         raise ValueError("Unexpected Modal workspace")
-    resources = (values.environment, values.gateway_secret, values.dispatcher_secret, values.worker_secret, values.model_volume)
+    resources = (
+        values.environment, values.gateway_secret, values.dispatcher_secret,
+        values.monitor_secret, values.worker_secret, values.model_volume,
+    )
     if any(not SAFE.fullmatch(value) for value in resources):
         raise ValueError("Environment resources must be explicit safe names")
-    secrets = [values.gateway_secret, values.dispatcher_secret, values.worker_secret]
+    secrets = [values.gateway_secret, values.dispatcher_secret, values.monitor_secret, values.worker_secret]
     if len(set(secrets)) != len(secrets):
-        raise ValueError("Gateway, dispatcher and worker require distinct secrets")
+        raise ValueError("Gateway, dispatcher, monitor and worker require distinct secrets")
     if values.isolated and values.environment == "main":
         raise ValueError("Isolated qualification cannot target the production environment")
     if values.isolated and values.resource_readback is None:
@@ -67,6 +71,7 @@ def plan(values):
         "RENDERLAB_MODAL_ENVIRONMENT": values.environment,
         "RENDERLAB_MODAL_GATEWAY_SECRET": values.gateway_secret,
         "RENDERLAB_MODAL_DISPATCHER_SECRET": values.dispatcher_secret,
+        "RENDERLAB_MODAL_MONITOR_SECRET": values.monitor_secret,
         "RENDERLAB_MODAL_WORKER_SECRET": values.worker_secret,
         "RENDERLAB_MODAL_MODEL_VOLUME": values.model_volume,
     }
