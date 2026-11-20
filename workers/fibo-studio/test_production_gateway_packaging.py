@@ -1,6 +1,10 @@
 import ast
+import os
+import runpy
+import sys
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 
 DIRECTORY = Path(__file__).parent
@@ -40,6 +44,47 @@ class GatewayPackagingTest(unittest.TestCase):
             source = (DIRECTORY / (gateway + ".py")).read_text(encoding="utf-8")
             self.assertIn('modal.Function.from_name(APP_NAMES["image"], "render", environment_name=environment)', source)
             self.assertNotIn(".include(", source)
+
+    def test_each_function_can_cold_import_with_its_declared_environment(self):
+        deployment_env = {
+            "RENDERLAB_MODAL_ENVIRONMENT": "qualification",
+            "RENDERLAB_MODAL_GATEWAY_SECRET": "qa-gateway",
+            "RENDERLAB_MODAL_DISPATCHER_SECRET": "qa-dispatcher",
+            "RENDERLAB_MODAL_WORKER_SECRET": "qa-worker",
+            "RENDERLAB_MODAL_MODEL_VOLUME": "qa-models",
+            "RENDERLAB_DISPATCH_DATABASE_URL": "must-not-be-forwarded",
+        }
+        gateway_keys = {"RENDERLAB_MODAL_GATEWAY_SECRET", "RENDERLAB_MODAL_DISPATCHER_SECRET"}
+        worker_keys = {"RENDERLAB_MODAL_WORKER_SECRET", "RENDERLAB_MODAL_MODEL_VOLUME"}
+        for module, resource_keys in (
+            ("modal_native_production", gateway_keys),
+            ("modal_native_candidate", gateway_keys),
+            (RENDERER, worker_keys),
+        ):
+            with self.subTest(module=module):
+                sdk = MagicMock()
+                function = sdk.App.return_value.function
+                path = str(DIRECTORY / (module + ".py"))
+                with patch.dict(sys.modules, {"modal": sdk}):
+                    with patch.dict(os.environ, deployment_env, clear=True):
+                        runpy.run_path(path, run_name=module)
+                    expected = {
+                        name: deployment_env[name]
+                        for name in resource_keys | {"RENDERLAB_MODAL_ENVIRONMENT"}
+                    }
+                    self.assertEqual(1 if module == RENDERER else 2, function.call_count)
+                    for declaration in tuple(function.call_args_list):
+                        self.assertEqual(expected, declaration.kwargs["env"])
+                        remote_env = {
+                            **declaration.kwargs["env"],
+                            "MODAL_IS_REMOTE": "1",
+                            "MODAL_ENVIRONMENT": "qualification",
+                        }
+                        with patch.dict(os.environ, remote_env, clear=True):
+                            runpy.run_path(path, run_name=module)
+                        with patch.dict(os.environ, {**remote_env, "MODAL_ENVIRONMENT": "main"}, clear=True):
+                            with self.assertRaisesRegex(RuntimeError, "does not match"):
+                                runpy.run_path(path, run_name=module)
 
     def test_gateway_and_worker_images_pin_the_postgres_driver(self):
         for module in ("modal_native_production", "modal_native_candidate", RENDERER):

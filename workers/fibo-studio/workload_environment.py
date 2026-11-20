@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 import re
 
 
@@ -15,6 +16,20 @@ APP_NAMES = {
 WORKSPACE_ID = "ac-88wJ5dCXYBOywnXXaGmUoV"
 WORKSPACE_NAME = "faresmohamed260"
 _SAFE_NAME = re.compile(r"[a-z][a-z0-9-]{0,62}")
+
+
+def workload_runtime_env(*resource_variables: str) -> dict[str, str]:
+    """Forward the selected resource names so Modal can reimport the entrypoint."""
+    environment_variable = "RENDERLAB_MODAL_ENVIRONMENT"
+    keys = (environment_variable, *resource_variables)
+    settings = {key: os.environ.get(key, "").strip() for key in keys}
+    for key, value in settings.items():
+        if not _SAFE_NAME.fullmatch(value):
+            raise RuntimeError(f"{key} must be an explicit Modal resource name")
+    if (os.environ.get("MODAL_IS_REMOTE") == "1"
+            and os.environ.get("MODAL_ENVIRONMENT") != settings[environment_variable]):
+        raise RuntimeError("Modal container environment does not match its configured resources")
+    return settings
 
 
 @dataclass(frozen=True)

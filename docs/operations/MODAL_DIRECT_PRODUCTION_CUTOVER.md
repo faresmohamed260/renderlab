@@ -90,6 +90,12 @@ All gates are fail-closed. Do not stop or deploy anything unless every gate pass
 
 Any nonzero active work, identity mismatch, missing preserved resource, dirty checkout, or unavailable recovery source aborts the operation without forced cancellation.
 
+## Replacement cold-start preflight
+
+The currently recorded replacement source `68651d2` fails a local cold-import check using Modal's documented container environment. The gateway and renderer require resource names at module import, but the deployment process only sets those names locally. Forward only each function's explicit non-secret resource settings and verify that the entrypoints import with the resulting container environment. Keep the shared gateway secret, two database credential contracts and model volume as specified above.
+
+Production stayed on the combined recovery gateway during this preflight. Before declaring another outage, record the corrected protected-main runtime SHA, confirm its required checks, and obtain Scope D and Scope G for that exact source.
+
 ## Cutover smoke invocation
 
 For each runbook render, dispatch `Production FIBO Smoke` from protected `main` with `scenario=text-to-image`, the exact current cutover or recovery SHA as `expected_production_sha`, the intended live Vercel deployment ID as `cutover_deployment_id`, and bounded fixture work explicitly confirmed. The cutover gate checks the live domain alias, RenderLab project, deployment readiness and production target, and exact provider-reported source before fixture work. Keep the domain stable until the run and fixture cleanup finish. Leave `cutover_deployment_id` blank for normal production audits; those still require manifest sync. Do not begin the outage until this workflow change is on protected main.
