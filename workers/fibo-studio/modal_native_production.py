@@ -3,9 +3,14 @@ import os
 
 import modal
 
-from workload_environment import APP_NAMES
+from workload_environment import APP_NAMES, workload_runtime_env
 
 app = modal.App(APP_NAMES["gateway"])
+runtime_env = workload_runtime_env(
+    "RENDERLAB_MODAL_DISPATCHER_SECRET", "RENDERLAB_MODAL_GATEWAY_SECRET",
+)
+environment = runtime_env["RENDERLAB_MODAL_ENVIRONMENT"]
+
 gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install(
     "fastapi==0.137.2", "psycopg[binary]==3.2.13"
 )
@@ -15,25 +20,17 @@ gateway_image = gateway_image.add_local_python_source(
 )
 
 
-def deployment_resource(name):
-    value = os.environ.get(name, "").strip()
-    if not value:
-        raise RuntimeError(f"{name} must be explicit")
-    return value
-
-
 def image_render():
-    environment = deployment_resource("RENDERLAB_MODAL_ENVIRONMENT")
     return modal.Function.from_name(APP_NAMES["image"], "render", environment_name=environment)
 
 
 dispatcher_secret = modal.Secret.from_name(
-    deployment_resource("RENDERLAB_MODAL_DISPATCHER_SECRET"),
-    environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+    runtime_env["RENDERLAB_MODAL_DISPATCHER_SECRET"],
+    environment_name=environment,
 )
 
 
-@app.function(image=gateway_image, secrets=[dispatcher_secret], schedule=modal.Cron("* * * * *"))
+@app.function(image=gateway_image, env=runtime_env, secrets=[dispatcher_secret], schedule=modal.Cron("* * * * *"))
 def dispatch_tick():
     from dispatch_core import Dispatcher
     from dispatch_supabase import SupabaseDispatchStore
@@ -43,9 +40,9 @@ def dispatch_tick():
     return Dispatcher(store, {"fibo": ModalImageBackend(store, image_render())}).tick().__dict__
 
 
-@app.function(image=gateway_image, secrets=[modal.Secret.from_name(
-    deployment_resource("RENDERLAB_MODAL_GATEWAY_SECRET"),
-    environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+@app.function(image=gateway_image, env=runtime_env, secrets=[modal.Secret.from_name(
+    runtime_env["RENDERLAB_MODAL_GATEWAY_SECRET"],
+    environment_name=environment,
 )])
 @modal.asgi_app(requires_proxy_auth=True)
 def web():

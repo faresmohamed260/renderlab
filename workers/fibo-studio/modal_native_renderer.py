@@ -12,11 +12,17 @@ from uuid import uuid4
 
 import modal
 
+from workload_environment import workload_runtime_env
+
 app = modal.App("renderlab-image-generation")
 COMFY = "/opt/ComfyUI"
 REVISION = "dea870e1a36614b3614c0008a820734d0fecdf4f"
 MODELS = "/opt/fibo-models"
 ORIGIN = "http://127.0.0.1:8188"
+runtime_env = workload_runtime_env(
+    "RENDERLAB_MODAL_WORKER_SECRET", "RENDERLAB_MODAL_MODEL_VOLUME",
+)
+environment = runtime_env["RENDERLAB_MODAL_ENVIRONMENT"]
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("git", "libgl1", "libglib2.0-0")
@@ -31,14 +37,8 @@ image = (
     .add_local_file(str(Path(__file__).with_name("native_generated_vgl.py")), "/opt/renderlab/native_generated_vgl.py")
     .add_local_file(str(Path(__file__).with_name("dispatch_core.py")), "/opt/renderlab/dispatch_core.py")
     .add_local_file(str(Path(__file__).with_name("dispatch_supabase.py")), "/opt/renderlab/dispatch_supabase.py")
+    .add_local_python_source("workload_environment")
 )
-
-
-def deployment_resource(name):
-    value = os.environ.get(name, "").strip()
-    if not value:
-        raise RuntimeError(f"{name} must be set explicitly for a Modal deployment")
-    return value
 
 
 def request(path, payload=None):
@@ -48,14 +48,14 @@ def request(path, payload=None):
 
 
 @app.function(image=image, gpu="A10", cpu=2, memory=16384, timeout=420, max_containers=1,
-              scaledown_window=60,
+              scaledown_window=60, env=runtime_env,
               secrets=[modal.Secret.from_name(
-                  deployment_resource("RENDERLAB_MODAL_WORKER_SECRET"),
-                  environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+                  runtime_env["RENDERLAB_MODAL_WORKER_SECRET"],
+                  environment_name=environment,
               )],
               volumes={MODELS: modal.Volume.from_name(
-                  deployment_resource("RENDERLAB_MODAL_MODEL_VOLUME"),
-                  environment_name=deployment_resource("RENDERLAB_MODAL_ENVIRONMENT"),
+                  runtime_env["RENDERLAB_MODAL_MODEL_VOLUME"],
+                  environment_name=environment,
               )})
 def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
            negative_prompt="", vgl="", mask=None, generate_vgl=False,
