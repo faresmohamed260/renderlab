@@ -1,10 +1,6 @@
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import unittest
-from unittest.mock import Mock
-
-from modal_dispatch_backend import ModalImageBackend
-from native_gateway import call_handle_signer
 
 from dispatch_core import (
     Dispatcher, DispatchIntent, Lookup, LookupState, PermanentDispatchError,
@@ -97,39 +93,13 @@ class DispatchCoreTest(unittest.TestCase):
         permanent_backend = Backend(outcomes=[PermanentDispatchError("invalid")])
         self.assertEqual(Dispatcher(permanent_store, {"fibo": permanent_backend}).tick(NOW).failed, 1)
 
-    def test_late_provider_admission_is_reattached_after_dispatch_deadline(self):
+    def test_accepted_attempt_is_reattached_after_dispatch_deadline(self):
         item = intent(deadline=NOW)
-        raw_call = "fc-0123456789abcdef"
         store = Store([item])
-        store.lookup = Mock(return_value=Lookup(LookupState.ACCEPTED, raw_call))
-        provider = Mock()
-        sign = call_handle_signer(b"unit-test-only-key" * 2)
-        backend = ModalImageBackend(store, provider, sign)
+        backend = Backend(lookups=[Lookup(LookupState.ACCEPTED, "existing-handle")])
         self.assertEqual(Dispatcher(store, {"fibo": backend}).tick(NOW).dispatched, 1)
-        self.assertEqual(store.events, [("dispatched", item.attempt_id, sign(raw_call))])
-        provider.spawn.assert_not_called()
-
-    def test_modal_spawn_requires_a_durable_send_reservation(self):
-        item = replace(intent(), payload={"prompt": "Fixture", "seed": 1})
-        store = Mock()
-        store.reserve_send.return_value = False
-        provider = Mock()
-        backend = ModalImageBackend(store, provider, call_handle_signer(b"unit-test-only-key" * 2))
-        with self.assertRaises(UnknownDispatchOutcome):
-            backend.submit(item)
-        store.reserve_send.assert_called_once_with(item.attempt_id)
-        provider.spawn.assert_not_called()
-
-        def spawn(**inputs):
-            self.assertEqual(store.reserve_send.call_count, 2)
-            self.assertEqual(inputs["model_binding"], (item.model_key, item.model_version, item.operation))
-            raise TimeoutError()
-
-        store.reserve_send.return_value = True
-        provider.spawn.side_effect = spawn
-        with self.assertRaises(UnknownDispatchOutcome):
-            backend.submit(item)
-        provider.spawn.assert_called_once()
+        self.assertEqual(store.events, [("dispatched", item.attempt_id, "existing-handle")])
+        self.assertEqual(backend.renders, 0)
 
     def test_expired_attempt_and_missing_bound_backend_fail_closed(self):
         expired_store = Store([intent(deadline=NOW)])

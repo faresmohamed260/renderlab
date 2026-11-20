@@ -1,5 +1,7 @@
 import base64
+from datetime import datetime, timezone
 from io import BytesIO
+from unittest.mock import Mock
 from datetime import datetime, timezone
 from types import SimpleNamespace
 import unittest
@@ -216,6 +218,41 @@ class GatewayTests(unittest.TestCase):
         handle = self.submit()
         self.result = KeyError()
         self.assertEqual(self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle}).status_code, 410)
+
+
+class ModalDispatcherAdapterTests(unittest.TestCase):
+    def test_modal_spawn_requires_a_durable_send_reservation(self):
+        from dispatch_core import DispatchIntent, Lookup, LookupState, UnknownDispatchOutcome
+        from modal_dispatch_backend import ModalImageBackend
+        from native_gateway import call_handle_signer
+
+        item = DispatchIntent("attempt-1", "job-1", "fibo", "fibo-2.0-turbo", "bria-fibo-2.0-turbo",
+                              "create-image", {"prompt": "Fixture", "seed": 1}, 0, datetime.now(timezone.utc))
+        store = Mock()
+        store.reserve_send.return_value = False
+        provider = Mock()
+        sign = call_handle_signer(b"unit-test-only-key" * 2)
+        backend = ModalImageBackend(store, provider, sign)
+        with self.assertRaises(UnknownDispatchOutcome):
+            backend.submit(item)
+        store.reserve_send.assert_called_once_with(item.attempt_id)
+        provider.spawn.assert_not_called()
+
+        def spawn(**inputs):
+            self.assertEqual(store.reserve_send.call_count, 2)
+            self.assertEqual(inputs["model_binding"], (item.model_key, item.model_version, item.operation))
+            raise TimeoutError()
+
+        store.reserve_send.return_value = True
+        provider.spawn.side_effect = spawn
+        with self.assertRaises(UnknownDispatchOutcome):
+            backend.submit(item)
+        provider.spawn.assert_called_once()
+
+        raw_call = "fc-0123456789abcdef"
+        store.lookup.return_value = Lookup(LookupState.ACCEPTED, raw_call)
+        self.assertEqual(backend.lookup(item.attempt_id), Lookup(LookupState.ACCEPTED, sign(raw_call)))
+        provider.spawn.assert_called_once()
 
 
 if __name__ == "__main__":
