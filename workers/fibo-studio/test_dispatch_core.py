@@ -93,6 +93,14 @@ class DispatchCoreTest(unittest.TestCase):
         permanent_backend = Backend(outcomes=[PermanentDispatchError("invalid")])
         self.assertEqual(Dispatcher(permanent_store, {"fibo": permanent_backend}).tick(NOW).failed, 1)
 
+    def test_accepted_attempt_is_reattached_after_dispatch_deadline(self):
+        item = intent(deadline=NOW)
+        store = Store([item])
+        backend = Backend(lookups=[Lookup(LookupState.ACCEPTED, "existing-handle")])
+        self.assertEqual(Dispatcher(store, {"fibo": backend}).tick(NOW).dispatched, 1)
+        self.assertEqual(store.events, [("dispatched", item.attempt_id, "existing-handle")])
+        self.assertEqual(backend.renders, 0)
+
     def test_expired_attempt_and_missing_bound_backend_fail_closed(self):
         expired_store = Store([intent(deadline=NOW)])
         self.assertEqual(Dispatcher(expired_store, {"fibo": Backend()}).tick(NOW).failed, 1)

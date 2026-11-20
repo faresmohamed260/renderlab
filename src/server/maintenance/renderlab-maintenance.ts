@@ -37,6 +37,7 @@ export type RenderLabMaintenanceSummary = {
   uploadCleanup: { scanned: number; deleted: number; adopted: number; failed: number };
   mediaPurges: { scanned: number; purged: number; pending: number; failed: number };
   diagnosticRetention: { deleted: number; failed: number };
+  dispatchRetention: { deleted: number; failed: number };
 };
 
 export type RenderLabMaintenanceBacklog = {
@@ -308,7 +309,19 @@ export async function runRenderLabMaintenance(limit = defaultBatchLimit): Promis
     diagnosticRetention = { deleted: 0, failed: 1 };
   }
 
-  const summary = { sourceClaims, sourceCleanup, uploadClaims, uploadCleanup, mediaPurges, diagnosticRetention };
+  let dispatchRetention = { deleted: 0, failed: 0 };
+  if (!testOwnerFilter()) {
+    try {
+      const deleted = await supabaseRest<number>("rpc/renderlab_cleanup_generation_dispatch", {
+        method: "POST",
+        body: JSON.stringify({ p_limit: safeLimit * 32 }),
+      });
+      dispatchRetention = { deleted, failed: 0 };
+    } catch {
+      dispatchRetention = { deleted: 0, failed: 1 };
+    }
+  }
+  const summary = { sourceClaims, sourceCleanup, uploadClaims, uploadCleanup, mediaPurges, diagnosticRetention, dispatchRetention };
   const correlationId = createDiagnosticCorrelationId();
   await Promise.all([
     emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "source-claims", count: sourceClaims.scanned, successCount: sourceClaims.claimed, failureCount: sourceClaims.failed }),
@@ -316,6 +329,7 @@ export async function runRenderLabMaintenance(limit = defaultBatchLimit): Promis
     emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "upload-claims", count: uploadClaims.scanned, successCount: uploadClaims.claimed, failureCount: uploadClaims.failed }),
     emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "upload-cleanup", count: uploadCleanup.scanned, successCount: uploadCleanup.deleted + uploadCleanup.adopted, failureCount: uploadCleanup.failed }),
     emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "media-purges", count: mediaPurges.scanned, successCount: mediaPurges.purged, failureCount: mediaPurges.failed }),
+    emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "dispatch-retention", count: dispatchRetention.deleted + dispatchRetention.failed, successCount: dispatchRetention.deleted, failureCount: dispatchRetention.failed }),
     emitDiagnosticEvent({ event: "maintenance.pass", correlationId, phase: "diagnostic-retention", count: diagnosticRetention.deleted + diagnosticRetention.failed, successCount: diagnosticRetention.deleted, failureCount: diagnosticRetention.failed }),
   ]);
   return summary;

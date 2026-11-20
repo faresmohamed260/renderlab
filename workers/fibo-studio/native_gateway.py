@@ -3,6 +3,7 @@ import base64
 import binascii
 import hashlib
 import hmac
+from io import BytesIO
 import json
 import re
 
@@ -18,6 +19,7 @@ MAX_IMAGES = 32 * 1024 * 1024
 MAX_MASK = 8 * 1024 * 1024
 PNG_HEADER = bytes.fromhex("89504e470d0a1a0a")
 CALL_ID = re.compile(r"fc-[A-Za-z0-9]{16,64}")
+JOB_HANDLE_HEADER = "X-RenderLab-Job-Handle"
 FIELDS = {"prompt", "seed", "width", "height", "steps", "negative_prompt", "vgl", "images", "mask", "generate_vgl"}
 
 
@@ -51,12 +53,6 @@ def validate_payload(payload):
         mask = base64.b64decode(encoded, validate=True)
         if not 0 < len(mask) <= MAX_MASK or not mask.startswith(PNG_HEADER):
             raise ValueError("Expected a bounded PNG mask")
-    # The gateway does not own source image dimensions. For Original geometry,
-    # this placeholder verifies the request shape only; the isolated render
-    # decodes its real owner-validated source and derives the exact FIBO size.
-    build_graph(**options, images=staged_names, mask=f"{len(images):032x}.png" if mask is not None else None,
-                source_dimensions=(1024, 1024) if mask is not None and
-                (options.get("width", 0), options.get("height", 0)) == (0, 0) else None)
     sources = []
     for encoded in images:
         if not isinstance(encoded, str) or len(encoded) > 4 * ((16 * 1024 * 1024 + 2) // 3):
@@ -67,6 +63,27 @@ def validate_payload(payload):
         sources.append(data)
     if sum(map(len, sources)) > MAX_IMAGES:
         raise ValueError("Combined input limit exceeded")
+    from PIL import Image
+
+    source_dimensions = None
+    try:
+        for data in sources:
+            with Image.open(BytesIO(data), formats=["PNG", "JPEG", "WEBP"]) as image:
+                if image.width * image.height > 16_777_216 or getattr(image, "is_animated", False):
+                    raise ValueError("Source image exceeds the pixel limit or is animated")
+                if source_dimensions is None and mask is not None:
+                    orientation = image.getexif().get(274)
+                    source_dimensions = (image.height, image.width) if orientation in (5, 6, 7, 8) else image.size
+                image.load()
+        if mask is not None:
+            from native_mask import normalize_mask_bytes
+            normalize_mask_bytes(mask, source_dimensions)
+    except (OSError, Image.DecompressionBombError, SyntaxError) as exc:
+        raise ValueError("Invalid or unsupported FIBO media") from exc
+
+    original_dimensions = (options.get("width", 0), options.get("height", 0)) == (0, 0)
+    build_graph(**options, images=staged_names, mask=f"{len(images):032x}.png" if mask is not None else None,
+                source_dimensions=source_dimensions if original_dimensions else None)
     return {**options, "sources": sources, **({"mask": mask} if mask is not None else {})}
 
 
@@ -122,6 +139,11 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dis
                 raise HTTPException(503, "FIBO submission was not confirmed") from exc
             return {"call_id": call_id, "worker_state": "queued"}
 
+    else:
+        @api.post("/jobs/fibo")
+        async def reject_direct_submit():
+            raise HTTPException(405, "FIBO dispatch requires the durable queue")
+
     if wake_dispatcher is not None:
         @api.post("/dispatch/wake", status_code=202)
         async def wake():
@@ -131,9 +153,9 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dis
                 raise HTTPException(503, "Dispatcher wake was not confirmed") from exc
             return {"status": "accepted"}
 
-    @api.get("/jobs/{token}")
-    async def status(token: str):
-        call_id = unwrap(token)
+    @api.get("/jobs")
+    async def status(request: Request):
+        call_id = unwrap(request.headers.get(JOB_HANDLE_HEADER, ""))
         try:
             result = await run_in_threadpool(poll, call_id)
         except TimeoutError:
@@ -150,9 +172,9 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dis
             raise HTTPException(502, "Invalid FIBO output") from exc
         return Response(image_bytes, media_type="image/png")
 
-    @api.get("/jobs/{token}/vgl")
-    async def generated_vgl(token: str):
-        call_id = unwrap(token)
+    @api.get("/jobs/vgl")
+    async def generated_vgl(request: Request):
+        call_id = unwrap(request.headers.get(JOB_HANDLE_HEADER, ""))
         try:
             result = await run_in_threadpool(poll, call_id)
         except TimeoutError:
@@ -171,9 +193,9 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dis
             raise HTTPException(404, "This FIBO job does not have generated VGL")
         return JSONResponse({"vgl": caption})
 
-    @api.delete("/jobs/{token}")
-    async def remove(token: str):
-        call_id = unwrap(token)
+    @api.delete("/jobs")
+    async def remove(request: Request):
+        call_id = unwrap(request.headers.get(JOB_HANDLE_HEADER, ""))
         try:
             await run_in_threadpool(cancel, call_id)
         except expired_errors as exc:

@@ -8,6 +8,7 @@ import {
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
 import { pollNativeGeneration } from "@/server/generation/native-generation";
+import { FIBO_DISPATCH_BACKEND } from "@/server/generation/worker-fleet";
 import { pollNativeUpscaleGeneration } from "@/server/generation/upscale-lifecycle";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
@@ -60,7 +61,7 @@ async function getSnapshot(ownerId: string, jobId: string) {
 
 async function failStaleUndispatchedJob(row: JobSnapshotRow) {
   if (row.status === "cancelling") return null;
-  if (row.worker_id && row.provider_job_id) return null;
+  if (row.worker_id === FIBO_DISPATCH_BACKEND || (row.worker_id && row.provider_job_id)) return null;
   if (Date.now() - Date.parse(row.updated_at) < staleMissingDispatchGraceMs) return null;
 
   const completedAt = new Date().toISOString();
@@ -157,7 +158,7 @@ async function listActiveNativeCandidates(limit: number) {
     : null;
   const ownerFilter = testOwnerId ? `&owner_id=eq.${encodeURIComponent(testOwnerId)}` : "";
   return supabaseRest<Array<{ id: string; owner_id: string }>>(
-    `generation_jobs?status=in.(${candidateStatuses})${ownerFilter}&select=id,owner_id&order=updated_at.asc,id.asc&limit=${safeLimit}`,
+    `generation_jobs?status=in.(${candidateStatuses})${ownerFilter}&or=(worker_id.is.null,worker_id.neq.${FIBO_DISPATCH_BACKEND},provider_job_id.not.is.null)&select=id,owner_id&order=updated_at.asc,id.asc&limit=${safeLimit}`,
     { method: "GET" },
   );
 }

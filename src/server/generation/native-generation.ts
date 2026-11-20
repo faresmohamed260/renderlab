@@ -21,7 +21,7 @@ import {
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
-import { acceptedWorkerCallId, findWorker, workerGatewayOptions, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
+import { FIBO_DISPATCH_BACKEND, acceptedWorkerCallId, findWorker, workerGatewayOptions, workerJobRequest, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import {
@@ -680,10 +680,10 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
 class InvalidGeneratedFiboSidecarError extends Error {}
 
 async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string): Promise<string> {
-  const options = workerGatewayOptions(worker);
+  const { url, options } = workerJobRequest(worker, callId, "/vgl");
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
-  const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(callId)}/vgl`, {
+  const response = await fetch(url, {
     ...options, method: "GET", headers, cache: "no-store",
   });
   if (response.status === 202) throw new Error("Generated FIBO VGL is still being prepared.");
@@ -902,15 +902,18 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     return toGenerationJob(failed);
   }
 
-  const options = workerGatewayOptions(worker);
+  const { url, options } = workerJobRequest(worker, row.provider_job_id);
   const headers = new Headers(options.headers);
   headers.set("accept", row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json");
-  const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
+  const response = await fetch(url, {
     ...options, method: "GET", headers,
     cache: "no-store",
   });
 
   if (response.status === 202) {
+    // Modal also returns pending for an accepted call waiting on the one GPU slot.
+    // Durable worker admission owns the queued-to-running transition.
+    if (row.worker_id === FIBO_DISPATCH_BACKEND) return toGenerationJob(row);
     const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
     const next = await patchJob(row.owner_id, row.id, {
       status: "running",

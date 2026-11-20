@@ -11,7 +11,7 @@ import re
 
 from native_generated_vgl import generated_vgl_instruction
 
-NAME = re.compile(r"[a-f0-9]{32}\.png")
+NAME = re.compile(r"(?:[a-f0-9]{32}/)?[a-f0-9]{32}\.png")
 MAX_PIXELS = 1536 * 1024
 
 

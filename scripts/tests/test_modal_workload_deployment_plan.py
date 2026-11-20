@@ -1,6 +1,8 @@
+import json
 from pathlib import Path
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 import unittest
 
 
@@ -8,7 +10,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / "plan-modal-workload-deployment.p
 
 
 class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
-    def run_plan(self, workspace="ac-88wJ5dCXYBOywnXXaGmUoV", environment="qualification"):
+    def run_plan(self, workspace="ac-88wJ5dCXYBOywnXXaGmUoV", environment="qualification", extra=()):
         return subprocess.run([
             sys.executable, str(SCRIPT),
             "--workspace-id", workspace,
@@ -17,6 +19,7 @@ class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
             "--dispatcher-secret", f"renderlab-dispatcher-{environment}",
             "--worker-secret", f"renderlab-worker-{environment}",
             "--model-volume", f"renderlab-fibo-models-{environment}",
+            *extra,
         ], capture_output=True, text=True, timeout=10)
 
     def test_prints_environment_local_commands_without_contacting_modal(self):
@@ -34,6 +37,28 @@ class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
     def test_rejects_wrong_workspace_and_unsafe_environment(self):
         self.assertNotEqual(self.run_plan(workspace="ac-other").returncode, 0)
         self.assertNotEqual(self.run_plan(environment="main; deploy").returncode, 0)
+
+    def test_isolated_plan_requires_matching_provider_inventory(self):
+        with TemporaryDirectory() as directory:
+            inventory = Path(directory) / "readback.json"
+            extra = ("--isolated", "--resource-readback", str(inventory))
+            readback = {
+                "workspaceId": "ac-88wJ5dCXYBOywnXXaGmUoV", "environment": "qualification",
+                "secrets": [
+                    "renderlab-gateway-qualification", "renderlab-dispatcher-qualification",
+                    "renderlab-worker-qualification",
+                ],
+                "volumes": ["renderlab-fibo-models-qualification"],
+            }
+            inventory.write_text(json.dumps(readback), encoding="utf-8")
+            approved = self.run_plan(extra=extra)
+            self.assertEqual(approved.returncode, 0, approved.stderr)
+            self.assertTrue(json.loads(approved.stdout)["validatedResourceReadback"])
+            self.assertNotEqual(self.run_plan(environment="main", extra=extra).returncode, 0)
+            self.assertNotEqual(self.run_plan(extra=("--isolated",)).returncode, 0)
+            for invalid in (dict(readback, environment="main"), dict(readback, volumes=[])):
+                inventory.write_text(json.dumps(invalid), encoding="utf-8")
+                self.assertNotEqual(self.run_plan(extra=extra).returncode, 0)
 
 
 if __name__ == "__main__":
