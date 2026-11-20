@@ -40,8 +40,10 @@ test("queued cancellation closes the outbox and missed wake stays accepted", () 
 test("Modal dispatcher and GPU worker receive distinct least-privilege database roles", () => {
   assert.match(migration, /create role renderlab_modal_dispatcher nologin noinherit/);
   assert.match(migration, /create role renderlab_modal_worker nologin noinherit/);
-  assert.match(migration, /alter role renderlab_modal_dispatcher with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls connection limit 4/);
-  assert.match(migration, /alter role renderlab_modal_worker with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls connection limit 2/);
+  assert.match(migration, /and \(rolsuper or rolreplication or rolbypassrls\)/);
+  assert.match(migration, /alter role renderlab_modal_dispatcher with nologin noinherit nocreatedb nocreaterole connection limit 4/);
+  assert.match(migration, /alter role renderlab_modal_worker with nologin noinherit nocreatedb nocreaterole connection limit 2/);
+  assert.doesNotMatch(migration, /alter role[^;]+(?:nosuperuser|noreplication|nobypassrls)/);
   assert.doesNotMatch(migration, /grant renderlab_modal_dispatcher, renderlab_modal_worker to authenticator/);
   assert.match(migration, /renderlab_claim_generation_dispatch[^;]+to renderlab_modal_dispatcher/s);
   assert.match(migration, /renderlab_begin_generation_attempt[^;]+to renderlab_modal_worker/s);

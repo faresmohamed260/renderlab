@@ -43,8 +43,26 @@ begin
 end;
 $$;
 
-alter role renderlab_modal_dispatcher with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls connection limit 4;
-alter role renderlab_modal_worker with nologin noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls connection limit 2;
+-- Hosted Supabase migrations run as a CREATEROLE identity rather than a
+-- superuser. PostgreSQL reserves even explicitly setting NOSUPERUSER,
+-- NOREPLICATION and NOBYPASSRLS for superusers. Fail closed if an existing
+-- role has any of those attributes, then alter only attributes the hosted
+-- migration identity is allowed to manage. Newly created roles default all
+-- three privileged attributes to false.
+do $$
+begin
+  if exists (
+    select 1 from pg_roles
+    where rolname in ('renderlab_modal_dispatcher', 'renderlab_modal_worker')
+      and (rolsuper or rolreplication or rolbypassrls)
+  ) then
+    raise exception 'RenderLab Modal roles have forbidden privileged attributes';
+  end if;
+end;
+$$;
+
+alter role renderlab_modal_dispatcher with nologin noinherit nocreatedb nocreaterole connection limit 4;
+alter role renderlab_modal_worker with nologin noinherit nocreatedb nocreaterole connection limit 2;
 grant usage on schema public to renderlab_modal_dispatcher, renderlab_modal_worker;
 
 create index generation_dispatch_due_idx
