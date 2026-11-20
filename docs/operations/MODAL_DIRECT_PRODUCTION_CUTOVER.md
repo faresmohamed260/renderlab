@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** The combined recovery gateway is live and passed the rollback smoke. The project owner approved the corrected replacement source for the outage and ordered smoke sequence.
+**Status:** The split gateway and private image worker are live in production. The three ordered smokes, recovery drill, cleanup and queue drain passed.
 
 ## 2026-11-20 execution and recovery checkpoint
 
@@ -192,6 +192,15 @@ Authorizes the exact Supabase migration, two dedicated database-login/password p
 Authorizes only the three disposable four-step A10 renders and 15-A10-minute aggregate ceiling described above. It authorizes no ComfyUI-reuse qualification or other GPU experiment.
 
 Do not begin the outage unless both Scope D and Scope G are explicitly renewed for the corrected replacement source recorded in [Exact identities](#exact-identities).
+
+## 2026-11-20 accepted split-stack cutover
+
+- Exact runtime `e93481466806b3a88f986cd547f11ef62e9543fb`. Vercel production deployment `dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE` was verified at the custom domain at `2026-11-20T01:52:15.000Z`. Recovery remains available through `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH` and exact combined source `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb`.
+- Initial image worker `ap-Qb1FruxXG3f3mwFJXOXIu0` and gateway `ap-CY9mlYx7bS6jda8IDiPhHw` deployed to Modal `main`. The dispatcher completed a scheduled database claim during an empty queue before any smoke or web request. The first split smoke [run 44655593284](https://github.com/faresmohamed260/renderlab/actions/runs/44655593284) saved and reopened the output, then cleaned its fixture.
+- The recovery drill restored the combined gateway `ap-zQzSJmdpxG7ZY4PrMHyYyB` and verified the prior Vercel alias. [Run 44656168377](https://github.com/faresmohamed260/renderlab/actions/runs/44656168377) rendered, saved and reopened on the combined stack and cleaned its fixture. The combined gateway then stopped before cut-forward.
+- Final gateway `ap-UfrkwIijsdz6xiGiQwtMlB` v1 and private image worker `ap-wS5WKruuipwssNGHf7Eo6k` v1 now serve the split path. The final dispatcher independently completed scheduled claims. [Run 44656743969](https://github.com/faresmohamed260/renderlab/actions/runs/44656743969) saved and reopened its output, and exact fixture cleanup passed.
+- After final cleanup, Supabase had zero active generation jobs and an empty outbox. The original baseline remained 70 jobs, two sources and 14 active media assets. Both dedicated restricted logins were enabled with TLS credentials in their approved secrets. Modal reported zero image-worker containers and the accepted configuration has one A10 slot. Migration `0030` remains applied as `20261119230644`.
+- Three renders completed at four steps. Conservative bounds from each generation step through zero containers were 205, 160 and 153 seconds, 518 A10 seconds total against 900 authorized. The previous attempt remains separate historical usage.
 
 ## Closure
 
