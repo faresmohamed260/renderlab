@@ -65,7 +65,7 @@ Canonical record: docs/production/current.json. Vercel confirms renderlab.faresu
 
 Exact-source CI completed at 2026-11-20T15:56:01.000Z: Deployment Readiness 44767876962; protected check runs 136397291512, 136397291772, 136397292617, 136397292551, 136397292299, 136397291909.
 
-Rollback anchor: dpl_GNAGLCFnynWUdMEtiYDgX9oXeNrb at source d9f9bd4e12103e3524b02e6d4d188ddf9b3ba882. Restore that application and redeploy its matching gateway source if the owner-monitor release must be rolled back. Automatic Git-to-production deployment remains disabled. Hosted missed-wake/lost-response/overlap recovery and replay-retention are production-verified in `docs/audits/ADR005_DURABLE_RECOVERY_PRODUCTION_2026-11-20.md`. Hosted timeout/process-exit recovery and the owner provider-spend alert remain open ADR-005 evidence; this production pointer does not claim those gates complete.
+Rollback anchor: dpl_GNAGLCFnynWUdMEtiYDgX9oXeNrb at source d9f9bd4e12103e3524b02e6d4d188ddf9b3ba882. Restore that application and redeploy its matching gateway source if the owner-monitor release must be rolled back. Automatic Git-to-production deployment remains disabled. Hosted missed-wake/lost-response/overlap recovery and replay-retention are production-verified in `docs/audits/ADR005_DURABLE_RECOVERY_PRODUCTION_2026-11-20.md`; the owner Modal usage alert is verified in `docs/audits/ADR005_MODAL_USAGE_ALERT_PRODUCTION_2026-11-20.md`. Hosted timeout/process-exit recovery is the only open ADR-005 evidence; this production pointer does not claim that gate complete.
 
 ## Current product and engineering state
 
