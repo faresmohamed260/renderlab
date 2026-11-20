@@ -29,6 +29,8 @@ Immediate direct response-header reads from both `https://renderlab.faresuniform
 
 Modal read-back returned zero image-worker containers, and no `phase=started` worker log existed for the checkpoint window. Therefore the run made zero provider calls, used no GPU allocation, created no accepted generation job and terminated no process. The approved two-call / 600-A10-second allowance remains unused.
 
+Authenticated read-only inspection of the team Billing page showed the Hobby plan still active but deployments paused because the team exceeded the Hobby fair-use limit for Fluid Active CPU. Vercel states that the pause ends December 20, 2026. The page offers `Upgrade to Pro` as the immediate recovery action and shows no payment method configured. No plan, payment method or provider setting was changed during inspection.
+
 ## Result and recovery gate
 
-This run does not close hosted timeout/process-exit recovery. Vercel service must be restored by the owner or provider before another checkpoint. Before reuse of the existing authorization, independently verify that both the production custom domain and exact deployment URL no longer return `DEPLOYMENT_DISABLED`, re-run the existing exact-release and zero-active-work preflight, and confirm zero image-worker containers. No deployment or alias movement is authorized merely by this audit.
+This run does not close hosted timeout/process-exit recovery. Vercel service must be restored by the owner or provider before another checkpoint, either by the provider's stated pause expiry or by a separately authorized plan/payment change. Before reuse of the existing authorization, independently verify that both the production custom domain and exact deployment URL no longer return `DEPLOYMENT_DISABLED`, re-run the existing exact-release and zero-active-work preflight, and confirm zero image-worker containers. No plan/payment change, deployment or alias movement is authorized merely by this audit.
