@@ -7,9 +7,10 @@ from workload_contract import FIBO_MODEL_KEY, FIBO_MODEL_VERSION, Operation, PRO
 
 
 class ModalImageBackend:
-    def __init__(self, store, render_function):
+    def __init__(self, store, render_function, sign_call):
         self.store = store
         self.render_function = render_function
+        self.sign_call = sign_call
 
     def lookup(self, attempt_id):
         return self.store.lookup(attempt_id)
@@ -32,9 +33,7 @@ class ModalImageBackend:
                 admission_deadline=intent.admission_deadline.isoformat(),
                 **inputs,
             )
-            if not getattr(call, "object_id", None):
-                raise UnknownDispatchOutcome("Modal accepted no readable execution handle")
-            return call.object_id
+            return self.sign_call(getattr(call, "object_id", None))
         except UnknownDispatchOutcome:
             raise
         except Exception as error:

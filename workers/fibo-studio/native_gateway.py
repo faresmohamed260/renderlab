@@ -70,20 +70,29 @@ def validate_payload(payload):
     return {**options, "sources": sources, **({"mask": mask} if mask is not None else {})}
 
 
-def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dispatcher=None,
-                   allow_direct_submit=True):
+def call_handle_signer(signing_key):
     if not isinstance(signing_key, bytes) or len(signing_key) < 32:
         raise RuntimeError("FIBO gateway requires a dedicated signing key")
-    api = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
 
-    def signature(call_id):
-        return hmac.new(signing_key, b"renderlab-fibo-v1:" + call_id.encode(), hashlib.sha256).hexdigest()
+    def sign(call_id):
+        if not isinstance(call_id, str) or not CALL_ID.fullmatch(call_id):
+            raise ValueError("Malformed Modal call ID")
+        signature = hmac.new(signing_key, b"renderlab-fibo-v1:" + call_id.encode(), hashlib.sha256).hexdigest()
+        return f"{call_id}.{signature}"
+
+    return sign
+
+
+def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dispatcher=None,
+                   allow_direct_submit=True):
+    sign_call = call_handle_signer(signing_key)
+    api = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
 
     def unwrap(token):
         call_id, sep, tag = token.partition(".")
         if not sep or not CALL_ID.fullmatch(call_id) or not re.fullmatch(r"[0-9a-f]{64}", tag):
             raise HTTPException(404, "Unknown FIBO job")
-        if not hmac.compare_digest(signature(call_id), tag):
+        if not hmac.compare_digest(sign_call(call_id), token):
             raise HTTPException(404, "Unknown FIBO job")
         return call_id
 
@@ -108,12 +117,10 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dis
             except (ValueError, TypeError, binascii.Error, RecursionError) as exc:
                 raise HTTPException(422, "Invalid or unsupported FIBO request") from exc
             try:
-                call_id = await run_in_threadpool(spawn, **inputs)
-                if not CALL_ID.fullmatch(call_id):
-                    raise RuntimeError("Malformed Modal call ID")
+                call_id = sign_call(await run_in_threadpool(spawn, **inputs))
             except Exception as exc:
                 raise HTTPException(503, "FIBO submission was not confirmed") from exc
-            return {"call_id": f"{call_id}.{signature(call_id)}", "worker_state": "queued"}
+            return {"call_id": call_id, "worker_state": "queued"}
 
     if wake_dispatcher is not None:
         @api.post("/dispatch/wake", status_code=202)

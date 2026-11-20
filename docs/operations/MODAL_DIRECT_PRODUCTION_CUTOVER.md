@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** The combined recovery gateway is live after a pre-alias rollback. The split Modal apps published successfully. The workflow source pin and Vercel deployment metadata must be verified before another outage.
+**Status:** The combined recovery gateway is live and passed the rollback smoke. The first split-stack smoke reached the renderer but failed application reconciliation. A corrected source must be qualified and explicitly approved before another outage.
 
 ## 2026-11-20 execution and recovery checkpoint
 
@@ -42,7 +42,7 @@ It does **not** waive exact-source CI, zero-in-flight verification, least privil
 | Recovery application and combined Modal source | `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` |
 | Modal workspace | `faresmohamed260` / `ac-88wJ5dCXYBOywnXXaGmUoV` |
 | Modal environment | existing `main`; no new environment |
-| Existing gateway at retry preflight | `renderlab-generation-gateway`, app `ap-iiL2RGqh6N96YKknO4zCo4`, version `v1` |
+| Existing gateway at retry preflight | `renderlab-generation-gateway`, app `ap-RhZ9OtOWoaFzSvnIXL1FDs`, version `v1` |
 | Replacement worker | `renderlab-image-generation` |
 | Preserved model volume | existing `renderlab-fibo-models` in `main` |
 | Preserved gateway secret | existing `renderlab-fibo-native-gateway` in `main` |
@@ -108,6 +108,14 @@ Track a conservative A10 bound for each of the three authorized smoke renders. W
 - The staged production-target Vercel build `dpl_71xEwp5dmmcBxfTeH3QKLD9d436A` reached READY but reported neither `gitSource.sha` nor `meta.githubCommitSha`. The protected-main smoke verifier also still pinned `68651d2`. The production alias stayed on the recovery deployment and no smoke was dispatched.
 - At 03:01 Cairo time, the combined source `4f8efb7` republished as `ap-iiL2RGqh6N96YKknO4zCo4` v1. The public site returned HTTP 200 and the protected gateway returned HTTP 401. The split apps stopped, both candidate passwords were cleared, both roles returned to `NOLOGIN`, and the two candidate Modal secrets were removed. Migration `0030` remained applied with an empty outbox. The baseline remained 70 jobs, two generation sources, and 14 active media assets. This attempt submitted zero GPU renders.
 - Before the next outage, run the matching smoke verifier regression tests and verify the allowlist on protected main. Prepare a clean Git checkout of the exact replacement SHA. When staging Vercel from that checkout, supply the verified Git SHA using `--meta githubCommitSha=<git rev-parse HEAD>` if the CLI does not infer it. Keep automatic alias assignment disabled and confirm the exact SHA in Vercel's deployment record before any alias movement.
+
+## 2026-11-20 first split smoke and verified rollback
+
+- The combined gateway stopped at 03:13:17 Cairo time. The retry deployed worker `ap-v0h3DXOzrLNA55Pb6nMOIW` and gateway `ap-CKGSQdaH2LXYe28BZxpHVU` from approved `bb0bca8`. The private worker had no web endpoint. The dispatcher completed a scheduled database claim before alias movement, demonstrated by the claim counter increasing from five to six under its dedicated database identity.
+- The alias moved to READY deployment `dpl_6LjYRnBZCLL5PBz8jr2RwqSuqMih`. [Split smoke 44652292811](https://github.com/faresmohamed260/renderlab/actions/runs/44652292811) passed the exact release and fixture checks. The outbox dispatched once and the private worker completed its four FIBO sampler steps. The application job remained running because the durable backend key `fibo` was stored where reconciliation resolved only the fleet ID `renderlab-fibo-native-01`. Source inspection also found that the dispatcher stored an unsigned Modal call ID, which the gateway's result route rejects. The operator marked only the identified disposable fixture job failed after stopping the split path. The workflow then verified exact fixture cleanup.
+- The alias returned to `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH`, and the combined gateway republished as `ap-RhZ9OtOWoaFzSvnIXL1FDs` v1. [Recovery smoke 44653302341](https://github.com/faresmohamed260/renderlab/actions/runs/44653302341) completed a four-step render, saved its output, reopened it from Library and passed fixture cleanup. Both split apps stopped, their two secrets were removed and their database roles returned to `NOLOGIN`. Database read-back showed zero active jobs, an empty outbox, 70 jobs, two sources and 14 active media assets.
+- The two smoke runs used a conservative upper bound of 498 A10 seconds, measured from each GitHub generation step start through provider-observed zero containers (285 seconds split and 213 seconds recovery). The cut-forward smoke was not dispatched. The recovery run followed a failed split smoke and does not complete the ordered acceptance sequence.
+- Before another outage, qualify the corrected runtime and reconcile its exact source across the runbook and the protected-main smoke workflow. Obtain approval for the corrected source and reconcile the two consumed renders before allocating a new smoke sequence.
 
 ## Cutover smoke invocation
 
