@@ -63,7 +63,7 @@ class FiboAdapter:
                 generated_vgl = validate_generated_vgl(generated[0])
             result, = record["outputs"]["output"]["images"]
             output = (files.output.parent / result["subfolder"] / result["filename"]).resolve()
-            if not output.is_relative_to(files.output) or output.stat().st_size > 16 * 1024 * 1024:
+            if not output.is_relative_to(files.output.resolve()) or output.stat().st_size > 16 * 1024 * 1024:
                 raise RuntimeError("Unexpected FIBO output")
             with Image.open(output, formats=["PNG"]) as decoded:
                 if decoded.width * decoded.height > 1536 * 1024 or (width and decoded.size != (width, height)):

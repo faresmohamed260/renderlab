@@ -13,7 +13,7 @@ The owner confirmed prior Scope D and G approval for runtime `68651d2d1e3c5602c2
 - One authorized recovery smoke was dispatched as [run 44639143236](https://github.com/faresmohamed260/renderlab/actions/runs/44639143236). The workflow completed successfully. Before closing recovery, independently reconcile fixture cleanup, queue drain, and A10 usage. Do not treat the candidate split or the three-smoke acceptance sequence as complete. Refresh the production and recovery identities, and reconcile approval and remaining GPU allowance before another cutover attempt.
 
 
-### Retry preflight â€” outage not started
+### Retry preflight — outage not started
 
 The recovery Vercel release and combined Modal gateway are still live. The seven corrected-source checks passed, the combined gateway had zero tasks, and Supabase had zero active jobs and an empty outbox (70 jobs and two sources total). The successful recovery smoke occurred before any replacement smoke, so it cannot establish the ordered recovery drill in this runbook. It is nevertheless one GPU render already performed. Modal CLI billing returned hourly app cost, not metered A10 time; it did not establish the remaining hard allowance. Do not start another outage until the runbook records an owner-approved retry sequence and a verifiable cumulative GPU budget. No production runtime changes were made during this preflight.
 
@@ -183,11 +183,11 @@ Stop after any failure rather than spending through the remaining budget. Hard c
 
 The 2026-11-20 direction decision does not authorize execution. Execution requires both approvals, which may be granted together but remain separately recorded:
 
-### Scope D â€” direct production mutation and cutover
+### Scope D — direct production mutation and cutover
 
 Authorizes the exact Supabase migration, two dedicated database-login/password provisions, Modal secret changes, planned outage, old-gateway stop, two `main` app deployments, one-minute dispatcher schedule, exact-source Vercel deployment, alias movements for the recovery drill and final cutover, failure recovery actions, retirement of the old running stack, and post-release documentation closure described here. It authorizes no additional environment, app, model, weight change, feature gate, credential, schema change, or destructive data cleanup.
 
-### Scope G â€” bounded GPU verification
+### Scope G — bounded GPU verification
 
 Authorizes only the three disposable four-step A10 renders and 15-A10-minute aggregate ceiling described above. It authorizes no ComfyUI-reuse qualification or other GPU experiment.
 
@@ -232,7 +232,7 @@ Reuse the create and edit fixtures when recording missed-wake, claim and recover
 
 ### Recovery and data retention
 
-The scheduled dispatcher emits `renderlab.dispatch-tick` only after completing a bounded pass. Its trigger differentiates an actual scheduled pass from an immediate wake. A monitor should check for a missing scheduled heartbeat across three one-minute intervals. The authenticated generation reconcile GET returns aggregate oldest due age, expired claims and unresolved attempts. It reports unhealthy after 180 seconds of due age or when expired claims or unresolved attempts require attention. Verify that both monitors reach the owner and recover after the isolated condition clears. Configure and verify the ownerâ€™s provider spend alert under the separately authorized threshold and recipient.
+The scheduled dispatcher emits `renderlab.dispatch-tick` only after completing a bounded pass. Its trigger differentiates an actual scheduled pass from an immediate wake. A monitor should check for a missing scheduled heartbeat across three one-minute intervals. The authenticated generation reconcile GET returns aggregate oldest due age, expired claims and unresolved attempts. It reports unhealthy after 180 seconds of due age or when expired claims or unresolved attempts require attention. Verify that both monitors reach the owner and recover after the isolated condition clears. Configure and verify the owner’s provider spend alert under the separately authorized threshold and recipient.
 
 The immutable admission deadline limits all deliveries of the attempt, including during rollback. While the original send is ambiguous, retain its record for reconciliation and never submit it again. A provider call ID recorded by worker admission lets a later scheduled pass recover that original call. Preserve live and unresolved rows for operator review. The daily maintenance pass removes bounded terminal rows no earlier than seven days after the later of the original admission deadline and terminal job time. Confirm that this boundary covers the planned rollback window before release. After a row is removed, both worker entry points reject the stale attempt. Start another render by accepting a new job with a new attempt identifier.
 

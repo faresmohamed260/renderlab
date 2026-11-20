@@ -121,7 +121,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
     if (requestedModel === "qwen-image-edit-2511") {
       return {
         id: operation === "edit-image" ? "qwen-image-edit-2511-edit" : "qwen-image-edit-2511-generate",
-        model: "Qwen Image Edit 2511 آ· Lightning 4-step",
+        model: "Qwen Image Edit 2511 · Lightning 4-step",
         ecosystem: "qwen-image-edit-2511",
         kind: "image",
         submitPath: "/jobs/edit",
@@ -139,7 +139,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
     }
     return {
       id: operation === "edit-image" ? "flux2-klein-image-edit" : "flux2-klein-image-generate",
-      model: "FLUX.2 Klein 9B آ· DarkBeast V2 BFS",
+      model: "FLUX.2 Klein 9B · DarkBeast V2 BFS",
       ecosystem: "flux2-klein-9b",
       kind: "image",
       submitPath: "/jobs/edit",
@@ -153,7 +153,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
   }
   return {
     id: "ltx25-redgraft-video",
-    model: "REDGraft LTX 2.5 آ· Sulphur2 INT8 ConvRot",
+    model: "REDGraft LTX 2.5 · Sulphur2 INT8 ConvRot",
     ecosystem: "ltx25-redgraft",
     kind: "video",
     submitPath: "/jobs/video",

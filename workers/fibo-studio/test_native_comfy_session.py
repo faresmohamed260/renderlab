@@ -65,6 +65,9 @@ class ComfySessionTest(unittest.TestCase):
             self.assertFalse(files.input.exists())
             self.assertFalse(files.output.exists())
         self.assertEqual(list((self.jobs[0].input.parent).iterdir()), [])
+        temp = self.jobs[0].input.parent.parent / "temp"
+        self.assertTrue(temp.is_dir())
+        self.assertEqual(list(temp.iterdir()), [])
 
     def test_interruption_reaps_process_before_a_new_job(self):
         self.interrupt = Interrupted()

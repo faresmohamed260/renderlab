@@ -2,7 +2,6 @@ import base64
 from datetime import datetime, timezone
 from io import BytesIO
 from unittest.mock import Mock
-from datetime import datetime, timezone
 from types import SimpleNamespace
 import unittest
 

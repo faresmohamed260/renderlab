@@ -142,7 +142,7 @@ class ComfySession:
                 shutil.rmtree(files.input)
                 shutil.rmtree(files.output)
                 shutil.rmtree(root / "temp")
-                (root / "temp" / "temp").mkdir(parents=True)
+                (root / "temp").mkdir()
                 print(f"renderlab attempt={attempt_id} phase=completed session={self._session_id} cold={cold} "
                       f"ready_seconds={ready-start:.3f} total_seconds={monotonic()-start:.3f}", flush=True)
                 return result
