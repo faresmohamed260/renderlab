@@ -20,7 +20,7 @@
       "subject": "Vercel production deployment and custom-domain cutover boundary",
       "claim": "Automatic Git-to-Vercel deployment is disabled and production deployment, custom-domain cutover, and rollback remain explicit provider operations that require independent provider read-back.",
       "source": "Authenticated Vercel deployment/alias read-back and release evidence from the current production rollout and Production Documentation Sync.",
-      "verified_at": "2026-10-09T13:25:40.464Z",
+      "verified_at": "2026-11-20",
       "reverify_before_action": true,
       "action_contexts": [
         "production deployment, custom-domain cutover, or rollback",
@@ -44,9 +44,9 @@
       "id": "modal-direct-cutover-baseline",
       "authority_path": "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md",
       "subject": "Direct production Modal cutover baseline and recovery anchors",
-      "claim": "Modal main has split gateway ap-UfrkwIijsdz6xiGiQwtMlB and private image worker ap-wS5WKruuipwssNGHf7Eo6k. The dispatcher schedule passed live read-back and the worker scaled to zero after the final smoke. Supabase migration 0030 is applied with zero active jobs and an empty outbox at acceptance. Vercel production and the verified combined rollback pair are recorded in docs/production/current.json.",
+      "claim": "Modal main has split gateway ap-UfrkwIijsdz6xiGiQwtMlB and private image worker ap-wS5WKruuipwssNGHf7Eo6k. The dispatcher schedule passed live read-back, durable heartbeat migration 20261120110737 is applied, and the worker scaled to zero after the final smoke. Supabase dispatch health has zero active, due, expired, or unresolved work. Vercel production and the verified immediate rollback pair are recorded in docs/production/current.json.",
       "source": "Modal app and container read-back, Supabase dispatch and Library baseline queries, Vercel alias read-back, and the three protected-main FIBO smoke runs in the cutover runbook.",
-      "verified_at": "2026-11-20T01:55:45.399Z",
+      "verified_at": "2026-11-20",
       "reverify_before_action": true,
       "action_contexts": [
         "applying migration 0030 or creating dispatcher/worker credentials",
