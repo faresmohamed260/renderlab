@@ -157,7 +157,7 @@ async function waitForTerminal(account, jobId, timeoutMs = 10 * 60_000) {
 async function verifySavedOutput(account, ownerId, jobId) {
   const rows = await serviceRows(
     `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&generation_job_id=eq.${encodeURIComponent(jobId)}`
-      + "&status=eq.active&select=id,generation_output_index,storage_key&order=generation_output_index.asc",
+      + "&select=id,generation_output_index,storage_key&order=generation_output_index.asc",
   );
   assert(rows.length === 1 && rows[0].generation_output_index === 0, `Expected one indexed Library result for ${jobId}.`);
   const content = await fetch(`${baseUrl}/api/media/assets/${encodeURIComponent(rows[0].id)}/content`,

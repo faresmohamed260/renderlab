@@ -24,4 +24,5 @@ test("ADR-005 lifecycle verifier covers warm queue, provider cancellation, clean
   assert.match(verifier, /providerCallCeiling: 2/);
   assert.match(verifier, /cleanup left durable dispatch residue/);
   assert.match(verifier, /if \(!primaryError\) primaryError = error/);
+  assert.doesNotMatch(verifier, /media_assets\?[^\n]+status=eq\.active/);
 });
