@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** The combined recovery gateway is live and passed the rollback smoke. The corrected replacement source is on protected main and awaits exact-source production and GPU authorization.
+**Status:** The combined recovery gateway is live and passed the rollback smoke. The project owner approved the corrected replacement source for the outage and ordered smoke sequence.
 
 ## 2026-11-20 execution and recovery checkpoint
 
@@ -122,6 +122,12 @@ Track a conservative A10 bound for each of the three authorized smoke renders. W
 [PR #483](https://github.com/faresmohamed260/renderlab/pull/483) merged as `e93481466806b3a88f986cd547f11ef62e9543fb`. It maps the durable backend key to the existing FIBO fleet route and signs durable Modal call handles with the same contract used by the gateway. The change reuses migration `0030` and the existing named gateway signing secret. The combined release and verified rollback evidence remain current. Prior authorization and GPU consumption recorded above belong to `bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba`.
 
 Before starting the new outage, record approval for both scopes on the exact replacement source, including the budget for all three ordered smoke renders. Reconfirm the previous render accounting, live recovery identities, required exact-source checks, zero in-flight work, and the staged Vercel deployment metadata.
+
+## 2026-11-20 authorization for the reconciled runtime
+
+The project owner approved Scope D and Scope G for exact application and Modal runtime `e93481466806b3a88f986cd547f11ef62e9543fb`. The approved retry has three disposable, four-step renders and a fresh aggregate ceiling of 900 A10 seconds. The prior two smoke runs and their conservative 498-second upper bound remain separate historical usage. The smoke harness is bound on protected main as `b514b9b4547fce28ecf43d1a4f4c11f2f60c4479`.
+
+Vercel read-back verified production-target deployment `dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE` READY with the exact approved SHA before the outage. The live alias still pointed to recovery deployment `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH` and the combined gateway `ap-RhZ9OtOWoaFzSvnIXL1FDs`.
 
 ## Cutover smoke invocation
 
