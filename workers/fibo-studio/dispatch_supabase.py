@@ -61,6 +61,17 @@ class SupabaseDispatchStore:
     def mark_failed(self, intent, *, error): self._finish(intent, "failed", error=error)
     def mark_unresolved(self, intent, *, error): self._finish(intent, "unresolved", error=error)
 
+    def record_heartbeat(self, *, environment, trigger, summary):
+        rows = self._query(
+            "select public.renderlab_record_generation_dispatch_heartbeat(%s::text, %s::text, %s::integer, %s::integer, %s::integer, %s::integer, %s::integer) as accepted",
+            (
+                environment, trigger, summary["claimed"], summary["dispatched"],
+                summary["retried"], summary["failed"], summary["unresolved"],
+            ),
+        )
+        if len(rows) != 1 or rows[0]["accepted"] is not True:
+            raise RuntimeError("Dispatch heartbeat was not committed")
+
     def reserve_send(self, attempt_id):
         rows = self._query(
             "select public.renderlab_reserve_generation_dispatch_send(%s::uuid, %s::uuid) as accepted",

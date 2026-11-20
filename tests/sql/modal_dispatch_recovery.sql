@@ -26,6 +26,11 @@ begin
   assert not has_function_privilege('anon', 'public.renderlab_begin_generation_call(uuid,timestamp with time zone,text)', 'execute');
   assert has_function_privilege('renderlab_modal_worker', 'public.renderlab_begin_generation_call(uuid,timestamp with time zone,text)', 'execute');
   assert has_function_privilege('renderlab_modal_dispatcher', 'public.renderlab_reserve_generation_dispatch_send(uuid,uuid)', 'execute');
+  assert not has_table_privilege('renderlab_modal_dispatcher', 'public.generation_dispatch_heartbeats', 'select');
+  assert has_function_privilege('renderlab_modal_dispatcher', 'public.renderlab_record_generation_dispatch_heartbeat(text,text,integer,integer,integer,integer,integer,timestamp with time zone)', 'execute');
+  assert not has_function_privilege('renderlab_modal_worker', 'public.renderlab_record_generation_dispatch_heartbeat(text,text,integer,integer,integer,integer,integer,timestamp with time zone)', 'execute');
+  assert public.renderlab_record_generation_dispatch_heartbeat('main', 'scheduled', 0, 0, 0, 0, 0);
+  assert (public.renderlab_generation_dispatch_health()->>'scheduledHeartbeatMissing')::boolean = false;
   insert into auth.users(id) values (owner);
 
   select row.id into strict job_id

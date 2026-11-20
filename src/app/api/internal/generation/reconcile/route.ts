@@ -22,7 +22,13 @@ export async function POST(request: Request) {
   }
 }
 
-type DispatchHealth = { oldestDueSeconds: number; expiredClaims: number; unresolved: number };
+type DispatchHealth = {
+  oldestDueSeconds: number;
+  expiredClaims: number;
+  unresolved: number;
+  scheduledHeartbeatAgeSeconds: number | null;
+  scheduledHeartbeatMissing: boolean;
+};
 
 export async function GET(request: Request) {
   const headers = { "Cache-Control": "no-store" };
@@ -32,7 +38,10 @@ export async function GET(request: Request) {
 
   try {
     const health = await supabaseRest<DispatchHealth>("rpc/renderlab_generation_dispatch_health", { method: "GET" });
-    const ok = health.oldestDueSeconds <= 180 && health.expiredClaims === 0 && health.unresolved === 0;
+    const ok = !health.scheduledHeartbeatMissing
+      && health.oldestDueSeconds <= 180
+      && health.expiredClaims === 0
+      && health.unresolved === 0;
     return NextResponse.json({ ok, health }, { status: ok ? 200 : 503, headers });
   } catch {
     return NextResponse.json({ ok: false }, { status: 503, headers });

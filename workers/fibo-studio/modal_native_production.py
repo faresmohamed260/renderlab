@@ -49,6 +49,7 @@ def dispatch_tick(trigger="scheduled"):
     summary = Dispatcher(store, {"fibo": ModalImageBackend(store, image_render(), sign_call)}).tick().__dict__
     if trigger not in ("scheduled", "wake", "manual"):
         trigger = "manual"
+    store.record_heartbeat(environment=environment, trigger=trigger, summary=summary)
     print(json.dumps({"event": "renderlab.dispatch-tick", "trigger": trigger, **summary}), flush=True)
     return summary
 

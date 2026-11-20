@@ -65,6 +65,19 @@ class SupabaseDispatchStoreTest(unittest.TestCase):
         self.assertIn("renderlab_lookup_generation_call(%s::uuid)", statement)
         self.assertEqual(parameters, ("00000000-0000-0000-0000-000000000001",))
 
+    def test_heartbeat_uses_the_dispatcher_only_rpc(self):
+        connection = Connection([{"accepted": True}])
+        store = SupabaseDispatchStore(
+            database_url="postgresql://renderlab_modal_dispatcher:secret@pooler.example:5432/postgres",
+        )
+        summary = {"claimed": 2, "dispatched": 1, "retried": 1, "failed": 0, "unresolved": 0}
+        with patch.object(store, "_connect", return_value=connection):
+            store.record_heartbeat(environment="main", trigger="scheduled", summary=summary)
+
+        statement, parameters = connection.cursor_value.__enter__.return_value.execute.call_args.args
+        self.assertIn("renderlab_record_generation_dispatch_heartbeat", statement)
+        self.assertEqual(parameters, ("main", "scheduled", 2, 1, 1, 0, 0))
+
     def test_worker_attempt_guard_fails_closed(self):
         connection = Connection([{"accepted": False}])
         database_url = "postgresql://renderlab_modal_worker:secret@pooler.example:5432/postgres"
