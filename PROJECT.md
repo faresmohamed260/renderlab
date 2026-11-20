@@ -61,7 +61,7 @@ Image, Video, Edit, Animate, Models and Workflows are not separate top-level des
 ## Current production - 2026-11-20
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: e93481466806b3a88f986cd547f11ef62e9543fb -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source e93481466806b3a88f986cd547f11ef62e9543fb from deployment dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE (https://renderlab-84jw07zig-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-20T01:52:15.000Z. FIBO generation now uses the private Modal image worker and the durable dispatcher. The split and cut-forward smokes 44655593284 and 44656743969 saved results, reopened them from Library and verified exact fixture cleanup.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source e93481466806b3a88f986cd547f11ef62e9543fb from deployment dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE (https://renderlab-84jw07zig-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-20T01:52:14.049Z. FIBO generation now uses the private Modal image worker and the durable dispatcher. The split and cut-forward smokes 44655593284 and 44656743969 saved results, reopened them from Library and verified exact fixture cleanup.
 
 Exact-source CI completed at 2026-11-20T01:40:26.000Z: Deployment Readiness 44655251456; protected check runs 136017265106, 136017265451, 136017265276, 136017265183, 136017265568, 136017265234.
 
