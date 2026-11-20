@@ -9,9 +9,14 @@ import sys
 
 WORKSPACE_ID = "ac-88wJ5dCXYBOywnXXaGmUoV"
 SAFE = re.compile(r"[a-z][a-z0-9-]{0,62}")
-ENTRYPOINTS = (
-    "workers/fibo-studio/modal_native_renderer.py",
-    "workers/fibo-studio/modal_native_production.py",
+ACTIVE_TARGETS = (
+    ("renderlab-image-generation", "workers/fibo-studio/modal_native_renderer.py"),
+    ("renderlab-generation-gateway", "workers/fibo-studio/modal_native_production.py"),
+)
+INACTIVE_TARGETS = (
+    ("renderlab-video-generation", "workers/fibo-studio/modal_video_generation.py"),
+    ("renderlab-image-tools", "workers/fibo-studio/modal_image_tools.py"),
+    ("renderlab-video-tools", "workers/fibo-studio/modal_video_tools.py"),
 )
 
 
@@ -24,6 +29,11 @@ def parser():
     result.add_argument("--worker-secret", required=True)
     result.add_argument("--model-volume", required=True)
     result.add_argument("--isolated", action="store_true", help="Require an isolated environment and provider read-back")
+    result.add_argument(
+        "--include-inactive",
+        action="store_true",
+        help="Include the three CPU-only inactive workload shells required by ADR-005",
+    )
     result.add_argument("--resource-readback", type=Path, help="Name-only provider inventory for the selected target")
     return result
 
@@ -60,6 +70,7 @@ def plan(values):
         "RENDERLAB_MODAL_WORKER_SECRET": values.worker_secret,
         "RENDERLAB_MODAL_MODEL_VOLUME": values.model_volume,
     }
+    targets = ACTIVE_TARGETS + (INACTIVE_TARGETS if values.include_inactive else ())
     return {
         "workspaceId": values.workspace_id,
         "environment": values.environment,
@@ -68,7 +79,8 @@ def plan(values):
             "volumes": [values.model_volume],
         },
         "environmentVariables": exports,
-        "commands": [f"python -m modal deploy -e {values.environment} {entrypoint}" for entrypoint in ENTRYPOINTS],
+        "apps": [app_name for app_name, _ in targets],
+        "commands": [f"python -m modal deploy -e {values.environment} {entrypoint}" for _, entrypoint in targets],
         "validatedResourceReadback": values.resource_readback is not None,
         "mutatesProvider": False,
     }
