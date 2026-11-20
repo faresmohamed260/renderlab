@@ -5,6 +5,7 @@ import {
   acceptedWorkerCallId,
   findWorker,
   workerGatewayOptions,
+  workerJobRequest,
   workerSupportsCancellation,
   generationWorkers,
   workersForEcosystem,
@@ -63,6 +64,14 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
     assert.equal(options.headers["Modal-Secret"], "test-secret");
     assert.ok(options.signal instanceof AbortSignal);
     const signed = "fc-" + "a".repeat(26) + "." + "f".repeat(64);
+    const request = workerJobRequest(worker, signed, "/vgl");
+    assert.equal(request.url, "https://test-worker.modal.run/jobs/vgl");
+    assert.equal(request.options.headers.get("X-RenderLab-Job-Handle"), signed);
+    assert.equal(request.options.headers.get("Modal-Key"), "test-key");
+    assert.equal(request.options.redirect, "error");
+    const ordinary = workerJobRequest({ gatewayUrl: "https://other.example" }, "other-id");
+    assert.equal(ordinary.url, "https://other.example/jobs/other-id");
+    assert.equal(ordinary.options.headers, undefined);
     assert.equal(acceptedWorkerCallId(worker, 202, signed), true);
     assert.equal(acceptedWorkerCallId(worker, 200, signed), false);
     assert.equal(acceptedWorkerCallId(worker, 202, "fc-unsigned"), false);

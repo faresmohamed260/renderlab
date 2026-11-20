@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 import re
 import sys
 
@@ -22,6 +23,8 @@ def parser():
     result.add_argument("--dispatcher-secret", required=True)
     result.add_argument("--worker-secret", required=True)
     result.add_argument("--model-volume", required=True)
+    result.add_argument("--isolated", action="store_true", help="Require an isolated environment and provider read-back")
+    result.add_argument("--resource-readback", type=Path, help="Name-only provider inventory for the selected target")
     return result
 
 
@@ -31,6 +34,25 @@ def plan(values):
     resources = (values.environment, values.gateway_secret, values.dispatcher_secret, values.worker_secret, values.model_volume)
     if any(not SAFE.fullmatch(value) for value in resources):
         raise ValueError("Environment resources must be explicit safe names")
+    secrets = [values.gateway_secret, values.dispatcher_secret, values.worker_secret]
+    if len(set(secrets)) != len(secrets):
+        raise ValueError("Gateway, dispatcher and worker require distinct secrets")
+    if values.isolated and values.environment == "main":
+        raise ValueError("Isolated qualification cannot target the production environment")
+    if values.isolated and values.resource_readback is None:
+        raise ValueError("Isolated qualification requires provider resource read-back")
+    if values.resource_readback is not None:
+        inventory = json.loads(values.resource_readback.read_text(encoding="utf-8-sig"))
+        if not isinstance(inventory, dict) or (inventory.get("workspaceId"), inventory.get("environment")) != (
+            values.workspace_id, values.environment,
+        ):
+            raise ValueError("Provider read-back does not match the requested workspace and environment")
+        for key, required in (("secrets", secrets), ("volumes", [values.model_volume])):
+            names = inventory.get(key)
+            if not isinstance(names, list) or any(not isinstance(name, str) for name in names):
+                raise ValueError(f"Provider read-back is missing the {key} inventory")
+            if any(name not in names for name in required):
+                raise ValueError(f"Required {key} are absent from the selected environment")
     exports = {
         "RENDERLAB_MODAL_ENVIRONMENT": values.environment,
         "RENDERLAB_MODAL_GATEWAY_SECRET": values.gateway_secret,
@@ -42,11 +64,12 @@ def plan(values):
         "workspaceId": values.workspace_id,
         "environment": values.environment,
         "requiredResources": {
-            "secrets": [values.gateway_secret, values.dispatcher_secret, values.worker_secret],
+            "secrets": secrets,
             "volumes": [values.model_volume],
         },
         "environmentVariables": exports,
         "commands": [f"python -m modal deploy -e {values.environment} {entrypoint}" for entrypoint in ENTRYPOINTS],
+        "validatedResourceReadback": values.resource_readback is not None,
         "mutatesProvider": False,
     }
 
@@ -54,7 +77,7 @@ def plan(values):
 def main():
     try:
         print(json.dumps(plan(parser().parse_args()), indent=2))
-    except ValueError as error:
+    except (OSError, ValueError) as error:
         print(str(error), file=sys.stderr)
         raise SystemExit(2) from error
 

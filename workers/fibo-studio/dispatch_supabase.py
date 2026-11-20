@@ -61,26 +61,40 @@ class SupabaseDispatchStore:
     def mark_failed(self, intent, *, error): self._finish(intent, "failed", error=error)
     def mark_unresolved(self, intent, *, error): self._finish(intent, "unresolved", error=error)
 
+    def reserve_send(self, attempt_id):
+        rows = self._query(
+            "select public.renderlab_reserve_generation_dispatch_send(%s::uuid, %s::uuid) as accepted",
+            (attempt_id, self.claim_token),
+        )
+        return len(rows) == 1 and rows[0]["accepted"] is True
+
     def lookup(self, attempt_id):
         rows = self._query(
-            "select * from public.renderlab_lookup_generation_attempt(%s::uuid)",
+            "select * from public.renderlab_lookup_generation_call(%s::uuid)",
             (attempt_id,),
         )
         if not rows:
             return Lookup(LookupState.UNRESOLVED)
         row = rows[0]
-        if row["provider_job_id"]:
-            return Lookup(LookupState.ACCEPTED, row["provider_job_id"])
-        if row["execution_started_at"] or row["status"] == "unresolved":
+        handle = row["provider_job_id"] or row["backend_call_id"]
+        if handle:
+            return Lookup(LookupState.ACCEPTED, handle)
+        if row["send_reserved_at"] or row["execution_started_at"] or row["status"] == "unresolved":
             return Lookup(LookupState.UNRESOLVED)
         return Lookup(LookupState.ABSENT)
 
 
-def begin_generation_attempt(attempt_id, admission_deadline):
+def begin_generation_attempt(attempt_id, admission_deadline, backend_call_id=None):
     store = SupabaseDispatchStore()
-    rows = store._query(
-        "select public.renderlab_begin_generation_attempt(%s::uuid, %s::timestamptz) as accepted",
-        (attempt_id, admission_deadline),
-    )
+    if backend_call_id is None:
+        rows = store._query(
+            "select public.renderlab_begin_generation_attempt(%s::uuid, %s::timestamptz) as accepted",
+            (attempt_id, admission_deadline),
+        )
+    else:
+        rows = store._query(
+            "select public.renderlab_begin_generation_call(%s::uuid, %s::timestamptz, %s::text) as accepted",
+            (attempt_id, admission_deadline, backend_call_id),
+        )
     if len(rows) != 1 or rows[0]["accepted"] is not True:
         raise RuntimeError("Generation attempt is duplicate, cancelled, stale or unverifiable")

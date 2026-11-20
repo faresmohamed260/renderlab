@@ -7,7 +7,7 @@ import {
   claimGenerationReconciliation,
   releaseGenerationReconciliation,
 } from "@/server/generation/generation-reconciliation-claim";
-import { findWorker, workerGatewayOptions, workerSupportsCancellation } from "@/server/generation/worker-fleet";
+import { findWorker, workerJobRequest, workerSupportsCancellation } from "@/server/generation/worker-fleet";
 import { getImageUpscaleWorker } from "@/server/generation/upscale-worker";
 import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
 
@@ -119,12 +119,16 @@ async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancell
   }
 
   const worker = findWorker(row.worker_id);
-  const options = worker ? workerGatewayOptions(worker, providerCancellationTimeoutMs)
-    : { signal: AbortSignal.timeout(providerCancellationTimeoutMs) };
+  const { url, options } = worker
+    ? workerJobRequest(worker, row.provider_job_id, "", providerCancellationTimeoutMs)
+    : {
+        url: `${gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`,
+        options: { signal: AbortSignal.timeout(providerCancellationTimeoutMs), headers: undefined },
+      };
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
   try {
-    const response = await fetch(`${gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
+    const response = await fetch(url, {
       ...options, method: "DELETE", headers, cache: "no-store",
     });
     if (response.ok) return { kind: "confirmed", status: response.status };

@@ -18,7 +18,7 @@ export type GenerationWorker = {
 const modalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
 
 const FIBO_WORKER_ID = "renderlab-fibo-native-01";
-const FIBO_DISPATCH_BACKEND = "fibo";
+export const FIBO_DISPATCH_BACKEND = "fibo";
 
 // The sole live RenderLab worker is configured from server-only FIBO settings
 // below. Legacy FLUX, Qwen and LTX registrations were deliberately removed:
@@ -53,6 +53,21 @@ export function workerGatewayOptions(worker: GenerationWorker, timeoutMs = worke
     ...(worker.policy?.transport === "modal-proxy" ? { headers: fiboWorkerHeaders(), redirect: "error" as const } : {}),
     ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
   };
+}
+
+export function workerJobRequest(
+  worker: GenerationWorker,
+  callId: string,
+  suffix: "" | "/vgl" = "",
+  timeoutMs = worker.policy?.timeoutMs,
+) {
+  const options = workerGatewayOptions(worker, timeoutMs);
+  if (worker.policy?.transport === "modal-proxy") {
+    const headers = new Headers(options.headers);
+    headers.set("X-RenderLab-Job-Handle", callId);
+    return { url: `${worker.gatewayUrl}/jobs${suffix}`, options: { ...options, headers } };
+  }
+  return { url: `${worker.gatewayUrl}/jobs/${encodeURIComponent(callId)}${suffix}`, options };
 }
 
 export function acceptedWorkerCallId(worker: GenerationWorker, status: number, id: unknown): id is string {

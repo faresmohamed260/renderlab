@@ -21,7 +21,7 @@ import {
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
-import { acceptedWorkerCallId, findWorker, workerGatewayOptions, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
+import { FIBO_DISPATCH_BACKEND, acceptedWorkerCallId, findWorker, workerGatewayOptions, workerJobRequest, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
 import { createImageGenerationCanvas, prepareImageAspectOverride, sourceVideoAspectRatio } from "@/server/generation/geometry";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import {
@@ -121,7 +121,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
     if (requestedModel === "qwen-image-edit-2511") {
       return {
         id: operation === "edit-image" ? "qwen-image-edit-2511-edit" : "qwen-image-edit-2511-generate",
-        model: "Qwen Image Edit 2511 · Lightning 4-step",
+        model: "Qwen Image Edit 2511 آ· Lightning 4-step",
         ecosystem: "qwen-image-edit-2511",
         kind: "image",
         submitPath: "/jobs/edit",
@@ -139,7 +139,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
     }
     return {
       id: operation === "edit-image" ? "flux2-klein-image-edit" : "flux2-klein-image-generate",
-      model: "FLUX.2 Klein 9B · DarkBeast V2 BFS",
+      model: "FLUX.2 Klein 9B آ· DarkBeast V2 BFS",
       ecosystem: "flux2-klein-9b",
       kind: "image",
       submitPath: "/jobs/edit",
@@ -153,7 +153,7 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
   }
   return {
     id: "ltx25-redgraft-video",
-    model: "REDGraft LTX 2.5 · Sulphur2 INT8 ConvRot",
+    model: "REDGraft LTX 2.5 آ· Sulphur2 INT8 ConvRot",
     ecosystem: "ltx25-redgraft",
     kind: "video",
     submitPath: "/jobs/video",
@@ -680,10 +680,10 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
 class InvalidGeneratedFiboSidecarError extends Error {}
 
 async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string): Promise<string> {
-  const options = workerGatewayOptions(worker);
+  const { url, options } = workerJobRequest(worker, callId, "/vgl");
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
-  const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(callId)}/vgl`, {
+  const response = await fetch(url, {
     ...options, method: "GET", headers, cache: "no-store",
   });
   if (response.status === 202) throw new Error("Generated FIBO VGL is still being prepared.");
@@ -902,15 +902,18 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     return toGenerationJob(failed);
   }
 
-  const options = workerGatewayOptions(worker);
+  const { url, options } = workerJobRequest(worker, row.provider_job_id);
   const headers = new Headers(options.headers);
   headers.set("accept", row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json");
-  const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
+  const response = await fetch(url, {
     ...options, method: "GET", headers,
     cache: "no-store",
   });
 
   if (response.status === 202) {
+    // Modal also returns pending for an accepted call waiting on the one GPU slot.
+    // Durable worker admission owns the queued-to-running transition.
+    if (row.worker_id === FIBO_DISPATCH_BACKEND) return toGenerationJob(row);
     const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
     const next = await patchJob(row.owner_id, row.id, {
       status: "running",

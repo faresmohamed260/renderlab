@@ -1,4 +1,5 @@
 import base64
+from io import BytesIO
 from datetime import datetime, timezone
 from types import SimpleNamespace
 import unittest
@@ -7,8 +8,16 @@ from fastapi.testclient import TestClient
 
 from dispatch_core import DispatchIntent
 from modal_dispatch_backend import ModalImageBackend
-from native_gateway import call_handle_signer, create_gateway
+from native_gateway import JOB_HANDLE_HEADER, call_handle_signer, create_gateway
 from workload_contract import FIBO_MODEL_KEY, FIBO_MODEL_VERSION
+
+
+def make_png():
+    from PIL import Image
+
+    buffer = BytesIO()
+    Image.new("RGB", (256, 256), "white").save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 class GatewayTests(unittest.TestCase):
@@ -38,27 +47,27 @@ class GatewayTests(unittest.TestCase):
 
     def submit(self):
         response = self.client.post("/jobs/fibo", json={
-            "prompt": "Example", "seed": 42, "images": [base64.b64encode(b"image").decode()],
+            "prompt": "Example", "seed": 42, "images": [base64.b64encode(make_png()).decode()],
         })
         self.assertEqual(response.status_code, 202)
-        self.assertEqual(self.spawns[0]["sources"], [b"image"])
-        return "/jobs/" + response.json()["call_id"]
+        self.assertEqual(self.spawns[0]["sources"], [make_png()])
+        return response.json()["call_id"]
 
     def test_async_poll_and_cancel(self):
-        path = self.submit()
-        response = self.client.get(path)
+        handle = self.submit()
+        response = self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle})
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.headers["cache-control"], "private, no-store")
         self.result = b"\x89PNG\r\n\x1a\npayload"
-        response = self.client.get(path)
+        response = self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle})
         self.assertEqual(response.headers["content-type"], "image/png")
         self.assertEqual(response.content, self.result)
-        self.assertEqual(self.client.delete(path).json(), {"status": "cancelled"})
+        self.assertEqual(self.client.delete("/jobs", headers={JOB_HANDLE_HEADER: handle}).json(), {"status": "cancelled"})
         self.assertEqual(self.cancels, [self.call_id])
 
     def test_durable_dispatch_handle_can_poll_and_cancel_on_the_gateway(self):
         worker = SimpleNamespace(spawn=lambda **_: SimpleNamespace(object_id=self.call_id))
-        backend = ModalImageBackend(None, worker, call_handle_signer(b"test-only-signing-key" * 2))
+        backend = ModalImageBackend(SimpleNamespace(reserve_send=lambda _: True), worker, call_handle_signer(b"test-only-signing-key" * 2))
         intent = DispatchIntent(
             attempt_id="attempt", job_id="job", backend="fibo", model_key=FIBO_MODEL_KEY,
             model_version=FIBO_MODEL_VERSION, operation="create-image",
@@ -66,12 +75,14 @@ class GatewayTests(unittest.TestCase):
             admission_deadline=datetime.now(timezone.utc),
         )
         handle = backend.submit(intent)
-        self.assertEqual(self.client.get("/jobs/" + self.call_id).status_code, 404)
+        self.assertEqual(self.client.get("/jobs", headers={JOB_HANDLE_HEADER: self.call_id}).status_code, 404)
+        self.assertEqual(self.client.get("/jobs").status_code, 404)
+        self.assertEqual(self.client.get("/jobs/" + handle).status_code, 404)
         self.result = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-image"
-        response = self.client.get("/jobs/" + handle)
+        response = self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, self.result)
-        self.assertEqual(self.client.delete("/jobs/" + handle).json(), {"status": "cancelled"})
+        self.assertEqual(self.client.delete("/jobs", headers={JOB_HANDLE_HEADER: handle}).json(), {"status": "cancelled"})
         self.assertEqual(self.cancels, [self.call_id])
 
     def test_dispatch_wake_carries_no_render_payload(self):
@@ -90,27 +101,27 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(client.post("/dispatch/wake").status_code, 202)
 
     def test_generated_vgl_sidecar_retains_plain_png_results_and_signed_access(self):
-        path = self.submit()
+        handle = self.submit()
         png = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-image"
         self.result = png
-        self.assertEqual(self.client.get(path).content, png)
-        self.assertEqual(self.client.get(path + "/vgl").status_code, 404)
+        self.assertEqual(self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle}).content, png)
+        self.assertEqual(self.client.get("/jobs/vgl", headers={JOB_HANDLE_HEADER: handle}).status_code, 404)
 
         caption = '{"short_description":"A sunlit garden","lighting":"soft"}'
         self.result = {"image_png": png, "generated_vgl": caption}
-        image = self.client.get(path)
+        image = self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle})
         self.assertEqual(image.status_code, 200)
         self.assertEqual(image.content, png)
         self.assertEqual(image.headers["content-type"], "image/png")
-        sidecar = self.client.get(path + "/vgl")
+        sidecar = self.client.get("/jobs/vgl", headers={JOB_HANDLE_HEADER: handle})
         self.assertEqual(sidecar.status_code, 200)
         self.assertEqual(sidecar.json(), {"vgl": caption})
         self.assertEqual(sidecar.headers["cache-control"], "private, no-store")
-        self.assertEqual(self.client.get(path[:-1] + "x/vgl").status_code, 404)
+        self.assertEqual(self.client.get("/jobs/vgl", headers={JOB_HANDLE_HEADER: handle[:-1] + "x"}).status_code, 404)
         self.assertEqual(self.reads[-1], self.call_id)
 
     def test_generated_vgl_sidecar_fails_closed_on_invalid_provider_output(self):
-        path = self.submit()
+        handle = self.submit()
         png = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-image"
         for invalid in (
             {"image_png": png, "generated_vgl": "not json"},
@@ -121,8 +132,8 @@ class GatewayTests(unittest.TestCase):
         ):
             with self.subTest(invalid=str(invalid)[:100]):
                 self.result = invalid
-                self.assertEqual(self.client.get(path).status_code, 502)
-                self.assertEqual(self.client.get(path + "/vgl").status_code, 502)
+                self.assertEqual(self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle}).status_code, 502)
+                self.assertEqual(self.client.get("/jobs/vgl", headers={JOB_HANDLE_HEADER: handle}).status_code, 502)
 
     def test_manual_vgl_is_worker_input_for_source_free_and_reference_edits(self):
         # FIBO Studio already uses Edit Turbo to generate with no references.
@@ -143,22 +154,21 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(invalid.status_code, 422)
 
     def test_mask_bytes_are_bounded_and_passed_only_for_single_source_edit(self):
-        png = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-mask-payload"
+        png = make_png()
         data = {"prompt": "Edit selected area", "seed": 42,
-                "images": [base64.b64encode(b"source-image").decode()],
+                "images": [base64.b64encode(png).decode()],
                 "mask": base64.b64encode(png).decode(), "width": 256, "height": 256}
         response = self.client.post("/jobs/fibo", json=data)
         self.assertEqual(response.status_code, 202)
         self.assertEqual(self.spawns[-1]["mask"], png)
-        self.assertEqual(self.spawns[-1]["sources"], [b"source-image"])
+        self.assertEqual(self.spawns[-1]["sources"], [png])
 
-        # Original geometry is validated in the gateway shape and derived from
-        # the decoded real owner source by the worker before graph execution.
         original = self.client.post("/jobs/fibo", json={**data, "width": 0, "height": 0})
         self.assertEqual(original.status_code, 202)
 
         for payload in (
             {**data, "images": []},
+            {**data, "images": [base64.b64encode(b"not-an-image").decode()]},
             {**data, "images": ["QQ==", "Qg=="]},
             {**data, "mask": "***"},
             {**data, "mask": base64.b64encode(b"not-png").decode()},
@@ -190,10 +200,11 @@ class GatewayTests(unittest.TestCase):
                 self.assertEqual(self.client.post("/jobs/fibo", json={**payload, **invalid}).status_code, 422)
 
     def test_unknown_and_modified_ids_never_reach_modal(self):
-        path = self.submit()
-        for invalid in ("/jobs/" + self.call_id, path[:-1] + ("a" if path[-1] != "a" else "b")):
-            self.assertEqual(self.client.get(invalid).status_code, 404)
-            self.assertEqual(self.client.delete(invalid).status_code, 404)
+        handle = self.submit()
+        for invalid in (self.call_id, handle[:-1] + ("a" if handle[-1] != "a" else "b")):
+            headers = {JOB_HANDLE_HEADER: invalid}
+            self.assertEqual(self.client.get("/jobs", headers=headers).status_code, 404)
+            self.assertEqual(self.client.delete("/jobs", headers=headers).status_code, 404)
         self.assertEqual((self.reads, self.cancels), ([], []))
 
     def test_invalid_payload_and_expired_result(self):
@@ -202,9 +213,9 @@ class GatewayTests(unittest.TestCase):
                 "prompt": "Example", "seed": 42, **options,
             }).status_code, 422)
         self.assertEqual(self.spawns, [])
-        path = self.submit()
+        handle = self.submit()
         self.result = KeyError()
-        self.assertEqual(self.client.get(path).status_code, 410)
+        self.assertEqual(self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle}).status_code, 410)
 
 
 if __name__ == "__main__":

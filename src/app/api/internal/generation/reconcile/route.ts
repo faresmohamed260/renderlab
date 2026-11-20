@@ -1,5 +1,6 @@
 // ENT-004 same-origin exemption: server-secret internal route authenticated by a dedicated bearer secret.
 import { NextResponse } from "next/server";
+import { supabaseRest } from "@/server/data/supabase-rest";
 import { reconcileActiveNativeGenerations } from "@/server/generation/reconcile-generation";
 
 function authorized(request: Request) {
@@ -18,5 +19,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, summary });
   } catch {
     return NextResponse.json({ ok: false }, { status: 503 });
+  }
+}
+
+type DispatchHealth = { oldestDueSeconds: number; expiredClaims: number; unresolved: number };
+
+export async function GET(request: Request) {
+  const headers = { "Cache-Control": "no-store" };
+  if (!authorized(request)) {
+    return NextResponse.json({ ok: false }, { status: 401, headers });
+  }
+
+  try {
+    const health = await supabaseRest<DispatchHealth>("rpc/renderlab_generation_dispatch_health", { method: "GET" });
+    const ok = health.oldestDueSeconds <= 180 && health.expiredClaims === 0 && health.unresolved === 0;
+    return NextResponse.json({ ok, health }, { status: ok ? 200 : 503, headers });
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 503, headers });
   }
 }

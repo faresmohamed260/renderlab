@@ -100,9 +100,6 @@ class Dispatcher:
         return DispatchSummary(**totals)
 
     def _dispatch(self, intent: DispatchIntent, now: datetime) -> str:
-        if now >= intent.admission_deadline:
-            self.store.mark_failed(intent, error="attempt admission expired")
-            return "failed"
         backend = self.backends.get(intent.backend)
         if backend is None:
             self.store.mark_failed(intent, error="bound backend is unavailable")
@@ -117,6 +114,9 @@ class Dispatcher:
         if lookup.state is LookupState.UNRESOLVED:
             self.store.mark_unresolved(intent, error="backend reports unresolved acceptance")
             return "unresolved"
+        if now >= intent.admission_deadline:
+            self.store.mark_failed(intent, error="attempt admission expired")
+            return "failed"
         try:
             handle = backend.submit(intent)
             if not handle:
