@@ -20,27 +20,35 @@ gateway_image = gateway_image.add_local_python_source(
 )
 
 
+gateway_secret = modal.Secret.from_name(
+    runtime_env["RENDERLAB_MODAL_GATEWAY_SECRET"],
+    environment_name=environment,
+)
+
+
 def image_render():
     return modal.Function.from_name(APP_NAMES["image"], "render", environment_name=environment)
 
 
-@app.function(image=gateway_image, env=runtime_env, secrets=[modal.Secret.from_name(
+dispatcher_secret = modal.Secret.from_name(
     runtime_env["RENDERLAB_MODAL_DISPATCHER_SECRET"],
     environment_name=environment,
-)])
+)
+
+
+@app.function(image=gateway_image, env=runtime_env, secrets=[dispatcher_secret, gateway_secret])
 def dispatch_tick():
     from dispatch_core import Dispatcher
     from dispatch_supabase import SupabaseDispatchStore
     from modal_dispatch_backend import ModalImageBackend
+    from native_gateway import call_handle_signer
 
+    sign_call = call_handle_signer(os.environ.get("RENDERLAB_FIBO_CALL_SIGNING_KEY", "").encode())
     store = SupabaseDispatchStore()
-    return Dispatcher(store, {"fibo": ModalImageBackend(store, image_render())}).tick().__dict__
+    return Dispatcher(store, {"fibo": ModalImageBackend(store, image_render(), sign_call)}).tick().__dict__
 
 
-@app.function(image=gateway_image, env=runtime_env, secrets=[modal.Secret.from_name(
-    runtime_env["RENDERLAB_MODAL_GATEWAY_SECRET"],
-    environment_name=environment,
-)])
+@app.function(image=gateway_image, env=runtime_env, secrets=[gateway_secret])
 @modal.asgi_app(requires_proxy_auth=True)
 def web():
     from native_gateway import create_gateway

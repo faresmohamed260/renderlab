@@ -1,9 +1,14 @@
 import base64
+from datetime import datetime, timezone
+from types import SimpleNamespace
 import unittest
 
 from fastapi.testclient import TestClient
 
-from native_gateway import create_gateway
+from dispatch_core import DispatchIntent
+from modal_dispatch_backend import ModalImageBackend
+from native_gateway import call_handle_signer, create_gateway
+from workload_contract import FIBO_MODEL_KEY, FIBO_MODEL_VERSION
 
 
 class GatewayTests(unittest.TestCase):
@@ -49,6 +54,24 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(response.headers["content-type"], "image/png")
         self.assertEqual(response.content, self.result)
         self.assertEqual(self.client.delete(path).json(), {"status": "cancelled"})
+        self.assertEqual(self.cancels, [self.call_id])
+
+    def test_durable_dispatch_handle_can_poll_and_cancel_on_the_gateway(self):
+        worker = SimpleNamespace(spawn=lambda **_: SimpleNamespace(object_id=self.call_id))
+        backend = ModalImageBackend(None, worker, call_handle_signer(b"test-only-signing-key" * 2))
+        intent = DispatchIntent(
+            attempt_id="attempt", job_id="job", backend="fibo", model_key=FIBO_MODEL_KEY,
+            model_version=FIBO_MODEL_VERSION, operation="create-image",
+            payload={"prompt": "Example", "seed": 42}, attempt_count=1,
+            admission_deadline=datetime.now(timezone.utc),
+        )
+        handle = backend.submit(intent)
+        self.assertEqual(self.client.get("/jobs/" + self.call_id).status_code, 404)
+        self.result = bytes.fromhex("89504e470d0a1a0a") + b"synthetic-image"
+        response = self.client.get("/jobs/" + handle)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, self.result)
+        self.assertEqual(self.client.delete("/jobs/" + handle).json(), {"status": "cancelled"})
         self.assertEqual(self.cancels, [self.call_id])
 
     def test_dispatch_wake_carries_no_render_payload(self):

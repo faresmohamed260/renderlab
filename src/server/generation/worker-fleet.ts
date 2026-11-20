@@ -17,6 +17,9 @@ export type GenerationWorker = {
 
 const modalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
 
+const FIBO_WORKER_ID = "renderlab-fibo-native-01";
+const FIBO_DISPATCH_BACKEND = "fibo";
+
 // The sole live RenderLab worker is configured from server-only FIBO settings
 // below. Legacy FLUX, Qwen and LTX registrations were deliberately removed:
 // no new job can route to a retired Modal worker.
@@ -28,7 +31,7 @@ function configuredFiboWorker(): GenerationWorker | null {
   const key = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
   const secret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
   if (!url || !key || !secret || !modalGatewayOriginPattern.test(url)) return null;
-  return { id: "renderlab-fibo-native-01", ecosystem: "fibo2-edit-turbo", gatewayUrl: url,
+  return { id: FIBO_WORKER_ID, ecosystem: "fibo2-edit-turbo", gatewayUrl: url,
     policy: { transport: "modal-proxy", cancellation: true, reassignment: false,
       retryAmbiguousSubmit: false, resultMime: "image/png", timeoutMs: 30_000 },
     displayName: "Bria FIBO 2.0 Edit Turbo", role: "primary", routingStatus: "active" };
@@ -70,5 +73,7 @@ export function workersForEcosystem(ecosystem: GenerationWorker["ecosystem"]) {
 }
 
 export function findWorker(workerId: string) {
-  return registeredWorkers().find((worker) => worker.id === workerId) ?? null;
+  // Durable dispatch stores the backend key. Earlier jobs store the fleet ID.
+  const fleetId = workerId === FIBO_DISPATCH_BACKEND ? FIBO_WORKER_ID : workerId;
+  return registeredWorkers().find((worker) => worker.id === fleetId) ?? null;
 }

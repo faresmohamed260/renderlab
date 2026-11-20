@@ -33,6 +33,7 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
   try {
     for (const name of names) delete process.env[name];
     assert.equal(findWorker("renderlab-fibo-native-01"), null);
+    assert.equal(findWorker("fibo"), null);
     process.env.RENDERLAB_FIBO_MODAL_KEY = "test-key";
     process.env.RENDERLAB_FIBO_MODAL_SECRET = "test-secret";
     for (const origin of ["http://localhost:3000", "https://worker.modal.run/redirect", "https://modal.run.example.org"]) {
@@ -68,6 +69,7 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
     delete process.env.RENDERLAB_FIBO_GENERATION;
     assert.deepEqual(workersForEcosystem("fibo2-edit-turbo"), []);
     assert.deepEqual(findWorker("renderlab-fibo-native-01"), worker);
+    assert.deepEqual(findWorker("fibo"), worker);
   } finally {
     for (const [i, name] of names.entries()) {
       if (before[i] === undefined) delete process.env[name];
