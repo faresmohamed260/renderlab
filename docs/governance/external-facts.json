@@ -18,13 +18,14 @@
       "id": "vercel-release-boundary",
       "authority_path": "docs/architecture/INFRASTRUCTURE.md",
       "subject": "Vercel production deployment and custom-domain cutover boundary",
-      "claim": "Automatic Git-to-Vercel deployment is disabled and production deployment, custom-domain cutover, and rollback remain explicit provider operations that require independent provider read-back.",
-      "source": "Authenticated Vercel deployment/alias read-back and release evidence from the current production rollout and Production Documentation Sync.",
+      "claim": "Automatic Git-to-Vercel deployment is disabled and production deployment, custom-domain cutover, and rollback remain explicit provider operations that require independent provider read-back. On 2026-11-20 at 21:45 UTC, both the assigned custom domain and exact deployment URL returned HTTP 402 with X-Vercel-Error DEPLOYMENT_DISABLED, so the recorded release is not currently reachable even though its deployment and alias identities remain canonical.",
+      "source": "Authenticated Vercel deployment/alias read-back and release evidence from the current production rollout and Production Documentation Sync, plus direct response-header read-back from the custom domain and exact deployment URL during ADR-005 run 44822796963.",
       "verified_at": "2026-11-20",
       "reverify_before_action": true,
       "action_contexts": [
         "production deployment, custom-domain cutover, or rollback",
-        "changing Vercel project deployment or alias configuration"
+        "changing Vercel project deployment or alias configuration",
+        "using the production application for a hosted acceptance checkpoint"
       ]
     },
     {
