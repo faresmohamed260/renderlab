@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** The combined recovery gateway is live. The owner approved the corrected replacement source for the planned outage and bounded smoke sequence.
+**Status:** The combined recovery gateway is live after a pre-alias rollback. The split Modal apps published successfully. The workflow source pin and Vercel deployment metadata must be verified before another outage.
 
 ## 2026-11-20 execution and recovery checkpoint
 
@@ -42,7 +42,7 @@ It does **not** waive exact-source CI, zero-in-flight verification, least privil
 | Recovery application and combined Modal source | `4f8efb7f52e7c43f5425c7a4aa3375f2292992cb` |
 | Modal workspace | `faresmohamed260` / `ac-88wJ5dCXYBOywnXXaGmUoV` |
 | Modal environment | existing `main`; no new environment |
-| Existing gateway at retry preflight | `renderlab-generation-gateway`, app `ap-IccrW86VuyQL9yZfVVShld`, version `v1` |
+| Existing gateway at retry preflight | `renderlab-generation-gateway`, app `ap-iiL2RGqh6N96YKknO4zCo4`, version `v1` |
 | Replacement worker | `renderlab-image-generation` |
 | Preserved model volume | existing `renderlab-fibo-models` in `main` |
 | Preserved gateway secret | existing `renderlab-fibo-native-gateway` in `main` |
@@ -101,6 +101,13 @@ Production stayed on the combined recovery gateway during this preflight. Before
 The project owner approved Scope D and Scope G for exact protected-main source `bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba`. All six required checks passed on that SHA. The recovery anchor is Vercel `dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH` with the combined Modal gateway `ap-IccrW86VuyQL9yZfVVShld` v1. The earlier recovery smoke stays historical.
 
 Track a conservative A10 bound for each of the three authorized smoke renders. With one A10 slot, charge the time from the first instant the monitored workflow can submit a render through the first provider observation that the corresponding GPU workload has no running container after the job drains. For the combined app, count its entire observed container window if provider telemetry cannot distinguish the CPU container. Count pending or unverified intervals conservatively. Stop dispatch and the exact GPU workload with time reserved for termination before exhausting the 900-second aggregate cap. Preserve the workflow and Modal evidence alongside the release.
+
+## 2026-11-20 rollout attempt and restoration
+
+- At 02:56:52 Cairo time, the combined gateway stopped after an empty-queue preflight. Both restricted database identities passed TLS and allowed/denied RPC checks. Modal published private image worker `ap-LXB3h6OYnylGHs1Fk4dP3e` and split gateway `ap-g03bteS8JZyqHNy7D96jix` successfully. The image worker had no public endpoint and zero containers. The dispatcher had one runner before any manual call or production smoke.
+- The staged production-target Vercel build `dpl_71xEwp5dmmcBxfTeH3QKLD9d436A` reached READY but reported neither `gitSource.sha` nor `meta.githubCommitSha`. The protected-main smoke verifier also still pinned `68651d2`. The production alias stayed on the recovery deployment and no smoke was dispatched.
+- At 03:01 Cairo time, the combined source `4f8efb7` republished as `ap-iiL2RGqh6N96YKknO4zCo4` v1. The public site returned HTTP 200 and the protected gateway returned HTTP 401. The split apps stopped, both candidate passwords were cleared, both roles returned to `NOLOGIN`, and the two candidate Modal secrets were removed. Migration `0030` remained applied with an empty outbox. The baseline remained 70 jobs, two generation sources, and 14 active media assets. This attempt submitted zero GPU renders.
+- Before the next outage, run the matching smoke verifier regression tests and verify the allowlist on protected main. Prepare a clean Git checkout of the exact replacement SHA. When staging Vercel from that checkout, supply the verified Git SHA using `--meta githubCommitSha=<git rev-parse HEAD>` if the CLI does not infer it. Keep automatic alias assignment disabled and confirm the exact SHA in Vercel's deployment record before any alias movement.
 
 ## Cutover smoke invocation
 

@@ -8,7 +8,8 @@ import {
   verifyModalCutoverSmokeRelease,
 } from "../../scripts/lib/production-live-state.mjs";
 
-const sha = "68651d2d1e3c5602c2f840a0d066a0f6185a5cf2";
+const sha = "bb0bca8e41ea118c94d2fc4cdda49baf8194e4ba";
+const supersededSha = "68651d2d1e3c5602c2f840a0d066a0f6185a5cf2";
 const recoverySha = "4f8efb7f52e7c43f5425c7a4aa3375f2292992cb";
 const deploymentId = "dpl_test";
 const domain = "renderlab.faresuniform.uk";
@@ -51,6 +52,7 @@ test("cutover verification rejects mismatched or unverified live deployment evid
     [{ deployment: { readyState: "BUILDING" } }, /state mismatch/],
     [{ deployment: { target: "preview" } }, /target mismatch/],
     [{ source: recoverySha }, /Git SHA mismatch/],
+    [{ deployment: { meta: {}, gitSource: null } }, /Git SHA mismatch/],
     [{ status: 401 }, /HTTP 401/],
   ];
   for (const [result, pattern] of cases) {
@@ -61,6 +63,7 @@ test("cutover verification rejects mismatched or unverified live deployment evid
 test("cutover inputs are checked before any provider calls", async () => {
   for (const [override, pattern] of [
     [{ expectedSha: "a".repeat(40) }, /runbook source/],
+    [{ expectedSha: supersededSha }, /runbook source/],
     [{ deploymentId: "dpl_test/other" }, /deployment ID/],
     [{ scenario: "reference-edit" }, /scenario mismatch/],
     [{ vercelToken: "" }, /VERCEL_TOKEN/],
@@ -69,6 +72,12 @@ test("cutover inputs are checked before any provider calls", async () => {
       ...base, ...override, fetchImpl: () => assert.fail("unexpected provider call"),
     }), pattern);
   }
+});
+
+test("cutover smoke and the runbook bind the same replacement and recovery SHAs", () => {
+  const runbook = readFileSync("docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md", "utf8");
+  assert.equal(runbook.match(/^\| Replacement application and Modal source \| `([a-f0-9]{40})`;/m)?.[1], sha);
+  assert.equal(runbook.match(/^\| Recovery application and combined Modal source \| `([a-f0-9]{40})` \|/m)?.[1], recoverySha);
 });
 
 test("the workflow keeps the routine manifest gate and uses the cutover gate before fixture work", () => {
