@@ -85,7 +85,7 @@ Follow-up scope: GitHub Actions workflow definitions, not ComfyUI graphs. The in
 
 - The heads for PRs #428 and #430–#436 were fast-forwarded to merge the current CI baseline (stacked branches via their updated parent). All eight resulting workflow trees match main; each lost 17 inherited legacy workflow paths. The current UI migration tracker takes precedence over the superseded rollout block; branch-specific FIBO evidence stays in the owning audit and architecture records. The owner subsequently confirmed that the backend and frontend changes had been applied separately. Those eight PRs were closed as superseded without merging, and their branches were retained.
 - The six required check contexts, scheduled recovery workflows, and backend coverage are intentionally unchanged. The obsolete MFA path filter for the removed Email Identity Change workflow is dropped here; the email-identity verifier and application path filters remain.
-- Dependabot PRs #440 and #442 were already closed. Do not reopen them to repair superseded checks; evaluate new updates against the current base. Android draft branches and the independent Android Stack Preflight were left intact.
+- Dependabot PRs #440 and #442 were already closed. Do not reopen them to repair superseded checks; evaluate new updates against the current base.
 - Production QA dispositions are tracked below. The manifest's historical release-matrix run remains historical evidence, not a dispatch target.
 - Do not run or delete the branch-only provider bootstrap or FIBO qualification deployment as sidebar cleanup. The ENT-006 dispatch and Checkpoint 1 branch helper are separate one-off branch-retirement candidates; inventory their owning branches before any ref deletion.
 
