@@ -34,6 +34,18 @@ class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
         self.assertIn('"mutatesProvider": false', result.stdout)
         self.assertNotIn(" -e main ", result.stdout)
 
+    def test_full_topology_includes_cpu_only_inactive_workloads(self):
+        result = self.run_plan(environment="main", extra=("--include-inactive",))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        plan = json.loads(result.stdout)
+        self.assertEqual(len(plan["commands"]), 5)
+        self.assertIn("renderlab-image-generation", plan["apps"])
+        self.assertIn("renderlab-generation-gateway", plan["apps"])
+        self.assertIn("renderlab-video-generation", plan["apps"])
+        self.assertIn("renderlab-image-tools", plan["apps"])
+        self.assertIn("renderlab-video-tools", plan["apps"])
+        self.assertTrue(all("modal deploy -e main" in command for command in plan["commands"]))
+
     def test_rejects_wrong_workspace_and_unsafe_environment(self):
         self.assertNotEqual(self.run_plan(workspace="ac-other").returncode, 0)
         self.assertNotEqual(self.run_plan(environment="main; deploy").returncode, 0)
