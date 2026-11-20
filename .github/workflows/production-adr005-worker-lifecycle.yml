@@ -21,7 +21,7 @@ on:
         type: boolean
         default: false
       confirm_external_process_termination:
-        description: Confirm the process-exit scenario may terminate its one run-owned Modal worker container
+        description: Confirm the process-exit scenario may terminate its one run-owned ComfyUI subprocess
         required: true
         type: boolean
         default: false
@@ -70,7 +70,7 @@ jobs:
             exit 1
           fi
           if [ "$RENDERLAB_ADR005_LIFECYCLE_SCENARIO" = "process-exit-recovery" ] && [ "$RENDERLAB_CONFIRM_ADR005_PROCESS_TERMINATION" != "true" ]; then
-            echo "::error::The process-exit scenario requires explicit external worker-termination confirmation."
+            echo "::error::The process-exit scenario requires explicit external ComfyUI-subprocess termination confirmation."
             exit 1
           fi
           if ! printf "%s" "$RENDERLAB_EXPECTED_PRODUCTION_SHA" | grep -Eq "^[0-9a-fA-F]{40}$"; then
