@@ -83,6 +83,7 @@ jobs:
           CLOUDFLARE_R2_BUCKET: "test-bucket"
           RESEND_API_KEY: "re_test_renderlab"
           CRON_SECRET: "renderlab-test-cron-secret"
+          RENDERLAB_GENERATION_RECONCILER_SECRET: "renderlab-test-reconciler-secret-0001"
         run: node scripts/verify-vercel-env.mjs
 
       - name: Build production application with Vercel contract
@@ -97,4 +98,5 @@ jobs:
           CLOUDFLARE_R2_BUCKET: "test-bucket"
           RESEND_API_KEY: "re_test_renderlab"
           CRON_SECRET: "renderlab-test-cron-secret"
+          RENDERLAB_GENERATION_RECONCILER_SECRET: "renderlab-test-reconciler-secret-0001"
         run: npm run build

@@ -27,7 +27,7 @@ case "$*" in
     fi ;;
   '-m modal secret list -e main --json')
     if [[ "$SCENARIO" = missing-signing-secret ]]; then echo '[]'
-    else echo '[{"name":"renderlab-fibo-native-gateway"},{"name":"renderlab-generation-dispatcher"},{"name":"renderlab-generation-worker"}]'; fi ;;
+    else echo '[{"name":"renderlab-fibo-native-gateway"},{"name":"renderlab-generation-dispatcher"},{"name":"renderlab-generation-monitor"},{"name":"renderlab-generation-worker"}]'; fi ;;
   '-m modal deploy -e main workers/fibo-studio/modal_native_candidate.py')
     touch "$RUNNER_TEMP/dispatched" ;;
   '-m modal deploy -e main workers/fibo-studio/modal_native_renderer.py')

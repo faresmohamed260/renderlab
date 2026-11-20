@@ -17,6 +17,7 @@ class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
             "--environment", environment,
             "--gateway-secret", f"renderlab-gateway-{environment}",
             "--dispatcher-secret", f"renderlab-dispatcher-{environment}",
+            "--monitor-secret", f"renderlab-monitor-{environment}",
             "--worker-secret", f"renderlab-worker-{environment}",
             "--model-volume", f"renderlab-fibo-models-{environment}",
             *extra,
@@ -58,7 +59,7 @@ class ModalWorkloadDeploymentPlanTest(unittest.TestCase):
                 "workspaceId": "ac-88wJ5dCXYBOywnXXaGmUoV", "environment": "qualification",
                 "secrets": [
                     "renderlab-gateway-qualification", "renderlab-dispatcher-qualification",
-                    "renderlab-worker-qualification",
+                    "renderlab-monitor-qualification", "renderlab-worker-qualification",
                 ],
                 "volumes": ["renderlab-fibo-models-qualification"],
             }

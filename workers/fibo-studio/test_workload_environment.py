@@ -9,6 +9,7 @@ def configured(environment="qualification"):
         environment=environment,
         gateway_secret="renderlab-gateway-qualification",
         dispatcher_secret="renderlab-dispatcher-qualification",
+        monitor_secret="renderlab-monitor-qualification",
         worker_secret="renderlab-worker-qualification",
         model_volume="renderlab-fibo-models-qualification",
     )
@@ -23,12 +24,14 @@ class WorkloadEnvironmentTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "workspace"):
             WorkloadEnvironment.from_values(
                 workspace_id="ac-other", environment="qualification",
-                gateway_secret="gateway", dispatcher_secret="dispatcher", worker_secret="worker", model_volume="models",
+                gateway_secret="gateway", dispatcher_secret="dispatcher", monitor_secret="monitor",
+                worker_secret="worker", model_volume="models",
             )
         with self.assertRaisesRegex(ValueError, "explicit"):
             WorkloadEnvironment.from_values(
                 workspace_id=WORKSPACE_ID, environment="qualification",
-                gateway_secret="", dispatcher_secret="dispatcher", worker_secret="worker", model_volume="models",
+                gateway_secret="", dispatcher_secret="dispatcher", monitor_secret="monitor",
+                worker_secret="worker", model_volume="models",
             )
         with self.assertRaisesRegex(ValueError, "Cross-environment"):
             configured().assert_same_environment("main")

@@ -15,6 +15,7 @@ const required = [
   "CLOUDFLARE_R2_BUCKET",
   "RESEND_API_KEY",
   "CRON_SECRET",
+  "RENDERLAB_GENERATION_RECONCILER_SECRET",
 ];
 
 const missing = required.filter((name) => !process.env[name]?.trim());
@@ -43,6 +44,10 @@ if (fiboUrl && (!/^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/.test(fiboUrl) || !fib
 
 if (process.env.CRON_SECRET.trim().length < 16) {
   throw new Error("CRON_SECRET must be a nontrivial bearer secret for the account-lifecycle recovery cron.");
+}
+
+if (process.env.RENDERLAB_GENERATION_RECONCILER_SECRET.trim().length < 32) {
+  throw new Error("RENDERLAB_GENERATION_RECONCILER_SECRET must be a strong dedicated bearer secret.");
 }
 
 console.log("Vercel production environment contract is complete.");

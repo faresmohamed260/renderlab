@@ -49,6 +49,28 @@ test("observability privilege hardening removes broad service-role table rights"
   assert.match(migration, /grant execute on function public\.renderlab_cleanup_test_operational_observability\(text\)\s+to service_role/i);
 });
 
+test("dispatch alert recovery is service-role-only and idempotent", async () => {
+  const migration = await source("supabase/migrations/20261120154000_generation_dispatch_alert_resolution.sql");
+  assert.match(migration, /create or replace function public\.renderlab_resolve_operational_alert/i);
+  assert.match(migration, /security definer\s+set search_path = ''/i);
+  assert.match(migration, /pg_catalog\.pg_advisory_xact_lock[\s\S]+pg_catalog\.hashtextextended\(p_alert_key, 5015\)/i);
+  assert.match(migration, /where alert\.alert_key = p_alert_key\s+and alert\.state = 'open'\s+and alert\.last_seen_at <= p_resolved_at/i);
+  assert.match(migration, /revoke all on function public\.renderlab_resolve_operational_alert\(text, timestamptz\)[\s\S]+from public, anon, authenticated/i);
+  assert.match(migration, /grant execute on function public\.renderlab_resolve_operational_alert\(text, timestamptz\)[\s\S]+to service_role/i);
+});
+
+test("protected dispatch health opens, notifies and resolves one bounded alert", async () => {
+  const route = await source("src/app/api/internal/generation/reconcile/route.ts");
+  const store = await source("src/server/observability/diagnostic-store.ts");
+  assert.match(route, /recordGenerationDispatchHealthAlert/);
+  assert.match(route, /sendOperationalAlertNotification/);
+  assert.match(route, /resolveGenerationDispatchHealthAlert/);
+  assert.match(route, /health\.scheduledHeartbeatMissing/);
+  assert.match(store, /generationDispatchHealthAlertKey = "generation-dispatch-health"/);
+  assert.match(store, /family: "generation-provider-degradation"/);
+  assert.doesNotMatch(store, /prompt|storage_key|provider_job_id/);
+});
+
 test("Admin diagnostic projection omits server-only job identity", async () => {
   const store = await source("src/server/observability/diagnostic-store.ts");
   const projection = store.split("export function adminDiagnosticProjection")[1]
