@@ -17,14 +17,14 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 - Preserve approved surfaces in Integration Mode unless the user explicitly reopens a named surface for redesign.
 
-## Current production - 2026-11-19
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb -->
+## Current production - 2026-11-20
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: e93481466806b3a88f986cd547f11ef62e9543fb -->
 
-Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb from deployment dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH (https://renderlab-cyqfm4jcs-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-19T18:09:29.041Z. This release routes FIBO through the model-neutral Modal gateway with mask capability unchanged. One disposable FIBO text-to-image job completed and reopened from Library in smoke run 44585394266; independent fixture cleanup passed.
+Canonical record: docs/production/current.json. Vercel confirms renderlab.faresuniform.uk serves source e93481466806b3a88f986cd547f11ef62e9543fb from deployment dpl_sPamVvj9D9g8eyczLsNuRwFfYPEE (https://renderlab-84jw07zig-faresmohamed260-6733s-projects.vercel.app). Alias cutover: 2026-11-20T01:52:15.000Z. FIBO generation now uses the private Modal image worker and the durable dispatcher. The split and cut-forward smokes 44655593284 and 44656743969 saved results, reopened them from Library and verified exact fixture cleanup.
 
-Exact-source CI completed at 2026-11-19T18:08:10.000Z: Deployment Readiness 44584232207; protected check runs 135772709934, 135772709967, 135772710031, 135772709907, 135772710064, 135772710036.
+Exact-source CI completed at 2026-11-20T01:40:26.000Z: Deployment Readiness 44655251456; protected check runs 136017265106, 136017265451, 136017265276, 136017265183, 136017265568, 136017265234.
 
-Previous alias target: dpl_F7sm9bab5FPL5dJBLEpc1Uk7pAiw at source b956e24337b329d9e89d06d8f60f24e8acac0328. Its release record is retained in docs/production/2026-11-19-before-generation-gateway.json. The old Modal app was stopped after smoke and drain. The previous deployment remains historical rollback evidence, but restoring its alias alone would not restore generation: a rollback must use a qualified deployment configured for the new gateway. Automatic Git-to-production deployment remains disabled.
+Rollback anchor: dpl_Dk8idC6n7SuQ7aUQhUQ1a8ygu6KH at source 4f8efb7f52e7c43f5425c7a4aa3375f2292992cb. Recovery smoke 44656168377 verified the combined gateway and its Vercel alias as a working pair. The combined gateway stopped after the drill. Restore its exact source together with the recovery alias. Automatic Git-to-production deployment remains disabled.
 
 ## Current UI foundation
 
