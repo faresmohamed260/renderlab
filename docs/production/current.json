@@ -19,6 +19,6 @@
     "deploymentReadinessRunId": 44767876962,
     "qualifiedAt": "2026-11-20T15:56:01.000Z"
   },
-  "cutoverAt": "2026-11-21T00:00:00.000Z",
+  "cutoverAt": "2026-11-21T02:03:55.371Z",
   "accountMigrationNote": "Migrated from faresmohamed260@gmail.com to faresmohamedsalah10@gmail.com (Fluid compute disabled). Same application SHA. See ADR-006."
 }
