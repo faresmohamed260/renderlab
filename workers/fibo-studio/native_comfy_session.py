@@ -54,7 +54,10 @@ class ComfySession:
         if self._server is not None:
             if self._server.poll() is None:
                 return False
-            raise RuntimeError("The previous ComfyUI process exited")
+            # Server exited after the previous job completed (e.g. externally killed between jobs).
+            # Clear the dead reference and start fresh below — the workspace is still usable.
+            self._server = None
+            self._session_id = None
         config = root / "models.yaml"
         config.write_text(
             f"renderlab:\n  base_path: {self.models}\n  diffusion_models: diffusion_models\n"
