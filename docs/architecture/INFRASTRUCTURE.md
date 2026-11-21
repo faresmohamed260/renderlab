@@ -465,6 +465,8 @@ The former configured Library lifecycle was hardened at both orchestration and i
 
 The app and deployment verifier prefer the model-neutral `RENDERLAB_GENERATION_GATEWAY_URL` setting and accept the existing `RENDERLAB_FIBO_GATEWAY_URL` as a compatibility fallback. The neutral Modal entrypoint name is `renderlab-generation-gateway`. This is a separate deployment, not a rename of the existing app. Preserve the current signing secret, model volume, and RenderLab worker ID. The verified cutover and retirement are recorded above. FIBO model storage and workflow names remain model-specific.
 
+On 2026-11-19, the owner authorized stopping the unused private FIBO app `renderlab-fibo-direct-private` (`ap-2VRcTG2DSstg6vf3RRv9IM`) in Modal environment `main`. The production Vercel gateway setting targeted `renderlab-fibo-native-gateway`, not the private app. Modal readback confirmed the private app stopped, the production gateway remained deployed, and the `renderlab-fibo-models` volume remained present. The read-only production capabilities endpoint still reported FIBO generation and masks available. No secrets, routing, model files, or production deployments were changed; no GPU job was submitted.
+
 The obsolete repository-wide `SAGA_MODAL_TOKENS_JSON`, protected-environment Modal deployment tokens, and Production upscale gateway setting were removed on 2026-11-18. The retained FIBO proxy credentials are server-only Vercel Production secrets; they are not GitHub Actions, browser, or client credentials.
 
 ### ADR-005 production workload foundation
