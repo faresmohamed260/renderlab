@@ -1,0 +1,50 @@
+name: Deploy FIBO Production Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_sha:
+        description: Exact 40-character Git SHA of the production build (must match HEAD of main)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-deploy-fibo-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.production_sha == github.sha }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify Modal account ownership
+        run: |
+          node --input-type=module << 'EOF'
+          import { assertRenderLabModalAccount } from "./scripts/lib/modal-project-ownership.mjs";
+          assertRenderLabModalAccount("modal-01");
+          console.log("Modal account ownership verified.");
+          EOF
+
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f1b # v5.5.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Modal CLI
+        run: |
+          python3 -m venv "${RUNNER_TEMP}/modal-cli"
+          "${RUNNER_TEMP}/modal-cli/bin/pip" install --quiet "modal>=0.73,<2"
+
+      - name: Deploy FIBO production worker and gateway
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: bash scripts/deploy-fibo-production.sh
