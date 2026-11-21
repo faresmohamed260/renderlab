@@ -60,7 +60,7 @@ def dispatch_tick(trigger="manual"):
     return summary
 
 
-@app.function(image=gateway_image, env=runtime_env, secrets=[monitor_secret], schedule=modal.Cron("*/5 * * * *"))
+@app.function(image=gateway_image, env=runtime_env, secrets=[monitor_secret])
 def monitor_tick():
     from dispatch_monitor import monitor_dispatch_health_direct
 
