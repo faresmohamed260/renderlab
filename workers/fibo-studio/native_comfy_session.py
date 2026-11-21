@@ -101,6 +101,7 @@ class ComfySession:
 
     def _reset(self):
         server = self._server
+        server_was_already_dead = server is not None and server.poll() is not None
         try:
             if server is not None and server.poll() is None:
                 with suppress(ProcessLookupError):
@@ -118,6 +119,8 @@ class ComfySession:
         self._server = None
         self._session_id = None
         self._workspace = None
+        if server_was_already_dead:
+            raise UncleanComfyWorker("ComfyUI process exited unexpectedly")
 
     def run(self, stage, collect, attempt_id):
         with self._lock:
