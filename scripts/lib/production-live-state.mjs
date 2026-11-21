@@ -1,7 +1,7 @@
 import { PROTECTED_CHECK_CONTEXTS_V2, validateProductionManifest } from "./production-documentation-sync.mjs";
 
-export const RENDERLAB_VERCEL_TEAM_ID = "team_r09C6RLmb2acHapENECQIn9T";
-export const RENDERLAB_VERCEL_PROJECT_ID = "prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU";
+export const RENDERLAB_VERCEL_TEAM_ID = "team_RwVJPL0rvE91GapkloHiSTXt";
+export const RENDERLAB_VERCEL_PROJECT_ID = "prj_APU35jTnge27D2MAFjuc7GP0Dd6I";
 export const RENDERLAB_GITHUB_REPOSITORY = "faresmohamed260/renderlab";
 
 function deploymentSha(deployment) {

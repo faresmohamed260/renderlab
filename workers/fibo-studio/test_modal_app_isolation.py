@@ -36,7 +36,21 @@ class ModalAppIsolationTest(unittest.TestCase):
 
     def test_only_production_gateway_owns_the_recovery_schedule(self):
         production = (ROOT / "modal_native_production.py").read_text(encoding="utf-8")
-        self.assertEqual(2, production.count('schedule=modal.Cron("* * * * *")'))
+        schedules = {}
+        for function in ast.parse(production).body:
+            if not isinstance(function, ast.FunctionDef):
+                continue
+            for decorator in function.decorator_list:
+                if not isinstance(decorator, ast.Call):
+                    continue
+                for keyword in decorator.keywords:
+                    if keyword.arg == "schedule":
+                        self.assertEqual("modal.Cron", ast.unparse(keyword.value.func))
+                        schedules[function.name] = ast.literal_eval(keyword.value.args[0])
+        self.assertEqual(
+            {"dispatch_tick": "* * * * *", "monitor_tick": "*/5 * * * *"},
+            schedules,
+        )
         for module in ("modal_native_candidate", "modal_native_renderer", "modal_video_generation",
                        "modal_image_tools", "modal_video_tools"):
             self.assertNotIn("modal.Cron", (ROOT / f"{module}.py").read_text(encoding="utf-8"))

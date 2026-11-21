@@ -32,8 +32,8 @@ jobs:
     timeout-minutes: 5
     env:
       RENDERLAB_EXPECTED_PRODUCTION_SHA: ${{ inputs.expected_production_sha }}
-      RENDERLAB_VERCEL_TEAM_ID: team_r09C6RLmb2acHapENECQIn9T
-      RENDERLAB_VERCEL_PROJECT_ID: prj_UGFbrAJ0fg2H0cZOznBoCZ8RCsJU
+      RENDERLAB_VERCEL_TEAM_ID: team_RwVJPL0rvE91GapkloHiSTXt
+      RENDERLAB_VERCEL_PROJECT_ID: prj_APU35jTnge27D2MAFjuc7GP0Dd6I
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       GITHUB_TOKEN: ${{ github.token }}
 
