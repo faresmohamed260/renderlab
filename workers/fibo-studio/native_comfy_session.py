@@ -2,6 +2,8 @@
 from contextlib import suppress
 from dataclasses import dataclass
 import json
+import os
+import signal
 from pathlib import Path
 import shutil
 from subprocess import DEVNULL, Popen, TimeoutExpired
@@ -23,6 +25,46 @@ class JobFiles:
 
 class UncleanComfyWorker(RuntimeError):
     """The container cannot safely accept another job."""
+
+    def __init__(self, msg, *, recycle_required=True):
+        super().__init__(msg)
+        self.recycle_required = recycle_required
+
+
+def _kill_port_occupant(port):
+    """Kill any process listening on the given TCP port via /proc/net/tcp (Linux only)."""
+    hex_port = f"{port:04X}"
+    target_inodes = set()
+    try:
+        with open("/proc/net/tcp") as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) < 10:
+                    continue
+                local_addr, state, inode = parts[1], parts[3], parts[9]
+                if state == "0A" and local_addr.split(":")[1].upper() == hex_port:
+                    target_inodes.add(inode)
+    except OSError:
+        return
+    if not target_inodes:
+        return
+    my_pid = str(os.getpid())
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit() or entry == my_pid:
+            continue
+        try:
+            fd_dir = f"/proc/{entry}/fd"
+            for fd in os.listdir(fd_dir):
+                try:
+                    link = os.readlink(f"{fd_dir}/{fd}")
+                    if link.startswith("socket:[") and link[8:-1] in target_inodes:
+                        with suppress(ProcessLookupError, PermissionError):
+                            os.kill(int(entry), signal.SIGKILL)
+                        break
+                except OSError:
+                    pass
+        except OSError:
+            pass
 
 
 class ComfySession:
@@ -58,6 +100,10 @@ class ComfySession:
             # Clear the dead reference and start fresh below — the workspace is still usable.
             self._server = None
             self._session_id = None
+        else:
+            # Fresh Python session: kill any orphaned ComfyUI left by a previous os._exit(1) path
+            # so it cannot block port 8188 and cause an immediate startup failure.
+            _kill_port_occupant(8188)
         config = root / "models.yaml"
         config.write_text(
             f"renderlab:\n  base_path: {self.models}\n  diffusion_models: diffusion_models\n"
@@ -125,7 +171,10 @@ class ComfySession:
         self._session_id = None
         self._workspace = None
         if server_was_already_dead or kill_was_needed:
-            raise UncleanComfyWorker("ComfyUI process exited unexpectedly or could not be cleanly terminated")
+            raise UncleanComfyWorker(
+                "ComfyUI process exited unexpectedly or could not be cleanly terminated",
+                recycle_required=kill_was_needed,
+            )
 
     def run(self, stage, collect, attempt_id):
         with self._lock:
