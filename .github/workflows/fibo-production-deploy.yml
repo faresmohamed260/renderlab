@@ -33,11 +33,6 @@ jobs:
           console.log("Modal account ownership verified.");
           EOF
 
-      - name: Set up Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f1b # v5.5.0
-        with:
-          python-version: "3.12"
-
       - name: Install Modal CLI
         run: |
           python3 -m venv "${RUNNER_TEMP}/modal-cli"
