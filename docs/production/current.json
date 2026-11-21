@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "applicationSha": "a450a95996329a4508883ab77996016cd27fbd86",
-  "deploymentId": "dpl_BGgjGSbpX87LhkYY7w6HXt6hvw5D",
-  "deploymentUrl": "https://renderlab-r3r4ky55h-faresmohamed260-6733s-projects.vercel.app",
+  "deploymentId": "dpl_GkX5rLW91nZv1DfYRXUpskPq8U3e",
+  "deploymentUrl": "https://renderlab-2m6vfwjxf-faresmohamedsalah10-1681.vercel.app",
   "domain": "renderlab.faresuniform.uk",
-  "rollbackDeploymentId": "dpl_GNAGLCFnynWUdMEtiYDgX9oXeNrb",
-  "rollbackApplicationSha": "d9f9bd4e12103e3524b02e6d4d188ddf9b3ba882",
+  "rollbackDeploymentId": "dpl_ALVqmSx8fp1avwu4W3pJbPc6JkT1",
+  "rollbackApplicationSha": "a450a95996329a4508883ab77996016cd27fbd86",
   "releaseQualification": {
     "requiredCheckRunIds": {
       "clean-room (ubuntu-latest)": 136397291512,
@@ -19,5 +19,6 @@
     "deploymentReadinessRunId": 44767876962,
     "qualifiedAt": "2026-11-20T15:56:01.000Z"
   },
-  "cutoverAt": "2026-11-20T15:59:40.628Z"
+  "cutoverAt": "2026-11-21T00:00:00.000Z",
+  "accountMigrationNote": "Migrated from faresmohamed260@gmail.com to faresmohamedsalah10@gmail.com (Fluid compute disabled). Same application SHA. See ADR-006."
 }
