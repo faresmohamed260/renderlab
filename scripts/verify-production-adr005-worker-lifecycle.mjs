@@ -290,7 +290,7 @@ async function runProcessExitRecovery(account) {
   console.log(`ADR005_PROCESS_EXIT_READY job=${failedId}`);
 
   const observed = await waitForExternalProcessExit(account, failedId);
-  if (observed.transientFailureObserved) await ageRunOwnedProviderFailure(account.id, failedId);
+  await ageRunOwnedProviderFailure(account.id, failedId);
   const failed = observed.terminal || await waitForTerminal(account, failedId, 90_000);
   assert(failed.status === "failed", `Process-exit render ended as ${failed.status}.`);
   const failedRow = await databaseJob(account.id, failedId);
