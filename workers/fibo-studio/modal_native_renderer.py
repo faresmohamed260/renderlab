@@ -69,6 +69,8 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
         key, version, intended_operation = model_binding
         if Operation(intended_operation) is not operation:
             raise ValueError("FIBO operation does not match its bound sources")
+    if not torch.cuda.is_available():
+        raise RuntimeError("Expected a Modal CUDA GPU")
     attempt_id = uuid4().hex
     if dispatch_attempt_id is not None or admission_deadline is not None:
         if not isinstance(dispatch_attempt_id, str) or not admission_deadline:
@@ -79,9 +81,6 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
         call_id = modal.current_function_call_id() if model_binding is not None else None
         begin_generation_attempt(dispatch_attempt_id, admission_deadline, call_id)
         attempt_id = dispatch_attempt_id
-
-    if not torch.cuda.is_available():
-        raise RuntimeError("Expected a Modal CUDA GPU")
     if _runner is None:
         _runner = WorkloadRunner(PRODUCTION_CATALOG, {"fibo": FiboAdapter(ComfySession(COMFY, MODELS))})
 
@@ -92,10 +91,15 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
     })
     try:
         result = _runner.run(request)
-    except UncleanComfyWorker:
-        # An unreaped child or workspace makes this container unsafe to reuse.
-        print(f"renderlab attempt={attempt_id} phase=container-recycle", flush=True)
-        os._exit(1)
+    except UncleanComfyWorker as exc:
+        if exc.recycle_required:
+            # SIGKILL was needed to stop ComfyUI — GPU state may be dirty; crash to force recycle.
+            print(f"renderlab attempt={attempt_id} phase=container-recycle", flush=True)
+            os._exit(1)
+        # ComfyUI exited on its own (server_was_already_dead); container state is clean.
+        # Propagate as a normal exception so Python stays alive for the recovery job.
+        print(f"renderlab attempt={attempt_id} phase=worker-process-exit", flush=True)
+        raise
     if generate_vgl:
         return {"image_png": result.content, "generated_vgl": result.metadata["generated_vgl"]}
     return result.content
