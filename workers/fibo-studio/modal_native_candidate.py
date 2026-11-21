@@ -60,13 +60,14 @@ def dispatch_tick(trigger="manual"):
     return summary
 
 
-@app.function(image=gateway_image, env=runtime_env, secrets=[monitor_secret])
+@app.function(image=gateway_image, env=runtime_env, secrets=[monitor_secret], schedule=modal.Cron("*/5 * * * *"))
 def monitor_tick():
-    from dispatch_monitor import monitor_dispatch_health
+    from dispatch_monitor import monitor_dispatch_health_direct
 
-    summary = monitor_dispatch_health(
-        os.environ.get("RENDERLAB_GENERATION_HEALTH_URL", ""),
-        os.environ.get("RENDERLAB_GENERATION_RECONCILER_SECRET", ""),
+    summary = monitor_dispatch_health_direct(
+        os.environ.get("RENDERLAB_SUPABASE_URL", ""),
+        os.environ.get("RENDERLAB_SUPABASE_SERVICE_ROLE_KEY", ""),
+        os.environ.get("RENDERLAB_RESEND_API_KEY", ""),
     )
     print(json.dumps(summary), flush=True)
     return summary
