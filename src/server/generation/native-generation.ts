@@ -959,7 +959,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
       }
     }
 
-    if (failure.retryable) {
+    if (failure.retryable || unconfirmedFiboResponse) {
       if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
         const failed = await failJob(
           row,
@@ -969,6 +969,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
         );
         return toGenerationJob(failed);
       }
+      if (unconfirmedFiboResponse) return toGenerationJob(row);
       throw new Error("Generation provider status is temporarily unavailable.");
     }
 
