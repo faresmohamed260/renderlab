@@ -248,6 +248,11 @@ class GatewayTests(unittest.TestCase):
 
 
 class RendererProcessExitTest(unittest.TestCase):
+    def _enter_context(self, context_manager):
+        value = context_manager.__enter__()
+        self.addCleanup(context_manager.__exit__, None, None, None)
+        return value
+
     def setUp(self):
         modal = MagicMock()
         modal.App.return_value.function.return_value = lambda function: function
@@ -266,21 +271,21 @@ class RendererProcessExitTest(unittest.TestCase):
 
         # Patch only the runtime boundaries. The renderer, adapter, session,
         # workspace cleanup and recovery call all run their production code.
-        self.enterContext(patch.dict(sys.modules, {"torch": torch}))
-        self.enterContext(patch.object(sys, "path", sys.path.copy()))
-        self.enterContext(patch("native_comfy_session._kill_port_occupant"))
+        self._enter_context(patch.dict(sys.modules, {"torch": torch}))
+        self._enter_context(patch.object(sys, "path", sys.path.copy()))
+        self._enter_context(patch("native_comfy_session._kill_port_occupant"))
         self.session = ComfySession("/opt/ComfyUI", "/opt/fibo-models")
         self.addCleanup(self.session._reset)
         self.children = [Mock(), Mock()]
         for child in self.children:
             child.poll.return_value = None
-        self.start = self.enterContext(patch("native_comfy_session.Popen", side_effect=self.children))
+        self.start = self._enter_context(patch("native_comfy_session.Popen", side_effect=self.children))
         self.first_exit = False
         self.prompt_id = str(uuid4())
         self.workspaces = []
         self.png = make_png()
-        self.enterContext(patch.object(self.session, "_request", side_effect=self.comfy_request))
-        self.enterContext(patch("native_comfy_session.ComfySession", return_value=self.session))
+        self._enter_context(patch.object(self.session, "_request", side_effect=self.comfy_request))
+        self._enter_context(patch("native_comfy_session.ComfySession", return_value=self.session))
 
     def comfy_request(self, path, payload=None):
         if path == "/system_stats":
@@ -311,7 +316,7 @@ class RendererProcessExitTest(unittest.TestCase):
 
     def test_process_exit_cleans_session_and_next_render_reuses_runner(self):
         self.first_exit = True
-        exit_container = self.enterContext(patch("os._exit", side_effect=AssertionError("unexpected recycle")))
+        exit_container = self._enter_context(patch("os._exit", side_effect=AssertionError("unexpected recycle")))
         result = self.render(prompt="Process exit", seed=1, width=256, height=256)
         self.assertEqual(result, {"outcome": "process_exited"})
         exit_container.assert_not_called()
@@ -347,7 +352,7 @@ class RendererProcessExitTest(unittest.TestCase):
             return interrupted(path, payload)
 
         self.session._request.side_effect = request
-        exit_container = self.enterContext(patch("os._exit", side_effect=SystemExit(1)))
+        exit_container = self._enter_context(patch("os._exit", side_effect=SystemExit(1)))
         with self.assertRaises(SystemExit):
             self.render(prompt="Unresponsive child", seed=1, width=256, height=256)
         child.terminate.assert_called_once()
