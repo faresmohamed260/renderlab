@@ -38,7 +38,12 @@ import {
   createImageThumbnailBytes,
   imageThumbnailStorageKey,
 } from "@/server/media/image-thumbnail";
-import { correlationIdForGenerationJob, emitDiagnosticEvent } from "@/server/observability/diagnostics";
+import {
+  correlationIdForGenerationJob,
+  emitDiagnosticEvent,
+  gatewayAuthRejectedCode,
+  isGatewayAuthRejectionStatus,
+} from "@/server/observability/diagnostics";
 import { randomUUID } from "node:crypto";
 
 type WorkflowConfig = {
@@ -912,6 +917,22 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     ...options, method: "GET", headers,
     cache: "no-store",
   });
+
+  if (
+    process.env.VERCEL_ENV === "production"
+    && worker.policy?.transport === "modal-proxy"
+    && isGatewayAuthRejectionStatus(response.status)
+  ) {
+    await emitDiagnosticEvent({
+      event: "generation.reconciliation",
+      level: "warn",
+      correlationId: correlationIdForGenerationJob(row.id),
+      jobId: row.id,
+      phase: "provider-outcome",
+      code: gatewayAuthRejectedCode,
+      upstreamStatus: response.status,
+    });
+  }
 
   if (response.status === 202) {
     // Modal also returns pending for an accepted call waiting on the one GPU slot.

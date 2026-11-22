@@ -56,6 +56,12 @@ Use [the local operator](../../scripts/adr005-operator/README.md) from the revie
 - Modal local deploys can leave the history Commit field blank. Record the clean checkout SHA, worker tree SHA, workspace and environment, app IDs, deploy windows, history versions, and source tag when supported.
 - Vercel Hobby projects with Fluid Compute disabled default to 10 seconds for functions. Read the deployed function inventory and confirm an explicit duration for critical routes such as generation submission. [Vercel function limits](https://vercel.com/docs/functions/limitations)
 
+### Gateway authentication alert response
+
+Before qualifying the alert, confirm Vercel exposes `VERCEL_ENV=production` to the Function.
+
+For a provider degradation alert with `gateway_auth_rejected`, confirm repeated HTTP 401 or 403 on the production Modal status poll in Admin Health and Vercel logs. Check that Vercel Production's `RENDERLAB_GENERATION_GATEWAY_URL`, `RENDERLAB_FIBO_MODAL_KEY`, and `RENDERLAB_FIBO_MODAL_SECRET` point to the intended Modal gateway and current proxy-token pair. Verify the workspace and environment scope in Modal. Keep credential values out of incident notes. After an approved correction, verify an authorized job reaches a terminal result through the gateway.
+
 ## Record ownership
 
 [docs/production/current.json](../production/current.json) is the canonical repository record of the accepted web release. `PROJECT.md`, `docs/STATUS.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` mirror it. Provider read-back is the evidence for a changed alias or runtime. Link the Modal app history, workflow or local checkout provenance and the separately verified lifecycle result from the release's dated audit evidence.

@@ -49,6 +49,7 @@ export const generationProviderAlertCodes = new Set([
   "PROVIDER_FAILED",
   "timeout",
   "provider-unreachable",
+  "gateway_auth_rejected",
 ]);
 
 export function isGenerationProviderAlertEvent(event: DiagnosticEvent) {

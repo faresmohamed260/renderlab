@@ -1,5 +1,11 @@
 import { supabaseRest } from "@/server/data/supabase-rest";
-import { currentObservabilityTestPrefix, scopeObservabilityIdentifier, type DiagnosticEvent } from "@/server/observability/diagnostics";
+import {
+  currentObservabilityTestPrefix,
+  gatewayAuthRejectedCode,
+  isGatewayAuthRejectionStatus,
+  scopeObservabilityIdentifier,
+  type DiagnosticEvent,
+} from "@/server/observability/diagnostics";
 import {
   generationProviderAlertCodes,
   isGenerationProviderAlertEvent,
@@ -12,6 +18,10 @@ const diagnosticRetentionDays = 30;
 const diagnosticAdminMaxLimit = 100;
 const generationAlertWindowMs = 15 * 60 * 1000;
 export const generationDispatchHealthAlertKey = "generation-dispatch-health";
+
+// This tuple identifies gateway auth rejections within the deployed diagnostic schema.
+const gatewayAuthStoredCode = "provider-unconfirmed";
+const gatewayAuthStoredPredicate = "event.eq.generation.reconciliation,phase.eq.provider-outcome,code.eq.provider-unconfirmed,count.in.(401,403)";
 
 export type StoredDiagnosticEventRow = {
   id: number | string;
@@ -47,6 +57,7 @@ export type OperationalAlertRow = {
 type AlertRpcRow = OperationalAlertRow & { should_notify: boolean };
 
 function diagnosticInsert(event: DiagnosticEvent) {
+  const gatewayAuthRejected = event.code === gatewayAuthRejectedCode;
   return {
     occurred_at: event.timestamp,
     event: event.event,
@@ -56,9 +67,9 @@ function diagnosticInsert(event: DiagnosticEvent) {
     operation: event.operation ?? null,
     phase: event.phase ?? null,
     status: event.status ?? null,
-    code: event.code ?? null,
+    code: gatewayAuthRejected ? gatewayAuthStoredCode : event.code ?? null,
     duration_ms: event.durationMs ?? null,
-    count: event.count ?? null,
+    count: gatewayAuthRejected ? event.upstreamStatus ?? null : event.count ?? null,
     success_count: event.successCount ?? null,
     failure_count: event.failureCount ?? null,
     attempt: event.attempt ?? null,
@@ -71,10 +82,11 @@ function inFilter(values: Iterable<string>) {
 
 async function recentGenerationProviderFailureCount(nowIso: string) {
   const since = new Date(Date.parse(nowIso) - generationAlertWindowMs).toISOString();
+  const providerCodes = Array.from(generationProviderAlertCodes).filter((code) => code !== gatewayAuthRejectedCode);
   const params = new URLSearchParams({
     occurred_at: `gte.${since}`,
     event: "in.(generation.submission,generation.reconciliation)",
-    code: inFilter(generationProviderAlertCodes),
+    or: `(code.${inFilter(providerCodes)},and(${gatewayAuthStoredPredicate}))`,
     select: "id",
     order: "occurred_at.desc,id.desc",
     limit: "3",
@@ -181,7 +193,14 @@ export async function listRecentDiagnosticEvents(query: AdminDiagnosticQuery = {
   });
   if (bounded.event) params.set("event", `eq.${bounded.event}`);
   if (bounded.level) params.set("level", `eq.${bounded.level}`);
-  if (bounded.code) params.set("code", `eq.${bounded.code}`);
+  if (bounded.code === gatewayAuthRejectedCode) {
+    params.set("and", `(${gatewayAuthStoredPredicate})`);
+  } else if (bounded.code) {
+    params.set("code", `eq.${bounded.code}`);
+    if (bounded.code === gatewayAuthStoredCode) {
+      params.set("or", "(event.neq.generation.reconciliation,phase.is.null,phase.neq.provider-outcome,count.is.null,count.not.in.(401,403))");
+    }
+  }
   const testPrefix = currentObservabilityTestPrefix();
   if (testPrefix) params.set("correlation_id", `like.${testPrefix}*`);
 
@@ -212,6 +231,11 @@ export async function listOperationalAlerts(limit = 20) {
 }
 
 export function adminDiagnosticProjection(row: StoredDiagnosticEventRow) {
+  const count = row.count === null ? null : Number(row.count);
+  const gatewayAuthRejected = row.event === "generation.reconciliation"
+    && row.phase === "provider-outcome"
+    && row.code === gatewayAuthStoredCode
+    && isGatewayAuthRejectionStatus(count);
   return {
     timestamp: row.occurred_at,
     event: row.event,
@@ -220,9 +244,10 @@ export function adminDiagnosticProjection(row: StoredDiagnosticEventRow) {
     operation: row.operation ?? null,
     phase: row.phase ?? null,
     status: row.status ?? null,
-    code: row.code ?? null,
+    code: gatewayAuthRejected ? gatewayAuthRejectedCode : row.code ?? null,
+    ...(gatewayAuthRejected ? { upstreamStatus: count } : {}),
     durationMs: row.duration_ms === null ? null : Number(row.duration_ms),
-    count: row.count === null ? null : Number(row.count),
+    count: gatewayAuthRejected ? null : count,
     successCount: row.success_count === null ? null : Number(row.success_count),
     failureCount: row.failure_count === null ? null : Number(row.failure_count),
     attempt: row.attempt === null ? null : Number(row.attempt),
