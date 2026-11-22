@@ -6,9 +6,9 @@ Records durable RenderLab infrastructure decisions and verified shared-resource 
 
 ## Current production - 2026-11-22
 <!-- EXTERNAL_FACT: vercel-release-boundary -->
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: decd2f6b7a2a640806649c123b2ea5bb9e552aa0 -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 -->
 
-Canonical record: docs/production/current.json records source decd2f6b7a2a640806649c123b2ea5bb9e552aa0 and deployment dpl_EU4SYENB2CwJoxk6PfSjZHqewvbb (https://renderlab-9msqkzv6r-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T16:37:30.318Z. Deployment Readiness 45029190336 and protected-main check runs 137220621176, 137220621619, 137220621984, 137220621553, 137220621419, 137220621673 qualified this source at 2026-11-22T13:46:34.000Z. The rollback anchor is dpl_BfPa68HpQUco2JfnidBSRFC4DP1o at source decd2f6b7a2a640806649c123b2ea5bb9e552aa0. Hosted ADR-005 process-exit recovery remains pending verification.
+Canonical record: docs/production/current.json records source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 and deployment dpl_DRDegFSonnfW88rhdHhmPJoTsQq5 (https://renderlab-pb51r3fdc-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T22:23:52.774Z. Deployment Readiness 45077206871 and protected-main check runs 137376922496, 137376922486, 137376922735, 137376923111, 137376922858, 137376922910 qualified this source at 2026-11-22T22:22:41.000Z. The rollback anchor is dpl_EU4SYENB2CwJoxk6PfSjZHqewvbb at source decd2f6b7a2a640806649c123b2ea5bb9e552aa0. Hosted ADR-005 process-exit recovery remains pending verification.
 
 ## Documentation governance linting — 2026-10-10
 - `npm run verify:docs-governance` is a credential-free repository check. It validates `docs/governance/documents.json` against the local schema contract, enforces reciprocal document/UI-decision supersession, canonical structured status enums, current-document review intervals, closed-contract checklist closure, unique normalized `Current ...` H2 sections, local documentation references, and checked-in production-manifest/mirror consistency.
