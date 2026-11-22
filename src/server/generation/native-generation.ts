@@ -104,6 +104,12 @@ type DurableOutputObject = {
 const maxPollReassignmentAttempts = 3;
 const invalidWorkerGraceMs = 15 * 60 * 1000;
 const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
+const fiboPollDetailCategories = new Map([
+  ["Unknown FIBO job", "unknown-job"],
+  ["FIBO result expired", "result-expired"],
+  ["FIBO rejected the render inputs", "inputs-rejected"],
+  ["FIBO_PROCESS_EXITED", "process-exited"],
+]);
 
 function workflowFor(request: GenerationRequest): WorkflowConfig {
   const operation = resolveCreativeOperation(request);
@@ -923,15 +929,24 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   }
 
   if (!response.ok) {
-    const body = await errorBody(response);
+    const body = await errorBody(response) ?? {};
     const failure = classifyWorkerFailure(response.status, body);
+    const fiboProcessExited = row.worker_id === FIBO_DISPATCH_BACKEND
+      && response.status === 409 && body.detail === "FIBO_PROCESS_EXITED";
+    const providerMessage = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
+    const diagnostic = providerFailureDiagnostic(row, response.status, failure, providerMessage);
+    if (fiboProcessExited) {
+      const failed = await failJob(
+        row, "generation_failed", "The render process exited before generation completed.", diagnostic,
+      );
+      return toGenerationJob(failed);
+    }
+
     const terminalFiboResponse = (response.status === 410 && body.detail === "FIBO result expired")
       || (response.status === 422 && body.detail === "FIBO rejected the render inputs");
     // A proxy or routing rejection gives no confirmed outcome for the accepted Modal call.
     const unconfirmedFiboResponse = row.worker_id === FIBO_DISPATCH_BACKEND
       && !failure.retryable && !terminalFiboResponse;
-    const providerMessage = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
-    const diagnostic = providerFailureDiagnostic(row, response.status, failure, providerMessage);
 
     if (failure.safeToReassign) {
       try {
@@ -969,7 +984,20 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
         );
         return toGenerationJob(failed);
       }
-      if (unconfirmedFiboResponse) return toGenerationJob(row);
+      if (unconfirmedFiboResponse) {
+        const detailCategory = typeof body.detail === "string"
+          ? fiboPollDetailCategories.get(body.detail) ?? "unknown"
+          : "unknown";
+        console.warn(`[renderlab] ${JSON.stringify({
+          event: "generation.reconciliation",
+          phase: "provider-outcome",
+          code: "provider-unconfirmed",
+          jobId: row.id,
+          upstreamStatus: response.status,
+          detailCategory,
+        })}`);
+        return toGenerationJob(row);
+      }
       throw new Error("Generation provider status is temporarily unavailable.");
     }
 

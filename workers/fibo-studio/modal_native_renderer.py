@@ -96,10 +96,9 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
             # SIGKILL was needed to stop ComfyUI — GPU state may be dirty; crash to force recycle.
             print(f"renderlab attempt={attempt_id} phase=container-recycle", flush=True)
             os._exit(1)
-        # ComfyUI exited on its own (server_was_already_dead); container state is clean.
-        # Propagate as a normal exception so Python stays alive for the recovery job.
+        # Reset confirmed the child was already dead and cleaned the workspace.
         print(f"renderlab attempt={attempt_id} phase=worker-process-exit", flush=True)
-        raise
+        return {"outcome": "process_exited"}
     if generate_vgl:
         return {"image_png": result.content, "generated_vgl": result.metadata["generated_vgl"]}
     return result.content
