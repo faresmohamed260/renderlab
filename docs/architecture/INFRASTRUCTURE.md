@@ -4,13 +4,13 @@
 
 Records durable RenderLab infrastructure decisions and verified shared-resource state.
 
-## Current production - 2026-11-21
+## Current production - 2026-11-22
 <!-- EXTERNAL_FACT: vercel-release-boundary -->
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: a450a95996329a4508883ab77996016cd27fbd86 -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 4b9773267a4db5dfa4a839e45522662dfcd794ea -->
 
-Canonical record: docs/production/current.json records source a450a95996329a4508883ab77996016cd27fbd86 and deployment dpl_GkX5rLW91nZv1DfYRXUpskPq8U3e (https://renderlab-2m6vfwjxf-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Hosting migrated from faresmohamed260@gmail.com to faresmohamedsalah10@gmail.com (team_RwVJPL0rvE91GapkloHiSTXt, project prj_APU35jTnge27D2MAFjuc7GP0Dd6I) on 2026-11-21; Fluid compute disabled to prevent recurrence. Application SHA unchanged. Custom domain alias assigned at 2026-11-21T02:03:55.371Z. Modal `main` retains the same five-app topology and gateway app `ap-UfrkwIijsdz6xiGiQwtMlB`; the gateway now runs both the durable dispatcher and the CPU-only owner health monitor (monitor_tick rewritten to call Supabase directly, schedule `*/5 * * * *`, ADR-006). Recovery migration 20261120050006, heartbeat migration 20261120110737 and alert-resolution migration 20261120155628 are applied. A controlled 245-second heartbeat-age injection produced one bounded unhealthy event and one accepted owner notification; the next scheduled completion restored healthy state and the alert resolved. Read-back then showed zero active jobs, incomplete dispatches, expired claims or unresolved work. Existing matched-release smokes 44679882865 and 44680785603 plus lifecycle runs 44722092155 and 44722444992 retain their render, Library, queue, warm-reuse, cancellation, recovery and cleanup evidence.
+Canonical record: docs/production/current.json records source 4b9773267a4db5dfa4a839e45522662dfcd794ea and deployment dpl_3iR6p9m6M2wcgV5ru25nhTwTv2x5 (https://renderlab-1got9zfg0-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover: 2026-11-22T04:11:12.524Z; qualified at 2026-11-22T04:04:26.000Z by Deployment Readiness 44983369933. Protected-main check run IDs: 137086357473, 137086357232, 137086357139, 137086357404, 137086357261, 137086357494. Rollback anchor: dpl_FCQcLR7jvfkAmrLNkQp1XeD8NP8r at source 4b9773267a4db5dfa4a839e45522662dfcd794ea. Automatic Git-to-production deployment remains disabled. Hosted process-exit recovery is pending verification.
 
-Exact-source CI completed at 2026-11-20T15:56:01.000Z: Deployment Readiness 44767876962; protected check runs 136397291512, 136397291772, 136397292617, 136397292551, 136397292299, 136397291909.
+Exact-source CI completed at 2026-11-22T04:04:26.000Z: Deployment Readiness 44983369933; protected check runs 137086357473, 137086357232, 137086357139, 137086357404, 137086357261, 137086357494.
 
 Rollback anchor: dpl_ALVqmSx8fp1avwu4W3pJbPc6JkT1 at source a450a95996329a4508883ab77996016cd27fbd86. Automatic Git-to-production deployment remains disabled. Hosted missed-wake/lost-response/overlap recovery and replay-retention are production-verified in `docs/audits/ADR005_DURABLE_RECOVERY_PRODUCTION_2026-11-20.md`; the owner Modal usage alert is verified in `docs/audits/ADR005_MODAL_USAGE_ALERT_PRODUCTION_2026-11-20.md`. Hosted timeout/process-exit recovery is the only open ADR-005 evidence; this production pointer does not claim that gate complete.
 
