@@ -8,7 +8,7 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 
 ## Production
 
-Canonical record: docs/production/current.json records source 4b9773267a4db5dfa4a839e45522662dfcd794ea and deployment dpl_3iR6p9m6M2wcgV5ru25nhTwTv2x5 (https://renderlab-1got9zfg0-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover: 2026-11-22T04:11:12.524Z; qualified at 2026-11-22T04:04:26.000Z by Deployment Readiness 44983369933. Protected-main check run IDs: 137086357473, 137086357232, 137086357139, 137086357404, 137086357261, 137086357494. Rollback anchor: dpl_FCQcLR7jvfkAmrLNkQp1XeD8NP8r at source 4b9773267a4db5dfa4a839e45522662dfcd794ea. Hosted process-exit recovery verification remains pending; no lifecycle pass is claimed.
+Canonical record: docs/production/current.json records source 4b9773267a4db5dfa4a839e45522662dfcd794ea and deployment dpl_3iR6p9m6M2wcgV5ru25nhTwTv2x5 (https://renderlab-1got9zfg0-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover: 2026-11-22T04:11:29.446Z; qualified at 2026-11-22T04:04:26.000Z by Deployment Readiness 44983369933. Protected-main check run IDs: 137086357473, 137086357232, 137086357139, 137086357404, 137086357261, 137086357494. Rollback anchor: dpl_FCQcLR7jvfkAmrLNkQp1XeD8NP8r at source 4b9773267a4db5dfa4a839e45522662dfcd794ea. Hosted process-exit recovery verification remains pending; no lifecycle pass is claimed.
 
 ## Product capabilities
 
