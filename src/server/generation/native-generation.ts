@@ -925,6 +925,11 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   if (!response.ok) {
     const body = await errorBody(response);
     const failure = classifyWorkerFailure(response.status, body);
+    const terminalFiboResponse = (response.status === 410 && body.detail === "FIBO result expired")
+      || (response.status === 422 && body.detail === "FIBO rejected the render inputs");
+    // A proxy or routing rejection gives no confirmed outcome for the accepted Modal call.
+    const unconfirmedFiboResponse = row.worker_id === FIBO_DISPATCH_BACKEND
+      && !failure.retryable && !terminalFiboResponse;
     const providerMessage = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
     const diagnostic = providerFailureDiagnostic(row, response.status, failure, providerMessage);
 
@@ -954,7 +959,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
       }
     }
 
-    if (failure.retryable) {
+    if (failure.retryable || unconfirmedFiboResponse) {
       if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
         const failed = await failJob(
           row,
@@ -964,6 +969,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
         );
         return toGenerationJob(failed);
       }
+      if (unconfirmedFiboResponse) return toGenerationJob(row);
       throw new Error("Generation provider status is temporarily unavailable.");
     }
 
