@@ -39,6 +39,23 @@ When CI prints `ADR005_PROCESS_EXIT_READY job=<uuid>`, the operator binds Job A 
 
 Record the marker and signal timestamps and correlated job, provider call and container evidence. Confirm Job A failed with no output or media row, Job B saved and reopened one PNG through Library using a distinct provider call, each was delivered once, and fixture cleanup and queue drain completed. Look for the confirmed `FIBO_PROCESS_EXITED` outcome and review ambiguous-response logs if the harness fails. Treat a transient response alone as incomplete evidence of process-exit handling. Stop after a failed attempt and retain the exact logs and bounded cleanup evidence.
 
+
+### Arm the watcher before dispatch
+
+Use [the local operator](../../scripts/adr005-operator/README.md) from the reviewed release checkout. Confirm the approved Modal operator profile and use fresh, separate inboxes for preflight and live evidence.
+
+1. Run the 15 watcher unit tests. Run the observe-only watcher and its relay against the approved production project for at least 10 minutes. Require zero relay errors, p95 detection bound at or under 10 seconds, and a synthetic marker-to-signal rehearsal under 25 seconds. The verified soak and rehearsal measurements are in the [ADR-005 audit](../audits/ADR005_PROCESS_EXIT_RECOVERY_VERIFIED_2026-11-22.md).
+2. Start the signal-capable watcher in a visible terminal and feed it the preflight relay's read-only snapshots. Wait for `PREFLIGHT_READY` with three fresh snapshots and `WATCHING` with `signal_enabled=true`. A stale or failed preflight blocks dispatch.
+3. Dispatch once under the existing authorization. Start the live relay immediately with the returned Actions run ID and its separate one-use inbox. Wait for `ARMED` with that exact ID. The watcher stays ready through the harness's wait for Job A and refuses to signal if evidence has stopped advancing for 10 seconds, Job A disappears or terminalizes, or the identity checks fail.
+4. Record `SIGNAL_CONFIRMED` and the correlated timestamps. Let the workflow finish its fixture cleanup. If anything fails, stop and retain the evidence under the original attempt boundary.
+
+### Release checks learned from this incident
+
+- After any account or credential migration, use a separately approved real submission and verify the app can poll it through the gateway to its terminal result.
+- If Modal has finished a call and the app still shows `running`, search the production runtime logs for `provider-unconfirmed` with upstream HTTP 401 before investigating rendering or queue latency.
+- Modal local deploys can leave the history Commit field blank. Record the clean checkout SHA, worker tree SHA, workspace and environment, app IDs, deploy windows, history versions, and source tag when supported.
+- Vercel Hobby projects with Fluid Compute disabled default to 10 seconds for functions. Read the deployed function inventory and confirm an explicit duration for critical routes such as generation submission. [Vercel function limits](https://vercel.com/docs/functions/limitations)
+
 ## Record ownership
 
 [docs/production/current.json](../production/current.json) is the canonical repository record of the accepted web release. `PROJECT.md`, `docs/STATUS.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` mirror it. Provider read-back is the evidence for a changed alias or runtime. Link the Modal app history, workflow or local checkout provenance and the separately verified lifecycle result from the release's dated audit evidence.
