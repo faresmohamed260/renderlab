@@ -18,9 +18,9 @@
       "id": "vercel-release-boundary",
       "authority_path": "docs/architecture/INFRASTRUCTURE.md",
       "subject": "Vercel production deployment and custom-domain cutover boundary",
-      "claim": "Automatic Git-to-Vercel deployment is disabled and production deployment, custom-domain cutover, and rollback remain explicit provider operations that require independent provider read-back. On 2026-11-20 at 21:45 UTC, both the assigned custom domain and exact deployment URL returned HTTP 402 with X-Vercel-Error DEPLOYMENT_DISABLED. Authenticated billing read-back attributes the pause to Hobby fair-use limits for Fluid Active CPU and states that it ends December 20, 2026; the recorded release is not currently reachable even though its deployment and alias identities remain canonical.",
-      "source": "Authenticated Vercel deployment/alias and Billing-page read-back, release evidence from the current production rollout and Production Documentation Sync, plus direct response-header read-back from the custom domain and exact deployment URL during ADR-005 run 44822796963.",
-      "verified_at": "2026-11-20",
+      "claim": "Automatic Git-to-Vercel deployment is disabled. Production uses the migrated RenderLab project. Production deployment, custom-domain cutover and rollback require explicit operator actions and independent provider read-back.",
+      "source": "Checked-in vercel.json and ADR-004, owner-authenticated Vercel deployment and alias read-back on 2026-11-22, and the independent production health response.",
+      "verified_at": "2026-11-22",
       "reverify_before_action": true,
       "action_contexts": [
         "production deployment, custom-domain cutover, or rollback",
@@ -44,10 +44,10 @@
     },
     {
       "id": "modal-direct-cutover-baseline",
-      "authority_path": "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md",
+      "authority_path": "docs/operations/PRODUCTION_RELEASE_RUNBOOK.md",
       "subject": "Direct production Modal cutover baseline and recovery anchors",
-      "claim": "Modal main has split gateway ap-UfrkwIijsdz6xiGiQwtMlB and private image worker ap-wS5WKruuipwssNGHf7Eo6k. The dispatcher schedule passed live read-back, durable heartbeat migration 20261120110737 is applied, and the worker scaled to zero after the final smoke. Supabase dispatch health has zero active, due, expired, or unresolved work. Vercel production and the verified immediate rollback pair are recorded in docs/production/current.json. Modal reschedules an active Function input when its container crashes or is stopped, so the bounded process-exit checkpoint must terminate only its unambiguous run-owned ComfyUI child process, not the Modal Function container.",
-      "source": "Modal app and container read-back, Supabase dispatch and Library baseline queries, Vercel alias read-back, the three protected-main FIBO smoke runs in the cutover runbook, and the current official Modal failures/retries plus container CLI documentation.",
+      "claim": "The RenderLab FIBO production target is the Modal main environment in the approved modal-01 workspace. The renderer and gateway are deployed under the stable app IDs recorded in the release runbook. Modal can reschedule a Function input after a container crash or stop, so the bounded process-exit test targets its run-owned ComfyUI child.",
+      "source": "Modal app history and container read-back, Deploy FIBO Production Worker records, and the official Modal failures and container CLI documentation.",
       "verified_at": "2026-11-20",
       "reverify_before_action": true,
       "action_contexts": [

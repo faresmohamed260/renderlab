@@ -49,7 +49,7 @@ Architecture decision records use `ADR-NNN` identifiers and H3 headings. Each cu
 **Decision:** A merge to protected `main` does not deploy RenderLab. Automatic Git-to-Vercel production deployment remains disabled; production deployment/cutover is a separately authorized operation bound to an exact release candidate, required qualification, provider read-back, and a known rollback anchor.
 **Rationale:** Separating repository acceptance from production mutation prevents a passing merge from silently changing live application state and preserves an auditable release/rollback boundary.
 **Consequences:** Documentation/CI/tooling changes may advance `main` without changing production. Enabling automatic deployment or making production authorization implicit requires a new explicit infrastructure/security/governance decision and the applicable human approvals.
-**Current truth:** [`GOVERNANCE.md`](../../GOVERNANCE.md#production-and-deployment-authority), [`INFRASTRUCTURE.md`](./INFRASTRUCTURE.md#vercel-deployment-boundary), [`PROJECT.md`](../../PROJECT.md#current-production---2026-10-09).
+**Current truth:** [`GOVERNANCE.md`](../../GOVERNANCE.md#production-and-deployment-authority), [`INFRASTRUCTURE.md`](./INFRASTRUCTURE.md#vercel-deployment-boundary), [Production release runbook](../operations/PRODUCTION_RELEASE_RUNBOOK.md) and [current release](../production/current.json).
 
 ### ADR-005 — Separate Modal workloads and recover durable generation dispatch
 **Status:** Accepted

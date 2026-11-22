@@ -26,20 +26,6 @@ for (const name of fs.readdirSync(workflowRoot)) {
   if (!name.endsWith(".yml") && !name.endsWith(".yaml")) continue;
   if (name === "modal-project-isolation-patch.yml") continue;
   const text = fs.readFileSync(path.join(workflowRoot, name), "utf8");
-  if (name === "fibo-qualification-deploy.yml") {
-    const guards = [
-      "workflow_dispatch:", "inputs.candidate_sha == github.sha", "github.ref == 'refs/heads/main'",
-      "environment: fibo-qualification", "assertRenderLabModalAccount", "scripts/deploy-fibo-qualification.sh",
-    ];
-    const script = fs.readFileSync(path.join(root, "scripts", "deploy-fibo-qualification.sh"), "utf8");
-    if (guards.some((guard) => !text.includes(guard))
-      || /^  (push|pull_request|pull_request_target|schedule|workflow_run):/m.test(text)
-      || !script.includes("ac-88wJ5dCXYBOywnXXaGmUoV")
-      || !script.includes("deploy -e main workers/fibo-studio/modal_native_candidate.py")) {
-      throw new Error("FIBO qualification deploy must remain manual and scoped to the approved workspace and app.");
-    }
-    continue;
-  }
   if (name === "fibo-production-deploy.yml") {
     const guards = [
       "workflow_dispatch:", "inputs.production_sha == github.sha", "github.ref == 'refs/heads/main'",
@@ -49,7 +35,10 @@ for (const name of fs.readdirSync(workflowRoot)) {
     if (guards.some((guard) => !text.includes(guard))
       || /^  (push|pull_request|pull_request_target|schedule|workflow_run):/m.test(text)
       || !script.includes("faresmohamed260 (ac-88wJ5dCXYBOywnXXaGmUoV)")
-      || !script.includes("deploy -e main workers/fibo-studio/modal_native_production.py")) {
+      || !script.includes("ap-wS5WKruuipwssNGHf7Eo6k")
+      || !script.includes("ap-UfrkwIijsdz6xiGiQwtMlB")
+      || !script.includes('deploy_component "$renderer_id" workers/fibo-studio/modal_native_renderer.py')
+      || !script.includes('deploy_component "$gateway_id" workers/fibo-studio/modal_native_production.py')) {
       throw new Error("FIBO production deploy must remain scoped to the approved workspace and app.");
     }
     continue;

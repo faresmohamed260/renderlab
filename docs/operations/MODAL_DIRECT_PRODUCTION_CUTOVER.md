@@ -1,6 +1,6 @@
 # Modal direct-production cutover
 
-**Status:** The split gateway and private image worker are live in production. The three ordered smokes, recovery drill, cleanup and queue drain passed.
+**Historical evidence.** The one-time November 20 cutover and its rollback drill are recorded below. Use the [Production release runbook](PRODUCTION_RELEASE_RUNBOOK.md) for current operations.
 
 ## 2026-11-20 ADR-005 production continuation
 
@@ -23,17 +23,9 @@ Production audit [`ADR005_DURABLE_RECOVERY_PRODUCTION_2026-11-20.md`](../audits/
 
 All disposable Auth, generation, outbox and media rows were removed. Final read-back returned zero fixture residue, zero active jobs, zero incomplete dispatches, zero due age, zero expired claims and zero unresolved attempts. No application, Modal app, schema, route, secret, model volume, provider function or GPU allocation changed. This closes the hosted missed-wake, lost-response, overlap and replay-retention gates only.
 
-## Process-exit recovery checkpoint
+## Historical process-exit checkpoint
 
-The remaining worker-failure exercise targets unchanged production application source `a450a95996329a4508883ab77996016cd27fbd86`, Modal workspace/environment `faresmohamed260` / `main`, gateway `ap-UfrkwIijsdz6xiGiQwtMlB`, image worker `ap-wS5WKruuipwssNGHf7Eo6k`, database project `rashyleshocuvpgcooxy`, and the current owner-scoped R2 bucket. It changes no deployment, route, secret, schema, app identity, model weight or owner data.
-
-The manual `process-exit-recovery` lifecycle scenario is limited to one run-owned account and two FIBO calls: one eight-step disposable render whose run-owned ComfyUI subprocess is terminated externally only after its provider call is durably bound and running, followed by one four-step clean recovery render. Stop if the target differs, another production job is active, the first call or its sole ComfyUI subprocess cannot be identified unambiguously, termination is not observed within four minutes, a duplicate dispatch occurs, cleanup fails, or cumulative A10 allocation reaches 600 seconds. The first job must terminalize failed with no output or media row; the second must save one PNG, reopen it through Library, and use a distinct provider call. The workflow then deletes the exact Auth/database/R2 fixtures and proves zero residue, active jobs, incomplete dispatches, expired claims and unresolved attempts.
-
-Do not use `modal container stop` for this checkpoint. Modal documents that a crashed or stopped Function container reschedules its active input, so terminating the container would not prove RenderLab's worker failure path and could consume an unbounded retry window. After the workflow prints `ADR005_PROCESS_EXIT_READY`, list containers only for image-worker app `ap-wS5WKruuipwssNGHf7Eo6k` in environment `main`. Continue only when exactly one container exists. Inspect that container's `/proc/[0-9]*/cmdline` and `/proc/[0-9]*/cwd` entries and continue only when exactly one child has working directory `/opt/ComfyUI` plus exact command arguments `main.py`, `--listen 127.0.0.1`, `--port 8188`, and `--disable-all-custom-nodes`; terminate only that child PID. The renderer starts the child with a relative `main.py` argument from `/opt/ComfyUI`, so an absolute-script-path match is incorrect and must not be used. The renderer then observes the real subprocess exit, resets its isolated workspace, propagates a normal Function exception without Modal container-crash resubmission, and lets the durable application reconciliation produce the truthful failed state.
-
-Recovery is to stop the manual workflow, reconcile only its run-owned job to a truthful terminal state, terminate only its identified ComfyUI subprocess if it is still present, and run the existing exact fixture cleanup. The production gateway, scheduled dispatcher and prior rollback release remain unchanged. This checkpoint does not authorize a container stop, deployment, performance experiment, additional rerun, ComfyUI code change, or more than the two named provider calls.
-
-Authorized run [`44822796963`](https://github.com/faresmohamed260/renderlab/actions/runs/44822796963) failed closed at application submission before creating a generation job or contacting Modal. Both the production custom domain and exact deployment URL returned HTTP 402 with Vercel `X-Vercel-Error: DEPLOYMENT_DISABLED`. Authenticated Vercel billing read-back identified a Hobby fair-use pause for Fluid Active CPU, stated that it ends December 20, 2026, and offered Pro upgrade as the immediate dashboard recovery action. The artifact recorded zero events, `outcome: null`, `cleanupVerified: true`, and `passed: false`; direct Modal read-back returned zero image-worker containers. No provider call or GPU allocation occurred, so the approved two-call / 600-A10-second allowance remains unused. Do not rerun until the owner restores Vercel service and independent HTTP read-back proves the exact production domain and deployment reachable. See [`ADR005_PROCESS_EXIT_BLOCKED_VERCEL_2026-11-20.md`](../audits/ADR005_PROCESS_EXIT_BLOCKED_VERCEL_2026-11-20.md).
+For current targets, operator steps and test limits, see the [Production release runbook](PRODUCTION_RELEASE_RUNBOOK.md#adr-005-process-exit-operator). The original attempt was blocked by the Vercel Hobby fair-use pause before any fixture or GPU call. See the [November 20 failure audit](../audits/ADR005_PROCESS_EXIT_BLOCKED_VERCEL_2026-11-20.md).
 
 ## Owner provider usage alert
 
@@ -71,7 +63,6 @@ It does **not** waive exact-source CI, zero-in-flight verification, least privil
 
 ## Exact identities
 
-<!-- EXTERNAL_FACT: modal-direct-cutover-baseline -->
 
 | Boundary | Exact target |
 | --- | --- |

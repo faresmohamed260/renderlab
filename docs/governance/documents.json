@@ -160,15 +160,30 @@
       "supersededBy": []
     },
     {
-      "path": "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md",
+      "path": "docs/operations/PRODUCTION_RELEASE_RUNBOOK.md",
       "kind": "operations-runbook",
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "infrastructure",
-      "lastReviewed": "2026-11-19",
+      "lastReviewed": "2026-11-22",
       "reviewIntervalDays": 30,
-      "supersedes": [],
+      "supersedes": [
+        "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md"
+      ],
       "supersededBy": []
+    },
+    {
+      "path": "docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md",
+      "kind": "historical-evidence",
+      "authority": "historical",
+      "lifecycle": "superseded",
+      "ownerRole": "infrastructure",
+      "lastReviewed": "2026-11-22",
+      "reviewIntervalDays": null,
+      "supersedes": [],
+      "supersededBy": [
+        "docs/operations/PRODUCTION_RELEASE_RUNBOOK.md"
+      ]
     },
     {
       "path": "docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md",

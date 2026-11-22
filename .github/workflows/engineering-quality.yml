@@ -62,6 +62,9 @@ jobs:
           python3 workers/fibo-studio/test_dispatch_core.py
           python3 workers/fibo-studio/test_dispatch_supabase.py
 
+      - name: Verify production Modal deploy guards offline
+        run: python3 scripts/tests/test_fibo_deploy_guards.py
+
       - name: Verify reciprocal S.A.G.A. Modal ownership
         run: npm run verify:modal-cross-repo-ownership
 
