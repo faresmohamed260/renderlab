@@ -1,6 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { CreativeOperation } from "@/lib/capabilities/generation";
 
+export const gatewayAuthRejectedCode = "gateway_auth_rejected";
+
+export function isGatewayAuthRejectionStatus(value: unknown): value is 401 | 403 {
+  return value === 401 || value === 403;
+}
+
 export type DiagnosticLevel = "info" | "warn" | "error";
 export type DiagnosticEventName =
   | "generation.submission"
@@ -67,6 +73,7 @@ export type DiagnosticCode =
   | "missing-dispatch"
   | "unsupported-worker"
   | "provider-unconfirmed"
+  | typeof gatewayAuthRejectedCode
   | "timeout"
   | "provider-unreachable"
   | "confirmed"
@@ -89,6 +96,7 @@ export type DiagnosticEventInput = {
   phase?: string;
   status?: string;
   code?: string;
+  upstreamStatus?: number;
   durationMs?: number;
   count?: number;
   successCount?: number;
@@ -106,6 +114,7 @@ export type DiagnosticEvent = {
   phase?: DiagnosticPhase;
   status?: DiagnosticStatus;
   code?: DiagnosticCode;
+  upstreamStatus?: 401 | 403;
   durationMs?: number;
   count?: number;
   successCount?: number;
@@ -170,7 +179,7 @@ const diagnosticCodes = new Set<DiagnosticCode>([
   "generation_orchestration_stalled", "reconciliation_failed", "generation_worker_unavailable",
   "worker_credit_exhausted", "worker_unavailable", "generation_reassignment_failed", "generation_provider_stalled",
   "generation_failed", "WORKER_CREDIT_EXHAUSTED", "WORKER_UNAVAILABLE", "PROVIDER_FAILED", "missing-dispatch",
-  "unsupported-worker", "provider-unconfirmed", "timeout", "provider-unreachable", "confirmed", "not-running",
+  "unsupported-worker", "provider-unconfirmed", gatewayAuthRejectedCode, "timeout", "provider-unreachable", "confirmed", "not-running",
   "account_auth_unavailable", "account_auth_delete_failed", "account_storage_residue", "account_database_residue",
   "account_invitation_residue", "account_deletion_retryable", "account_deletion_mail_send_failed",
   "account_deletion_mail_recipient_unavailable",
@@ -252,6 +261,12 @@ export function normalizeDiagnosticEvent(input: DiagnosticEventInput, timestamp 
   if (phase) normalized.phase = phase;
   if (status) normalized.status = status;
   if (code) normalized.code = code;
+  if (code === gatewayAuthRejectedCode) {
+    if (event !== "generation.reconciliation" || phase !== "provider-outcome" || !isGatewayAuthRejectionStatus(input.upstreamStatus)) {
+      throw new Error("Gateway auth diagnostics require a reconciliation poll and HTTP 401 or 403.");
+    }
+    normalized.upstreamStatus = input.upstreamStatus;
+  }
   if (durationMs !== undefined) normalized.durationMs = durationMs;
   if (count !== undefined) normalized.count = count;
   if (successCount !== undefined) normalized.successCount = successCount;
