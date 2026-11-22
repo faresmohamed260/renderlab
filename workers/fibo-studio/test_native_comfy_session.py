@@ -87,6 +87,11 @@ class ComfySessionTest(unittest.TestCase):
 
     def test_unclean_workspace_blocks_reuse(self):
         with patch("native_comfy_session.shutil.rmtree", side_effect=PermissionError("busy")):
-            with self.assertRaises(UncleanComfyWorker):
+            with self.assertRaises(UncleanComfyWorker) as error:
                 self.session.run(self.stage, self.collect, "failed")
+        self.assertTrue(error.exception.recycle_required)
         self.process.terminate.assert_called_once()
+        # This test stays in Python after the renderer would have recycled.
+        with self.assertRaises(UncleanComfyWorker) as reset:
+            self.session._reset()
+        self.assertFalse(reset.exception.recycle_required)

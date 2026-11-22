@@ -26,6 +26,8 @@ FIELDS = {"prompt", "seed", "width", "height", "steps", "negative_prompt", "vgl"
 def validated_worker_result(result):
     generated_vgl = None
     if type(result) is dict:
+        if result == {"outcome": "process_exited"}:
+            raise HTTPException(409, "FIBO_PROCESS_EXITED")
         if set(result) != {"image_png", "generated_vgl"}:
             raise ValueError("Unexpected generated VGL result fields")
         generated_vgl = validate_generated_vgl(result["generated_vgl"])

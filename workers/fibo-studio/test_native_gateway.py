@@ -1,14 +1,21 @@
 import base64
+import os
+import runpy
+import sys
+import unittest
 from datetime import datetime, timezone
 from io import BytesIO
-from unittest.mock import Mock
+from pathlib import Path
+from subprocess import TimeoutExpired
 from types import SimpleNamespace
-import unittest
+from unittest.mock import MagicMock, Mock, patch
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
 from dispatch_core import DispatchIntent
 from modal_dispatch_backend import ModalImageBackend
+from native_comfy_session import ComfySession
 from native_gateway import JOB_HANDLE_HEADER, call_handle_signer, create_gateway
 from workload_contract import FIBO_MODEL_KEY, FIBO_MODEL_VERSION
 
@@ -85,6 +92,26 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(response.content, self.result)
         self.assertEqual(self.client.delete("/jobs", headers={JOB_HANDLE_HEADER: handle}).json(), {"status": "cancelled"})
         self.assertEqual(self.cancels, [self.call_id])
+
+
+    def test_signed_routes_distinguish_process_exit_from_pending_and_other_errors(self):
+        handle = self.submit()
+        for result, status, body in (
+            ({"outcome": "process_exited"}, 409, {"detail": "FIBO_PROCESS_EXITED"}),
+            (TimeoutError(), 202, {"worker_state": "generating"}),
+            (RuntimeError("private exception text"), 500, {"detail": "FIBO job failed or could not be read"}),
+            (KeyError(), 410, {"detail": "FIBO result expired"}),
+            (ValueError(), 422, {"detail": "FIBO rejected the render inputs"}),
+            ({"outcome": "process_exited", "unexpected": True}, 502, None),
+        ):
+            self.result = result
+            for route in ("/jobs", "/jobs/vgl"):
+                with self.subTest(route=route, status=status):
+                    response = self.client.get(route, headers={JOB_HANDLE_HEADER: handle})
+                    self.assertEqual(response.status_code, status)
+                    self.assertEqual(response.headers["cache-control"], "private, no-store")
+                    if body is not None:
+                        self.assertEqual(response.json(), body)
 
     def test_dispatch_wake_carries_no_render_payload(self):
         response = self.client.post("/dispatch/wake", content=b"")
@@ -217,6 +244,116 @@ class GatewayTests(unittest.TestCase):
         handle = self.submit()
         self.result = KeyError()
         self.assertEqual(self.client.get("/jobs", headers={JOB_HANDLE_HEADER: handle}).status_code, 410)
+
+
+
+class RendererProcessExitTest(unittest.TestCase):
+    def setUp(self):
+        modal = MagicMock()
+        modal.App.return_value.function.return_value = lambda function: function
+        env = {
+            "RENDERLAB_MODAL_ENVIRONMENT": "main",
+            "RENDERLAB_MODAL_WORKER_SECRET": "test-worker",
+            "RENDERLAB_MODAL_MODEL_VOLUME": "test-models",
+        }
+        torch = Mock()
+        torch.cuda.is_available.return_value = True
+        with patch.dict(sys.modules, {"modal": modal, "torch": torch}):
+            with patch.dict(os.environ, env, clear=True):
+                module = runpy.run_path(Path(__file__).with_name("modal_native_renderer.py"))
+            self.render = module["render"]
+            self.addCleanup(self.render.__globals__.pop, "_runner", None)
+
+        # Patch only the runtime boundaries. The renderer, adapter, session,
+        # workspace cleanup and recovery call all run their production code.
+        self.enterContext(patch.dict(sys.modules, {"torch": torch}))
+        self.enterContext(patch.object(sys, "path", sys.path.copy()))
+        self.enterContext(patch("native_comfy_session._kill_port_occupant"))
+        self.session = ComfySession("/opt/ComfyUI", "/opt/fibo-models")
+        self.addCleanup(self.session._reset)
+        self.children = [Mock(), Mock()]
+        for child in self.children:
+            child.poll.return_value = None
+        self.start = self.enterContext(patch("native_comfy_session.Popen", side_effect=self.children))
+        self.first_exit = False
+        self.prompt_id = str(uuid4())
+        self.workspaces = []
+        self.png = make_png()
+        self.enterContext(patch.object(self.session, "_request", side_effect=self.comfy_request))
+        self.enterContext(patch("native_comfy_session.ComfySession", return_value=self.session))
+
+    def comfy_request(self, path, payload=None):
+        if path == "/system_stats":
+            workspace = Path(self.session._workspace.name)
+            self.workspaces.append(workspace)
+            return {}
+        if path == "/queue":
+            return {"queue_running": [], "queue_pending": []}
+        if path == "/prompt":
+            self.graph = payload["prompt"]
+            return {"prompt_id": self.prompt_id}
+        if path == "/history/" + self.prompt_id:
+            if self.first_exit:
+                self.children[0].poll.return_value = -9
+                raise ConnectionResetError("ComfyUI child exited")
+            subfolder = self.graph["output"]["inputs"]["filename_prefix"].split("/")[0]
+            (self.workspaces[-1] / "output" / subfolder / "result.png").write_bytes(self.png)
+            return {self.prompt_id: {
+                "status": {"status_str": "success"},
+                "outputs": {
+                    "output": {"images": [{"subfolder": subfolder, "filename": "result.png"}]},
+                    "auto_vgl_result": {"text": ['{"short_description":"A red cube"}']},
+                },
+            }}
+        if path == "/history":
+            return None
+        self.fail(f"Unexpected ComfyUI request: {path}")
+
+    def test_process_exit_cleans_session_and_next_render_reuses_runner(self):
+        self.first_exit = True
+        exit_container = self.enterContext(patch("os._exit", side_effect=AssertionError("unexpected recycle")))
+        result = self.render(prompt="Process exit", seed=1, width=256, height=256)
+        self.assertEqual(result, {"outcome": "process_exited"})
+        exit_container.assert_not_called()
+        self.children[0].terminate.assert_not_called()
+        self.assertIsNone(self.session._server)
+        self.assertIsNone(self.session._workspace)
+        self.assertIsNone(self.session._session_id)
+        self.assertFalse(self.workspaces[0].exists())
+
+        runner = self.render.__globals__["_runner"]
+        self.first_exit = False
+        self.assertEqual(self.render(prompt="Recovery", seed=2, width=256, height=256), self.png)
+        self.assertIs(self.render.__globals__["_runner"], runner)
+        self.assertIs(self.session._server, self.children[1])
+        self.assertNotEqual(self.workspaces[0], self.workspaces[1])
+        self.assertEqual(self.start.call_count, 2)
+        self.assertEqual(list((self.workspaces[1] / "output").iterdir()), [])
+
+        with_vgl = self.render(prompt="Recovery", seed=2, width=256, height=256, generate_vgl=True)
+        self.assertEqual(with_vgl, {
+            "image_png": self.png, "generated_vgl": '{"short_description":"A red cube"}',
+        })
+        self.assertEqual(self.start.call_count, 2)
+
+    def test_reset_that_requires_sigkill_still_recycles_container(self):
+        child = self.children[0]
+        child.wait.side_effect = [TimeoutExpired("ComfyUI", 8), 0]
+        interrupted = self.comfy_request
+
+        def request(path, payload=None):
+            if path.startswith("/history/"):
+                raise ConnectionResetError("Unresponsive ComfyUI child")
+            return interrupted(path, payload)
+
+        self.session._request.side_effect = request
+        exit_container = self.enterContext(patch("os._exit", side_effect=SystemExit(1)))
+        with self.assertRaises(SystemExit):
+            self.render(prompt="Unresponsive child", seed=1, width=256, height=256)
+        child.terminate.assert_called_once()
+        child.kill.assert_called_once()
+        exit_container.assert_called_once_with(1)
+        self.assertFalse(self.workspaces[0].exists())
 
 
 class ModalDispatcherAdapterTests(unittest.TestCase):
