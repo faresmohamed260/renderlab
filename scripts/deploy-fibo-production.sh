@@ -41,7 +41,7 @@ deploy_component() {
   tag="${GITHUB_SHA:0:7}"
   previous=$("$cli" -m modal app history -e main "$app_id" --json | python3 -c '
 import json, sys
-print(json.load(sys.stdin)[0]["Version"])
+print(json.load(sys.stdin)[0]["version"])
 ')
   start=$(date +%s)
   "$cli" -m modal deploy -e main "$entrypoint" --tag "$tag"
@@ -52,9 +52,9 @@ import json, sys
 
 app_id, previous, sha, start, end = sys.argv[1:]
 latest = json.load(sys.stdin)[0]
-deployed_at = datetime.fromisoformat(latest["Time deployed"]).timestamp()
-commit = latest.get("Commit")
-if (latest["Version"] == previous or latest.get("Tag") != sha[:7]
+deployed_at = datetime.fromisoformat(latest["time_deployed"]).timestamp()
+commit = latest.get("commit")
+if (latest["version"] == previous or latest.get("tag") != sha[:7]
         or (commit and not sha.startswith(commit))
         or not int(start) <= deployed_at < int(end) + 1):
     sys.exit(f"New Modal deployment history did not match the invocation for {app_id}.")

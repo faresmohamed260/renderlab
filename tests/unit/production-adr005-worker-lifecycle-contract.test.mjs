@@ -4,7 +4,7 @@ import test from "node:test";
 
 const workflow = readFileSync(".github/workflows/production-adr005-worker-lifecycle.yml", "utf8");
 const verifier = readFileSync("scripts/verify-production-adr005-worker-lifecycle.mjs", "utf8");
-const runbook = readFileSync("docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md", "utf8");
+const runbook = readFileSync("docs/operations/PRODUCTION_RELEASE_RUNBOOK.md", "utf8");
 
 test("ADR-005 lifecycle workflow is manual, serialized, exact-release bound and two-call bounded", () => {
   assert.match(workflow, /workflow_dispatch:/);

@@ -35,9 +35,9 @@ case "$*" in
   '-m modal app history -e main '*)
     app_id="$7"
     if [[ "$SCENARIO" = stale-history || ! -f "$RUNNER_TEMP/$app_id" ]]; then
-      echo '[{"Version":"v8","Time deployed":"2026-01-01 00:00:00+00:00","Commit":null,"Tag":null}]'
+      echo '[{"version":"v8","time_deployed":"2026-01-01 00:00:00+00:00","commit":null,"tag":null}]'
     else
-      printf '[{"Version":"v9","Time deployed":"%s","Commit":"decd2f6","Tag":"decd2f6"}]\n' "$(cat "$RUNNER_TEMP/$app_id")"
+      printf '[{"version":"v9","time_deployed":"%s","commit":"decd2f6","tag":"decd2f6"}]\n' "$(cat "$RUNNER_TEMP/$app_id")"
     fi ;;
   '-m modal deploy -e main workers/fibo-studio/modal_native_renderer.py --tag decd2f6')
     date -u '+%Y-%m-%d %H:%M:%S+00:00' >"$RUNNER_TEMP/ap-wS5WKruuipwssNGHf7Eo6k" ;;
