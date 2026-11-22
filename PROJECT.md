@@ -59,9 +59,9 @@ Contextual/utility:
 Image, Video, Edit, Animate, Models and Workflows are not separate top-level destinations by default.
 
 ## Current production - 2026-11-22
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 -->
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 17ff9ddbc4659153560f622b0b994e9c13f97ef4 -->
 
-Canonical record: docs/production/current.json records source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 and deployment dpl_DRDegFSonnfW88rhdHhmPJoTsQq5 (https://renderlab-pb51r3fdc-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T22:23:52.774Z. Deployment Readiness 45077206871 and protected-main check runs 137376922496, 137376922486, 137376922735, 137376923111, 137376922858, 137376922910 qualified this source at 2026-11-22T22:22:41.000Z. The rollback anchor is dpl_EU4SYENB2CwJoxk6PfSjZHqewvbb at source decd2f6b7a2a640806649c123b2ea5bb9e552aa0. Hosted ADR-005 process-exit recovery was verified live on this source in [run #45079695192](https://github.com/faresmohamed260/renderlab/actions/runs/45079695192). See the [verification audit](docs/audits/ADR005_PROCESS_EXIT_RECOVERY_VERIFIED_2026-11-22.md).
+Canonical record: docs/production/current.json records source 17ff9ddbc4659153560f622b0b994e9c13f97ef4 and deployment dpl_FBQADzS6c2E42My4uy3y71Rc3dA7 (https://renderlab-qjo0rlc9m-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T23:28:41.392Z. Deployment Readiness 45083235798 and protected-main check runs 137394942546, 137394942401, 137394942519, 137394942721, 137394942751, 137394942714 qualified this source at 2026-11-22T23:26:46.000Z. The rollback anchor is dpl_DRDegFSonnfW88rhdHhmPJoTsQq5 at source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176. Hosted ADR-005 process-exit recovery was verified live on application source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 in [run #45079695192](https://github.com/faresmohamed260/renderlab/actions/runs/45079695192). See the [verification audit](docs/audits/ADR005_PROCESS_EXIT_RECOVERY_VERIFIED_2026-11-22.md).
 
 ## Current product and engineering state
 
