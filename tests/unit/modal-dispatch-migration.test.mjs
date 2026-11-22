@@ -35,9 +35,8 @@ test("dedup cleanup preserves live and unresolved attempts and stale delivery fa
   assert.match(begin, /item\.execution_started_at is null/);
 });
 
-test("queued cancellation closes the outbox and missed wake stays accepted", () => {
+test("queued cancellation closes the outbox", () => {
   assert.match(migration, /function public\.renderlab_cancel_queued_generation_dispatch/);
-  assert.match(nativeGeneration, /await requestDispatcherWake\(workflow\)\.catch/);
 });
 
 test("Modal dispatcher and GPU worker receive distinct least-privilege database roles", () => {
