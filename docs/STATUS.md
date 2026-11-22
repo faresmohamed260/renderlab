@@ -8,7 +8,7 @@ Lifecycle/status terminology follows `docs/INDEX.md`. Exact production identity 
 
 ## Production
 
-Canonical record: docs/production/current.json records source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 and deployment dpl_DRDegFSonnfW88rhdHhmPJoTsQq5 (https://renderlab-pb51r3fdc-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T22:23:52.774Z. Deployment Readiness 45077206871 and protected-main check runs 137376922496, 137376922486, 137376922735, 137376923111, 137376922858, 137376922910 qualified this source at 2026-11-22T22:22:41.000Z. The rollback anchor is dpl_EU4SYENB2CwJoxk6PfSjZHqewvbb at source decd2f6b7a2a640806649c123b2ea5bb9e552aa0. Hosted ADR-005 process-exit recovery remains pending verification.
+Canonical record: docs/production/current.json records source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 and deployment dpl_DRDegFSonnfW88rhdHhmPJoTsQq5 (https://renderlab-pb51r3fdc-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T22:23:52.774Z. Deployment Readiness 45077206871 and protected-main check runs 137376922496, 137376922486, 137376922735, 137376923111, 137376922858, 137376922910 qualified this source at 2026-11-22T22:22:41.000Z. The rollback anchor is dpl_EU4SYENB2CwJoxk6PfSjZHqewvbb at source decd2f6b7a2a640806649c123b2ea5bb9e552aa0. Hosted ADR-005 process-exit recovery was verified live on this source in [run #45079695192](https://github.com/faresmohamed260/renderlab/actions/runs/45079695192). See the [verification audit](audits/ADR005_PROCESS_EXIT_RECOVERY_VERIFIED_2026-11-22.md).
 
 ## Product capabilities
 
