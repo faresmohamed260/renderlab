@@ -229,10 +229,10 @@ async function acceptDurableDispatch(
   return rows[0];
 }
 
-async function requestDispatcherWake(workflow: WorkflowConfig) {
-  const worker = workersForEcosystem(workflow.ecosystem)[0];
+export async function wakeFiboDispatcher() {
+  const worker = workersForEcosystem(fiboGenerationModel)[0];
   if (!worker) return;
-  const options = workerGatewayOptions(worker);
+  const options = workerGatewayOptions(worker, 6_000);
   const origin = worker.policy?.transport === "modal-proxy" ? worker.gatewayUrl : gatewayUrlForWorker(worker);
   const response = await fetch(`${origin}/dispatch/wake`, {
     ...options,
@@ -449,9 +449,6 @@ export async function submitNativeGeneration(ownerId: string, request: Generatio
     }
     const payload = JSON.parse(submission.body) as Record<string, unknown>;
     const job = await acceptDurableDispatch(ownerId, request, workflow, payload);
-    // The committed outbox is authoritative. A failed immediate wake is recovered
-    // by the scheduled dispatcher and must not turn an accepted job into an error.
-    await requestDispatcherWake(workflow).catch(() => undefined);
     return { ok: true, job: toGenerationJob(job) };
   } catch (error) {
     return {
