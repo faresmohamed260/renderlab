@@ -20,7 +20,7 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 ## Current production - 2026-11-22
 <!-- RENDERLAB_CURRENT_PRODUCTION_SHA: decd2f6b7a2a640806649c123b2ea5bb9e552aa0 -->
 
-Canonical record: docs/production/current.json records source decd2f6b7a2a640806649c123b2ea5bb9e552aa0 and deployment dpl_BfPa68HpQUco2JfnidBSRFC4DP1o (https://renderlab-3fxapjb6s-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T14:39:53.624Z. Deployment Readiness 45029190336 and protected-main check runs 137220621176, 137220621619, 137220621984, 137220621553, 137220621419, 137220621673 qualified this source at 2026-11-22T13:46:34.000Z. The rollback anchor is dpl_3iR6p9m6M2wcgV5ru25nhTwTv2x5 at source 4b9773267a4db5dfa4a839e45522662dfcd794ea. Hosted ADR-005 process-exit recovery remains pending verification.
+Canonical record: docs/production/current.json records source decd2f6b7a2a640806649c123b2ea5bb9e552aa0 and deployment dpl_EU4SYENB2CwJoxk6PfSjZHqewvbb (https://renderlab-9msqkzv6r-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T16:37:30.318Z. Deployment Readiness 45029190336 and protected-main check runs 137220621176, 137220621619, 137220621984, 137220621553, 137220621419, 137220621673 qualified this source at 2026-11-22T13:46:34.000Z. The rollback anchor is dpl_BfPa68HpQUco2JfnidBSRFC4DP1o at source decd2f6b7a2a640806649c123b2ea5bb9e552aa0. Hosted ADR-005 process-exit recovery remains pending verification.
 
 ## Current UI foundation
 

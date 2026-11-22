@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "applicationSha": "decd2f6b7a2a640806649c123b2ea5bb9e552aa0",
-  "deploymentId": "dpl_BfPa68HpQUco2JfnidBSRFC4DP1o",
-  "deploymentUrl": "https://renderlab-3fxapjb6s-faresmohamedsalah10-1681.vercel.app",
+  "deploymentId": "dpl_EU4SYENB2CwJoxk6PfSjZHqewvbb",
+  "deploymentUrl": "https://renderlab-9msqkzv6r-faresmohamedsalah10-1681.vercel.app",
   "domain": "renderlab.faresuniform.uk",
-  "rollbackDeploymentId": "dpl_3iR6p9m6M2wcgV5ru25nhTwTv2x5",
-  "rollbackApplicationSha": "4b9773267a4db5dfa4a839e45522662dfcd794ea",
+  "rollbackDeploymentId": "dpl_BfPa68HpQUco2JfnidBSRFC4DP1o",
+  "rollbackApplicationSha": "decd2f6b7a2a640806649c123b2ea5bb9e552aa0",
   "releaseQualification": {
     "requiredCheckRunIds": {
       "clean-room (ubuntu-latest)": 137220621176,
@@ -19,6 +19,6 @@
     "deploymentReadinessRunId": 45029190336,
     "qualifiedAt": "2026-11-22T13:46:34.000Z"
   },
-  "cutoverAt": "2026-11-22T14:39:53.624Z",
+  "cutoverAt": "2026-11-22T16:37:30.318Z",
   "accountMigrationNote": "Production remains on team faresmohamedsalah10-1681."
 }
