@@ -4,6 +4,8 @@ import { parseGenerationRequest, type SubmitGenerationErrorCode } from "@/lib/ap
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
 import { isFiboGenerationAvailable, isFiboMaskGenerationAvailable, isFiboAutoVglAvailable, isGenerationBackendConfigured, submitGeneration } from "@/server/generation/submit-generation";
 
+export const maxDuration = 60;
+
 function submissionStatus(code: SubmitGenerationErrorCode) {
   if (code === "generation_access_denied") return 403;
   if (code === "generation_disabled" || code === "generation_backend_unavailable") return 503;

@@ -1,8 +1,10 @@
 import "server-only";
 
+import { after } from "next/server";
+
 import { fiboGenerationModel, resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
-import { isNativeGenerationConfigured, submitNativeGeneration } from "@/server/generation/native-generation";
+import { isNativeGenerationConfigured, submitNativeGeneration, wakeFiboDispatcher } from "@/server/generation/native-generation";
 import { workersForEcosystem } from "@/server/generation/worker-fleet";
 import { getMediaAsset } from "@/server/media/media-assets";
 import { supabaseRest } from "@/server/data/supabase-rest";
@@ -131,6 +133,31 @@ async function submitToRenderLabBackend(ownerId: string, request: GenerationRequ
   }
 }
 
+function scheduleFiboDispatcherWake(jobId: string) {
+  const warn = (code: string) => {
+    console.warn(`[renderlab] ${JSON.stringify({
+      event: "generation.dispatch-wake",
+      level: "warn",
+      jobId,
+      code,
+    })}`);
+  };
+
+  try {
+    after(async () => {
+      try {
+        await wakeFiboDispatcher();
+      } catch (error) {
+        warn(error instanceof Error && error.name === "TimeoutError"
+          ? "dispatcher_wake_timeout"
+          : "dispatcher_wake_failed");
+      }
+    });
+  } catch {
+    warn("dispatcher_wake_schedule_failed");
+  }
+}
+
 export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
   const startedAt = Date.now();
   const operation = resolveCreativeOperation(request);
@@ -182,7 +209,8 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
   if (!admission.ok) return reject(admission);
 
   const reservationId = admission.reservation.id;
-  const submitted = !isFibo && isExternalGenerationBackendConfigured()
+  const useExternalBackend = !isFibo && isExternalGenerationBackendConfigured();
+  const submitted = useExternalBackend
     ? await submitToRenderLabBackend(ownerId, request)
     : await submitNativeGeneration(ownerId, request);
 
@@ -191,9 +219,12 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
     return reject(submitted);
   }
 
-  // A successful backend dispatch must never be repeated merely because binding could not
-  // be confirmed. The original unbound reservation remains conservative until its lease expires.
-  await bindGenerationAdmission(ownerId, reservationId, submitted.job.id);
+  // Keep accepted jobs on the original reservation if binding cannot be confirmed.
+  // The scheduled dispatcher can still consume the committed outbox without a wake.
+  const bound = await bindGenerationAdmission(ownerId, reservationId, submitted.job.id);
+  if (bound && !useExternalBackend) {
+    scheduleFiboDispatcherWake(submitted.job.id);
+  }
   await emitDiagnosticEvent({
     event: "generation.submission",
     correlationId: correlationIdForGenerationJob(submitted.job.id),
