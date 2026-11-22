@@ -166,6 +166,10 @@ function requiredManifestValues(manifest) {
 
 function assertSectionMirrorsManifest({ body, section, path, manifest }) {
   const sectionBody = body.split(/\r?\n/).slice(section.start, section.end).join("\n");
+  const rollbackAnchors = [...sectionBody.matchAll(/\brollback(?:\s+anchor)?(?:\s+is\b|\s*:)?\s+`?(dpl_[A-Za-z0-9]+)/gi)];
+  if (rollbackAnchors.length > 1 || rollbackAnchors.some((match) => match[1] !== manifest.rollbackDeploymentId)) {
+    throw new Error(`${path}: current-production section has a conflicting or duplicate rollback anchor.`);
+  }
   for (const value of requiredManifestValues(manifest)) {
     if (!sectionBody.includes(value)) {
       throw new Error(`${path}: current-production section does not mirror ${PRODUCTION_MANIFEST_PATH} value ${value}.`);

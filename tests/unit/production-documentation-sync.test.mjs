@@ -115,6 +115,36 @@ test("a matching marker cannot hide a stale deployment mirror", async () => {
   );
 });
 
+test("a second rollback anchor fails within the current section", async () => {
+  const rootDir = await fixture({
+    "PROJECT.md": [
+      "# Project",
+      "## Current production",
+      `<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: ${currentSha} -->`,
+      ...mirrorLines(),
+      "Rollback anchor: dpl_obsolete123 at the previous source.",
+    ].join("\n"),
+  });
+  await assert.rejects(
+    verifyProductionDocumentationSync({ expectedSha: currentSha, rootDir }),
+    /conflicting or duplicate rollback anchor/,
+  );
+});
+
+test("a historical rollback anchor can remain outside the current section", async () => {
+  const rootDir = await fixture({
+    "PROJECT.md": [
+      "# Project",
+      "## Current production",
+      `<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: ${currentSha} -->`,
+      ...mirrorLines(),
+      "## Historical rollout",
+      "Rollback anchor: dpl_obsolete123 at the previous source.",
+    ].join("\n"),
+  });
+  await verifyProductionDocumentationSync({ expectedSha: currentSha, rootDir });
+});
+
 test("STATUS is a checked production mirror", async () => {
   const rootDir = await fixture({
     [PRODUCTION_STATUS_SUMMARY]: [

@@ -211,7 +211,7 @@ Current authority files must optimize for present state, binding rules and expli
 - When a current tracker closes a phase, retain only the current outcome/constraint needed for future decisions and move detailed chronology out of mandatory context.
 
 ## Production Release Documentation Closure
-Any production alias cutover is not repository-closed merely because deployment and smoke passed.
+Use the [Production release runbook](docs/operations/PRODUCTION_RELEASE_RUNBOOK.md) for release order, verification, rollback, and the external ADR-005 operator. Repository closure requires the documentation and provider read-back below.
 
 After every verified production cutover:
 1. Update canonical machine-readable production state in `docs/production/current.json` from verified deployment reality: exact application SHA, deployment ID/URL, custom domain, rollback anchor, release qualification, and cutover timestamp.
@@ -254,5 +254,7 @@ Compilation alone does not mean the UI task is complete.
 Modal account ownership is a locked cross-project infrastructure boundary. RenderLab owns only `modal-01`, `modal-02`, and `modal-42` through `modal-47`. S.A.G.A. owns `modal-03` through `modal-41`.
 
 Possession of an omnibus credential roster does not authorize use of every Modal credential. Any RenderLab script or workflow that selects Modal credentials must pass the checked-in ownership helper before exporting or using them and must fail closed for S.A.G.A.-owned labels. Required Engineering Quality also performs a read-only reciprocal check against S.A.G.A.'s protected `main` ownership manifest; counterpart drift is a merge blocker, not an invitation to infer ownership. Do not change this partition unless the owner explicitly changes the decision in both repositories and the reciprocal manifests are reconciled.
+
+The FIBO production path uses `modal-01` (`faresmohamed260`, Modal environment `main`). The reciprocal allocation governs account ownership.
 
 Public gateway names may retain historical `saga-` resource names; naming does not transfer ownership. Worker redeployment, reset, token rotation and secret-store changes remain separately authorized infrastructure operations.
