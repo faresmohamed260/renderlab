@@ -381,7 +381,6 @@ export async function getAdminHealth(
       operationalAlerts,
       oldestActiveJob,
       dispatchHealth,
-      generationObservability,
     ] = await Promise.all([
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${recentParams.toString()}`),
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${activeParams.toString()}`),
