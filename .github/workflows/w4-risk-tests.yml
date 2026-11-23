@@ -1,0 +1,40 @@
+name: W4 Targeted Risk Coverage
+
+on:
+  pull_request:
+    paths:
+      - "tests/unit/w4-*.test.mjs"
+      - "tests/helpers/w4-*.mjs"
+      - "docs/audits/W4_RISK_BOUNDARY_TEST_EVIDENCE_2026-11-23.md"
+      - ".github/workflows/w4-risk-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: w4-risk-coverage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  w4-risk-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: All-source unit coverage and per-module evidence
+        run: |
+          npm run test:unit:coverage
+          node tests/helpers/w4-coverage-report.mjs
+      - name: Verify UI purity and docs governance explicitly
+        run: |
+          npm run verify:ui-purity
+          npm run verify:docs-governance
+      - name: Repeat all new W4 behavior tests in 20 fresh processes
+        run: node tests/helpers/w4-determinism.mjs
