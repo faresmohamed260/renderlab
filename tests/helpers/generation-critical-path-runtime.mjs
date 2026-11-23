@@ -145,7 +145,9 @@ function jobRows(url) {
   const token = url.searchParams.get("reconcile_token");
   if (token && token !== "eq." + (row.reconcile_token ?? "")) return [];
   if (!url.searchParams.has("id") && url.searchParams.get("select") === "id") {
-    if (row.status !== "persisting" && !(row.worker_id && row.provider_job_id)) return [];
+    const expiredFibo = row.worker_id === "fibo"
+      && Date.now() - Date.parse(row.created_at) >= 20 * 60 * 1000;
+    if (row.status !== "persisting" && !(row.worker_id && row.provider_job_id) && !expiredFibo) return [];
   }
   return [{...row}];
 }
