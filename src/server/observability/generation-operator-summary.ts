@@ -46,7 +46,7 @@ export function summarizeGenerationTerminalHeld(
   nowMs: number,
 ) {
   const statusByJob = new Map(jobs.filter((job): job is TerminalHeldJob & { status: Terminal } =>
-    terminalStatuses.includes(job.status as Terminal)).map((job) => [job.id, job]));
+    terminalStatuses.includes(job.status as Terminal)).map((job) => [job.id, job] as const));
   const unexpiredByStatus = emptyCounts();
   const expiredByStatus = emptyCounts();
   let oldestUnexpiredHeldSeconds: number | null = null;
