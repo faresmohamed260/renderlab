@@ -35,17 +35,17 @@ test("outbox latency measures durable created->dispatched only, never queued or 
 test("terminal-held join returns status totals and duration, never private identities", () => {
   const marker = "private-prompt-owner-provider-handle";
   const reservations = [
-    { job_id: "a", expires_at: iso(-3600), prompt: marker },
-    { job_id: "b", expires_at: iso(-3600), owner_id: marker },
-    { job_id: "c", expires_at: iso(5), provider_job_id: marker },
-    { job_id: "d", expires_at: iso(-3600) },
-    { job_id: "other", expires_at: iso(-3600) },
+    { job_id: "private-job-alpha", expires_at: iso(-3600), prompt: marker },
+    { job_id: "private-job-beta", expires_at: iso(-3600), owner_id: marker },
+    { job_id: "private-job-gamma", expires_at: iso(5), provider_job_id: marker },
+    { job_id: "private-job-delta", expires_at: iso(-3600) },
+    { job_id: "private-job-extra", expires_at: iso(-3600) },
   ];
   const jobs = [
-    { id: "a", status: "succeeded", completed_at: iso(400), secret: marker },
-    { id: "b", status: "failed", completed_at: null },
-    { id: "c", status: "cancelled", completed_at: iso(30) },
-    { id: "d", status: "running", completed_at: null },
+    { id: "private-job-alpha", status: "succeeded", completed_at: iso(400), secret: marker },
+    { id: "private-job-beta", status: "failed", completed_at: null },
+    { id: "private-job-gamma", status: "cancelled", completed_at: iso(30) },
+    { id: "private-job-delta", status: "running", completed_at: null },
   ];
   const result = summarizeGenerationTerminalHeld(reservations, jobs, false, now);
   assert.deepEqual(result, {
