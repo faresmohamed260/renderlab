@@ -1255,7 +1255,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/observability/generation-operator-store.ts:39:7",
+      "id": "src/server/observability/generation-operator-store.ts:41:7",
       "tableOrRpc": "generation_dispatch_outbox",
       "classification": "admin",
       "family": "admin",
@@ -1264,7 +1264,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/observability/generation-operator-store.ts:40:7",
+      "id": "src/server/observability/generation-operator-store.ts:42:7",
       "tableOrRpc": "generation_admission_reservations",
       "classification": "admin",
       "family": "admin",
@@ -1273,7 +1273,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/observability/generation-operator-store.ts:47:37",
+      "id": "src/server/observability/generation-operator-store.ts:49:37",
       "tableOrRpc": "generation_jobs",
       "classification": "admin",
       "family": "admin",
