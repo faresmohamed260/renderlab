@@ -310,7 +310,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:161:22",
+      "id": "src/server/admin/admin-operations.ts:163:22",
       "tableOrRpc": "renderlab_account_access",
       "classification": "admin",
       "family": "admin",
@@ -319,7 +319,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:174:22",
+      "id": "src/server/admin/admin-operations.ts:176:22",
       "tableOrRpc": "renderlab_beta_invitations",
       "classification": "admin",
       "family": "admin",
@@ -328,7 +328,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:199:26",
+      "id": "src/server/admin/admin-operations.ts:201:26",
       "tableOrRpc": "renderlab_beta_invitations",
       "classification": "admin",
       "family": "admin",
@@ -337,7 +337,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:207:11",
+      "id": "src/server/admin/admin-operations.ts:209:11",
       "tableOrRpc": "renderlab_beta_invitations",
       "classification": "admin",
       "family": "admin",
@@ -346,7 +346,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:220:18",
+      "id": "src/server/admin/admin-operations.ts:222:18",
       "tableOrRpc": "renderlab_beta_invitations",
       "classification": "admin",
       "family": "admin",
@@ -355,7 +355,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:265:22",
+      "id": "src/server/admin/admin-operations.ts:267:22",
       "tableOrRpc": "renderlab_beta_invitations",
       "classification": "admin",
       "family": "admin",
@@ -364,7 +364,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:308:24",
+      "id": "src/server/admin/admin-operations.ts:310:24",
       "tableOrRpc": "rpc/renderlab_admin_set_account_access",
       "classification": "admin",
       "family": "admin",
@@ -373,7 +373,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:338:24",
+      "id": "src/server/admin/admin-operations.ts:340:24",
       "tableOrRpc": "rpc/renderlab_admin_health",
       "classification": "admin",
       "family": "admin",
@@ -382,25 +382,25 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:383:7",
-      "tableOrRpc": "generation_jobs",
-      "classification": "admin",
-      "family": "admin",
-      "negativeHarness": "A4/A5",
-      "principalDerivation": "Verified active admin with fresh AAL2 session; all global reads and RPC writes routed through admin authorization",
-      "ownerEvidence": "admin-AAL2-before-service-role"
-    },
-    {
-      "id": "src/server/admin/admin-operations.ts:384:7",
-      "tableOrRpc": "generation_jobs",
-      "classification": "admin",
-      "family": "admin",
-      "negativeHarness": "A4/A5",
-      "principalDerivation": "Verified active admin with fresh AAL2 session; all global reads and RPC writes routed through admin authorization",
-      "ownerEvidence": "admin-AAL2-before-service-role"
-    },
-    {
       "id": "src/server/admin/admin-operations.ts:385:7",
+      "tableOrRpc": "generation_jobs",
+      "classification": "admin",
+      "family": "admin",
+      "negativeHarness": "A4/A5",
+      "principalDerivation": "Verified active admin with fresh AAL2 session; all global reads and RPC writes routed through admin authorization",
+      "ownerEvidence": "admin-AAL2-before-service-role"
+    },
+    {
+      "id": "src/server/admin/admin-operations.ts:386:7",
+      "tableOrRpc": "generation_jobs",
+      "classification": "admin",
+      "family": "admin",
+      "negativeHarness": "A4/A5",
+      "principalDerivation": "Verified active admin with fresh AAL2 session; all global reads and RPC writes routed through admin authorization",
+      "ownerEvidence": "admin-AAL2-before-service-role"
+    },
+    {
+      "id": "src/server/admin/admin-operations.ts:387:7",
       "tableOrRpc": "generation_admission_reservations",
       "classification": "admin",
       "family": "admin",
@@ -409,7 +409,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/admin/admin-operations.ts:391:7",
+      "id": "src/server/admin/admin-operations.ts:393:7",
       "tableOrRpc": "rpc/renderlab_generation_dispatch_health",
       "classification": "admin",
       "family": "admin",
@@ -436,7 +436,7 @@
       "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
-      "id": "src/server/generation/atomic-terminalization.ts:39:18",
+      "id": "src/server/generation/atomic-terminalization.ts:40:18",
       "tableOrRpc": "rpc/renderlab_terminalize_generation_and_release",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -517,7 +517,7 @@
       "ownerEvidence": "owner-filter-URLSearchParams"
     },
     {
-      "id": "src/server/generation/generation-admission.ts:42:24",
+      "id": "src/server/generation/generation-admission.ts:43:24",
       "tableOrRpc": "rpc/renderlab_reserve_generation_admission",
       "classification": "owner-scoped",
       "family": "admission",
@@ -526,7 +526,7 @@
       "ownerEvidence": "actor-derived-RPC-p_owner_id"
     },
     {
-      "id": "src/server/generation/generation-admission.ts:58:22",
+      "id": "src/server/generation/generation-admission.ts:59:22",
       "tableOrRpc": "generation_admission_reservations",
       "classification": "owner-scoped",
       "family": "admission",
@@ -535,7 +535,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/generation-admission.ts:71:18",
+      "id": "src/server/generation/generation-admission.ts:72:18",
       "tableOrRpc": "rpc/renderlab_bind_generation_admission",
       "classification": "owner-scoped",
       "family": "admission",
@@ -544,7 +544,7 @@
       "ownerEvidence": "actor-derived-RPC-p_owner_id"
     },
     {
-      "id": "src/server/generation/generation-admission.ts:86:18",
+      "id": "src/server/generation/generation-admission.ts:87:18",
       "tableOrRpc": "rpc/renderlab_release_generation_admission",
       "classification": "owner-scoped",
       "family": "admission",
@@ -553,7 +553,7 @@
       "ownerEvidence": "actor-derived-RPC-p_owner_id"
     },
     {
-      "id": "src/server/generation/generation-admission.ts:101:24",
+      "id": "src/server/generation/generation-admission.ts:102:24",
       "tableOrRpc": "generation_admission_reservations",
       "classification": "owner-scoped",
       "family": "admission",
@@ -589,33 +589,6 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation-worker-inputs.ts:18:26",
-      "tableOrRpc": "generation_sources",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/generation/native-generation-worker-inputs.ts:29:26",
-      "tableOrRpc": "media_assets",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/generation/native-generation-lifecycle.ts:59:22",
-      "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
-      "classification": "internal",
-      "family": "jobs",
-      "negativeHarness": "I2/O1",
-      "principalDerivation": "Server-owned durable dispatch RPC with authenticated or stored generation row owner_id",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
-    },
-    {
       "id": "src/server/generation/native-generation-job-store.ts:9:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
@@ -634,6 +607,15 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
+      "id": "src/server/generation/native-generation-lifecycle.ts:60:22",
+      "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
+      "classification": "internal",
+      "family": "jobs",
+      "negativeHarness": "I2/O1",
+      "principalDerivation": "Server-owned durable dispatch RPC with authenticated or stored generation row owner_id",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
+    },
+    {
       "id": "src/server/generation/native-generation-output-persistence.ts:69:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
@@ -650,6 +632,24 @@
       "negativeHarness": "O1/O3",
       "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
+    },
+    {
+      "id": "src/server/generation/native-generation-worker-inputs.ts:18:26",
+      "tableOrRpc": "generation_sources",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/generation/native-generation-worker-inputs.ts:29:26",
+      "tableOrRpc": "media_assets",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
     },
     {
       "id": "src/server/generation/reconcile-generation.ts:58:22",
@@ -1253,6 +1253,33 @@
       "negativeHarness": "I1/I2",
       "principalDerivation": "Privileged server diagnostics/health/alert process, no browser-selected owner",
       "ownerEvidence": "server-internal-secret-or-verified-worker"
+    },
+    {
+      "id": "src/server/observability/generation-operator-store.ts:39:7",
+      "tableOrRpc": "generation_dispatch_outbox",
+      "classification": "admin",
+      "family": "admin",
+      "negativeHarness": "A4/A5",
+      "principalDerivation": "Called only after getAdminHealth verifies privileged AAL2 admin via renderlab_admin_health RPC; read-only aggregate projection, isolated fixture scopes are owner-filtered",
+      "ownerEvidence": "admin-AAL2-before-service-role"
+    },
+    {
+      "id": "src/server/observability/generation-operator-store.ts:40:7",
+      "tableOrRpc": "generation_admission_reservations",
+      "classification": "admin",
+      "family": "admin",
+      "negativeHarness": "A4/A5",
+      "principalDerivation": "Called only after getAdminHealth verifies privileged AAL2 admin via renderlab_admin_health RPC; read-only aggregate projection, isolated fixture scopes are owner-filtered",
+      "ownerEvidence": "admin-AAL2-before-service-role"
+    },
+    {
+      "id": "src/server/observability/generation-operator-store.ts:47:37",
+      "tableOrRpc": "generation_jobs",
+      "classification": "admin",
+      "family": "admin",
+      "negativeHarness": "A4/A5",
+      "principalDerivation": "Called only after getAdminHealth verifies privileged AAL2 admin via renderlab_admin_health RPC; read-only aggregate projection, isolated fixture scopes are owner-filtered",
+      "ownerEvidence": "admin-AAL2-before-service-role"
     },
     {
       "id": "src/server/observability/oldest-active-job-store.ts:17:24",
