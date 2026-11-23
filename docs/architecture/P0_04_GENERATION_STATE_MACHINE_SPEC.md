@@ -90,3 +90,25 @@ to downgrade deadline settlement to non-atomic PATCH on a missing RPC.
 Terminal races remain protected by status + reconciliation-token compare-and-swap.
 Tests cover the exact deadline boundary, pending HTTP 202, unresolved queued,
 persisting and cancelling, one reservation release and zero new provider calls.
+
+## Post-Unit-4 fairness follow-up: last-claimed reconciliation ordering
+
+The additional migration `0033_generation_reconciliation_fairness.sql` adds a
+**durable, nullable `last_reconciled_at`** to generation_jobs and upgrades the
+existing owner-scoped reconciliation **claim RPC** to stamp it in the same
+atomic SQL update that acquires the lease. No new REST operation or provider
+call is required. Timestamp remains unchanged when a claim fails; releasing a
+claim retains it. The two candidate selectors order
+`last_reconciled_at ASC NULLS FIRST, updated_at ASC, id ASC`. A pending
+HTTP 202, temporary error, or poison persisting result no longer monopolizes
+every future limited batch: after a successful claim it sorts behind any less
+recently claimed jobs. Both global and owner-scoped active-job query indexes
+cover the ordering; only active statuses are indexed.
+
+`updated_at` retains its existing business-state semantics; historical
+non-FIBO stale ages and FIBO's immutable `created_at` deadline are unaffected.
+Worker 1 **must apply migration 0032 before deploying** the application
+consumer because pre-migration SQL does not have the ordering column.
+Disposable PostgreSQL conformance verifies a claim advances the timestamp
+and a release preserves it; unit tests pin both selectors and the SQL
+claim's owner/token guards.
