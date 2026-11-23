@@ -80,7 +80,7 @@ test("status translation distinguishes confirmed terminal, ambiguous and retryab
     [409, { detail: "FIBO_RENDER_TIMED_OUT" }, { processExited: false, renderTimedOut: true, unconfirmed: true, detailCategory: "render-timed-out" }],
     [410, { detail: "FIBO result expired" }, { terminal: true, unconfirmed: false, detailCategory: "result-expired" }],
     [422, { detail: "FIBO rejected the render inputs" }, { terminal: true, unconfirmed: false, detailCategory: "inputs-rejected" }],
-    [402, { error: "quota exposed PRIVATE_TOKEN" }, { unconfirmed: true, detailCategory: "unknown" }],
+    [402, { error: "quota exposed PRIVATE_TOKEN" }, { unconfirmed: false, detailCategory: "unknown" }],
     [503, { detail: "upstream provider PRIVATE_TOKEN" }, { unconfirmed: false, detailCategory: "unknown" }],
     [409, { detail: "UNKNOWN_PRIVATE_PAYLOAD" }, { unconfirmed: true, detailCategory: "unknown" }],
   ];
