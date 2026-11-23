@@ -21,6 +21,8 @@ Do not include real user data, production credentials, tokens, session material,
 
 RenderLab is a closed-beta product. Security support applies to the current production deployment and the current `main` branch. Historical commits, abandoned preview deployments, local developer environments, and unsupported third-party infrastructure are not treated as supported releases.
 
+For the concrete authorization model and cross-owner negative-test coverage, see the [P0-03 trust-boundary and owner-isolation contract](docs/architecture/P0_03_TRUST_BOUNDARIES_AND_OWNER_ISOLATION_CONTRACT.md). That technical contract does not replace the private reporting instructions above.
+
 ## Severity and response expectations
 
 RenderLab uses the same four severity names as the incident runbook. Severity is based on demonstrated or credible impact and may change as evidence develops. These are maintainer response targets, **not contractual SLAs**.

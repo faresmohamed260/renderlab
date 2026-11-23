@@ -1,3 +1,5 @@
+# Monthly, grouped, review-only updates to protect the six-check PR CI budget.
+# No Dependabot PR auto-merge and no protected provider workflows.
 version: 2
 
 updates:
@@ -5,15 +7,23 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 2
     groups:
       production-dependencies:
         dependency-type: "production"
+        patterns:
+          - "*"
       development-dependencies:
         dependency-type: "development"
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 1
+    groups:
+      actions-updates:
+        patterns:
+          - "*"
