@@ -145,7 +145,7 @@ export function recordGenerationMetric(
 
 export function generationMetricAlertThreshold(
   name: GenerationMetricName,
-  sample: { values: readonly number[]; outcome?: string },
+  sample: { values: readonly number[]; outcome?: string; oldestHeldSeconds?: number | null },
 ): "no_data" | "ok" | "warning" | "critical" {
   const clean = sample.values.filter((v) => Number.isFinite(v) && v >= 0).sort((a, b) => a - b);
   if (!clean.length) return "no_data";
@@ -156,7 +156,11 @@ export function generationMetricAlertThreshold(
     return sample.outcome === "failed" && clean.some((v) => v > 0) ? "critical" : "ok";
   }
   if (name === "renderlab_generation_terminal_held_reservations") {
-    return clean.some((v) => v > 300) ? "critical" : "ok"; // held duration, not count
+    // The metric values are *counts*. Only the separate oldest-known hold
+    // duration may be compared with the five-minute intervention threshold.
+    if (!clean.some((count) => count > 0)) return "ok";
+    if (typeof sample.oldestHeldSeconds !== "number" || !Number.isFinite(sample.oldestHeldSeconds)) return "no_data";
+    return sample.oldestHeldSeconds > 300 ? "critical" : "ok";
   }
   if (name === "renderlab_generation_active_age_seconds") {
     return clean.some((v) => v >= 3600) ? "warning" : "ok";
