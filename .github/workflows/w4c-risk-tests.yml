@@ -1,0 +1,36 @@
+name: W4C Risk Boundary Determinism
+on:
+  pull_request:
+    paths:
+      - "tests/unit/w4c-*.test.mjs"
+      - "tests/helpers/w4c-*.mjs"
+      - "docs/audits/W4C_RISK_BOUNDARY_TEST_EVIDENCE_2026-11-23.md"
+      - ".github/workflows/w4c-risk-tests.yml"
+permissions:
+  contents: read
+concurrency:
+  group: w4c-risk-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  risk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Exact-head per-module coverage
+        run: |
+          npm run test:unit:coverage
+          node tests/helpers/w4c-coverage-report.mjs
+      - name: UI purity and governance
+        run: |
+          npm run verify:ui-purity
+          npm run verify:docs-governance
+      - name: Repeat C suites in twenty independent Node processes
+        run: node tests/helpers/w4c-determinism.mjs
