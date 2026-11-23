@@ -74,18 +74,11 @@ DECLARE
   v_reservation_id uuid;
   v_bound boolean;
 BEGIN
-  IF p_owner_id IS NULL OR p_attempt_id IS NULL
+  -- An already-committed replay must survive expiry of the original
+  -- admission deadline, and digest mismatch must still return conflict.
+  IF p_owner_id IS NULL
     OR p_request_key IS NULL OR p_request_key !~ '^[A-Za-z0-9_-]{16,128}$'
     OR p_request_digest IS NULL OR p_request_digest !~ '^[0-9a-f]{64}$'
-    OR p_operation IS NULL OR p_operation NOT IN ('create-image', 'edit-image')
-    OR p_output_kind IS DISTINCT FROM 'image'
-    OR p_backend_key IS DISTINCT FROM 'fibo'
-    OR p_model_key IS DISTINCT FROM 'fibo-2.0-turbo'
-    OR p_model_version IS DISTINCT FROM 'bria-fibo-2.0-turbo'
-    OR p_payload IS NULL OR pg_catalog.jsonb_typeof(p_payload) <> 'object'
-    OR p_admission_deadline IS NULL
-    OR p_admission_deadline <= pg_catalog.now()
-    OR p_admission_deadline > pg_catalog.now() + interval '30 minutes'
   THEN
     RAISE EXCEPTION USING MESSAGE = 'renderlab_idempotency_invalid_request';
   END IF;
@@ -109,6 +102,21 @@ BEGIN
                           v_old.reservation_id, v_old.admission_deadline;
     END IF;
     RETURN;
+  END IF;
+
+  -- Only first acceptance validates a live attempt/deadline.
+  IF p_attempt_id IS NULL
+    OR p_operation IS NULL OR p_operation NOT IN ('create-image', 'edit-image')
+    OR p_output_kind IS DISTINCT FROM 'image'
+    OR p_backend_key IS DISTINCT FROM 'fibo'
+    OR p_model_key IS DISTINCT FROM 'fibo-2.0-turbo'
+    OR p_model_version IS DISTINCT FROM 'bria-fibo-2.0-turbo'
+    OR p_payload IS NULL OR pg_catalog.jsonb_typeof(p_payload) <> 'object'
+    OR p_admission_deadline IS NULL
+    OR p_admission_deadline <= pg_catalog.now()
+    OR p_admission_deadline > pg_catalog.now() + interval '30 minutes'
+  THEN
+    RAISE EXCEPTION USING MESSAGE = 'renderlab_idempotency_invalid_request';
   END IF;
 
   -- Single SQL transaction: admission capacity/quota, job, durable dispatch,
