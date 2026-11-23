@@ -58,9 +58,9 @@ registerHooks({
   }
 });
 Object.assign(process.env,{
-  RENDERLAB_MAINTENANCE_SECRET:"synthetic-maintenance-test",
-  RENDERLAB_GENERATION_RECONCILER_SECRET:"synthetic-reconciler-test",
-  CRON_SECRET:"synthetic-cron-test",
+  RENDERLAB_MAINTENANCE_SECRET:"synthetic-maintenance-test-security-32-character-secret",
+  RENDERLAB_GENERATION_RECONCILER_SECRET:"synthetic-reconciler-test-security-32-character-secret",
+  CRON_SECRET:"synthetic-cron-test-security-32-character-secret",
   GITHUB_ACTIONS:"true",
 });
 const adminAuth=await import("../../src/server/admin/admin-auth.ts");
@@ -134,21 +134,21 @@ for (const [name,handler,method,path,bearer] of deniedRequests) {
 test("I1 maintenance authorized POST uses only maintenance secret",async()=>{
   reset();const response=await maintenance.POST(new Request(
     "https://example.invalid/api/internal/maintenance",{method:"POST",
-      headers:{authorization:"Bearer synthetic-maintenance-test"}}));
+      headers:{authorization:"Bearer synthetic-maintenance-test-security-32-character-secret"}}));
   assert.equal(response.status,200);
   assert.equal(states.maintenanceRuns,2);
 });
 test("I1 cron authorized GET uses only cron secret",async()=>{
   reset();const response=await maintenance.GET(new Request(
     "https://example.invalid/api/internal/maintenance",{method:"GET",
-      headers:{authorization:"Bearer synthetic-cron-test"}}));
+      headers:{authorization:"Bearer synthetic-cron-test-security-32-character-secret"}}));
   assert.equal(response.status,200);
   assert.equal(states.maintenanceRuns,2);
 });
 test("I2 reconciler authorized POST uses only reconciler secret",async()=>{
   reset();const response=await reconciliation.POST(new Request(
     "https://example.invalid/api/internal/generation/reconcile",{method:"POST",
-      headers:{authorization:"Bearer synthetic-reconciler-test"}}));
+      headers:{authorization:"Bearer synthetic-reconciler-test-security-32-character-secret"}}));
   assert.equal(response.status,200);
   assert.equal(states.reconcilerRuns,1);
 });
