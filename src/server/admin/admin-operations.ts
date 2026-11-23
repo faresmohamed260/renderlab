@@ -15,6 +15,8 @@ import { isSupabaseConfigured, supabaseErrorClassification, supabaseRest } from 
 import { getAdminGenerationSettings } from "@/server/admin/admin-settings";
 import { summarizeActiveAdminJobAge, summarizeRecentAdminJobs, summarizeScopedAdminHealthBase, type AdminHealthJobSample } from "@/server/admin/admin-health-summary";
 import { readOldestActiveJobAge } from "@/server/observability/oldest-active-job-store";
+import { readGenerationOperatorMetrics } from "@/server/observability/generation-operator-store";
+import { recordGenerationMetric } from "@/server/observability/generation-metrics";
 import type { DispatchHealth } from "@/server/observability/dispatch-health";
 import { getRenderLabMaintenanceBacklog } from "@/server/maintenance/renderlab-maintenance";
 import {
@@ -379,6 +381,7 @@ export async function getAdminHealth(
       operationalAlerts,
       oldestActiveJob,
       dispatchHealth,
+      generationObservability,
     ] = await Promise.all([
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${recentParams.toString()}`),
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${activeParams.toString()}`),
@@ -391,6 +394,25 @@ export async function getAdminHealth(
       supabaseRest<DispatchHealth>("rpc/renderlab_generation_dispatch_health", { method: "GET" }),
     ]);
 
+    // Optional telemetry never changes the authorized Health response status.
+    const generationObservability = await readGenerationOperatorMetrics(now.valueOf(), testOwnerId ?? undefined);
+    for (const status of ["queued", "running", "cancelling", "persisting"] as const) {
+      const seconds = oldestActiveJob.byStatusSeconds[status];
+      if (seconds !== null) recordGenerationMetric({
+        name: "renderlab_generation_active_age_seconds",
+        labels: { status },
+        value: seconds,
+      });
+    }
+    if (generationObservability.terminalHeld) {
+      for (const status of ["succeeded", "failed", "cancelled"] as const) {
+        recordGenerationMetric({
+          name: "renderlab_generation_terminal_held_reservations",
+          labels: { terminal_status: status },
+          value: generationObservability.terminalHeld.unexpiredByStatus[status],
+        });
+      }
+    }
     const recentTruncated = recentRowsRaw.length > healthSampleLimit;
     const activeTruncated = activeRowsRaw.length > healthSampleLimit;
     const reservationTruncated = reservationRows.length > healthSampleLimit;
