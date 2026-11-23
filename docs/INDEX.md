@@ -205,6 +205,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md` — historical one-time planned-outage cutover and recovery evidence.
 - `docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md` — active Phase 3 backend professional baseline (P0) contract; five separately reviewed backend-first units.
 - `docs/architecture/P0_03_TRUST_BOUNDARIES_AND_OWNER_ISOLATION_CONTRACT.md` — P0-03 review draft: trust/principal boundaries, endpoint-owner matrix and per-service-role negative-test obligations; implementation not begun.
+- `docs/architecture/P0_04_GENERATION_STATE_MACHINE_SPEC.md` — P0-04 generation-job state inventory, pure transition policy, SQL conformance and explicitly unenforced invariants.
 - Active architecture contracts remain beside current architecture while execution requires them. Closed bounded implementation contracts are historical evidence under `docs/history/contracts/architecture/**`; current architecture/roadmaps carry forward any still-binding constraints.
 
 ### UI and design system
