@@ -17,10 +17,10 @@ Build RenderLab as a fresh, extensible product using Saga only as behavioral/bac
 - Keep repository documentation synchronized with verified implementation.
 - Preserve approved surfaces in Integration Mode unless the user explicitly reopens a named surface for redesign.
 
-## Current production - 2026-11-22
-<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: 17ff9ddbc4659153560f622b0b994e9c13f97ef4 -->
+## Current production - 2026-11-23
+<!-- RENDERLAB_CURRENT_PRODUCTION_SHA: f1d04f889c3d810876e30365a49658932853b381 -->
 
-Canonical record: docs/production/current.json records source 17ff9ddbc4659153560f622b0b994e9c13f97ef4 and deployment dpl_FBQADzS6c2E42My4uy3y71Rc3dA7 (https://renderlab-qjo0rlc9m-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-22T23:28:41.392Z. Deployment Readiness 45083235798 and protected-main check runs 137394942546, 137394942401, 137394942519, 137394942721, 137394942751, 137394942714 qualified this source at 2026-11-22T23:26:46.000Z. The rollback anchor is dpl_DRDegFSonnfW88rhdHhmPJoTsQq5 at source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176. Hosted ADR-005 process-exit recovery was verified live on application source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 in [run #45079695192](https://github.com/faresmohamed260/renderlab/actions/runs/45079695192). See the [verification audit](../audits/ADR005_PROCESS_EXIT_RECOVERY_VERIFIED_2026-11-22.md).
+Canonical record: docs/production/current.json records source f1d04f889c3d810876e30365a49658932853b381 and deployment dpl_FoWum6qkiEx9f2TEDHa36926zVZ5 (https://renderlab-kab3db66f-faresmohamedsalah10-1681.vercel.app) as the assigned production release for renderlab.faresuniform.uk. Production cutover was 2026-11-23T00:47:13.695Z. Deployment Readiness 45090592627 and protected-main check runs 137409013814, 137409014016, 137409013962, 137409013976, 137409013524, 137409014222 qualified this source at 2026-11-23T00:45:43.000Z. The rollback anchor is dpl_FBQADzS6c2E42My4uy3y71Rc3dA7 at source 17ff9ddbc4659153560f622b0b994e9c13f97ef4. Hosted ADR-005 process-exit recovery was verified live on application source 2db59d904bd02b8fc6e6d4690d4417f4ba55d176 in [run #45079695192](https://github.com/faresmohamed260/renderlab/actions/runs/45079695192). See the [verification audit](../audits/ADR005_PROCESS_EXIT_RECOVERY_VERIFIED_2026-11-22.md).
 
 ## Current UI foundation
 
