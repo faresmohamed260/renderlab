@@ -1,6 +1,7 @@
 import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
-import { parseGenerationRequest, type SubmitGenerationErrorCode } from "@/lib/api/generation-contract";
+import { type SubmitGenerationErrorCode } from "@/lib/api/generation-contract";
+import { generationApiSchemas } from "@/lib/api/generation-api-schemas";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
 import { isFiboGenerationAvailable, isFiboMaskGenerationAvailable, isFiboAutoVglAvailable, isGenerationBackendConfigured, submitGeneration } from "@/server/generation/submit-generation";
 
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
   const originFailure = enforceSameOriginMutation(request);
   if (originFailure) return originFailure;
   const body: unknown = await request.json().catch(() => null);
-  const parsed = parseGenerationRequest(body);
+  const parsed = generationApiSchemas.request.parse(body);
 
   if (!parsed.ok) {
     return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });

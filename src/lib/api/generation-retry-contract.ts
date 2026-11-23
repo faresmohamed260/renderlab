@@ -1,3 +1,4 @@
+import type { generationApiContractSource } from "@/lib/api/generation-api-source";
 import type { GenerationJob } from "@/lib/capabilities/generation";
 
 export type RetryGenerationSuccess = {
@@ -5,15 +6,7 @@ export type RetryGenerationSuccess = {
   job: GenerationJob;
 };
 
-export type RetryGenerationErrorCode =
-  | "job_not_found"
-  | "retry_not_available"
-  | "generation_access_denied"
-  | "generation_disabled"
-  | "generation_active_limit_reached"
-  | "generation_rate_limit_reached"
-  | "generation_backend_unavailable"
-  | "generation_submission_failed";
+export type RetryGenerationErrorCode = (typeof generationApiContractSource.domainErrors.retry)[number];
 
 export type RetryGenerationError = {
   ok: false;

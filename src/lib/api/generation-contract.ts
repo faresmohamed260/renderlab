@@ -1,3 +1,4 @@
+import { generationApiContractSource } from "@/lib/api/generation-api-source";
 import { normalizeFiboVgl } from "@/lib/capabilities/fibo-vgl";
 import { parseFiboMaskSource } from "@/lib/capabilities/fibo-mask";
 import {
@@ -34,14 +35,7 @@ export type SubmitGenerationSuccess = {
   job: GenerationJob;
 };
 
-export type SubmitGenerationErrorCode =
-  | "invalid_request"
-  | "generation_access_denied"
-  | "generation_disabled"
-  | "generation_active_limit_reached"
-  | "generation_rate_limit_reached"
-  | "generation_backend_unavailable"
-  | "generation_submission_failed";
+export type SubmitGenerationErrorCode = (typeof generationApiContractSource.domainErrors.submit)[number];
 
 export type SubmitGenerationError = {
   ok: false;
@@ -200,7 +194,7 @@ export function parseGenerationRequest(value: unknown):
     model = value.model as GenerationModel;
   }
 
-  const maxInputs = model === fiboGenerationModel ? 4 : maxGenerationInputsForOutput(outputKind);
+  const maxInputs = model === fiboGenerationModel ? generationApiContractSource.schemas.GenerationRequest.properties.inputs.maxItems : maxGenerationInputsForOutput(outputKind);
   if (inputs.length > maxInputs) {
     return {
       ok: false,
@@ -285,11 +279,11 @@ export function parseGenerationRequest(value: unknown):
   }
 
   if (model === fiboGenerationModel && (
-    !["original", "1:1", "4:3", "3:4", "16:9", "9:16"].includes(String(aspectRatio))
-    || (advanced?.steps ?? 4) > 8
-    || (Array.from(prompt).length > 4000 && !(vgl && !textPrompt)) || Array.from(advanced?.negativePrompt ?? "").length > 4000
+    !generationApiContractSource.schemas.GenerationRequest.properties.output.properties.aspectRatio.enum.includes(String(aspectRatio) as (typeof generationApiContractSource.schemas.GenerationRequest.properties.output.properties.aspectRatio.enum)[number])
+    || (advanced?.steps ?? 4) > generationApiContractSource.schemas.GenerationRequest.properties.advanced.properties.steps.maximum
+    || (Array.from(prompt).length > generationApiContractSource.schemas.GenerationRequest.properties.prompt["x-renderlab-fiboCodePointMax"] && !(vgl && !textPrompt)) || Array.from(advanced?.negativePrompt ?? "").length > generationApiContractSource.schemas.GenerationRequest.properties.prompt["x-renderlab-fiboCodePointMax"]
     || "json_instruction" in value
-    || (advanced?.guidance ?? 1) !== 1
+    || (advanced?.guidance ?? 1) !== generationApiContractSource.schemas.GenerationRequest.properties.advanced.properties.guidance.const
   )) {
     return { ok: false, error: { code: "invalid_request", message: "Unsupported FIBO size, inputs, or tuning." } };
   }

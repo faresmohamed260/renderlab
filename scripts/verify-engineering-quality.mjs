@@ -153,6 +153,12 @@ try {
   await rm(typeFixture, { force: true });
 }
 
+const contract = spawnNodeCli(path.join(root, "scripts", "generate-generation-api-contract.mjs"), ["--check"]);
+if (contract.error) throw contract.error;
+if (contract.status !== 0) {
+  throw new Error("Generation API contract drift verification failed:\n" + contract.stdout + contract.stderr);
+}
+
 await verifyWorkflowSecurity();
 await verifyMutationOriginCoverage();
 await import("./verify-server-boundaries.mjs");
