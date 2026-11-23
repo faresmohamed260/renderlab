@@ -34,7 +34,7 @@ RenderLab is a personal **generative-media tool suite**, now also an **AI Engine
 
 ## Near-term roadmap — numbered backend/product reliability cycle
 
-Phase 1 beta correctness and Phase 2 operational reliability are closed. **Phase 3: Backend professional baseline (P0)** is the next owner-approved execution phase, governed by the [five-unit contract](architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md). Execute Units 1–5 in order: truthful README/claims; typed configuration; threat/owner isolation; deterministic state-machine contracts; deterministic critical-path tests. The previously contemplated **creative productivity** phase is deferred until the full backend-first gate. Subsequent P1 provider abstraction and engineering follow-ons are roadmap-level only and are not authorized by this P0 contract.
+Phase 1 beta correctness and Phase 2 operational reliability are closed. **Phase 3 backend P0 execution is complete with evidence**; the [Phase 3 exit ledger](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md) records a partly-met **global SQL transition-graph** requirement, and the [final scorecard](audits/PHASE3_BACKEND_P0_FINAL_SCORECARD_2026-11-23.md) is **43/60**. The independent external post-P0 review is **not complete**, so the broader backend-first charter gate below remains **OPEN**. **Phase 4 — backend P1** is next for planning; its proposed execution contract is **DRAFT, unapproved and unmerged** until owner review. The accepted [P0 contract](architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md) preserves original boundaries/evidence. Frontend, new models and creative productivity remain deferred and require separate approval.
 
 ## Backend-first policy and exit gate
 

@@ -2,6 +2,8 @@
 
 **Scope:** RenderLab's current FIBO image generation and editing only; not a general video, audio or multi-model platform. **Authority:** [technical claims](../TECHNICAL_CLAIMS.md), [capabilities](PRODUCT_CAPABILITIES.md), [P0 state specification](P0_04_GENERATION_STATE_MACHINE_SPEC.md), [production record](../production/current.json). This is a concise source-based map, not a claim that the latest merged code is deployed.
 
+**Current production update (2026-11-23):** [Atomic P0-07 FIBO release proof](../audits/PHASE3_P007_ATOMIC_PRODUCTION_SMOKE_VERIFICATION_2026-11-23.md) is live at source `b548fe40ac274bb4d5bc6d2674ce7bfac556bfcf`. The new service-only 0031 RPC atomically finalizes a converted FIBO job and releases its bound reservation; this does not guarantee unattended finalization for owners who never return or cover generic SQL writers. The original diagrams below remain conceptual; detailed historical P0-04/06 limitations describe the pre-0031 checkpoint.
+
 ## 1. Context and containers
 
 ```mermaid
@@ -54,7 +56,7 @@ sequenceDiagram
     API-->>U: Current job and owner-visible Library asset
 ```
 
-The **owner-return** path is bounded and best-effort: [settlement](../../src/server/generation/owner-generation-settlement.ts) invokes [reconciliation](../../src/server/generation/reconcile-generation.ts); the [native lifecycle](../../src/server/generation/native-generation.ts) handles provider and persistence; [admission](../../src/server/generation/generation-admission.ts) owns slot release. Replays reuse the indexed output when present. The [P0-06 status-CAS fix](../audits/P0_06_STATUS_CAS_FIX_RELEASE_PLAN_2026-11-23.md) guards generic job PATCHes against a changed or terminal status **in repository main**, but the job's terminalization and reservation release are **not yet atomic**.
+The **owner-return** path is bounded and best-effort: [settlement](../../src/server/generation/owner-generation-settlement.ts) invokes [reconciliation](../../src/server/generation/reconcile-generation.ts); the [native lifecycle](../../src/server/generation/native-generation.ts) handles provider and persistence; [admission](../../src/server/generation/generation-admission.ts) owns slot release. Replays reuse the indexed output when present. The [P0-06 status-CAS fix](../audits/P0_06_STATUS_CAS_FIX_RELEASE_PLAN_2026-11-23.md) guards stale generic job PATCHes. [P0-07 migration 0031 and app switch](../audits/PHASE3_P007_ATOMIC_PRODUCTION_SMOKE_VERIFICATION_2026-11-23.md) **now atomically commit a terminal job outcome and bound reservation release for the converted FIBO path**, with a real Postgres contention test and one successful hosted proof. It is **not a global SQL state transition trigger**, and other legacy/raw writers may still commit separate updates.
 
 ## 3. Eight-state transition summary
 
@@ -67,7 +69,7 @@ The **owner-return** path is bounded and best-effort: [settlement](../../src/ser
 | `persisting` | succeeded, failed | One indexed output per job/output index; recovery can replay |
 | `succeeded` / `failed` / `cancelled` | none | Terminal; read/release replay must not reopen or rewrite |
 
-The [Unit 4 matrix](P0_04_GENERATION_STATE_MACHINE_SPEC.md) is normative for the observed policy; its [pure TS model](../../src/lib/capabilities/generation-job-state-machine.ts) tests all 64 state pairs. SQL CHECK constraints validate **values**, not the full transition graph. P0-06 adds expected-status database updates, not a global SQL state-machine trigger.
+The [Unit 4 matrix](P0_04_GENERATION_STATE_MACHINE_SPEC.md) is normative for the observed policy; its [pure TS model](../../src/lib/capabilities/generation-job-state-machine.ts) tests all 64 state pairs. SQL CHECK constraints validate **values**, not the full transition graph. P0-06 adds expected-status database updates and P0-07 adds **scoped atomic terminalization**; neither is a global SQL state-machine trigger.
 
 ## 4. Trust boundaries, recovery and extension seams
 
@@ -80,7 +82,7 @@ The [Unit 4 matrix](P0_04_GENERATION_STATE_MACHINE_SPEC.md) is normative for the
 | Modal pending, 409 process exit, unavailable or expired result | Pending stays active; explicit `FIBO_PROCESS_EXITED` maps to failed; unknown result uses bounded stale policy |
 | Missing dispatch / delayed cancellation | 15-minute missing-dispatch grace; cancellation has status+token CAS; settled terminal cannot be rewritten by stale generic PATCH |
 | R2/DB commit or response loss | Deterministic object/asset ID and unique output index permit bounded recovery; not a guarantee of a single R2 PUT |
-| Terminal job still holding admission | Idempotent release on settlement/return; **separate transactions** leave a real atomicity gap |
+| Terminal job still holding admission | Converted FIBO terminal writers use **one 0031 RPC transaction** to terminalize and release; raw/legacy writers still can leave held admission, so retain independent aggregate monitoring and reconciliation |
 
 **Extensibility seams, not shipped promises:** [request validation and operation types](../../src/lib/api/generation-contract.ts), [worker selection/policy](../../src/server/generation/worker-fleet.ts), [submission/admission](../../src/server/generation/submit-generation.ts), [provider lifecycle](../../src/server/generation/native-generation.ts) and [durable media](../../src/server/media/media-assets.ts). New providers/modalities need new reviewed contracts, routing, safety checks, verification and a release; FIBO is the only current new-generation route.
 
