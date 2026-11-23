@@ -16,6 +16,8 @@ const boundUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 /** Operator-only, bounded reads. Failure never turns a working Health page into 503. */
 export async function readGenerationOperatorMetrics(nowMs: number, testOwnerId?: string) {
   try {
+    // A single shared deadline caps all optional reads, including the join.
+    const signal = AbortSignal.timeout(1_500);
     const limit = String(generationOperatorSampleLimit + 1);
     const dispatchParams = new URLSearchParams({
       status: "eq.dispatched",
@@ -36,8 +38,8 @@ export async function readGenerationOperatorMetrics(nowMs: number, testOwnerId?:
       reservationParams.set("owner_id", `eq.${testOwnerId}`);
     }
     const [dispatchRaw, reservationRaw] = await Promise.all([
-      supabaseRest<DispatchTimingSample[]>(`generation_dispatch_outbox?${dispatchParams}`),
-      supabaseRest<UnreleasedBoundReservation[]>(`generation_admission_reservations?${reservationParams}`),
+      supabaseRest<DispatchTimingSample[]>(`generation_dispatch_outbox?${dispatchParams}`, { signal }),
+      supabaseRest<UnreleasedBoundReservation[]>(`generation_admission_reservations?${reservationParams}`, { signal }),
     ]);
     const dispatchRows = dispatchRaw.slice(0, generationOperatorSampleLimit);
     const reservationRows = reservationRaw.slice(0, generationOperatorSampleLimit);
@@ -51,6 +53,7 @@ export async function readGenerationOperatorMetrics(nowMs: number, testOwnerId?:
         select: "id,status,completed_at",
         limit: String(generationOperatorSampleLimit),
       })}`,
+      { signal },
     ) : [];
     return {
       available: true as const,
