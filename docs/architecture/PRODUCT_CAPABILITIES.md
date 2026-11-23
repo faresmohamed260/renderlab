@@ -10,6 +10,8 @@ The [product charter](../PRODUCT_CHARTER.md) defines direction, including future
 
 New creative work is **FIBO image generation and image editing only**. FLUX, Qwen, REDGraft LTX, video/animation, and image upscale are retired from new submissions. Historical jobs and media remain readable for continuity but are not reusable through a retired provider path.
 
+The standalone unauthenticated `workers/image-upscale` Modal ASGI source and its worker-specific runtime configuration have been **removed from the current repository**. Retained historical job metadata, source/output media and the existing same-origin-checked 410 Upscale API route are unchanged. This removal does not reactivate Upscale or erase past evidence.
+
 Historical edit/animate result-to-source comparison remains a read-only, owner-scoped media operation even when an old model recipe is no longer runnable; Retry/Reuse Settings still require current capability validation.
 
 Settings exposes the image aspect ratios supported by FIBO. New, clean Create drafts use that saved image aspect ratio, with 1:1 as the fallback for stale values. Save and Reset update the image preference while preserving the stored legacy output mode and Video fields for historical export. Existing jobs, media and recipes retain their own settings.
