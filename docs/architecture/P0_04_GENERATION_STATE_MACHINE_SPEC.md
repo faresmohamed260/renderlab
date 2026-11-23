@@ -63,3 +63,52 @@ The dispatch outbox is **not** the generation job state. Migration [0030](../../
 ## Review/acceptance
 
 Run (1) node --test tests/unit/generation-job-state-machine.test.mjs tests/unit/generation-job-sql-conformance.test.mjs, (2) full npm run test:unit, (3) npm run typecheck, build, verify:ui-purity, verify:docs-governance and engineering-quality, then exact-head six required checks plus CodeQL before a docs/tests/pure-library-only merge. No release. **Unit 5 remains separate and cannot take credit for a runtime wiring change that was not implemented.**
+
+## Post-Unit-4 correctness follow-up: bounded FIBO generation deadline (R2/R3)
+
+The unit inventory above is historical. The subsequent FIBO runtime deadline is
+**20 minutes from `generation_jobs.created_at`**: Modal's renderer timeout is
+**420 seconds (7 minutes)**, plus **780 seconds (13 minutes)** of bounded allowance
+for durable outbox dispatch, GPU queue/startup, return transit and persistence.
+Using immutable creation time prevents repeated provider HTTP 202 responses,
+reconciliation attempts, or poison output from extending this cutoff.
+
+For a FIBO job in queued, preparing, running or persisting, expiry triggers one
+owner-scoped **migration 0031 atomic terminalize-and-release** call with error code
+`generation_deadline_exceeded`, before making further provider or storage calls.
+A FIBO job already **cancelling** follows the existing legal
+`cancelling -> cancelled` SQL edge, still using the same atomic release;
+SQL 0031 intentionally does not allow `cancelling -> failed`.
+Retired/non-FIBO workflows keep their previous 2-hour ambiguous-response and
+15-minute undispatched policies. The cutoff applies even to an unresolved
+durable outbox with no backend call ID: both owner-return and global candidate
+selectors include aged FIBO rows without handles.
+
+This follow-up requires production schema 0031 before release (already applied,
+but worker 1 alone verifies/coordinates runtime deployment). The code refuses
+to downgrade deadline settlement to non-atomic PATCH on a missing RPC.
+Terminal races remain protected by status + reconciliation-token compare-and-swap.
+Tests cover the exact deadline boundary, pending HTTP 202, unresolved queued,
+persisting and cancelling, one reservation release and zero new provider calls.
+
+## Post-Unit-4 fairness follow-up: last-claimed reconciliation ordering
+
+The additional migration `0033_generation_reconciliation_fairness.sql` adds a
+**durable, nullable `last_reconciled_at`** to generation_jobs and upgrades the
+existing owner-scoped reconciliation **claim RPC** to stamp it in the same
+atomic SQL update that acquires the lease. No new REST operation or provider
+call is required. Timestamp remains unchanged when a claim fails; releasing a
+claim retains it. The two candidate selectors order
+`last_reconciled_at ASC NULLS FIRST, updated_at ASC, id ASC`. A pending
+HTTP 202, temporary error, or poison persisting result no longer monopolizes
+every future limited batch: after a successful claim it sorts behind any less
+recently claimed jobs. Both global and owner-scoped active-job query indexes
+cover the ordering; only active statuses are indexed.
+
+`updated_at` retains its existing business-state semantics; historical
+non-FIBO stale ages and FIBO's immutable `created_at` deadline are unaffected.
+Worker 1 **must apply migration 0032 before deploying** the application
+consumer because pre-migration SQL does not have the ordering column.
+Disposable PostgreSQL conformance verifies a claim advances the timestamp
+and a release preserves it; unit tests pin both selectors and the SQL
+claim's owner/token guards.

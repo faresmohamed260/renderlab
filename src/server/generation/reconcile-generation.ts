@@ -1,6 +1,7 @@
 import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 import { randomUUID } from "node:crypto";
 import type { GenerationJob } from "@/lib/capabilities/generation";
+import { fiboJobDeadlineMs } from "@/lib/capabilities/generation-job-state-machine";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { reconcileClaimedGenerationCancellation } from "@/server/generation/cancel-generation";
 import { releaseBoundGenerationAdmission } from "@/server/generation/generation-admission";
@@ -97,6 +98,36 @@ async function failStaleUndispatchedJob(row: JobSnapshotRow, token: string) {
   return rows?.[0] ?? null;
 }
 
+/**
+ * All FIBO states have one immutable, absolute cutoff. A lost provider handle,
+ * repeated 202, and stalled persistence all converge on the same atomic SQL
+ * terminalization plus reservation release, without another provider request.
+ * Cancellation retains the only legal SQL terminal edge (cancelled).
+ */
+async function failExpiredFiboJob(row: JobSnapshotRow, token: string) {
+  if (row.worker_id !== FIBO_DISPATCH_BACKEND
+    || Date.now() - Date.parse(row.created_at) < fiboJobDeadlineMs) return null;
+
+  const cancelling = row.status === "cancelling";
+  const outcome = await tryAtomicTerminalizeGeneration({
+    ownerId: row.owner_id,
+    jobId: row.id,
+    expectedStatus: row.status,
+    terminalStatus: cancelling ? "cancelled" : "failed",
+    ...(cancelling ? {} : {
+      errorCode: "generation_deadline_exceeded",
+      errorMessage: "FIBO generation could not finish within the bounded worker deadline.",
+    }),
+    reconcileToken: token,
+  });
+  if (outcome === null) {
+    // Deployed FIBO requires migration 0031. Never silently use a non-atomic
+    // status PATCH: that could leave a terminal job holding its only slot.
+    throw new Error("FIBO deadline requires atomic terminalization migration 0031.");
+  }
+  return getSnapshot(row.owner_id, row.id);
+}
+
 async function settleTerminalAdmission(job: GenerationJob, ownerId: string) {
   if (!terminalStatuses.has(job.status)) return;
   await releaseBoundGenerationAdmission(ownerId, job.id);
@@ -107,7 +138,12 @@ export async function findOwnerSettlementCandidate(
   options: { signal: AbortSignal; jobIds?: string[]; includeActivityRecovery: boolean },
 ) {
   const statuses = options.includeActivityRecovery ? candidateStatuses : "queued,preparing,running,persisting";
-  const eligible = ["status.eq.persisting", "and(worker_id.not.is.null,provider_job_id.not.is.null)"];
+  const expiredFibo = new Date(Date.now() - fiboJobDeadlineMs).toISOString();
+  const eligible = [
+    "status.eq.persisting",
+    "and(worker_id.not.is.null,provider_job_id.not.is.null)",
+    `and(worker_id.eq.${FIBO_DISPATCH_BACKEND},created_at.lte.${expiredFibo})`,
+  ];
   if (options.includeActivityRecovery) {
     const stale = new Date(Date.now() - staleMissingDispatchGraceMs).toISOString();
     eligible.push("status.eq.cancelling", `and(updated_at.lt.${stale},or(worker_id.is.null,worker_id.neq.${FIBO_DISPATCH_BACKEND}))`);
@@ -118,7 +154,7 @@ export async function findOwnerSettlementCandidate(
     status: `in.(${statuses})`,
     or: `(${eligible.join(",")})`,
     select: "id",
-    order: "updated_at.asc,id.asc",
+    order: "last_reconciled_at.asc.nullsfirst,updated_at.asc,id.asc",
     limit: "1",
   });
   if (options.jobIds) query.set("id", `in.(${options.jobIds.join(",")})`);
@@ -177,6 +213,13 @@ export async function reconcileNativeGeneration(
     const claimedSnapshot = await getSnapshot(ownerId, jobId, lookupSignal());
     if (!claimedSnapshot) return null;
 
+    const expired = await failExpiredFiboJob(claimedSnapshot, token);
+    if (expired) {
+      const job = toGenerationJob(expired);
+      await settleTerminalAdmission(job, ownerId);
+      return diagnose(job, "deadline", "generation_deadline_exceeded");
+    }
+
     if (claimedSnapshot.status === "cancelling") {
       const job = await reconcileClaimedGenerationCancellation(ownerId, jobId, token, deadlines);
       if (job) await settleTerminalAdmission(job, ownerId);
@@ -210,8 +253,9 @@ async function listActiveNativeCandidates(limit: number) {
     ? envString("RENDERLAB_TEST_RECONCILER_OWNER_ID")?.trim() || null
     : null;
   const ownerFilter = testOwnerId ? `&owner_id=eq.${encodeURIComponent(testOwnerId)}` : "";
+  const expiredFibo = new Date(Date.now() - fiboJobDeadlineMs).toISOString();
   return supabaseRest<Array<{ id: string; owner_id: string }>>(
-    `generation_jobs?status=in.(${candidateStatuses})${ownerFilter}&or=(worker_id.is.null,worker_id.neq.${FIBO_DISPATCH_BACKEND},provider_job_id.not.is.null)&select=id,owner_id&order=updated_at.asc,id.asc&limit=${safeLimit}`,
+    `generation_jobs?status=in.(${candidateStatuses})${ownerFilter}&or=(worker_id.is.null,worker_id.neq.${FIBO_DISPATCH_BACKEND},provider_job_id.not.is.null,and(worker_id.eq.${FIBO_DISPATCH_BACKEND},created_at.lte.${expiredFibo}))&select=id,owner_id&order=last_reconciled_at.asc.nullsfirst,updated_at.asc,id.asc&limit=${safeLimit}`,
     { method: "GET" },
   );
 }
