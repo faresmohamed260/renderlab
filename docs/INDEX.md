@@ -196,6 +196,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
 - `docs/architecture/INFRASTRUCTURE.md` — infrastructure/resource/security boundaries plus exact current-production authority.
 - `docs/PRODUCT_CHARTER.md` — normative product purpose, audience, planned vs current capabilities, and backend-first execution gate.
+- `docs/TECHNICAL_CLAIMS.md` — portfolio-facing current claim/evidence guide; not a capability or deployment authority.
 - `docs/architecture/PRODUCT_CAPABILITIES.md` — capability/current product contract registry.
 - `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` — bounded account/settings roadmap and current workstream tracker.
 - `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` — accepted incident/recovery operating procedure, operator roles, review cadence, and exercise metadata.
