@@ -1,24 +1,24 @@
 {
   "schemaVersion": 2,
-  "applicationSha": "e209bfee430c8e61789aeabc8a63579f05b0435c",
-  "deploymentId": "dpl_7ZvwdWi4B7qr1EkTnDYbBWNYPsBZ",
-  "deploymentUrl": "https://renderlab-q35ibpd81-faresmohamedsalah10-1681.vercel.app",
+  "applicationSha": "30634662fb0319e3b6a943af2c89872ef607104b",
+  "deploymentId": "dpl_ChVfct9Zsy2UY19QKKHYHetER46S",
+  "deploymentUrl": "https://renderlab-pvx198rf4-faresmohamedsalah10-1681.vercel.app",
   "domain": "renderlab.faresuniform.uk",
-  "rollbackDeploymentId": "dpl_BoYHkxvwdiXh2CACedNxvZCwAiLd",
-  "rollbackApplicationSha": "52fdfd013250371d52c4808a3c1949317f0e3ecd",
+  "rollbackDeploymentId": "dpl_7ZvwdWi4B7qr1EkTnDYbBWNYPsBZ",
+  "rollbackApplicationSha": "e209bfee430c8e61789aeabc8a63579f05b0435c",
   "releaseQualification": {
     "requiredCheckRunIds": {
-      "clean-room (ubuntu-latest)": 137467133441,
-      "unit-coverage": 137467133311,
-      "javascript-typescript": 137467133326,
-      "quality": 137467133822,
-      "clean-room (windows-latest)": 137467133283,
-      "governance": 137467133534
+      "clean-room (ubuntu-latest)": 137498800325,
+      "unit-coverage": 137498798907,
+      "javascript-typescript": 137498798978,
+      "quality": 137498799687,
+      "clean-room (windows-latest)": 137498799951,
+      "governance": 137498799103
     },
     "type": "protected-main-checks",
-    "deploymentReadinessRunId": 45106031214,
-    "qualifiedAt": "2026-11-23T03:27:43.000Z"
+    "deploymentReadinessRunId": 45115997271,
+    "qualifiedAt": "2026-11-23T05:11:13.000Z"
   },
-  "cutoverAt": "2026-11-23T03:36:24.505Z",
+  "cutoverAt": "2026-11-23T05:18:02.278Z",
   "accountMigrationNote": "Production remains on team faresmohamedsalah10-1681."
 }
