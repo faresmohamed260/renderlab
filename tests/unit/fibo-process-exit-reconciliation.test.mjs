@@ -192,6 +192,11 @@ function fixture(t, {
       }
       return Response.json([row]);
     }
+    // This older lifecycle fixture deliberately models the pre-0031 hosted schema.
+    // The atomic adapter must then use the existing owner-scoped status-CAS path.
+    if (url.pathname === "/rest/v1/rpc/renderlab_terminalize_generation_and_release") {
+      return Response.json({ code: "PGRST202", message: "New RPC not installed in this fixture" }, { status: 404 });
+    }
     if (url.pathname === "/rest/v1/rpc/renderlab_claim_generation_reconciliation") {
       assert.equal(method, "POST");
       assert.equal(body.p_owner_id, ownerId);

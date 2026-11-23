@@ -378,8 +378,12 @@ test("P0-07 atomic success releases the bound slot within the terminal RPC",asyn
   assert.equal(heldReservation(),false);
   assert.ok(runtime.traces.some(x=>x.table==="rpc/renderlab_terminalize_generation_and_release"
     && x.body?.p_terminal_status==="succeeded"));
-  assert.equal(runtime.traces.some(x=>x.table==="generation_admission_reservations"
-    && x.method==="PATCH"),false,"atomic success must not need a separate reservation PATCH");
+  const atomicIndex=runtime.traces.findIndex(x=>x.table==="rpc/renderlab_terminalize_generation_and_release");
+  const cleanupIndex=runtime.traces.findIndex(x=>x.table==="generation_admission_reservations"
+    && x.method==="PATCH");
+  assert.ok(atomicIndex>=0 && (cleanupIndex<0 || atomicIndex<cleanupIndex),
+    "the atomic commit must precede any optional legacy owner-return cleanup");
+  assert.equal(runtime.releases,1,"cleanup cannot release a slot already released atomically");
 });
 
 test("P0-07 in-flight cancellation terminalizes and releases atomically",async(t)=>{
