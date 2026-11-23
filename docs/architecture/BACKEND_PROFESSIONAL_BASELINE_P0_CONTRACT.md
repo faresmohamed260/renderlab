@@ -1,6 +1,6 @@
 # Phase 3 — Backend professional baseline (P0) contract
 
-**Scope:** Owner-approved five-unit P0 sequence; only one small PR at a time, with Unit 1 starting after contract merge. **Change type:** Docs-only contract, no production deployment. **Owner:** Engineering / Project Owner. **Accepted:** 2026-11-23.
+**Status:** P0 execution and scoped release **CLOSED with evidence** on 2026-11-23; the **broader backend-first charter gate OPEN** pending selected P1 and independent external review. **Scope:** the *originally accepted* five-unit P0 sequence, retained as historical execution scope (not new authorization). **Owner:** Engineering / Project Owner. **Accepted:** 2026-11-23. [Exit-evidence ledger](../audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md) · [Final 12-dimension score](../audits/PHASE3_BACKEND_P0_FINAL_SCORECARD_2026-11-23.md).
 
 ## Goal, audience and verified baseline
 
@@ -62,3 +62,7 @@ Every one of P0-01 to P0-05 is separately merged with green **exact-head** requi
 **Targets (assessment baseline → re-review):** documentation **3→4**, configuration **2→4**, security **3→4**, architecture/state machine **3→4**, reliability **3→4**, testing/determinism **2→3**; other dimensions must not regress. Overall **2.9→at least 3.5/5** (42/60 if all six dimensions hit target). This is a review-quality benchmark, **not** a promise that CI alone proves the score. Missing outcomes remain open; do not close the phase by relabeling an unmet test.
 
 **Next phase dependency:** After the owner reviews the P0 closeout, P1 provider adapters, module decomposition, API contracts, low-cardinality metrics and offline bootstrap may be planned in progressive order. The broader [charter backend-first exit gate](../PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) still requires selected P1 work, operational evidence and explicit owner authorization **before any frontend phase resumes**. Creative productivity is deferred, not deleted.
+
+## P0 closure — November 23, 2026
+
+The [exit ledger](../audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md) is authoritative for completed-unit status and release evidence; the original tasks above are historical, not an active backlog. P0-04 global raw-SQL transition graph enforcement is **partly met**; converted FIBO terminalization and bound admission release are now atomic after migration 0031, supported by independent Postgres contention and a single successful live fixture. The [same-rubric score](../audits/PHASE3_BACKEND_P0_FINAL_SCORECARD_2026-11-23.md) is **43/60**, up from 42/60. **Independent external review has not been completed**, selected P1 remains unmerged, and no frontend phase is authorized. This original contract remains a linked current-history source until the outstanding charter gate is owner-reviewed; no new deployment or provider request is authorized by closure.
