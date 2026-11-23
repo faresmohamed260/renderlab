@@ -80,6 +80,34 @@ async function serviceRows(path) {
   return response.json();
 }
 
+/** A read-only fixture witness; used only for the one-generation text-to-image smoke. */
+async function readSingleSmokeDurability(ownerId, { jobId, assetId }) {
+  const owner = "owner_id=eq." + encodeURIComponent(ownerId);
+  const [jobs, reservations, assets] = await Promise.all([
+    serviceRows("generation_jobs?" + owner + "&select=id,status,output_asset_ids,completed_at"),
+    serviceRows("generation_admission_reservations?" + owner + "&select=id,job_id,released_at"),
+    serviceRows("media_assets?" + owner + "&generation_job_id=eq." + encodeURIComponent(jobId)
+      + "&deleted_at=is.null&select=id,generation_job_id,deleted_at"),
+  ]);
+  assert(jobs.length === 1 && jobs[0].id === jobId && jobs[0].status === "succeeded"
+    && Boolean(jobs[0].completed_at),
+  "Single FIBO smoke job was not durably terminal.");
+  assert(Array.isArray(jobs[0].output_asset_ids) && jobs[0].output_asset_ids.length === 1
+    && jobs[0].output_asset_ids[0] === assetId,
+  "Single FIBO smoke job did not index exactly one output.");
+  assert(assets.length === 1 && assets[0].id === assetId
+    && assets[0].generation_job_id === jobId && !assets[0].deleted_at,
+  "Single FIBO smoke produced an unexpected number of live Library assets.");
+  assert(reservations.length === 1 && reservations[0].job_id === jobId
+    && typeof reservations[0].released_at === "string" && Boolean(reservations[0].released_at),
+  "Single FIBO smoke did not release its bound admission reservation.");
+  return {
+    jobId, status: jobs[0].status, outputAssetIds: jobs[0].output_asset_ids,
+    completedAt: jobs[0].completed_at, assetIds: assets.map((asset) => asset.id),
+    reservationId: reservations[0].id, reservationReleasedAt: reservations[0].released_at,
+  };
+}
+
 async function collectTrackedStorageKeys(ownerId) {
   const encoded = encodeURIComponent(ownerId);
   const [sessions, assets, sources] = await Promise.all([
@@ -440,6 +468,7 @@ let cleanup = null;
 let publicRoutes = [];
 let accountRoutes = [];
 let libraryDeletion = null;
+let smokeDurableProof = null;
 const generations = [];
 const expectedGenerations = smoke ? 1 : 4;
 
@@ -561,6 +590,22 @@ try {
   await assertNoOverflow(page, "Library mobile");
   await screenshot(page, "05-library-mobile");
 
+  if (smoke && !referenceEdit) {
+    // The first Library visit above already opened the indexed FIBO result.
+    // A second visit must neither create another asset nor reactivate a released slot.
+    const beforeSecondVisit = await readSingleSmokeDurability(account.id, generations[0]);
+    await page.setViewportSize(desktop);
+    await page.goto(baseUrl + "/library", { waitUntil: "networkidle", timeout: 60_000 });
+    await page.locator('a[href="/library/' + generations[0].assetId + '"]').first()
+      .waitFor({ state: "visible", timeout: 30_000 });
+    const afterSecondVisit = await readSingleSmokeDurability(account.id, generations[0]);
+    assert(JSON.stringify(afterSecondVisit) === JSON.stringify(beforeSecondVisit),
+      "Second Library load changed the terminal job, indexed output or released reservation.");
+    smokeDurableProof = { ...afterSecondVisit, stableAfterSecondLibraryLoad: true };
+    await screenshot(page, "05-library-second-load");
+    console.log("FIBO smoke durable job, one indexed output, released reservation and second Library load verified.");
+  }
+
   if (!smoke) {
     accountRoutes = await verifyReadOnlyAccountSurfaces(page);
     await assertReadOnlyAccountMetadata(account.id);
@@ -602,6 +647,7 @@ const manifest = {
   providerGenerationCount: generations.length,
   fixtureAccountId: ownerIdentity.id,
   generations,
+  smokeDurableProof,
   libraryDeletion,
   publicRoutes,
   accountRoutes,
