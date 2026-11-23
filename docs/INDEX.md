@@ -251,3 +251,7 @@ When two repository records appear to conflict:
 5. Correct the appropriate authoritative repository document when reality and documentation differ. Do not create another competing source of truth merely to explain the conflict.
 
 ChatGPT Project context and the current chat remain supplementary/temporary continuity only, as defined by `AGENTS.md`; neither can override the repository.
+
+## Proposed Phase 4 P1 (pending owner approval)
+
+- [Backend P1 Phase 4 execution contract — DRAFT](architecture/BACKEND_P1_PHASE4_CONTRACT_DRAFT.md): **proposal only**, unmerged/unaccepted, not active implementation or release authority. Owner must approve, promote governance metadata to normative and merge on required checks before P1 starts. [Phase 3 P0 closeout](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md) is the evidence baseline; independent external review remains open.
