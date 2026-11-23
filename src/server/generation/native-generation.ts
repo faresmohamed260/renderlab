@@ -1,8 +1,6 @@
-import { envFlag, envString } from "../../lib/config/runtime-env.ts";
+import { envString } from "../../lib/config/runtime-env.ts";
 import { isGenerationTerminalStatus } from "@/lib/capabilities/generation-job-state-machine";
 import { tryAtomicTerminalizeGeneration } from "@/server/generation/atomic-terminalization";
-import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
-import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { persistFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
 import type {
   GenerationJob,
@@ -16,7 +14,7 @@ import {
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { headR2Object, isR2Configured, readR2Object, writeR2Object } from "@/server/storage/r2";
-import { FIBO_DISPATCH_BACKEND, acceptedWorkerCallId, findWorker, workerGatewayOptions, workerJobRequest, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
+import { FIBO_DISPATCH_BACKEND, acceptedWorkerCallId, findWorker, workerJobRequest, workersForEcosystem } from "@/server/generation/worker-fleet";
 import { injectGenerationFinalizationFault } from "@/server/generation/finalization-faults";
 import {
   deterministicGenerationAssetId,
@@ -39,10 +37,15 @@ import {
   isGatewayAuthRejectionStatus,
 } from "@/server/observability/diagnostics";
 import { randomUUID } from "node:crypto";
-import { workflowFor, prepareWorkerPayload, buildForm, type WorkflowConfig } from "@/server/generation/native-generation-legacy-workflows";
-import { resolveInputs, resolveMaskBytes, requestFromJobRow, type InputBytes } from "@/server/generation/native-generation-worker-inputs";
+import { workflowFor, type WorkflowConfig } from "@/server/generation/native-generation-legacy-workflows";
+import { resolveInputs, resolveMaskBytes, requestFromJobRow } from "@/server/generation/native-generation-worker-inputs";
+import {
+  prepareWorkerSubmission, dispatchWorker, getGeneratedFiboCaption, fetchPoster,
+  InvalidGeneratedFiboSidecarError, errorBody,
+} from "@/server/generation/native-generation-worker-transport";
 import { toGenerationJob } from "@/server/generation/native-generation-job-projection";
 import type { NativeGenerationJobRow } from "@/server/generation/native-generation-job-projection";
+export { wakeFiboDispatcher } from "@/server/generation/native-generation-worker-transport";
 export { toGenerationJob } from "@/server/generation/native-generation-job-projection";
 export type { NativeGenerationJobRow } from "@/server/generation/native-generation-job-projection";
 
@@ -111,21 +114,6 @@ async function acceptDurableDispatch(
   return rows[0];
 }
 
-export async function wakeFiboDispatcher() {
-  const worker = workersForEcosystem(fiboGenerationModel)[0];
-  if (!worker) return;
-  const options = workerGatewayOptions(worker, 6_000);
-  const origin = worker.policy?.transport === "modal-proxy" ? worker.gatewayUrl : gatewayUrlForWorker(worker);
-  const response = await fetch(`${origin}/dispatch/wake`, {
-    ...options,
-    method: "POST",
-    headers: options.headers,
-    body: null,
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error("Dispatcher wake was not accepted.");
-}
-
 export async function getJobRow(ownerId: string, jobId: string, signal?: AbortSignal) {
   const rows = await supabaseRest<JobRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`,
@@ -189,41 +177,6 @@ export async function patchJobRow(row: JobRow, patch: Record<string, unknown>) {
   if (outcome.ok) return { applied: true as const, row: outcome.row };
   if (!outcome.current) throw new Error("Generation job disappeared during status-conditional update.");
   return { applied: false as const, row: outcome.current };
-}
-
-async function errorBody(response: Response) {
-  try { return await response.json() as Record<string, unknown>; } catch { return {}; }
-}
-
-function gatewayUrlForWorker(worker: GenerationWorker) {
-  if (envFlag("RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE")) {
-    const override = envString("RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL")?.trim().replace(/\/+$/, "");
-    if (!override) throw new Error("Native worker test override requires a gateway URL.");
-    return override;
-  }
-  return worker.gatewayUrl;
-}
-
-async function prepareWorkerSubmission(workflow: WorkflowConfig, request: GenerationRequest, sources: InputBytes[], maskBytes?: Buffer): Promise<{ body: string | FormData; contentType?: string }> {
-  if (Boolean(request.mask) !== Boolean(maskBytes)
-    || (maskBytes && (workflow.ecosystem !== fiboGenerationModel || sources.length !== 1))) {
-    throw new Error("FIBO masked edit payload is incomplete or has invalid source slots.");
-  }
-  if (workflow.ecosystem === fiboGenerationModel) {
-    return buildFiboWorkerPayload(request, sources, maskBytes);
-  }
-  const prepared = await prepareWorkerPayload(request, workflow, sources);
-  return { body: buildForm(request, workflow, prepared) };
-}
-
-function dispatchWorker(worker: GenerationWorker, workflow: WorkflowConfig, submission: Awaited<ReturnType<typeof prepareWorkerSubmission>>) {
-  const options = workerGatewayOptions(worker);
-  const headers = new Headers(options.headers);
-  if (submission.contentType) headers.set("content-type", submission.contentType);
-  const origin = worker.policy?.transport === "modal-proxy" ? worker.gatewayUrl : gatewayUrlForWorker(worker);
-  return fetch(origin + workflow.submitPath, {
-    ...options, method: "POST", body: submission.body, headers, cache: "no-store",
-  });
 }
 
 export async function submitNativeGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
@@ -466,47 +419,6 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
     thumbnailStorageKey,
     upscaleMetadata,
   });
-}
-
-/** Same owner-assigned, signed native worker call as the PNG poll.
- * A generated caption is fetched and persisted BEFORE the image finalization
- * transitions to persisting, so recovery cannot lose its provenance.
- */
-class InvalidGeneratedFiboSidecarError extends Error {}
-
-async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string, timeoutMs?: number): Promise<string> {
-  const { url, options } = workerJobRequest(worker, callId, "/vgl", timeoutMs);
-  const headers = new Headers(options.headers);
-  headers.set("accept", "application/json");
-  const response = await fetch(url, {
-    ...options, method: "GET", headers, cache: "no-store",
-  });
-  if (response.status === 202) throw new Error("Generated FIBO VGL is still being prepared.");
-  if ([404, 410, 422, 502].includes(response.status)) {
-    throw new InvalidGeneratedFiboSidecarError("Generated FIBO VGL is absent or could not be validated.");
-  }
-  if (!response.ok) throw new Error("Generated FIBO VGL sidecar is temporarily unavailable.");
-  const payload: unknown = await response.json().catch(() => null);
-  if (timeoutMs) options.signal?.throwIfAborted();
-  const caption = parseGeneratedFiboSidecar(payload);
-  if (!caption) throw new InvalidGeneratedFiboSidecarError("Generated FIBO VGL sidecar returned invalid JSON.");
-  return caption;
-}
-
-async function fetchPoster(worker: GenerationWorker, callId: string, timeoutMs?: number) {
-  try {
-    const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(callId)}/poster`, {
-      headers: { accept: "image/*, application/json" },
-      signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
-      cache: "no-store",
-    });
-    if (!response.ok) return null;
-    const contentType = String(response.headers.get("content-type") || "image/jpeg").split(";")[0].trim();
-    if (!contentType.startsWith("image/")) return null;
-    return { bytes: Buffer.from(await response.arrayBuffer()), contentType };
-  } catch {
-    return null;
-  }
 }
 
 function pollReassignmentAttemptCount(row: JobRow) {
