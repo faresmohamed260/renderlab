@@ -37,9 +37,17 @@ RenderLab is the product layer between a creator and a cloud-hosted generation s
 
 ### Why RenderLab
 
-- **Durable creative lifecycle.** Accepted work becomes a server-owned job and does not depend on the initiating browser remaining open.
+- **Durable creative lifecycle.** Accepted work is durably dispatched without the initiating browser staying open. In the current beta, a finished job can require the owner's next Create, Activity, Library or blocked-submit interaction to settle and publish its output.
 - **Provider complexity stays behind product contracts.** ComfyUI graphs, worker identifiers, storage keys, and backend routing are not exposed as the user experience.
 - **Media stays actionable.** A finished asset remains connected to prompt/provenance context and compatible next steps such as edit or reuse.
+
+## Capability status — Now / Next / Historical
+
+| **Now: supported in the closed beta** | **Next: planned, not available** | **Historical: retired from new submissions** |
+| --- | --- | --- |
+| FIBO image creation, reference editing and source-preserving masked editing; owner-scoped Library, Viewer and Activity. | Additional image models; upscale, face swap and background removal; video and audio after independent capability, cost and release qualification. | Earlier FLUX, Qwen and REDGraft LTX providers, and the old Video, Animate and Upscale submission paths. Historical saved media and verification captures can still be viewed. |
+
+**Video is planned again, not abandoned.** The earlier Video/Animate routes are retired, not current features. The [product charter](docs/PRODUCT_CHARTER.md) governs future direction; [current capabilities](docs/architecture/PRODUCT_CAPABILITIES.md) and the [production manifest](docs/production/current.json) govern what is real today. See the [technical claims and evidence sheet](docs/TECHNICAL_CLAIMS.md).
 
 ## Product surfaces
 
@@ -116,12 +124,12 @@ The examples below are **production-capture crops of real provider-backed Render
 
 </details>
 
-## Video workflows
+## Historical verification — retired Video and Animate paths
 
-The same bounded production verification created both an image-animation result and a text-to-video result. The retained evidence contains the completed video results in RenderLab's Media Viewer; the fixture cleanup removed the generated R2 media afterward, so this repository does not claim a retained raw motion file from that run.
+The following captures are **historical evidence only**: an older, bounded provider-backed verification produced an image-animation result and a text-to-video result, then cleaned up the generated R2 objects. They are **not current submit capabilities** or retained downloadable videos. Video is planned as a future media category under the product charter, but these old implementations are retired.
 
 <details>
-<summary><strong>See provider-backed video result evidence</strong></summary>
+<summary><strong>View historical video/animation result captures</strong></summary>
 
 ### Image animation result
 
@@ -142,10 +150,10 @@ flowchart LR
     C --> D["Activity lifecycle"]
     D --> E["Durable result"]
     E --> F["Viewer / Library"]
-    F --> G["Edit · Animate · Upscale · Reuse"]
+    F --> G["Edit · Reuse"]
 ```
 
-Accepted work is reconciled independently of the browser. Finalization is designed to be idempotent so terminal job state and durable media do not depend on one client request surviving end to end.
+Accepted jobs have **browser-independent durable dispatch and outbox recovery**. For the current beta, reconciliation and idempotent media finalization may occur when the **owner returns** to Create, Library or Activity, or attempts another submit while admission is occupied. A user who never returns has **no guaranteed app-side scheduled settlement**; this known retention risk is accepted for the small beta. [Owner-settlement implementation](src/server/generation/owner-generation-settlement.ts) · [hosted return proof](https://github.com/faresmohamed260/renderlab/actions/runs/45099617648).
 
 ## Architecture
 
@@ -174,10 +182,10 @@ RenderLab keeps schema ownership, storage prefixes, orchestration, authorization
 
 | Concern | RenderLab approach |
 | --- | --- |
-| **Authorization** | Owner-scoped resource access backed by Supabase Auth/RLS and server-side ownership checks. |
+| **Authorization** | Supabase Auth and application-level owner checks; RLS applies to scoped clients, while privileged service-role DB calls require explicit owner filtering. |
 | **Privileged account actions** | MFA/session controls and recent-authentication boundaries for sensitive operations. |
 | **Media delivery** | Server-owned storage access and presigned delivery/upload boundaries. |
-| **Long-running generation** | Browser-independent reconciliation with bounded retry/cancellation behavior. |
+| **Long-running generation** | Browser-independent durable dispatch; bounded owner-return reconciliation with retry/cancellation. |
 | **Finalization** | Idempotent persistence and explicit terminal-state handling. |
 | **Failures** | Sanitized user-facing failures while operational detail remains server-side. |
 | **Data lifecycle** | Account export/deletion and fixture cleanup workflows. |
@@ -189,7 +197,7 @@ RenderLab keeps schema ownership, storage prefixes, orchestration, authorization
 - **Interface:** Radix/shadcn-derived primitives, Motion for React, Lucide
 - **Data and identity:** Supabase Auth, PostgreSQL, Row Level Security
 - **Media:** Cloudflare R2
-- **Generation:** curated ComfyUI workflows on a partitioned Modal worker fleet
+- **Generation:** one qualified production FIBO image-worker route behind the private Modal/ComfyUI gateway; historical multi-worker/failover logic is not a live FIBO standby pair
 - **Quality:** Oxlint, TypeScript, Node test runner, Playwright, repository-specific contract verifiers
 - **Delivery:** Vercel with guarded production qualification
 
@@ -267,7 +275,9 @@ GitHub's secret-free **Unit Coverage** workflow runs the same Node 24 path, publ
 
 Public/product documentation starts with:
 
-1. [Current public status](docs/STATUS.md)
+1. [Product charter and planned scope](docs/PRODUCT_CHARTER.md)
+2. [Evidence-linked technical claims](docs/TECHNICAL_CLAIMS.md)
+3. [Current public status](docs/STATUS.md)
 2. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
 3. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
 4. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
@@ -288,18 +298,13 @@ Maintainer/agent handoff entry points and execution history remain repository-in
 - The retained artistic QA fixture cleaned its generated R2 objects, so the current public gallery uses verified production-capture crops rather than raw downloadable model outputs.
 - The project currently uses exact production commit qualification rather than a public semantic-release stream.
 
-## Current direction
+## Current direction — backend first
 
-Current work is focused on deeper creative capability rather than exposing more infrastructure:
+RenderLab is a personal/friends closed beta and an AI Engineer portfolio project. The next work is the **Phase 3 backend professional baseline (P0)**: truthful claims, typed fail-fast configuration, a reviewed trust/owner-isolation model, explicit job-state invariants, and deterministic critical-path tests. The [accepted five-unit contract](docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md) governs implementation order and its exit checks.
 
-- broaden image and video workflows while preserving one coherent Create experience;
-- improve continuation among generation, editing, animation, video, and upscale operations;
-- deepen media organization and creative project workflows;
-- continue responsive, motion, and accessibility refinement;
-- expand provider/worker capability only when ownership and production readiness are verified;
-- preserve lifecycle, cleanup, security, and exact-commit qualification as the product grows.
+Provider adapters, modularization, API contracts, metrics and the local demo follow in a later **P1 review**; they are not approved for implementation by this README. Frontend changes and new image/video/audio capabilities remain on hold until the [charter's backend-first exit gate](docs/PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) is met and the owner authorizes resumption. Video remains a genuine **planned** goal, not a current feature.
 
-See [STATUS.md](docs/STATUS.md) for the concise public current state. Detailed execution chronology remains historical evidence under repository governance rather than part of the public README path.
+See [STATUS.md](docs/STATUS.md) for deployed capability and [TECHNICAL_CLAIMS.md](docs/TECHNICAL_CLAIMS.md) for independently checkable statements. Execution history remains historical evidence under repository governance.
 
 ## Contributing, security, and license
 
