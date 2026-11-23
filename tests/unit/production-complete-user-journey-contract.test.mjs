@@ -69,3 +69,19 @@ test("QA-002 asserts user-facing deletion independently of account cleanup", () 
   assert.match(verifier, /Library Delete did not preserve terminal generation history/);
   assert.match(verifier, /libraryDeletion = await verifyLibraryDeletion\(page, account.id, image\)/);
 });
+
+
+test("text-to-image smoke proves one durable output, released slot and second Library idempotence", () => {
+  assert.match(verifier, /function readSingleSmokeDurability\(/);
+  assert.match(verifier, /jobs\.length === 1/);
+  assert.match(verifier, /output_asset_ids\.length === 1/);
+  assert.match(verifier, /assets\.length === 1/);
+  assert.match(verifier, /reservations\.length === 1/);
+  assert.match(verifier, /released_at/);
+  assert.match(verifier, /smoke && !referenceEdit/);
+  assert.match(verifier, /beforeSecondVisit/);
+  assert.match(verifier, /afterSecondVisit/);
+  assert.match(verifier, /stableAfterSecondLibraryLoad: true/);
+  assert.match(verifier, /smokeDurableProof,/);
+  assert.match(verifier, /--cleanup-only/);
+});
