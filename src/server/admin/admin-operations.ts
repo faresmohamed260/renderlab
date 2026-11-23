@@ -396,7 +396,7 @@ export async function getAdminHealth(
     // Optional telemetry never changes the authorized Health response status.
     const generationObservability = await readGenerationOperatorMetrics(now.valueOf(), testOwnerId ?? undefined);
     for (const status of ["queued", "running", "cancelling", "persisting"] as const) {
-      const seconds = oldestActiveJob.byStatusSeconds[status];
+      const seconds = oldestActiveJob?.byStatusSeconds?.[status] ?? null;
       if (seconds !== null) recordGenerationMetric({
         name: "renderlab_generation_active_age_seconds",
         labels: { status },
