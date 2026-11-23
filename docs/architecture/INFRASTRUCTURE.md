@@ -315,6 +315,7 @@ Validation consequences:
 - Vercel preview deployment is not required for iterative UI/application verification;
 - final exact-head validation remains mandatory; a future runner outage still does not waive required gates;
 - connector-driven writes should continue to batch cohesive changes into as few commits as practical.
+- Optional `.github/workflows/database-conformance.yml` is path-filtered, manual-dispatchable and non-required: one self-contained PostgreSQL 17 service, no shared/production fixtures or secrets, 14-minute job timeout, and `cancel-in-progress: true` because cancellation destroys only the run-owned disposable service; see `docs/operations/DATABASE_CONFORMANCE_GATE.md`.
 
 ## Credential-bearing source boundary — ENT-006
 
