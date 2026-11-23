@@ -55,6 +55,17 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres -d renderlab_conformance"
           --health-interval 5s --health-timeout 3s --health-retries 12
+      postgres_restore:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: renderlab_conformance_restore_0031
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d renderlab_conformance_restore_0031"
+          --health-interval 5s --health-timeout 3s --health-retries 12
     env:
       PGHOST: 127.0.0.1
       PGPORT: "5432"

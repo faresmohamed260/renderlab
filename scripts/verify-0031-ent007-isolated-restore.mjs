@@ -21,7 +21,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const { PGHOST:host="127.0.0.1", PGPORT:port="5432",
   PGUSER:user="postgres", PGDATABASE:database="", PGPASSWORD:password } = process.env;
 assert.ok(["127.0.0.1","localhost","::1"].includes(host)
-  && database==="renderlab_conformance" && user==="postgres" && password
+  && port!=="5433" && database==="renderlab_conformance" && user==="postgres" && password
   && /^\d{1,5}$/.test(port),
 "Refusing P1-05 restore outside disposable local PostgreSQL conformance service");
 for (const name of Object.keys(process.env)) {
@@ -29,6 +29,7 @@ for (const name of Object.keys(process.env)) {
     "P1-05 restore refuses cloud R2 configuration in the test process");
 }
 const restoredDb="renderlab_conformance_restore_0031";
+const restorePort="5433"; // separate PostgreSQL service/cluster; roles are cluster-global
 const owner="c1111111-1111-4111-8111-111111111111";
 const job="c2222222-2222-4222-8222-222222222222";
 const asset="c3333333-3333-4333-8333-333333333333";
@@ -37,8 +38,8 @@ const env={...process.env};
 delete env.PGSERVICE;
 delete env.PGHOSTADDR;
 const common=["-X","-w","-v","ON_ERROR_STOP=1","-h",host,"-p",port,"-U",user];
-function psql(query, db=database) {
-  return execFileSync("psql",[...common,"-d",db,"-t","-A","-c",query],
+function psql(query, db=database, targetPort=port) {
+  return execFileSync("psql",[...common.filter((_,i,a)=>i!==a.indexOf("-p") && i!==a.indexOf("-p")+1),"-p",targetPort,"-d",db,"-t","-A","-c",query],
     {cwd:root,env,encoding:"utf8",maxBuffer:8*1024*1024}).trim();
 }
 const literal=(s)=>"'"+s.replaceAll("'","''")+"'";
@@ -48,9 +49,10 @@ let createdDb=false,createdSource=false;
 let primaryPath,retainedPath;
 const cleanupErrors=[];
 try {
-  assert.equal(psql("select count(*) from pg_database where datname="+literal(restoredDb),"postgres"),"0",
-    "P1-05 refuses to overwrite a pre-existing restore database");
-  psql("CREATE DATABASE "+restoredDb,"postgres");
+  // The independent PG17 service contains a fresh, explicitly named database
+  // and no cluster-global roles from the primary conformance service.
+  assert.equal(psql("select count(*) from pg_roles where rolname='anon'",restoredDb,restorePort),"0",
+    "P1-05 isolated restore PostgreSQL cluster is not fresh");
   createdDb=true;
 
   psql(
@@ -99,7 +101,7 @@ try {
   // Entire restore uses the production ENT-007 verifier on synthetic local data.
   const restoreEnv={
     ...env,ENT007_RESTORE_DATABASE_URL:
-      "postgresql://"+user+":"+encodeURIComponent(password)+"@"+host+":"+port+"/"+restoredDb,
+      "postgresql://"+user+":"+encodeURIComponent(password)+"@"+host+":"+restorePort+"/"+restoredDb,
     ENT007_OUTPUT_DIR:temp,ENT007_BACKUP_ENCRYPTION_KEY:key.toString("base64"),
   };
   const restored=execFileSync(process.execPath,
@@ -124,28 +126,28 @@ try {
   assert.equal(hash(await readFile(retainedPath)),hash(bytes),"retained object must survive deletion");
   await copyFile(retainedPath,primaryPath);
   assert.equal(hash(await readFile(primaryPath)),hash(bytes),"R2 fixture recovery bytes must match");
-  assert.equal(psql("select storage_key from public.media_assets where id="+literal(asset),restoredDb),storageKey);
-  assert.equal(psql("select count(*) from auth.sessions",restoredDb),"0",
+  assert.equal(psql("select storage_key from public.media_assets where id="+literal(asset),restoredDb,restorePort),storageKey);
+  assert.equal(psql("select count(*) from auth.sessions",restoredDb,restorePort),"0",
     "logical ENT-007 backup must not restore active Auth sessions");
-  assert.equal(psql("select count(*) from public.generation_admission_reservations",restoredDb),"0",
+  assert.equal(psql("select count(*) from public.generation_admission_reservations",restoredDb,restorePort),"0",
     "ephemeral admission reservations are intentionally excluded from retained backup");
 
   psql("INSERT INTO public.generation_admission_reservations(owner_id,job_id,expires_at)"
-    +" VALUES("+literal(owner)+","+literal(job)+",now()+interval '1 hour')",restoredDb);
+    +" VALUES("+literal(owner)+","+literal(job)+",now()+interval '1 hour')",restoredDb,restorePort);
   const call="public.renderlab_terminalize_generation_and_release("+
     [owner,job].map(literal).join(",")+
     ",'persisting','succeeded',"+literal(asset)+")";
-  const first=psql("select outcome||'|'||reservation_released from "+call,restoredDb);
-  const replay=psql("select outcome||'|'||reservation_released from "+call,restoredDb);
+  const first=psql("select outcome||'|'||reservation_released from "+call,restoredDb,restorePort);
+  const replay=psql("select outcome||'|'||reservation_released from "+call,restoredDb,restorePort);
   assert.equal(first,"applied|true");
   assert.equal(replay,"already_terminal|false");
-  assert.equal(psql("select status||'|'||output_asset_ids[1] from public.generation_jobs where id="+literal(job),restoredDb),
+  assert.equal(psql("select status||'|'||output_asset_ids[1] from public.generation_jobs where id="+literal(job),restoredDb,restorePort),
     "succeeded|"+asset);
-  assert.equal(psql("select count(*) from public.generation_admission_reservations where job_id="+literal(job)+" and released_at is not null",restoredDb),"1");
+  assert.equal(psql("select count(*) from public.generation_admission_reservations where job_id="+literal(job)+" and released_at is not null",restoredDb,restorePort),"1");
   console.log("PASS P1-05: synthetic encrypted ENT-007 retained snapshot restored into isolated PostgreSQL 17; 0031 RPC applied/replayed, one reservation release, owner/media/Auth integrity, local durable bytes delete survival; no external R2 or production access");
 } finally {
   if (createdDb) {
-    try { psql("DROP DATABASE "+restoredDb+" WITH (FORCE)","postgres"); }
+    try { psql("DROP DATABASE "+restoredDb+" WITH (FORCE)","postgres",restorePort); }
     catch (error) { cleanupErrors.push("isolated database: "+String(error)); }
   }
   if (createdSource) {
