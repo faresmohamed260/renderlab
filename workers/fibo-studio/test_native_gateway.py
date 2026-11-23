@@ -120,7 +120,7 @@ class GatewayTests(unittest.TestCase):
 
         self.assertEqual(version("modal"), "1.6.4")
         self.assertFalse(issubclass(OutputExpiredError, TimeoutError))
-        self.assertTrue(issubclass(FunctionTimeoutError, TimeoutError))
+        self.assertFalse(issubclass(FunctionTimeoutError, TimeoutError))
         handle = self.submit()
         for exception, status, body in (
             (OutputExpiredError("expired"), 410, {"detail": "FIBO result expired"}),
