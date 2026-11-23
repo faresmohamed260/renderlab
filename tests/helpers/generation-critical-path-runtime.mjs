@@ -18,6 +18,7 @@ const initial = () => ({
   releases: 0, dispatchCalls: 0, wakeCalls: 0, providerPolls: 0, providerCancels: 0,
   admissionFailure: null, providerOutcome: "ready", cancelOutcome: "confirmed", wakeFailure: false, wakeResponseLost: false,
   skipDispatch: false, finalizationFault: null, faultUsed: false,
+  beforeJobPatch: null, jobPatchMutations: 0, jobPatchAttempts: 0,
   realCrypto, nextUuid() {
     const index = (this.uuidCounter++).toString(16).padStart(12, "0");
     return "00000000-0000-4000-8000-" + index;
@@ -245,10 +246,16 @@ function handleDatabase(url, init) {
   if (tail === "generation_jobs") {
     if (method === "GET") return Response.json(jobRows(url));
     if (method === "PATCH") {
+      runtime.jobPatchAttempts++;
+      if (runtime.beforeJobPatch) {
+        const interpose=runtime.beforeJobPatch; runtime.beforeJobPatch=null;
+        interpose({url,patch:content});
+      }
       const existing=jobRows(url)[0];
       if (!existing) return Response.json([]);
       const row=runtime.jobs.get(JOB_ID);
       Object.assign(row,content);
+      runtime.jobPatchMutations++;
       return Response.json([{...row}]);
     }
   }
