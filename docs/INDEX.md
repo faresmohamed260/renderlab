@@ -186,6 +186,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `GOVERNANCE.md` — normative human decision rights for repository, architecture, security, infrastructure, production/deployment, rollback, and emergency authority.
 - `PROJECT.md` — compact current project handoff, product direction, authority routing, and current-production pointer; detailed chronology is archived.
 - `docs/INDEX.md` — this taxonomy, source-precedence rule, and backlog semantics.
+- `docs/ENGINEERING_PRACTICES.md` — concise employer-facing map to reproducible checks, typed configuration, security/state/recovery proof and release evidence; reference guide, not an independent authority.
 - `docs/governance/documents.json` — machine-readable governance metadata for the high-authority document set; schema: `docs/governance/document-metadata.schema.json`.
 - `CHATGPT_PROJECT_INSTRUCTIONS.txt` — lightweight ChatGPT project bootstrap; it routes back to repository authorities and does not outrank them.
 
@@ -209,7 +210,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/operations/PRODUCTION_RELEASE_RUNBOOK.md` — current Vercel and Modal release, rollback, and ADR-005 operator procedure.
 - `docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md` — historical one-time planned-outage cutover and recovery evidence.
 - `docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md` — active Phase 3 backend professional baseline (P0) contract; five separately reviewed backend-first units.
-- `docs/architecture/P0_03_TRUST_BOUNDARIES_AND_OWNER_ISOLATION_CONTRACT.md` — P0-03 review draft: trust/principal boundaries, endpoint-owner matrix and per-service-role negative-test obligations; implementation not begun.
+- `docs/architecture/P0_03_TRUST_BOUNDARIES_AND_OWNER_ISOLATION_CONTRACT.md` — P0-03 trust/principal model, owner-isolation test inventory, and service-role negative-test obligations; consult linked test evidence and current production state.
 - `docs/architecture/P0_04_GENERATION_STATE_MACHINE_SPEC.md` — P0-04 generation-job state inventory, pure transition policy, SQL conformance and explicitly unenforced invariants.
 - Active architecture contracts remain beside current architecture while execution requires them. Closed bounded implementation contracts are historical evidence under `docs/history/contracts/architecture/**`; current architecture/roadmaps carry forward any still-binding constraints.
 
@@ -228,6 +229,7 @@ Use this map to find the appropriate current authority without treating every Ma
 
 ### Status, audits, archives, and supporting material
 
+- `CHANGELOG.md` — release-history navigation and convention; the production manifest remains canonical.
 - `docs/production/current.json` — canonical machine-readable current-production application/deployment record.
 - `docs/STATUS.md` — concise current status/deployment summary validated against the production manifest; detailed domain authorities still govern their own non-production facts.
 - `docs/audits/**` — evidence and assessments. A current authority must explicitly identify an audit/assessment if its finding is meant to represent current accepted state.
