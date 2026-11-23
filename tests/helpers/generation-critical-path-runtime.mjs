@@ -19,6 +19,7 @@ const initial = () => ({
   admissionFailure: null, providerOutcome: "ready", cancelOutcome: "confirmed", wakeFailure: false, wakeResponseLost: false,
   skipDispatch: false, finalizationFault: null, faultUsed: false,
   beforeJobPatch: null, jobPatchMutations: 0, jobPatchAttempts: 0,
+  atomicRpcAvailable: true, atomicRpcFailure: false, atomicCommits: 0, atomicAttempts: 0,
   realCrypto, nextUuid() {
     const index = (this.uuidCounter++).toString(16).padStart(12, "0");
     return "00000000-0000-4000-8000-" + index;
@@ -221,6 +222,62 @@ function rpcResponse(rpc, body) {
     case "renderlab_release_generation_reconciliation":
       if (job && job.reconcile_token===body.p_token) job.reconcile_token=null;
       return Response.json(true);
+    case "renderlab_terminalize_generation_and_release": {
+      runtime.atomicAttempts++;
+      if (!runtime.atomicRpcAvailable) {
+        return Response.json({code:"PGRST202",message:"RPC absent from fixture schema cache"},{status:404});
+      }
+      if (runtime.atomicRpcFailure) {
+        return Response.json({code:"P0001",message:"fixture backend failure"},{status:503});
+      }
+      const answer=(outcome,released=false)=>Response.json([{
+        outcome,job_status:job?.status??null,
+        output_asset_ids:job?.output_asset_ids??null,reservation_released:released,
+      }]);
+      if (runtime.beforeJobPatch) {
+        const interpose=runtime.beforeJobPatch;runtime.beforeJobPatch=null;
+        interpose({url:new URL("https://database.example.invalid/rest/v1/generation_jobs"),
+          patch:{status:body.p_terminal_status}});
+      }
+      if (!job || job.owner_id!==body.p_owner_id || job.id!==body.p_job_id) return answer("not_found");
+      const target=body.p_terminal_status,original=job.status;
+      const bound=reservation?.job_id===job.id&&reservation.owner_id===job.owner_id&&!reservation.released_at;
+      const release=()=>{
+        if (!bound || reservation.released_at) return false;
+        reservation.released_at=new Date().toISOString();runtime.releases++;return true;
+      };
+      if (["succeeded","failed","cancelled"].includes(original)) {
+        if (target!==original || (original==="succeeded"&&body.p_asset_id
+          &&job.output_asset_ids?.[0]!==body.p_asset_id)) return answer("conflict");
+        return answer("already_terminal",release());
+      }
+      const legal=(target==="succeeded"&&original==="persisting")
+        ||(target==="failed"&&["queued","preparing","running","persisting"].includes(original))
+        ||(target==="cancelled"&&["queued","cancelling"].includes(original));
+      if (!legal || body.p_expected_status!==original
+        || (job.reconcile_token && job.reconcile_token!==body.p_reconcile_token)) {
+        return answer("conflict");
+      }
+      if (target==="succeeded") {
+        const output=[...runtime.media.values()].find(x=>x.id===body.p_asset_id
+          && x.owner_id===body.p_owner_id && x.generation_job_id===job.id
+          && x.generation_output_index===0);
+        if (!output) return answer("conflict");
+      } else if (target==="failed") {
+        if (!body.p_error_code||!body.p_error_message) return answer("conflict");
+      } else if (job.output_asset_ids.length) return answer("conflict");
+      const now=new Date().toISOString();
+      Object.assign(job,{
+        status:target,completed_at:job.completed_at??now,updated_at:now,
+        output_asset_ids:target==="succeeded"?[body.p_asset_id]:job.output_asset_ids,
+        worker_state:target==="succeeded"?"ready":target==="cancelled"?"cancelled":job.worker_state,
+        error_code:target==="failed"?body.p_error_code:null,
+        error_message:target==="failed"?body.p_error_message:null,
+        failover_history:body.p_failover_history??job.failover_history,
+      });
+      runtime.atomicCommits++;
+      return answer("applied",release());
+    }
     case "renderlab_cancel_queued_generation_dispatch": {
       const outbox=runtime.outbox.get(JOB_ID);
       if (!job||job.status!=="queued"||job.owner_id!==body.p_owner_id

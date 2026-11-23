@@ -4,6 +4,7 @@ import type { GenerationJob } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { reconcileClaimedGenerationCancellation } from "@/server/generation/cancel-generation";
 import { releaseBoundGenerationAdmission } from "@/server/generation/generation-admission";
+import { tryAtomicTerminalizeGeneration } from "@/server/generation/atomic-terminalization";
 import {
   claimGenerationReconciliation,
   releaseGenerationReconciliation,
@@ -60,11 +61,24 @@ async function getSnapshot(ownerId: string, jobId: string, signal?: AbortSignal)
   return rows?.[0] ?? null;
 }
 
-async function failStaleUndispatchedJob(row: JobSnapshotRow) {
+async function failStaleUndispatchedJob(row: JobSnapshotRow, token: string) {
   if (row.status === "cancelling") return null;
   if (row.worker_id === FIBO_DISPATCH_BACKEND || (row.worker_id && row.provider_job_id)) return null;
   if (Date.now() - Date.parse(row.updated_at) < staleMissingDispatchGraceMs) return null;
 
+  const atomic = await tryAtomicTerminalizeGeneration({
+    ownerId: row.owner_id,
+    jobId: row.id,
+    expectedStatus: row.status,
+    terminalStatus: "failed",
+    errorCode: "generation_orchestration_stalled",
+    errorMessage: "Generation could not be resumed because its worker dispatch state is incomplete.",
+    reconcileToken: token,
+  });
+  if (atomic !== null) {
+    return atomic.outcome === "applied" ? getSnapshot(row.owner_id, row.id) : null;
+  }
+  // Compatibility: schema 0031 can be applied separately after this code.
   const completedAt = new Date().toISOString();
   const rows = await supabaseRest<JobSnapshotRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=in.(queued,preparing,running,persisting)&select=id,owner_id,status,operation,output_asset_ids,error_code,error_message,worker_id,provider_job_id,created_at,updated_at`,
@@ -169,7 +183,7 @@ export async function reconcileNativeGeneration(
       return diagnose(job, "cancellation");
     }
 
-    const stalled = await failStaleUndispatchedJob(claimedSnapshot);
+    const stalled = await failStaleUndispatchedJob(claimedSnapshot, token);
     if (stalled) {
       const failed = toGenerationJob(stalled);
       await settleTerminalAdmission(failed, ownerId);

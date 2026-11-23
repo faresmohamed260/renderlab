@@ -369,3 +369,49 @@ test("P0-05 overlapping reconciliation callbacks converge on one durable output"
   assert.equal(runtime.releases,1);
   assert.equal(heldReservation(),false);
 });
+test("P0-07 atomic success releases the bound slot within the terminal RPC",async(t)=>{
+  fixture(t);await dispatched();
+  const job=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
+  assert.equal(job.status,"succeeded");
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+  assert.equal(heldReservation(),false);
+  assert.ok(runtime.traces.some(x=>x.table==="rpc/renderlab_terminalize_generation_and_release"
+    && x.body?.p_terminal_status==="succeeded"));
+  assert.equal(runtime.traces.some(x=>x.table==="generation_admission_reservations"
+    && x.method==="PATCH"),false,"atomic success must not need a separate reservation PATCH");
+});
+
+test("P0-07 in-flight cancellation terminalizes and releases atomically",async(t)=>{
+  fixture(t);await dispatched();
+  const response=await cancellation.requestGenerationCancellation(OWNER_A,JOB_ID);
+  assert.equal(response.ok,true);
+  assert.equal(response.job.status,"cancelled");
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+  assert.equal(runtime.providerCancels,1);
+  assert.equal(heldReservation(),false);
+});
+
+test("P0-07 schema-not-installed is the only pre-migration fallback",async(t)=>{
+  fixture(t,{atomicRpcAvailable:false});await dispatched();
+  const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
+  assert.equal(result.status,"succeeded");
+  assert.ok(runtime.atomicAttempts>=1,"first probes the new RPC");
+  assert.equal(runtime.atomicCommits,0);
+  assert.equal(runtime.releases,1);
+  assert.ok(runtime.traces.some(x=>x.table==="generation_jobs"&&x.method==="PATCH"
+    &&x.body?.status==="succeeded"),"existing status-CAS stays available before migration");
+});
+
+test("P0-07 database failure is not misclassified as a missing-RPC fallback",async(t)=>{
+  fixture(t,{atomicRpcFailure:true,providerOutcome:"process-exited"});await dispatched();
+  await assert.rejects(()=>reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID),
+    /Privileged database request is temporarily unavailable/);
+  assert.equal(currentJob().status,"running");
+  assert.equal(runtime.atomicCommits,0);
+  assert.equal(runtime.releases,0);
+  assert.equal(heldReservation(),true);
+  assert.equal(runtime.traces.some(x=>x.table==="generation_jobs"&&x.method==="PATCH"
+    &&x.body?.status==="failed"),false,"must not silently fall back on a failed installed RPC");
+});

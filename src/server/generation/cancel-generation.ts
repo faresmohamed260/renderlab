@@ -3,6 +3,7 @@ import type { GenerationJob, GenerationJobStatus } from "@/lib/capabilities/gene
 import type { CancelGenerationResponse } from "@/lib/api/generation-cancel-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { releaseBoundGenerationAdmission } from "@/server/generation/generation-admission";
+import { tryAtomicTerminalizeGeneration } from "@/server/generation/atomic-terminalization";
 import {
   claimGenerationReconciliation,
   releaseGenerationReconciliation,
@@ -168,6 +169,19 @@ async function transitionToCancelling(row: CancellationRow, token: string) {
 }
 
 async function terminalizeCancelled(row: CancellationRow, token: string, diagnostic: Record<string, unknown>) {
+  const atomic = await tryAtomicTerminalizeGeneration({
+    ownerId: row.owner_id,
+    jobId: row.id,
+    expectedStatus: "cancelling",
+    terminalStatus: "cancelled",
+    reconcileToken: token,
+    failoverHistory: cancellationDiagnostic(row, diagnostic),
+  });
+  if (atomic !== null) {
+    // A lost race has the same non-applied result as the old status+token CAS.
+    return atomic.outcome === "applied" ? getCancellationRow(row.owner_id, row.id) : null;
+  }
+  // Pre-migration mixed-version fallback: preserve the original guarded PATCH.
   const at = new Date().toISOString();
   const rows = await supabaseRest<CancellationRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(row.owner_id)}&id=eq.${encodeURIComponent(row.id)}&status=eq.cancelling&reconcile_token=eq.${encodeURIComponent(token)}&select=id,owner_id,status,operation,worker_id,provider_job_id,worker_state,failover_history,output_asset_ids,error_code,error_message,reconcile_token,created_at,updated_at,completed_at`,
