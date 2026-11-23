@@ -91,7 +91,9 @@ test("signed JSON VGL sidecar must contain precisely one bounded structured capt
 test("auto-VGL remains default-off and is captured before durable image finalization", () => {
   const admission = fs.readFileSync("src/server/generation/submit-generation.ts", "utf8");
   const route = fs.readFileSync("src/app/api/generation/jobs/route.ts", "utf8");
-  const engine = fs.readFileSync("src/server/generation/native-generation.ts", "utf8");
+  const facade = fs.readFileSync("src/server/generation/native-generation.ts", "utf8");
+  const engine = fs.readFileSync("src/server/generation/native-generation-lifecycle.ts", "utf8");
+  assert.match(facade, /native-generation-lifecycle/);
   const persistence = fs.readFileSync("src/server/generation/native-generation-output-persistence.ts", "utf8");
   const recipe = fs.readFileSync("src/server/generation/generation-recipe.ts", "utf8");
   assert.match(admission, /process\.env\.RENDERLAB_FIBO_AUTOVGL_ENABLED === "true"/);

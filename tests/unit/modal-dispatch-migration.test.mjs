@@ -4,7 +4,8 @@ import path from "node:path";
 import test from "node:test";
 
 const migration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/0030_modal_generation_dispatch_outbox.sql"), "utf8");
-const nativeGeneration = fs.readFileSync(path.join(process.cwd(), "src/server/generation/native-generation.ts"), "utf8");
+const nativeFacade = fs.readFileSync(path.join(process.cwd(), "src/server/generation/native-generation.ts"), "utf8");
+const nativeGeneration = fs.readFileSync(path.join(process.cwd(), "src/server/generation/native-generation-lifecycle.ts"), "utf8");
 const heartbeatMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20261120110000_generation_dispatch_heartbeat.sql"), "utf8");
 const productionGateway = fs.readFileSync(path.join(process.cwd(), "workers/fibo-studio/modal_native_production.py"), "utf8");
 const reconcileRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/internal/generation/reconcile/route.ts"), "utf8");
@@ -13,6 +14,7 @@ test("accepted generation and dispatch intent share one database function", () =
   const body = migration.slice(migration.indexOf("function public.renderlab_accept_generation_dispatch"), migration.indexOf("function public.renderlab_claim_generation_dispatch"));
   assert.match(body, /insert into public\.generation_jobs/);
   assert.match(body, /insert into public\.generation_dispatch_outbox/);
+  assert.match(nativeFacade, /native-generation-lifecycle/);
   assert.match(nativeGeneration, /rpc\/renderlab_accept_generation_dispatch/);
   assert.doesNotMatch(nativeGeneration, /async function insertJob/);
 });
