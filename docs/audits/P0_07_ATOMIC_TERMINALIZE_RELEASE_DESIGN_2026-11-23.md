@@ -1,0 +1,55 @@
+# Design proposal — atomic generation terminalization and admission release
+
+**Status:** DESIGN ONLY; owner approval is required before any migration, schema update or runtime rollout. **Date:** 2026-11-23. **Change authority:** [Phase 3 P0 contract](../architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md), [Unit 4 state matrix](../architecture/P0_04_GENERATION_STATE_MACHINE_SPEC.md), [P0-06 status-CAS release plan](P0_06_STATUS_CAS_FIX_RELEASE_PLAN_2026-11-23.md). This document does **not** implement the proposal.
+
+## Problem and intended invariant
+
+Today `native-generation.ts` and cancellation/reconciliation can write a terminal `generation_jobs.status`, while `releaseBoundGenerationAdmission` separately clears the bound slot. Status-CAS protects terminal immutability against stale generic writers on main, but **does not** make these two database mutations one transaction. A committed terminal job can briefly hold a reservation; a lost response or permanently absent owner can extend that window.
+
+**Proposed property for converted writer paths:** in one committed PostgreSQL transaction, either (1) the job transitions from an allowed active state to exactly one terminal state, with a unique durable asset link when succeeding, **and** its bound reservation is released if present; or (2) nothing changes. Replays return typed already-terminal / conflict results with no duplicate release. This is a scoped transaction invariant, not a guarantee that every pre-existing SQL writer will immediately use the new function.
+
+## Proposed additive database contract
+
+Introduce one new migration, after the current highest migration number, defining a service-only SECURITY DEFINER RPC such as `public.renderlab_terminalize_generation_and_release`. Its proposed arguments are `p_owner_id uuid`, `p_job_id uuid`, `p_expected_status text`, `p_terminal_status text`, `p_asset_id uuid DEFAULT NULL`, `p_error_code text DEFAULT NULL`, `p_error_message text DEFAULT NULL`, `p_reconcile_token uuid DEFAULT NULL`. The exact token type/lease condition must be checked against existing `generation_jobs.reconcile_token` DDL before approval. Return an explicit typed record: `applied`, `already_terminal`, `conflict` or `not_found`, plus authoritative status, output asset IDs, and whether a bound release changed a row. Do not expose raw SQL exceptions to an end user.
+
+Within a single server-side transaction, the function should:
+
+1. **Validate** caller scope, allowed terminal value (`succeeded`, `failed`, `cancelled`), expected state and the Unit 4 edge; reject terminal→different terminal, `cancelling→succeeded`, or `persisting→cancelled`. Restrict `succeeded` to previously indexed (`job_id`, output index 0) media whose `owner_id` and asset ID match; require terminal failure/error fields to be consistent. Do not move object bytes through SQL.
+2. **Serialize** on the owner-scoped job row first (`SELECT ... FOR UPDATE`). Check the expected status and matching active reconciliation claim/token when applicable. A competing request that commits first determines the visible outcome; the loser receives `conflict` and must not write. Use a documented consistent job-then-reservation lock order; admission reservation/binding functions must be reviewed for reverse lock order and potential deadlocks before rollout.
+3. **Update** job terminal state, timestamps and output fields, then conditionally release a reservation linked by `job_id` and `owner_id` with `released_at IS NULL`. The existing [0012 partial unique index on job_id](../../supabase/migrations/0012_renderlab_generation_admission.sql) prevents multiple bound reservations for one job; the release predicate keeps at most one actual release timestamp. No reservation is required for historical unbound rows.
+4. **Replay**: on same terminal state/output, return `already_terminal` without rewriting the job, and release any legacy still-held matching reservation exactly once. On a different terminal status or asset, return `conflict` and preserve the first result. Never overwrite prior error fields, output IDs or completion timestamp on same-state replay.
+5. **Secure** the function with `SET search_path = ''`, schema-qualified tables/functions, an audited function owner, explicit `REVOKE ALL FROM PUBLIC, anon, authenticated`, narrowly scoped `GRANT EXECUTE TO service_role`, and a real owner-ID check independent of the untrusted argument. The application obtains owner identity from server-verified authentication; the SECURITY DEFINER function should additionally check job/reservation ownership, including cross-owner and missing-owner cases.
+
+**Schema effect:** additive function signature, return type, privileges and documentation; **no new table/column is necessarily required** because current migrations already have a job-bound reservation and unique job/output-index constraints. This is nevertheless a **reviewed SQL schema migration**. A stronger global database guarantee would additionally need all other terminal writers converted or a carefully reviewed trigger/privilege boundary; merely installing this RPC cannot provide it.
+
+## Existing writers and compatibility audit
+
+| Writer / scenario | Migration requirement | Compatibility requirement |
+| --- | --- | --- |
+| Native FIBO success and failure; persisting recovery | Adopt the new RPC only once durable media index is confirmed | Old app still uses conditional PATCH + separate release while migration is staged |
+| Owner-return reconciliation and stale missing-dispatch fallback | Route terminal action through RPC; owner-return replay may call release path | No double-terminalization; missing dispatch still respects 15-minute grace |
+| In-flight cancellation and queued-before-execution outbox cancel RPC | Integrate carefully with claim/token and existing SQL outbox transaction; **do not** break the accepted queued-cancel semantics | Existing outbox SQL may finalize cancelled itself. Count it as an explicit exception until migrated or proven to release atomically |
+| Admission bind of a job that is already terminal | Keep migration 0015's immediate-release behavior | Binding must not resurrect a released slot or falsely reject legitimate late binding |
+| Historical preparing/Upscale rows and ongoing old-version functions | Preserve read/cleanup compatibility during mixed-version deployment | No forced migration of legacy jobs, no new generation capability |
+
+## Migration order, deployment and rollback
+
+**Phase A: evidence before DDL.** Inventory *every* SQL and TypeScript terminal writer, exact reconcile-token types, role owner grants, lock ordering, and migrations `0012`, `0013`, `0015`, `0016`, `0030` and the 2026-11-20 dispatch recovery. Build a disposable Supabase-compatible Postgres harness and negative/security tests. Require an owner-reviewed design with an explicit downtime/drain and spending decision. **This document does not provide that approval.**
+
+**Phase B: additive database migration only.** Deploy the new RPC and grants through the approved migration channel; existing deployed app ignores it, so backward compatibility is testable before any app change. Capture migration SHA, production read-back of the signature and grants, rollback decision, and the exact existing Vercel/Modal release anchors. Do not revoke old calls or drop columns.
+
+**Phase C: app switch with mixed-version safety.** Add a narrowly scoped adapter that uses the new RPC for reviewed job-finalization paths; retain legacy protocol for older app versions until the request and function lifetimes drain. Qualify app code on its exact SHA, pass all protected checks and CodeQL, stage under the [production release runbook](../operations/PRODUCTION_RELEASE_RUNBOOK.md), use a separately approved disposable fixture and record the new live alias/manifest in the same sitting. Only claim a **global** terminal+release invariant after auditing and converting the outbox cancellation and all other terminal writers, and after old app versions are no longer active.
+
+**Rollback:** first stop promotion / restore the preverified same-project Vercel deployment, and verify the alias. Keep the additive RPC installed while an app version may still call it. If a later cleanup migration is approved, remove the function **only after** full caller absence is proven; never attempt an automatic irreversible down-migration of job or reservation data. A partial release or deadlock is a stop condition, not an invitation to bypass grants or rewrite job history. Modal and R2 objects are not touched by this proposal.
+
+## Test / security acceptance matrix (required; currently absent)
+
+The **disposable DB-backed conformance harness becomes mandatory**, because a fake REST fixture and static SQL checks cannot establish PostgreSQL row locking, transaction rollback or SECURITY DEFINER permissions. Run the actual ordered migrations in a disposable Supabase/Postgres environment (including Auth roles/extensions and RLS), then execute at least:
+
+- Two independent SQL sessions racing `cancelled` versus `succeeded`, `failed` versus `succeeded`, and duplicate `succeeded` settlement; assert one winner, one durable output index, one non-null `released_at` and no contradictory terminal history. Simulate a client timeout **after commit** and replay.
+- Race bind-vs-terminalize, dispatcher queued-cancel-vs-poll-finalize, and a stale reconciliation token; assert neither leaked slot nor unauthorized job mutation. Exercise lost DB response and provider result after terminal.
+- Inject exceptions **between the job update and reservation update** inside the transaction to prove rollback of both. Exercise missing reservation, expired reservation, old historical job, and missing output asset. Assert no deadlock under consistent locking and bounded retry policy.
+- Verify `anon` and `authenticated` cannot execute RPC, service role cannot change a foreign owner's row via a forged job ID, and invalid/denied requests return redacted, stable application errors. Prove function schema-resolution hardening and correct ownership under an actual RLS/service-role setup.
+- Re-run the Unit 4 64-edge matrix, Unit 5 20-process deterministic offline suite and current 439+ existing Node tests unchanged, then protected CI + CodeQL, targeted hosted fixture, cleanup, rollback rehearsal, production-documentation sync.
+
+**Risk: HIGH.** Highest risks are lock-order deadlocks with admission reserve/bind, mixed-version double finalization, privilege escalation through SECURITY DEFINER, retroactive incompatibility with queued-cancel outbox functions, asset-index races and a failed app/schema cutover. The design reduces a known consistency window but must not be treated as implemented, approved or production-verified.
