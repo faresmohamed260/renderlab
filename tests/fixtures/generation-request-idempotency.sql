@@ -111,6 +111,18 @@ BEGIN
     OR v_row.admission_deadline IS DISTINCT FROM v_deadline
   THEN RAISE EXCEPTION 'Same intent replay changed immutable acceptance'; END IF;
 
+  -- An old deadline does not invalidate a replay of a committed intent.
+  SELECT * INTO v_row FROM public.renderlab_accept_generation_dispatch_idempotent(
+    v_key, v_digest, 'a6767676-6767-4676-8676-676767676767', v_owner,
+    'create-image','image','fixture only','fixture','fibo2-edit-turbo','fibo',
+    '[]'::jsonb,'{}'::jsonb,'fibo','fibo-2.0-turbo','bria-fibo-2.0-turbo',
+    '{}'::jsonb,now()-interval '1 day'
+  );
+  IF v_row.outcome <> 'replayed' OR v_row.job_id IS DISTINCT FROM v_job
+    OR v_row.attempt_id IS DISTINCT FROM v_attempt
+    OR v_row.admission_deadline IS DISTINCT FROM v_deadline
+  THEN RAISE EXCEPTION 'Expired admission deadline prevented historical replay'; END IF;
+
   SELECT count(*) INTO v_total FROM public.generation_admission_reservations
     WHERE owner_id = v_owner;
   IF v_total <> 1 THEN RAISE EXCEPTION 'Replay consumed another admission grant'; END IF;
