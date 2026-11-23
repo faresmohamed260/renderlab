@@ -17,7 +17,9 @@ export async function GET() {
     if (!url) {
       return NextResponse.json({ ok: false, error: { code: "account_export_not_ready" } }, { status: 404 });
     }
-    return NextResponse.redirect(url, 302);
+    const response = NextResponse.redirect(url, 302);
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
   } catch {
     return NextResponse.json({ ok: false, error: { code: "account_export_unavailable" } }, { status: 503 });
   }
