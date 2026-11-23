@@ -1,5 +1,5 @@
 import { envString } from "../../lib/config/runtime-env.ts";
-import { fiboProvider } from "@/server/generation/adapters/fibo-adapter";
+import { fiboProvider } from "@/server/generation/adapters/fibo-provider-port";
 import { persistFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
 import type {
   GenerationJob,

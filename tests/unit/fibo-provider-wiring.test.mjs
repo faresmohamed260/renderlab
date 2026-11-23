@@ -8,7 +8,7 @@ import {
 
 const submitApi = await import("../../src/app/api/generation/jobs/route.ts");
 const poll = await import("../../src/server/generation/poll-generation.ts");
-const { fiboProvider } = await import("../../src/server/generation/adapters/fibo-adapter.ts");
+const { fiboProvider } = await import("../../src/server/generation/adapters/fibo-provider-port.ts");
 
 test("P1-02 provider wiring retains exactly one app accept, one outbox dispatch and one terminal release", async t => {
   resetRuntime();

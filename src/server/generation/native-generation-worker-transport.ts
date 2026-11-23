@@ -1,5 +1,5 @@
 import { envFlag, envString } from "../../lib/config/runtime-env.ts";
-import { fiboProvider } from "@/server/generation/adapters/fibo-adapter";
+import { fiboProvider } from "@/server/generation/adapters/fibo-provider-port";
 import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { fiboGenerationModel, type GenerationRequest } from "@/lib/capabilities/generation";
 import { workerGatewayOptions, workerJobRequest, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
