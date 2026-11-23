@@ -92,6 +92,8 @@ const rows = expectedGaps.map(e =>
 const template = await readFile(join(root, "tests", "fixtures", "database-conformance.sql"), "utf8");
 assert.equal(template.split("/* MODEL_EDGE_ROWS */").length, 2);
 psql([], template.replace("/* MODEL_EDGE_ROWS */", rows));
+const invitationConformance = join(root, "tests", "fixtures", "invitation-claim-conformance.sql");
+psql(["-f", invitationConformance]);
 const atomicTemplate = await readFile(join(root, "tests", "fixtures", "atomic-terminalize-conformance.sql"), "utf8");
 assert.equal(atomicTemplate.split("/* MODEL_EDGE_ROWS */").length, 2);
 psql([], atomicTemplate.replace("/* MODEL_EDGE_ROWS */", rows));

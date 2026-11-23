@@ -16,12 +16,14 @@ type RequestOwner =
       code: "authentication_required" | "renderlab_access_required" | "account_preferences_unavailable";
     };
 
-async function getPreferenceRequestOwner(): Promise<RequestOwner> {
+async function getPreferenceRequestOwner(requireActive = false): Promise<RequestOwner> {
   const authentication = await getFreshCurrentRenderLabAuthentication();
   if (!authentication) return { ok: false, status: 401, code: "authentication_required" };
   try {
     const access = await getRenderLabAccountAccess(authentication.identity.id);
-    if (!access) return { ok: false, status: 403, code: "renderlab_access_required" };
+    if (!access || (requireActive && access.status !== "active")) {
+      return { ok: false, status: 403, code: "renderlab_access_required" };
+    }
     return { ok: true, ownerId: authentication.identity.id };
   } catch {
     return { ok: false, status: 503, code: "account_preferences_unavailable" };
@@ -56,7 +58,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   const originFailure = enforceSameOriginMutation(request);
   if (originFailure) return originFailure;
-  const owner = await getPreferenceRequestOwner();
+  const owner = await getPreferenceRequestOwner(true);
   if (!owner.ok) return accessError(owner);
 
   let body: unknown;
@@ -86,7 +88,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: Request) {
   const originFailure = enforceSameOriginMutation(request);
   if (originFailure) return originFailure;
-  const owner = await getPreferenceRequestOwner();
+  const owner = await getPreferenceRequestOwner(true);
   if (!owner.ok) return accessError(owner);
   try {
     return NextResponse.json({ ok: true, preferences: await resetRenderLabAccountPreferences(owner.ownerId) });

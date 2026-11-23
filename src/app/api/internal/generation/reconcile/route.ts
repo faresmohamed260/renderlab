@@ -1,4 +1,5 @@
 import { envString } from "../../../../../lib/config/runtime-env.ts";
+import { isAuthorizedInternalBearer } from "@/server/security/internal-bearer-secret";
 // ENT-004 same-origin exemption: server-secret internal route authenticated by a dedicated bearer secret.
 import { NextResponse } from "next/server";
 import { supabaseRest } from "@/server/data/supabase-rest";
@@ -15,9 +16,7 @@ import { readOldestActiveJobAge } from "@/server/observability/oldest-active-job
 import { dispatchHealthIsHealthy, type DispatchHealth } from "@/server/observability/dispatch-health";
 
 function authorized(request: Request) {
-  const secret = envString("RENDERLAB_GENERATION_RECONCILER_SECRET")?.trim();
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return isAuthorizedInternalBearer(request.headers.get("authorization"), envString("RENDERLAB_GENERATION_RECONCILER_SECRET"));
 }
 
 export async function POST(request: Request) {

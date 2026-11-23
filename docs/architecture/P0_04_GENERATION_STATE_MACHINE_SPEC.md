@@ -2,7 +2,7 @@
 
 **Status:** P0 Unit 4, behavior-preserving specification and tests only. **Date:** 2026-11-23. **Authority:** [Backend professional baseline P0 contract](BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md). **Scope:** existing FIBO image beta, retained historical operations and existing Supabase SQL; no runtime wiring, schema migration, secrets, provider calls, generations, or release.
 
-**P0-06 subsequent implementation notice (not yet production-released):** [status-CAS hardening plan](../audits/P0_06_STATUS_CAS_FIX_RELEASE_PLAN_2026-11-23.md) preserves this Unit 4 historical inventory, but adds expected-status database guards to the two generic job writers and a typed lost-CAS response. The pure transition table remains a policy model rather than a SQL transition trigger; status-conditional writes do **not** make terminalization and reservation release atomic. Original Unit 4 gaps below are preserved as the findings at that checkpoint.
+**Post-Unit-4 correction, as of 2026-11-23:** P0-06 guarded writes were **merged and production-released**, and P0-07's service-role atomic terminalization RPC (migration 0031) and converted FIBO terminal paths were subsequently released. [P0-06 release evidence](../audits/PHASE3_P0_RELEASE_BACKED_GATE_REASSESSMENT_2026-11-23.md); [Phase 3 closeout](../audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md); [P0-07 smoke evidence](../audits/PHASE3_P007_ATOMIC_PRODUCTION_SMOKE_VERIFICATION_2026-11-23.md). The original Unit 4 gap inventory below is **historical, not a description of current unguarded patchJob**. Expected-status CAS is not a global SQL transition trigger; P0-07 conversion is not universal and residual terminal+release exceptions remain.
 
 ## Verified status and transition inventory
 
@@ -40,11 +40,11 @@ The dispatch outbox is **not** the generation job state. Migration [0030](../../
 
 ## Explicit gaps found *before* implementation
 
-1. **Terminal transitions are not globally enforced at write boundary.** [native-generation.ts patchJob](../../src/server/generation/native-generation.ts) performs an owner+job filtered PATCH without a prior status compare-and-swap. Many callers coordinate through claims or check prior status; nevertheless the 0016 CHECK only validates legal **values**. A stale internal caller could theoretically overwrite an already terminal job. **A pure module and 64-edge tests do not fix or establish actual protection against such a race.** No runtime behavior was changed in this unit.
+1. **Historical gap at Unit 4; fixed for converted generic writer calls by P0-06/P0-07.** At the Unit 4 checkpoint, [native-generation.ts patchJob](../../src/server/generation/native-generation.ts) filtered only owner+job, not expected status. **Current code** refuses an already-terminal expected status and uses owner+job+expected-status CAS (plus token fencing where applicable); eligible terminal paths call the service-only atomic RPC. SQL CHECK still validates legal **values**, not the complete transition graph. Legacy/dispatcher/upscale paths outside the converted set must be audited separately; the 64-edge pure policy alone never proved a global SQL guarantee.
 2. **Terminal + held reservation can be transient.** Complete-job status update and releaseBoundGenerationAdmission may occur in distinct requests/transactions. Existing SQL makes *repeated* release safe and terminal binding immediate when possible, but it does not enforce the stronger invariant that no committed terminal row ever coexists even briefly with an unreleased reservation. This is modeled as a visible consistency warning, not silently asserted as impossible.
 3. **Persisting exactly once is a qualified statement.** SQL uniquely indexes a generation output by (job, output index), and native recovery checks existing rows; duplicate callbacks should converge on the same durable asset row. This does not prove exactly one provider invocation or object-storage PUT.
 4. **Legacy compatibility:** preparing and earlier non-FIBO model paths are still readable. New submitted FIBO jobs enter queued via durable dispatch. The pure model does not re-enable retired new operations.
-5. **Deferred follow-up:** do not wire a new guard at this point. Propose separately a small behavior-preserving *observe-only* adapter at patchJob or a transactionally guarded SQL transition, with a reviewed rollback and production release for any runtime change. Runtime-rejecting illegal edges could alter in-flight behavior and needs independent owner approval.
+5. **Remaining follow-up, not an unimplemented patchJob proposal:** guarded generic writes and a restricted atomic terminalization RPC now exist. The remaining P1 gap is full enumeration/conversion or database enforcement of legacy and dispatcher terminal writers, including the dispatch finish-failed path, queued-cancel reservation release and retired upscale submit-failure path. Any additional runtime or SQL conversion requires independent review and the production release runbook.
 
 ## Pure model invariants and deterministic evidence
 
@@ -63,3 +63,52 @@ The dispatch outbox is **not** the generation job state. Migration [0030](../../
 ## Review/acceptance
 
 Run (1) node --test tests/unit/generation-job-state-machine.test.mjs tests/unit/generation-job-sql-conformance.test.mjs, (2) full npm run test:unit, (3) npm run typecheck, build, verify:ui-purity, verify:docs-governance and engineering-quality, then exact-head six required checks plus CodeQL before a docs/tests/pure-library-only merge. No release. **Unit 5 remains separate and cannot take credit for a runtime wiring change that was not implemented.**
+
+## Post-Unit-4 correctness follow-up: bounded FIBO generation deadline (R2/R3)
+
+The unit inventory above is historical. The subsequent FIBO runtime deadline is
+**20 minutes from `generation_jobs.created_at`**: Modal's renderer timeout is
+**420 seconds (7 minutes)**, plus **780 seconds (13 minutes)** of bounded allowance
+for durable outbox dispatch, GPU queue/startup, return transit and persistence.
+Using immutable creation time prevents repeated provider HTTP 202 responses,
+reconciliation attempts, or poison output from extending this cutoff.
+
+For a FIBO job in queued, preparing, running or persisting, expiry triggers one
+owner-scoped **migration 0031 atomic terminalize-and-release** call with error code
+`generation_deadline_exceeded`, before making further provider or storage calls.
+A FIBO job already **cancelling** follows the existing legal
+`cancelling -> cancelled` SQL edge, still using the same atomic release;
+SQL 0031 intentionally does not allow `cancelling -> failed`.
+Retired/non-FIBO workflows keep their previous 2-hour ambiguous-response and
+15-minute undispatched policies. The cutoff applies even to an unresolved
+durable outbox with no backend call ID: both owner-return and global candidate
+selectors include aged FIBO rows without handles.
+
+This follow-up requires production schema 0031 before release (already applied,
+but worker 1 alone verifies/coordinates runtime deployment). The code refuses
+to downgrade deadline settlement to non-atomic PATCH on a missing RPC.
+Terminal races remain protected by status + reconciliation-token compare-and-swap.
+Tests cover the exact deadline boundary, pending HTTP 202, unresolved queued,
+persisting and cancelling, one reservation release and zero new provider calls.
+
+## Post-Unit-4 fairness follow-up: last-claimed reconciliation ordering
+
+The additional migration `0033_generation_reconciliation_fairness.sql` adds a
+**durable, nullable `last_reconciled_at`** to generation_jobs and upgrades the
+existing owner-scoped reconciliation **claim RPC** to stamp it in the same
+atomic SQL update that acquires the lease. No new REST operation or provider
+call is required. Timestamp remains unchanged when a claim fails; releasing a
+claim retains it. The two candidate selectors order
+`last_reconciled_at ASC NULLS FIRST, updated_at ASC, id ASC`. A pending
+HTTP 202, temporary error, or poison persisting result no longer monopolizes
+every future limited batch: after a successful claim it sorts behind any less
+recently claimed jobs. Both global and owner-scoped active-job query indexes
+cover the ordering; only active statuses are indexed.
+
+`updated_at` retains its existing business-state semantics; historical
+non-FIBO stale ages and FIBO's immutable `created_at` deadline are unaffected.
+Worker 1 **must apply migration 0032 before deploying** the application
+consumer because pre-migration SQL does not have the ordering column.
+Disposable PostgreSQL conformance verifies a claim advances the timestamp
+and a release preserves it; unit tests pin both selectors and the SQL
+claim's owner/token guards.

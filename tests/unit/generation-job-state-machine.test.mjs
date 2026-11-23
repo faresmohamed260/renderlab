@@ -5,7 +5,7 @@ import {
   evaluateJobTransition, isGenerationTerminalStatus, initialGenerationLifecycle,
   changeJobStatus, recordPersistedOutput, releaseGenerationReservation,
   settleTerminalOnOwnerReturn, projectProviderObservation, requestRetryOfExistingJob,
-  inspectJobLifecycle,
+  inspectJobLifecycle, fiboJobDeadlineMs,
 } from "../../src/lib/capabilities/generation-job-state-machine.ts";
 
 const expectedEdges = {
@@ -173,4 +173,23 @@ test("P0-04 invariant inspector detects invalid persisted-output and release sna
     ["multiple-output-writes","multiple-reservation-releases","output-without-persisting-or-success"].sort());
   assert.deepEqual(inspectJobLifecycle({...initialGenerationLifecycle("released"),
     status:"succeeded"}), ["success-without-output"]);
+});
+
+test("FIBO deadline derives from 420s render limit and is bounded across every active state", () => {
+  assert.equal(fiboJobDeadlineMs, 20 * 60 * 1000);
+  const statuses = ["queued", "preparing", "running", "cancelling", "persisting"];
+  for (const status of statuses) {
+    const snapshot = { ...initialGenerationLifecycle(), status };
+    const early = projectProviderObservation(snapshot, { kind: "fibo-deadline", ageMs: fiboJobDeadlineMs - 1 });
+    assert.equal(early.decision, "idempotent", status);
+    assert.equal(early.next, snapshot);
+    const expired = projectProviderObservation(snapshot, { kind: "fibo-deadline", ageMs: fiboJobDeadlineMs });
+    assert.equal(expired.decision, "accepted", status);
+    assert.equal(expired.next.status, status === "cancelling" ? "cancelled" : "failed", status);
+    assert.equal(expired.next.errorCode, status === "cancelling" ? null : "generation_deadline_exceeded");
+    assert.equal(projectProviderObservation(expired.next, { kind: "fibo-deadline", ageMs: fiboJobDeadlineMs + 1 }).decision, "idempotent");
+    const released = releaseGenerationReservation(expired.next).next;
+    assert.equal(released.reservationReleaseCount, 1);
+    assert.equal(releaseGenerationReservation(released).decision, "idempotent");
+  }
 });

@@ -10,6 +10,7 @@ on:
       - "src/lib/capabilities/generation-job-state-machine.ts"
       - "tests/fixtures/disposable-supabase-bootstrap.sql"
       - "tests/fixtures/database-conformance.sql"
+      - "tests/fixtures/invitation-claim-conformance.sql"
       - "tests/fixtures/atomic-terminalize-conformance.sql"
       - "tests/fixtures/database-0031-version-skew.sql"
       - "scripts/verify-0031-ent007-isolated-restore.mjs"
