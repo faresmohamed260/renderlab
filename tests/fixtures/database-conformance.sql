@@ -165,10 +165,31 @@ BEGIN
   UPDATE public.generation_jobs SET status='running' WHERE id=v_job;
   IF public.renderlab_claim_generation_reconciliation(v_foreign,v_job,v_token,600)
   THEN RAISE EXCEPTION 'Cross-owner reconciliation claim accepted'; END IF;
+  IF (SELECT last_reconciled_at FROM public.generation_jobs WHERE id=v_job) IS NOT NULL
+  THEN RAISE EXCEPTION 'Unclaimed generation job already has fairness timestamp'; END IF;
   IF NOT public.renderlab_claim_generation_reconciliation(v_owner,v_job,v_token,600)
   THEN RAISE EXCEPTION 'Active job reconciliation claim rejected'; END IF;
+  IF (SELECT last_reconciled_at FROM public.generation_jobs WHERE id=v_job) IS NULL
+  THEN RAISE EXCEPTION 'Accepted claim did not advance last_reconciled_at'; END IF;
   IF NOT public.renderlab_release_generation_reconciliation(v_owner,v_job,v_token)
   THEN RAISE EXCEPTION 'Matching reconciliation token release rejected'; END IF;
+  IF (SELECT last_reconciled_at FROM public.generation_jobs WHERE id=v_job) IS NULL
+  THEN RAISE EXCEPTION 'Release must retain fairness timestamp'; END IF;
+
+  -- A never-claimed eligible job must sort ahead of a pending job whose
+  -- previous claim saw HTTP 202 without updating its business-state timestamp.
+  INSERT INTO public.generation_jobs(
+    id,owner_id,status,operation,output_kind,prompt,workflow_id,model,ecosystem
+  ) VALUES(
+    '77777777-7777-4777-8777-777777777777',v_owner,'running','create-image','image',
+    'fairness fixture','fixture','fibo2-edit-turbo','fibo'
+  );
+  IF (SELECT id FROM public.generation_jobs
+      WHERE owner_id=v_owner AND status='running'
+      ORDER BY last_reconciled_at ASC NULLS FIRST, updated_at ASC, id ASC
+      LIMIT 1) IS DISTINCT FROM '77777777-7777-4777-8777-777777777777'::uuid
+  THEN RAISE EXCEPTION 'Pending older job starved the untouched active job'; END IF;
+  DELETE FROM public.generation_jobs WHERE id='77777777-7777-4777-8777-777777777777';
   IF public.renderlab_release_generation_reconciliation(v_owner,v_job,v_token)
   THEN RAISE EXCEPTION 'Duplicate reconciliation token release accepted'; END IF;
 

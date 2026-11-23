@@ -167,7 +167,7 @@ function fixture(t, {
       if (query.get("select") === "id") {
         assert.equal(method, "GET");
         assert.equal(query.get("limit"), "1");
-        assert.equal(query.get("order"), "updated_at.asc,id.asc");
+        assert.equal(query.get("order"), "last_reconciled_at.asc.nullsfirst,updated_at.asc,id.asc");
         assert.match(query.get("or"), /provider_job_id.not.is.null/);
         assert.ok(init.signal instanceof AbortSignal);
         candidateLookups += 1;

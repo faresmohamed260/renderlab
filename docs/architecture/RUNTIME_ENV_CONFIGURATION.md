@@ -66,9 +66,6 @@
 | `RENDERLAB_TEST_RECONCILER_OWNER_ID` | test-only | unset (undefined) | string. Run-owned fixture switch/identifier only. Production preflight rejects any nonempty test override; absent in live operation. |
 | `RENDERLAB_TEST_RECONCILER_OWNER_SCOPE` | test-only | false | boolean, exact true. Run-owned fixture switch/identifier only. Production preflight rejects any nonempty test override; absent in live operation. |
 | `RENDERLAB_TEST_UPLOAD_ADMISSION_FAULTS` | test-only | false | boolean, exact true. Run-owned fixture switch/identifier only. Production preflight rejects any nonempty test override; absent in live operation. |
-| `RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL` | test-only | unset (undefined) | string. Run-owned fixture switch/identifier only. Production preflight rejects any nonempty test override; absent in live operation. |
-| `RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE` | test-only | false | boolean, exact true. Run-owned fixture switch/identifier only. Production preflight rejects any nonempty test override; absent in live operation. |
-| `RENDERLAB_UPSCALE_WORKER_GATEWAY_URL` | feature-required | unset (undefined) | string. Retired upscale backend setting; absent keeps retired action unavailable. |
 | `RESEND_API_KEY` | production-required | unset (undefined) | string. Required in build; affects transaction/alert email only; no key in logs. |
 | `SUPABASE_PUBLISHABLE_KEY` | production-required | unset (undefined) | string. Required in build; public server Auth key; may not be missing from Production. |
 | `SUPABASE_SERVICE_ROLE_KEY` | production-required | unset (undefined) | string. Required in build; server-only privileged DB access. Never expose it to client modules or logs. |
@@ -84,3 +81,5 @@
 **Known-good rollback before this P0-02 change:** deployment `dpl_7ZvwdWi4B7qr1EkTnDYbBWNYPsBZ` at app SHA `e209bfee430c8e61789aeabc8a63579f05b0435c` in team `faresmohamedsalah10-1681`, project `renderlab`. If a startup regression or capability drift appears, restore that READY deployment with the [production release runbook](../operations/PRODUCTION_RELEASE_RUNBOOK.md), re-read the alias/health and flags, update the canonical release record and five mirrors, and run Production Documentation Sync. **Do not disable beta enforcement or rotate credentials as an expedient rollback.**
 
 **Change discipline:** No database migrations, Modal worker rollout or generation in P0-02. This document does not approve a frontend/model phase.
+
+**Retired upscale-worker configuration:** `RENDERLAB_UPSCALE_WORKER_GATEWAY_URL` and its two `RENDERLAB_TEST_UPSCALE_WORKER_*` overrides are no longer runtime settings. The standalone unauthenticated upscale Modal app was removed from the repository, and the exported worker resolver now always returns `null`, irrespective of inherited variables. Historical Phase 18 verifier scripts and audit records remain provenance only: no current workflow calls them or the removed worker, and the upscale API remains a same-origin-checked HTTP 410 stub.

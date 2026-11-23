@@ -97,6 +97,10 @@ psql(["-f", invitationConformance]);
 const atomicTemplate = await readFile(join(root, "tests", "fixtures", "atomic-terminalize-conformance.sql"), "utf8");
 assert.equal(atomicTemplate.split("/* MODEL_EDGE_ROWS */").length, 2);
 psql([], atomicTemplate.replace("/* MODEL_EDGE_ROWS */", rows));
+psql(["-f", join(root, "tests", "fixtures", "database-0031-version-skew.sql")]);
+execFileSync(process.execPath, [join(root,"scripts","verify-0031-ent007-isolated-restore.mjs")], {
+  cwd: root,env,stdio: "inherit",timeout:120_000,
+});
 execFileSync(process.execPath, [join(root, "scripts", "verify-atomic-terminalize-concurrency.mjs")], {
   cwd: root, env, stdio: "inherit", timeout: 60_000,
 });
