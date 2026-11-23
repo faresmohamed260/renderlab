@@ -108,7 +108,7 @@ try {
   assert((await signIn.getAttribute("href")) === "/settings", "Landing Sign in CTA does not target /settings.");
   await desktop.getByText("Closed beta · invitation only", { exact: true }).first().waitFor();
   await desktop.getByText("No public sign-up", { exact: true }).waitFor();
-  await desktop.getByRole("heading", { name: "Make it. Shape it. Move it. Keep going." }).waitFor();
+  await desktop.getByRole("heading", { name: "Make it. Shape it. Refine it. Keep going." }).waitFor();
   await desktop.getByRole("heading", { name: "Every result stays alive." }).waitFor();
   await desktop.getByRole("heading", { name: "Keep the thread moving." }).waitFor();
 
@@ -133,7 +133,7 @@ try {
   await libraryCard.focus();
   await desktop.waitForTimeout(220);
   assert((await libraryCard.getAttribute("aria-pressed")) === "true", "Keyboard focus did not select Living Library media.");
-  await desktop.getByRole("heading", { name: "Motion test" }).waitFor();
+  await desktop.getByRole("heading", { name: "Coastal study" }).waitFor();
   await desktop.screenshot({ path: `${artifactDir}/brand-launch-desktop-library-focus.png` });
 
   await setSectionProgress(desktop, '[data-landing-section="resolve"]', 0.96);
@@ -145,10 +145,12 @@ try {
 
   assert(runtimeErrors.length === 0, `Landing runtime errors: ${runtimeErrors.join(" | ")}`);
 
+  const advertised = await desktop.locator("main").innerText();
+  assert(!/create video|animate image|upscale|set in motion|00:05/i.test(advertised), "Landing advertises a retired capability.");
   const title = await desktop.title();
-  assert(title.includes("RenderLab") && title.includes("Image & video"), `Unexpected landing title: ${title}`);
+  assert(title.includes("RenderLab") && title.includes("Image creation and editing"), `Unexpected landing title: ${title}`);
   const description = await desktop.locator('meta[name="description"]').getAttribute("content");
-  assert(description?.includes("Create images and videos"), "Launch metadata description is missing or untruthful.");
+  assert(description?.includes("Create images, edit them"), "Launch metadata description is missing or untruthful.");
 
   const icon = await desktop.request.get(`${baseUrl}/icon.svg`);
   assert(icon.ok(), `Brand icon unavailable: ${icon.status()}`);
@@ -215,7 +217,7 @@ try {
   const animations = await mobile.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length);
   assert(animations === 0, `Reduced-motion landing has ${animations} running animation(s).`);
   await mobile.locator('[data-landing-section="thread"]').scrollIntoViewIfNeeded();
-  await mobile.getByRole("heading", { name: "Make it. Shape it. Move it. Keep going." }).waitFor();
+  await mobile.getByRole("heading", { name: "Make it. Shape it. Refine it. Keep going." }).waitFor();
   await mobile.locator('[data-landing-section="library"]').scrollIntoViewIfNeeded();
   const mobileCard = mobile.locator('[data-library-card="3"]');
   await mobileCard.click();

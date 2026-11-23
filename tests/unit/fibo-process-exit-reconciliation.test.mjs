@@ -241,6 +241,11 @@ function fixture(t, {
       admissionSteps.push("bind");
       return Response.json(true);
     }
+    if (url.pathname === "/rest/v1/renderlab_account_preferences") {
+      assert.equal(method, "GET");
+      assert.equal(url.searchParams.get("owner_id"), "eq." + ownerId);
+      return Response.json([{ create_image_aspect_ratio: "3:4" }]);
+    }
     if (url.pathname === "/rest/v1/media_collections") {
       assert.equal(method, "GET");
       assert.equal(url.searchParams.get("owner_id"), "eq." + ownerId);
@@ -548,11 +553,12 @@ test("production Create returns before settling the owner's result", async (t) =
   });
 
   const page = await loadCreate(pageInput());
-  const pageShell = page.type();
-  const view = await pageShell.props.children.type();
+  const pageShell = page.type(page.props);
+  const view = await pageShell.props.children.type(pageShell.props.children.props);
 
   assert.equal(createDuration, 30);
   assert.equal(view.props.admitted, true);
+  assert.equal(view.props.initialAspectRatio, "3:4");
   assert.equal(job.candidateLookups, 0);
   assert.equal(job.reads, 0);
   assert.equal(job.afterCallbacks.length, 1);

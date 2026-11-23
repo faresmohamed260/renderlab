@@ -17,7 +17,18 @@ type BusyAction = "save" | "remove" | null;
 
 const INITIAL_CROP: RenderLabAvatarCrop = { centerX: 0.5, centerY: 0.5, zoom: 1 };
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
-const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const RASTER_HEADERS: Readonly<Record<string, readonly number[]>> = {
+  "image/jpeg": [0xff, 0xd8, 0xff],
+  "image/png": [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  "image/webp": [0x52, 0x49, 0x46, 0x46],
+};
+
+async function hasRasterHeader(file: File, signature: readonly number[]) {
+  const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  return signature.every((byte, index) => header[index] === byte)
+    && (file.type !== "image/webp"
+      || [0x57, 0x45, 0x42, 0x50].every((byte, index) => header[index + 8] === byte));
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -32,6 +43,7 @@ export function AccountProfileForm({ initialProfile }: { initialProfile: RenderL
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [busy, setBusy] = useState<BusyAction>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingFile = useRef<File | null>(null);
   const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -40,19 +52,27 @@ export function AccountProfileForm({ initialProfile }: { initialProfile: RenderL
       return;
     }
     const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
+    setPreviewUrl(url.startsWith(`blob:${window.location.origin}/`) ? url : null);
     return () => URL.revokeObjectURL(url);
   }, [selectedFile]);
 
-  function selectFile(file: File | null) {
+  async function selectFile(file: File | null) {
+    pendingFile.current = file;
     setFeedback(null);
     if (!file) return;
-    if (!ACCEPTED_TYPES.has(file.type)) {
+    const signature = Object.hasOwn(RASTER_HEADERS, file.type) ? RASTER_HEADERS[file.type] : null;
+    if (!signature) {
       setFeedback({ kind: "error", message: "Choose a JPEG, PNG or WebP image." });
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
       setFeedback({ kind: "error", message: "Profile pictures must be 3 MB or smaller." });
+      return;
+    }
+    const validRaster = await hasRasterHeader(file, signature).catch(() => false);
+    if (pendingFile.current !== file) return;
+    if (!validRaster) {
+      setFeedback({ kind: "error", message: "Choose a valid JPEG, PNG or WebP image." });
       return;
     }
     setSelectedFile(file);
@@ -149,6 +169,7 @@ export function AccountProfileForm({ initialProfile }: { initialProfile: RenderL
 
       setProfile(savedProfile);
       setDisplayName(savedProfile.displayName ?? "");
+      pendingFile.current = null;
       setSelectedFile(null);
       setCrop(INITIAL_CROP);
       setFeedback({ kind: "success", message: "Profile updated." });
@@ -170,6 +191,7 @@ export function AccountProfileForm({ initialProfile }: { initialProfile: RenderL
         return;
       }
       if (payload?.profile) setProfile(payload.profile);
+      pendingFile.current = null;
       setSelectedFile(null);
       setCrop(INITIAL_CROP);
       setFeedback({
@@ -226,7 +248,7 @@ export function AccountProfileForm({ initialProfile }: { initialProfile: RenderL
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     tabIndex={-1}
-                    onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+                    onChange={(event) => void selectFile(event.target.files?.[0] ?? null)}
                   />
                   <Button type="button" variant="secondary" size="lg" onClick={() => fileInputRef.current?.click()} disabled={busy !== null}>
                     <Upload aria-hidden="true" />
@@ -241,7 +263,7 @@ export function AccountProfileForm({ initialProfile }: { initialProfile: RenderL
                 </div>
               </div>
 
-              {previewUrl ? (
+              {previewUrl?.startsWith("blob:") ? (
                 <div className={styles.cropPanel}>
                   <div className={styles.valueStack}>
                     <p className={styles.valueLabel}>Crop preview</p>

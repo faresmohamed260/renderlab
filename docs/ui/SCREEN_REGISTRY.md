@@ -51,7 +51,7 @@ Approved behavior:
 **UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`. **Authority:** #220 initial Create-default slice.
 **Implementation:** `src/app/(app)/settings/preferences/page.tsx`, `src/features/account/account-preferences-form.tsx`, `src/app/api/account/preferences/route.ts`, `src/server/account/account-preferences.ts`
 **Purpose:** Manage the admitted account's durable defaults for new Create drafts without changing existing generations, media, history, recipes, continuations, admission, role, ownership or security state.
-**Composition:** subordinate UI-078 Trust Register continuation with Default Create mode, fixed Image aspect ratio, Video resolution, Video duration and Video audio. Save persists the complete curated set; Reset deletes the owner row and follows current RenderLab product defaults. Product notifications, theme/language/timezone, model/provider defaults, Advanced tuning persistence and app-level accessibility overrides are absent by design.
+**Composition:** subordinate UI-078 Trust Register continuation with a FIBO Image aspect ratio control. Save updates that field and Reset restores the 1:1 image default. Both preserve stored legacy output mode and Video values. Product notifications, theme/language/timezone, model/provider defaults, Advanced tuning persistence and app-level accessibility overrides are absent by design.
 **Create integration:** clean authenticated `/create` is seeded server-side before hydration; saved recipes and media continuations win over preferences, capability/product defaults win over stale unsupported values, and signed-out Create retains current product defaults.
 **Verification:** implementation head `f01399bac0a50fef82ac55cf2c9a088c18443415`; Account Profile Credential `35138292468`; dedicated artifact `10463549435` (`sha256:8751ce800695841d94668653fa3c02eb065fa56c52ba8161d18771c7e107954e`); desktop, 390px reduced-motion Settings and mobile Create evidence reviewed clean. Account Data Lifecycle `35138293298` proves export-v3/deletion integration. At implementation closure, production deployment remained separate; this surface is production-live per the current-production block above.
 ### Settings Profile
@@ -76,7 +76,7 @@ Approved behavior:
 
 **2026-09-30 widescreen correction:** the local candidate now expands to the full browser width at 2560×1440, uses large-desktop layout caps, shortens the Thread and Resolve scroll tracks, raises secondary-copy contrast, keeps Library context controls within the section, and limits Resolve convergence to the four canonical tiles. The same 1440px and 390px production verifier remains green.
 
-**Verified behavior:** `/` renders without `AppShell`; `/create` and application routes use the `(app)` shell; `Open Create` → `/create`; `Sign in` → `/settings`; legacy root continuation preserves the complete query into `/create`; Closed Beta / invitation-only / no-public-sign-up truth remains explicit; forbidden pricing/testimonial/fake-metric/provider/model/SLA/public-admission claims remain absent. The implementation uses the existing Motion for React runtime, maintained `Button` primitives and locked `RenderLabBrand`; no GSAP, Lenis, Three.js/WebGL or new animation runtime was added.
+**Verified behavior:** The landing copy, illustrative media cards and share metadata describe image creation, reference editing and Library. `/` renders without `AppShell`; `/create` and application routes use the `(app)` shell; `Open Create` → `/create`; `Sign in` → `/settings`; legacy root continuation preserves the complete query into `/create`; Closed Beta / invitation-only / no-public-sign-up truth remains explicit; forbidden pricing/testimonial/fake-metric/provider/model/SLA/public-admission claims remain absent. The implementation uses the existing Motion for React runtime, maintained `Button` primitives and locked `RenderLabBrand`; no GSAP, Lenis, Three.js/WebGL or new animation runtime was added.
 
 **Locked geometry:** the Hero and Resolve lower-right Lab Grid media module is the canonical **quarter-circle / large outer arc**, not a rounded rectangle. Its repository-owned source path is `M75 91H89A33 33 0 0 1 122 124V132H75Q71 132 71 128V95Q71 91 75 91Z`, shared through the Landing mask and test-enforced by Brand / Launch Visual. The locked RenderLab logo/wordmark must not be reinterpreted.
 
@@ -94,24 +94,22 @@ Approved behavior:
 
 **Purpose:** Start and continue creative operations from one task-oriented workspace.
 
-**Approved operations:** Create Image, Edit Image, Create Video, Animate Image.
+**Current production operations:** FIBO Create Image and Edit Image. The implementation below includes historical verification of retired operations.
 
 **Verified behavior:**
-- prompt + Image/Video output intent;
-- Video output includes contextual Audio on/off, default ON, carried through the validated generation contract as `output.audioEnabled`;
-- Video output includes contextual **Resolution** with exact `480p`, `720p`, `1080p`, `2K` choices, default `480p`, hidden/rejected `4K`, and server-normalized/persisted `output.resolution`;
+- image prompt and supported image aspect ratios;
 - PNG/JPEG/WebP user reference input up to 25 MB;
 - UI-069 adds optional desktop file drag/drop onto the Create composer for one reference image through the exact same durable upload/validation transaction as the maintained file picker; the picker remains the keyboard/touch/mobile baseline and no second upload path exists;
 - signed-R2 persistent upload promoted to an owner-scoped durable `media_asset` before generation;
 - newly uploaded Create references remain ordinary Library media even if Generate is never pressed;
 - generation binds newly uploaded references through opaque `media-asset` identity rather than exposing R2/storage identity;
 - reference preview/removal/replacement;
-- Image + reference → Edit; Video + reference → Animate;
+- image references and source-aware Edit;
 - RenderLab `generation_jobs` + durable `media_assets` persistence;
-- capability-derived Edit/Animate continuation from durable images;
+- capability-derived Edit continuation from durable images;
 - Advanced controls from verified capability definitions;
-- UI-061 gives Image and Video the same dedicated compact Advanced disclosure; Video settings contain Resolution / Duration / Audio only, and the 390px primary control cluster stays on one no-wrap row while Generate remains the separate primary action;
-- UI-043 purposeful Create spatial continuity for operation/context changes, reference add/remove/reorder, contextual Image↔Video controls, Advanced field changes and result arrival, with static reduced-motion behavior;
+- compact Advanced disclosure and a separate primary Generate action;
+- UI-043 purposeful Create spatial continuity for operation/context changes, reference add/remove/reorder, Advanced field changes and result arrival, with static reduced-motion behavior;
 - complete configured browser lifecycle `33031817744`;
 - uploaded-media continuation preserves uploaded display identity;
 - UI-030 keeps prompt/settings draftable while signed out, but generation/reference upload and other persistent actions require a verified non-anonymous account;
@@ -220,7 +218,7 @@ Approved behavior:
 - UI-069 requires shrinkable min-content-safe Viewer layout/stage/rail composition and safe wrapping for long unbroken labels so intrinsic media or filenames cannot force horizontal viewport overflow at narrow/intermediate widths;
 - secondary product metadata;
 - capability-derived continuation actions;
-- persisted images expose Edit/Animate via opaque media identity + action intent;
+- eligible persisted images expose Edit via opaque media identity and action intent. Historical saved videos remain playable and downloadable. No new Animate or Upscale action is shown.
 - Create reloads durable media and validates compatibility server-side;
 - uploaded assets show truthful Upload/display-name/original-file metadata;
 - one secondary Viewer-only `Download` action for durable generated/uploaded media;

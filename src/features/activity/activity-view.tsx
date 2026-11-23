@@ -12,9 +12,9 @@ import styles from "./activity-view.module.css";
 const operationLabels = {
   "create-image": "Create image",
   "edit-image": "Edit image",
-  "create-video": "Create video",
-  "animate-image": "Animate image",
-  "upscale-image": "Upscale image",
+  "create-video": "Video generation",
+  "animate-image": "Image animation",
+  "upscale-image": "Image upscale",
 } as const;
 
 const statusLabels = {
@@ -102,7 +102,7 @@ function ActivityActions({ item }: { item: PublicGenerationActivity }) {
     );
   }
 
-  if (item.status === "failed") {
+  if (item.status === "failed" && (item.operation === "create-image" || item.operation === "edit-image")) {
     return (
       <div className={styles.actions}>
         <ActivityRetryButton jobId={item.id} />

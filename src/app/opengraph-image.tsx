@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "RenderLab — image and video creative workspace";
+export const alt = "RenderLab — image creation and editing workspace";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -66,11 +66,11 @@ export default function OpenGraphImage() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 22, maxWidth: 980 }}>
           <div style={{ color: "#8C7CFF", fontSize: 20, fontWeight: 700, letterSpacing: 2 }}>THE CREATIVE LAB</div>
-          <div style={{ fontSize: 72, lineHeight: 1.02, letterSpacing: -3, fontWeight: 700 }}>Create images. Shape them. Put them in motion.</div>
-          <div style={{ color: "#9CA3AF", fontSize: 24, lineHeight: 1.4 }}>Image and video creation, reference-driven edits, reusable media, and generation history in one focused workspace.</div>
+          <div style={{ fontSize: 72, lineHeight: 1.02, letterSpacing: -3, fontWeight: 700 }}>Create images. Shape them. Keep the results.</div>
+          <div style={{ color: "#9CA3AF", fontSize: 24, lineHeight: 1.4 }}>Image creation, reference-driven editing, reusable media, and generation history in one workspace.</div>
         </div>
         <div style={{ display: "flex", gap: 14, color: "#9CA3AF", fontSize: 16 }}>
-          <span>Create Image</span><span>·</span><span>Edit Image</span><span>·</span><span>Create Video</span><span>·</span><span>Animate Image</span>
+          <span>Create Image</span><span>·</span><span>Edit Image</span><span>·</span><span>Use References</span><span>·</span><span>Save to Library</span>
         </div>
       </div>
     ),

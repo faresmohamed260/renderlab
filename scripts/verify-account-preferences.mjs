@@ -190,12 +190,16 @@ async function verifySettingsAndCreate(accountA, accountB) {
     await pageA.getByRole("link", { name: "Manage preferences", exact: true }).waitFor({ state: "visible", timeout: 30_000 });
     await pageA.getByRole("link", { name: "Manage preferences", exact: true }).click();
     await pageA.getByRole("heading", { name: "Create defaults", exact: true }).waitFor({ state: "visible" });
-    assert((await pageA.getByLabel("Default Create mode").inputValue()) === "image", "Default preference UI did not start from Image.");
-    await pageA.getByLabel("Default Create mode").selectOption("image");
+    const legacy = {
+      outputKind: "video",
+      imageAspectRatio: "1:1",
+      videoResolution: "1080p",
+      videoDurationSeconds: 20,
+      videoAudioEnabled: false,
+    };
+    await savePreferences(accountA.accessToken, legacy);
+    assert(await pageA.getByLabel(/Default (Create mode|Video)/).count() === 0, "Retired preferences controls are visible.");
     await pageA.getByLabel("Default Image aspect ratio").selectOption("3:4");
-    await pageA.getByLabel("Default Video resolution").selectOption("1080p");
-    await pageA.getByLabel("Default Video duration").selectOption("20");
-    await pageA.getByLabel("Default Video audio").selectOption("off");
     await pageA.getByRole("button", { name: "Save defaults", exact: true }).click();
     await pageA.getByText("Create defaults saved.", { exact: true }).waitFor({ state: "visible" });
     await pageA.getByText("Using saved account defaults across signed-in devices.", { exact: true }).waitFor({ state: "visible" });
@@ -210,9 +214,9 @@ async function verifySettingsAndCreate(accountA, accountB) {
     await routeLocalAppRequestsWithAccount(pageSecond, baseUrl, secondAccount);
     await pageSecond.goto(`${baseUrl}/settings/preferences`, { waitUntil: "networkidle", timeout: 60_000 });
     assert((await pageSecond.getByLabel("Default Image aspect ratio").inputValue()) === "3:4", "Second session did not receive saved Image ratio.");
-    assert((await pageSecond.getByLabel("Default Video resolution").inputValue()) === "1080p", "Second session did not receive saved Video resolution.");
-    assert((await pageSecond.getByLabel("Default Video duration").inputValue()) === "20", "Second session did not receive saved Video duration.");
-    assert((await pageSecond.getByLabel("Default Video audio").inputValue()) === "off", "Second session did not receive saved Video audio.");
+    assert(await pageSecond.getByLabel(/Default (Create mode|Video)/).count() === 0, "Retired controls reappeared in a second session.");
+    const afterSave = (await getPreferences(secondToken)).create;
+    assert(JSON.stringify(afterSave) === JSON.stringify({ ...legacy, imageAspectRatio: "3:4" }), "Save changed a hidden preference.");
     overflow = await pageSecond.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     assert(overflow <= 1, `390px #220 Settings has horizontal overflow: ${overflow}px.`);
     await pageSecond.screenshot({ path: `${artifactDir}/preferences-settings-mobile-reduced-motion.png`, fullPage: true });
@@ -353,8 +357,11 @@ async function verifyPrecedenceAndFallback(accountA, secondToken) {
 
   const reset = await appJson("/api/account/preferences", secondToken, { method: "DELETE" });
   assert(reset.response.status === 200 && reset.payload?.preferences?.source === "product-defaults", "Reset did not restore current product-default semantics.");
-  const rows = await serviceRows(`renderlab_account_preferences?owner_id=eq.${encodeURIComponent(accountA.id)}&select=owner_id`);
-  assert(rows.length === 0, "Reset persisted a snapshot row instead of deleting preferences.");
+  const rows = await serviceRows(`renderlab_account_preferences?owner_id=eq.${encodeURIComponent(accountA.id)}&select=*`);
+  assert(rows.length === 1 && rows[0].create_image_aspect_ratio === "1:1", "Reset did not restore the image default.");
+  assert(rows[0].create_output_kind === "obsolete" && rows[0].create_video_resolution === "8K"
+    && rows[0].create_video_duration_seconds === 17 && rows[0].create_video_audio_enabled === false,
+  "Reset changed opaque legacy defaults.");
   console.log("RENDERLAB_220_PRECEDENCE_STALE_RESET=true");
 }
 

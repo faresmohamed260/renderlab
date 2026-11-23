@@ -361,7 +361,7 @@ export function AccountSettings({
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Create defaults</p>
                   <p className={styles.helper}>
-                    Choose starting values for new Image and Video drafts. Saved recipes and continuations keep their own settings.
+                    Choose the aspect ratio for new image drafts. Saved recipes and continuations keep their own settings.
                   </p>
                 </div>
                 <Button asChild variant="secondary" size="lg">

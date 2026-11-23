@@ -13,6 +13,7 @@ import type { ContinuationAction } from "@/lib/capabilities/generation";
 import {
   continuationActionForMedia,
   fiboGenerationModel,
+  fiboPreferenceAspectRatio,
   defaultGenerationModelForOutput,
 } from "@/lib/capabilities/generation";
 import { CreateWorkspace } from "@/features/create/create-workspace";
@@ -72,7 +73,11 @@ export default async function CreatePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (process.env.NODE_ENV === "production") return <ProductionCreatePage />;
+  if (process.env.NODE_ENV === "production") {
+    const params = await searchParams;
+    const useImageDefault = !params.recipe && !params.source && !params.action;
+    return <ProductionCreatePage useImageDefault={useImageDefault} />;
+  }
   if (await isCreatePreview()) return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}><CreatePreviewCreate /></Suspense>;
 
   const params = await searchParams;
@@ -168,19 +173,23 @@ async function CreatePreviewCreate() {
 
 const model = { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" };
 
-function ProductionCreatePage() {
+function ProductionCreatePage({ useImageDefault }: { useImageDefault: boolean }) {
   return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}>
-    <Create />
+    <Create useImageDefault={useImageDefault} />
   </Suspense>;
 }
 
-async function Create() {
+async function Create({ useImageDefault }: { useImageDefault: boolean }) {
   const account = await getCurrentRenderLabAccount();
   if (account && isSupabaseConfigured()) scheduleOwnerGenerationSettlement(account.id);
   const accountKey = account ? createHash("sha256").update("create-stage:" + account.id).digest("hex") : undefined;
   const ready = !!account && isFiboGenerationAvailable() && isMediaUploadConfigured();
+  const preferences = ready && useImageDefault
+    ? await getRenderLabAccountPreferences(account.id).catch(() => null)
+    : null;
   return <CreatePreviewWorkspace key={accountKey ?? "guest"} admitted={!!account} hostedOnly
     hostedModel={ready ? model : undefined} hostedAccountKey={accountKey}
+    initialAspectRatio={fiboPreferenceAspectRatio(preferences?.create.imageAspectRatio ?? "1:1")}
     masksEnabled={ready && isFiboMaskGenerationAvailable()}
     advancedPrompt={ready} variableSteps={ready} extendedSetup={ready} />;
 }
