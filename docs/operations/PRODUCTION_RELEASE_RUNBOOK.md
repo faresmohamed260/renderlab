@@ -18,7 +18,7 @@ The active FIBO workspace is one label in the existing reciprocal Modal allocati
 
 ## Production environment preflight
 
-Before a release or account migration, compare the Vercel Production variable names against the required names in [the build preflight](../../scripts/verify-vercel-env.mjs) and the active [FIBO connection contract](../architecture/INFRASTRUCTURE.md). Check the team, project, and Production scope. Record names only and keep credential values out of logs and release notes.
+Before a release or account migration, compare the Vercel Production variable names against the required names in [the build preflight](../../scripts/verify-vercel-env.mjs) and the active [FIBO connection contract](../architecture/INFRASTRUCTURE.md). The [typed runtime environment contract](../architecture/RUNTIME_ENV_CONFIGURATION.md) and [16-name dashboard inventory](PRODUCTION_ENV_REQUIRED_NAMES.json) are the single schema/approved-inventory pair; CI exercises the same validator with synthetic credentials, and the staged Production build validates actual masked values without printing them. Check the team, project, and Production scope. Record names only and keep credential values out of logs and release notes.
 
 Production also requires `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED=true` for invitation-only access and `RENDERLAB_FIBO_MASK_ENABLED=true` for masked editing. Confirm both are present in Production and verify effective behavior after cutover with an admitted and a non-admitted fixture and the live capabilities response.
 
