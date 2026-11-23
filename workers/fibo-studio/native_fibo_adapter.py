@@ -3,7 +3,7 @@ from io import BytesIO
 from uuid import uuid4
 
 from native_generated_vgl import validate_generated_vgl
-from native_graph import build_graph
+from native_graph import FiboInputRejected, build_graph
 from native_mask import normalize_mask_bytes
 from workload_contract import WorkRequest, WorkResult
 
@@ -21,13 +21,13 @@ class FiboAdapter:
         width, height = options.get("width", 0), options.get("height", 0)
         generate_vgl = options.get("generate_vgl", False)
         if not isinstance(sources, (list, tuple)) or len(sources) > 4:
-            raise ValueError("Expected zero to four source images")
+            raise FiboInputRejected("Expected zero to four source images")
         if any(type(item) is not bytes or not 0 < len(item) <= 16 * 1024 * 1024 for item in sources):
-            raise ValueError("Invalid source image byte size")
+            raise FiboInputRejected("Invalid source image byte size")
         if sum(map(len, sources)) > 32 * 1024 * 1024:
-            raise ValueError("Source images exceed the combined limit")
+            raise FiboInputRejected("Source images exceed the combined limit")
         if mask is not None and len(sources) != 1:
-            raise ValueError("A mask requires exactly one source image")
+            raise FiboInputRejected("A mask requires exactly one source image")
         names = [uuid4().hex + ".png" for _ in sources]
         mask_name = uuid4().hex + ".png" if mask is not None else None
 
@@ -36,7 +36,7 @@ class FiboAdapter:
             for name, payload in zip(names, sources):
                 with Image.open(BytesIO(payload), formats=["PNG", "JPEG", "WEBP"]) as source:
                     if source.width * source.height > 16_777_216 or getattr(source, "is_animated", False):
-                        raise ValueError("Source image exceeds the pixel limit or is animated")
+                        raise FiboInputRejected("Source image exceeds the pixel limit or is animated")
                     normalized = ImageOps.exif_transpose(source).convert("RGB")
                     if source_size is None:
                         source_size = normalized.size

@@ -11,6 +11,10 @@ import re
 
 from native_generated_vgl import generated_vgl_instruction
 
+
+class FiboInputRejected(ValueError):
+    """Confirmed invalid render inputs, distinct from provider/protocol faults."""
+
 NAME = re.compile(r"(?:[a-f0-9]{32}/)?[a-f0-9]{32}\.png")
 MAX_PIXELS = 1536 * 1024
 
@@ -22,7 +26,7 @@ def original_fibo_size(width, height):
     Comfy Org node (comfy_extras/nodes_fibo2.py).
     """
     if any(type(side) is not int or side < 1 or side > 4096 for side in (width, height)):
-        raise ValueError("Invalid original source dimensions")
+        raise FiboInputRejected("Invalid original source dimensions")
     aspect = width / height
     area = 1024 * 1024
     candidates = (
@@ -38,7 +42,7 @@ def original_fibo_size(width, height):
     ))
     if (not all(256 <= side <= 1536 for side in chosen)
             or chosen[0] * chosen[1] > MAX_PIXELS):
-        raise ValueError("Original geometry is outside supported FIBO mask bounds")
+        raise FiboInputRejected("Original geometry is outside supported FIBO mask bounds")
     return chosen
 
 
@@ -46,45 +50,48 @@ def build_graph(*, prompt, seed, images=(), width=0, height=0, steps=4,
                 negative_prompt="", vgl="", mask=None, source_dimensions=None,
                 generate_vgl=False):
     if type(seed) is not int or not 0 <= seed <= 2_147_483_647:
-        raise ValueError("Invalid seed")
+        raise FiboInputRejected("Invalid seed")
     if type(steps) is not int or not 1 <= steps <= 8:
-        raise ValueError("Invalid step count")
+        raise FiboInputRejected("Invalid step count")
     if type(prompt) is not str or len(prompt) > 4000 or type(negative_prompt) is not str or len(negative_prompt) > 4000:
-        raise ValueError("Invalid prompt")
+        raise FiboInputRejected("Invalid prompt")
     if type(vgl) is not str or len(vgl) > 8192:
-        raise ValueError("Invalid VGL")
+        raise FiboInputRejected("Invalid VGL")
     if type(generate_vgl) is not bool:
-        raise ValueError("Generated VGL must be a boolean")
+        raise FiboInputRejected("Generated VGL must be a boolean")
     if generate_vgl and (vgl or mask is not None or len(images) != 0
                          or not prompt.strip() or (width, height) == (0, 0)):
-        raise ValueError("Generated VGL only supports source-free image generation with explicit dimensions")
+        raise FiboInputRejected("Generated VGL only supports source-free image generation with explicit dimensions")
     if vgl:
-        caption = json.loads(vgl)
+        try:
+            caption = json.loads(vgl)
+        except json.JSONDecodeError as exc:
+            raise FiboInputRejected("Invalid VGL JSON") from exc
         if not isinstance(caption, dict) or not caption:
-            raise ValueError("VGL must be a non-empty object")
+            raise FiboInputRejected("VGL must be a non-empty object")
     elif not prompt.strip():
-        raise ValueError("Prompt required")
+        raise FiboInputRejected("Prompt required")
     if not isinstance(images, (tuple, list)) or len(images) > 4 or any(
         not isinstance(name, str) or not NAME.fullmatch(name) for name in images
     ):
-        raise ValueError("Expected up to four worker-assigned staged filenames")
+        raise FiboInputRejected("Expected up to four worker-assigned staged filenames")
     if any(type(side) is not int for side in (width, height)):
-        raise ValueError("Dimensions must be integers")
+        raise FiboInputRejected("Dimensions must be integers")
     if (width, height) != (0, 0) and (
         not all(256 <= side <= 1536 and side % 16 == 0 for side in (width, height))
         or width * height > MAX_PIXELS
     ):
-        raise ValueError("Invalid dimensions")
+        raise FiboInputRejected("Invalid dimensions")
 
     if mask is not None:
         if not isinstance(mask, str) or not NAME.fullmatch(mask) or len(images) != 1 or mask in images:
-            raise ValueError("A mask requires exactly one source image and a separate staged PNG")
+            raise FiboInputRejected("A mask requires exactly one source image and a separate staged PNG")
         if (width, height) == (0, 0):
             if not isinstance(source_dimensions, (tuple, list)) or len(source_dimensions) != 2:
-                raise ValueError("Original masked geometry requires decoded source dimensions")
+                raise FiboInputRejected("Original masked geometry requires decoded source dimensions")
             width, height = original_fibo_size(*source_dimensions)
     elif source_dimensions is not None:
-        raise ValueError("Decoded source dimensions are reserved for mask sizing")
+        raise FiboInputRejected("Decoded source dimensions are reserved for mask sizing")
 
     def node(kind, **inputs):
         return {"class_type": kind, "inputs": inputs}
