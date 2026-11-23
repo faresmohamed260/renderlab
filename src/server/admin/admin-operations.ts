@@ -428,6 +428,7 @@ export async function getAdminHealth(
       activeStateAge: summarizeActiveAdminJobAge(activeRows, activeTruncated, now.valueOf()),
       oldestActiveJob,
       dispatchHealth,
+      generationObservability,
       capacity: {
         activeReservations: {
           count: Math.min(reservationRows.length, healthSampleLimit),
