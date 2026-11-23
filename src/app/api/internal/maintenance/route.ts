@@ -3,17 +3,14 @@ import { envString, maintenanceBatchLimit } from "../../../../lib/config/runtime
 import { NextResponse } from "next/server";
 import { runAccountDataLifecycleMaintenance } from "@/server/account/account-data-lifecycle";
 import { runRenderLabMaintenance } from "@/server/maintenance/renderlab-maintenance";
+import { isAuthorizedInternalBearer } from "@/server/security/internal-bearer-secret";
 
 function authorizedMaintenance(request: Request) {
-  const secret = envString("RENDERLAB_MAINTENANCE_SECRET")?.trim();
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return isAuthorizedInternalBearer(request.headers.get("authorization"), envString("RENDERLAB_MAINTENANCE_SECRET"));
 }
 
 function authorizedCron(request: Request) {
-  const secret = envString("CRON_SECRET")?.trim();
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return isAuthorizedInternalBearer(request.headers.get("authorization"), envString("CRON_SECRET"));
 }
 
 function configuredLimit() {

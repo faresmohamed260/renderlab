@@ -67,7 +67,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const originFailure = enforceSameOriginMutation(request);
   if (originFailure) return originFailure;
-  const owner = await getRenderLabProfileRequestOwner();
+  const owner = await getRenderLabProfileRequestOwner({ requireActive: true });
   if (!owner.ok) return accessError(owner);
 
   let form: FormData;
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: Request) {
   const originFailure = enforceSameOriginMutation(request);
   if (originFailure) return originFailure;
-  const owner = await getRenderLabProfileRequestOwner();
+  const owner = await getRenderLabProfileRequestOwner({ requireActive: true });
   if (!owner.ok) return accessError(owner);
 
   try {

@@ -31,4 +31,4 @@ jobs:
           /tmp/renderlab-fibo-gateway/bin/python -m pip install --disable-pip-version-check "modal==1.6.4" "fastapi==0.137.2" "httpx==0.28.1" "Pillow==12.2.0"
       - name: Test native gateway against real Modal exceptions
         working-directory: workers/fibo-studio
-        run: /tmp/renderlab-fibo-gateway/bin/python -m unittest test_native_gateway -v
+        run: /tmp/renderlab-fibo-gateway/bin/python -m unittest test_native_gateway test_native_graph -v

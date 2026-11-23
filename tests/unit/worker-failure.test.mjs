@@ -14,11 +14,17 @@ test("stable worker codes take precedence over misleading text", () => {
   );
 });
 
-test("text compatibility fallback remains bounded", () => {
-  assert.equal(classifyWorkerFailure(409, { detail: "workspace budget exhausted" }).code, "WORKER_CREDIT_EXHAUSTED");
-  assert.equal(classifyWorkerFailure(409, { error: "workspace is disabled" }).code, "WORKER_UNAVAILABLE");
-  assert.deepEqual(
-    classifyWorkerFailure(503, { detail: "generic gateway failure" }),
-    { retryable: true, safeToReassign: false, kind: "unavailable", code: "WORKER_UNAVAILABLE" },
-  );
+test("only stable worker codes and statuses establish failure categories", () => {
+  assert.deepEqual(classifyWorkerFailure(409, { detail: "workspace budget exhausted" }), {
+    retryable: false, safeToReassign: false, kind: "failed", code: "PROVIDER_FAILED",
+  });
+  assert.deepEqual(classifyWorkerFailure(409, { error: "temporarily unavailable" }), {
+    retryable: false, safeToReassign: false, kind: "failed", code: "PROVIDER_FAILED",
+  });
+  assert.deepEqual(classifyWorkerFailure(402, { detail: "arbitrary gateway body" }), {
+    retryable: true, safeToReassign: true, kind: "credit_exhausted", code: "WORKER_CREDIT_EXHAUSTED",
+  });
+  assert.deepEqual(classifyWorkerFailure(503, { detail: "generic gateway failure" }), {
+    retryable: true, safeToReassign: false, kind: "unavailable", code: "WORKER_UNAVAILABLE",
+  });
 });

@@ -34,7 +34,7 @@ registerHooks({
       );
     }
     if (specifier === "@/lib/supabase/server") {
-      return stub("export async function getCurrentRenderLabIdentity() { return { id: "
+      return stub("export async function getCurrentRenderLabAccount() { return { id: "
         + JSON.stringify(ownerId) + " }; }");
     }
     if (specifier.startsWith("@/")) {

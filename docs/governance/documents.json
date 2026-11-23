@@ -434,6 +434,17 @@
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
+    },
+    {
+      "path": "docs/architecture/BACKEND_P1_PHASE4_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-23",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
     }
   ]
 }

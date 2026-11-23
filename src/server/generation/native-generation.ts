@@ -750,7 +750,8 @@ export async function pollNativeGeneration(
     const unconfirmedFiboResponse = row.worker_id === FIBO_DISPATCH_BACKEND
       && !failure.retryable && !terminalFiboResponse;
 
-    if (failure.safeToReassign) {
+    // FIBO has no safe reassignment path: provider errors may conceal an accepted result.
+    if (failure.safeToReassign && row.worker_id !== FIBO_DISPATCH_BACKEND) {
       try {
         const reassigned = await reassignPollJob(row, failure);
         if (reassigned) return toGenerationJob(reassigned);
