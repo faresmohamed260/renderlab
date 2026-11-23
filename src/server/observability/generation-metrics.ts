@@ -1,5 +1,3 @@
-import { randomBytes } from "node:crypto";
-
 /**
  * P1-03: local, observe-only instruments for the existing server runtime logs.
  * No exporter, persistence, provider header propagation or job-state dependency.
@@ -83,7 +81,10 @@ export function validGenerationTraceparent(value: unknown): value is string {
 
 export function createGenerationTraceparent(): string {
   // Each async HTTP/worker phase is a new local span; correlation is a private link only.
-  return `00-${randomBytes(16).toString("hex")}-${randomBytes(8).toString("hex")}-01`;
+  const bytes = new Uint8Array(24);
+  globalThis.crypto.getRandomValues(bytes);
+  const hex = (part: Uint8Array) => Array.from(part, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `00-${hex(bytes.subarray(0, 16))}-${hex(bytes.subarray(16))}-01`;
 }
 
 export function classifyGenerationProviderRejection(status: number | null, transportFailure = false) {
