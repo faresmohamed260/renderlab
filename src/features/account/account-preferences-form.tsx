@@ -6,15 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  imageAspectRatios,
-  videoDurations,
-  videoResolutions,
-  type OutputKind,
-  type PresetAspectRatio,
-  type VideoResolution,
-} from "@/lib/capabilities/generation";
-import type { RenderLabAccountPreferences, RenderLabCreatePreferences } from "@/server/account/account-preferences";
+import { fiboImageAspectRatios, fiboPreferenceAspectRatio, type PresetAspectRatio } from "@/lib/capabilities/generation";
+import type { RenderLabAccountPreferences } from "@/server/account/account-preferences";
 import styles from "./account-settings.module.css";
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
@@ -22,14 +15,9 @@ type BusyAction = "save" | "reset" | null;
 
 export function AccountPreferencesForm({ initialPreferences }: { initialPreferences: RenderLabAccountPreferences }) {
   const [source, setSource] = useState(initialPreferences.source);
-  const [create, setCreate] = useState<RenderLabCreatePreferences>(initialPreferences.create);
+  const [imageAspectRatio, setImageAspectRatio] = useState(() => fiboPreferenceAspectRatio(initialPreferences.create.imageAspectRatio));
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [busy, setBusy] = useState<BusyAction>(null);
-
-  function patchCreate(patch: Partial<RenderLabCreatePreferences>) {
-    setCreate((current) => ({ ...current, ...patch }));
-    setFeedback(null);
-  }
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,7 +27,7 @@ export function AccountPreferencesForm({ initialPreferences }: { initialPreferen
       const response = await fetch("/api/account/preferences", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ create }),
+        body: JSON.stringify({ create: { imageAspectRatio } }),
       });
       const payload = await response.json().catch(() => null) as {
         preferences?: RenderLabAccountPreferences;
@@ -55,7 +43,7 @@ export function AccountPreferencesForm({ initialPreferences }: { initialPreferen
         return;
       }
       setSource(payload.preferences.source);
-      setCreate(payload.preferences.create);
+      setImageAspectRatio(fiboPreferenceAspectRatio(payload.preferences.create.imageAspectRatio));
       setFeedback({ kind: "success", message: "Create defaults saved." });
     } catch {
       setFeedback({ kind: "error", message: "Create defaults could not be saved. Try again." });
@@ -83,7 +71,7 @@ export function AccountPreferencesForm({ initialPreferences }: { initialPreferen
         return;
       }
       setSource(payload.preferences.source);
-      setCreate(payload.preferences.create);
+      setImageAspectRatio(fiboPreferenceAspectRatio(payload.preferences.create.imageAspectRatio));
       setFeedback({ kind: "success", message: "Following current RenderLab defaults." });
     } catch {
       setFeedback({ kind: "error", message: "Create defaults could not be reset. Try again." });
@@ -114,76 +102,21 @@ export function AccountPreferencesForm({ initialPreferences }: { initialPreferen
 
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="preferences-output-kind">Default Create mode</FieldLabel>
-                  <NativeSelect
-                    id="preferences-output-kind"
-                    value={create.outputKind}
-                    onChange={(event) => patchCreate({ outputKind: event.target.value as OutputKind })}
-                    disabled={busy !== null}
-                  >
-                    <NativeSelectOption value="image">Image</NativeSelectOption>
-                    <NativeSelectOption value="video">Video</NativeSelectOption>
-                  </NativeSelect>
-                  <FieldDescription>Used only for a new Create draft with no saved recipe or media continuation.</FieldDescription>
-                </Field>
-
-                <Field>
                   <FieldLabel htmlFor="preferences-image-aspect">Default Image aspect ratio</FieldLabel>
                   <NativeSelect
                     id="preferences-image-aspect"
-                    value={create.imageAspectRatio}
-                    onChange={(event) => patchCreate({ imageAspectRatio: event.target.value as PresetAspectRatio })}
+                    value={imageAspectRatio}
+                    onChange={(event) => {
+                      setImageAspectRatio(event.target.value as PresetAspectRatio);
+                      setFeedback(null);
+                    }}
                     disabled={busy !== null}
                   >
-                    {imageAspectRatios.map((ratio) => (
+                    {fiboImageAspectRatios.map((ratio) => (
                       <NativeSelectOption key={ratio} value={ratio}>{ratio}</NativeSelectOption>
                     ))}
                   </NativeSelect>
                   <FieldDescription>Original is source-aware and remains reserved for explicit media continuation.</FieldDescription>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="preferences-video-resolution">Default Video resolution</FieldLabel>
-                  <NativeSelect
-                    id="preferences-video-resolution"
-                    value={create.videoResolution}
-                    onChange={(event) => patchCreate({ videoResolution: event.target.value as VideoResolution })}
-                    disabled={busy !== null}
-                  >
-                    {videoResolutions.map((resolution) => (
-                      <NativeSelectOption key={resolution} value={resolution}>{resolution}</NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="preferences-video-duration">Default Video duration</FieldLabel>
-                  <NativeSelect
-                    id="preferences-video-duration"
-                    value={String(create.videoDurationSeconds)}
-                    onChange={(event) => patchCreate({
-                      videoDurationSeconds: Number(event.target.value) as RenderLabCreatePreferences["videoDurationSeconds"],
-                    })}
-                    disabled={busy !== null}
-                  >
-                    {videoDurations.map((duration) => (
-                      <NativeSelectOption key={duration} value={String(duration)}>{duration} seconds</NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="preferences-video-audio">Default Video audio</FieldLabel>
-                  <NativeSelect
-                    id="preferences-video-audio"
-                    value={create.videoAudioEnabled ? "on" : "off"}
-                    onChange={(event) => patchCreate({ videoAudioEnabled: event.target.value === "on" })}
-                    disabled={busy !== null}
-                  >
-                    <NativeSelectOption value="on">On</NativeSelectOption>
-                    <NativeSelectOption value="off">Off</NativeSelectOption>
-                  </NativeSelect>
-                  <FieldDescription>Applies to clean new Video drafts only.</FieldDescription>
                 </Field>
               </FieldGroup>
 

@@ -8,9 +8,9 @@ import "./globals.css";
 import "./renderlab-background.css";
 import "./create-clear-composer.css";
 
-const title = "RenderLab — Image & video creative workspace";
+const title = "RenderLab — Image creation and editing workspace";
 const description =
-  "Create images and videos, shape them with owned references, and keep reusable media and generation history in one focused workspace.";
+  "Create images, edit them with your references, and keep reusable media and generation history in one focused workspace.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://renderlab-lake.vercel.app"),

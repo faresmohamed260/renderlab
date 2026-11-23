@@ -57,6 +57,8 @@ Use [the local operator](../../scripts/adr005-operator/README.md) from the revie
 
 ### Release checks learned from this incident
 
+The [November 22–23 incident audit](../audits/FIBO_BETA_CORRECTNESS_INCIDENTS_2026-11-23.md) records the observed symptoms, corrections and exact release evidence.
+
 - After any account or credential migration, use a separately approved real submission and verify the app can poll it through the gateway to its terminal result.
 - If Modal has finished a call and the app still shows `running`, search the production runtime logs for `provider-unconfirmed` with upstream HTTP 401 before investigating rendering or queue latency.
 - Modal local deploys can leave the history Commit field blank. Record the clean checkout SHA, worker tree SHA, workspace and environment, app IDs, deploy windows, history versions, and source tag when supported.

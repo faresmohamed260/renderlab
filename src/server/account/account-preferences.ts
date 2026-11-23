@@ -1,6 +1,7 @@
 import {
   defaultVideoAudioEnabled,
   defaultVideoResolution,
+  fiboImageAspectRatios,
   imageAspectRatios,
   videoDurations,
   videoResolutions,
@@ -65,7 +66,7 @@ function publicPreferences(row: RenderLabAccountPreferencesRow | null): RenderLa
   }
 
   return {
-    source: "saved",
+    source: row.create_image_aspect_ratio === productCreateDefaults.imageAspectRatio ? "product-defaults" : "saved",
     create: {
       outputKind: isOutputKind(row.create_output_kind) ? row.create_output_kind : productCreateDefaults.outputKind,
       imageAspectRatio: isImageAspectRatio(row.create_image_aspect_ratio)
@@ -134,14 +135,24 @@ export async function getRenderLabAccountPreferences(ownerId: string) {
   return publicPreferences(await getRenderLabAccountPreferencesRow(ownerId));
 }
 
-export async function updateRenderLabAccountPreferences(ownerId: string, value: unknown) {
-  await assertPreferenceMutationAllowed(ownerId);
-  const create = parseCreatePreferences(value);
+async function patchImageAspectRatio(ownerId: string, imageAspectRatio: PresetAspectRatio) {
+  const rows = await supabaseRest<RenderLabAccountPreferencesRow[]>(
+    `renderlab_account_preferences?owner_id=eq.${encodeURIComponent(ownerId)}&select=*`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ create_image_aspect_ratio: imageAspectRatio, updated_at: new Date().toISOString() }),
+    },
+  );
+  return rows[0] ?? null;
+}
+
+async function writePreferenceRow(ownerId: string, create: RenderLabCreatePreferences, resolution: "merge-duplicates" | "ignore-duplicates") {
   const rows = await supabaseRest<RenderLabAccountPreferencesRow[]>(
     "renderlab_account_preferences?on_conflict=owner_id&select=*",
     {
       method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      headers: { Prefer: `resolution=${resolution},return=representation` },
       body: JSON.stringify({
         owner_id: ownerId,
         create_output_kind: create.outputKind,
@@ -153,16 +164,33 @@ export async function updateRenderLabAccountPreferences(ownerId: string, value: 
       }),
     },
   );
-  if (!rows[0]) throw new Error("account_preferences_unavailable");
-  return publicPreferences(rows[0]);
+  return rows[0] ?? null;
+}
+
+export async function updateRenderLabAccountPreferences(ownerId: string, value: unknown) {
+  await assertPreferenceMutationAllowed(ownerId);
+  let row: RenderLabAccountPreferencesRow | null;
+  if (value && typeof value === "object" && Object.keys(value).length === 1 && "imageAspectRatio" in value) {
+    const { imageAspectRatio } = value;
+    if (!isImageAspectRatio(imageAspectRatio) || !fiboImageAspectRatios.includes(imageAspectRatio)) {
+      throw new Error("account_preferences_invalid");
+    }
+    row = await patchImageAspectRatio(ownerId, imageAspectRatio);
+    if (!row) {
+      row = await writePreferenceRow(ownerId, { ...productCreateDefaults, imageAspectRatio }, "ignore-duplicates");
+      // If another request inserted the row, update just the image preference.
+      row ??= await patchImageAspectRatio(ownerId, imageAspectRatio);
+    }
+  } else {
+    row = await writePreferenceRow(ownerId, parseCreatePreferences(value), "merge-duplicates");
+  }
+  if (!row) throw new Error("account_preferences_unavailable");
+  return publicPreferences(row);
 }
 
 export async function resetRenderLabAccountPreferences(ownerId: string) {
   await assertPreferenceMutationAllowed(ownerId);
-  await supabaseRest(`renderlab_account_preferences?owner_id=eq.${encodeURIComponent(ownerId)}`, {
-    method: "DELETE",
-  });
-  return publicPreferences(null);
+  return publicPreferences(await patchImageAspectRatio(ownerId, productCreateDefaults.imageAspectRatio));
 }
 
 export const renderLabAccountPreferenceOptions = {

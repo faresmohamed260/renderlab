@@ -323,7 +323,7 @@ Before copying/installing an external component:
 **Source:** `src/features/library/media-viewer.tsx`
 **Origin:** RenderLab composition based on `design/penpot/media-viewer-v0.1.svg`, approved UI-056 comparison direction in `design/penpot/media-viewer-v0.2-compare-source.md`, and the UI-058 repository-backed `media-viewer-v0.3-upscale-2x` checkpoint
 **Purpose:** Contextual durable-media workspace: media-primary presentation, truthful metadata, capability-derived continuation and secondary durable asset actions.
-**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Collections, Download and Rename; approved UI-033 single-asset Delete; UI-056 successful-history Reuse Settings and conditional durable-source comparison; UI-058 server-eligible fixed 2× image continuation.
+**Variants:** image/video; generated/uploaded metadata; optional dimensions/duration; continuation actions when supported; Viewer-only Favorite, Collections, Download and Rename; approved UI-033 single-asset Delete; UI-056 successful-history Reuse Settings and conditional durable-source comparison. Historical saved videos and image-upscale results retain their media presentation.
 **Used by:** `/library/[assetId]`
 **Dependencies:** Next.js Link, maintained Button/Alert/AlertDialog/Spinner primitives, Lucide React, `PublicMediaAsset`, shared continuation capabilities, product media/collection/Upscale routes, feature-owned `MediaViewerComparison`, `MediaViewerUpscaleAction`, `MediaViewerActions` and `MediaViewerCollections`.
 **Reuse rules:** Keep continuation derivation in the capability model. Keep durable actions on opaque media IDs/product routes. Extend Viewer actions deliberately rather than adding card/batch controls by implication.
@@ -331,7 +331,7 @@ Before copying/installing an external component:
 **Notes:** Base generated-media Viewer/continuation passed `33034606396`; Download PR #11; Rename PR #12; Favorites PR #23. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` and the complete affected matrix; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile Viewer artifacts preserve Continue hierarchy and existing Rename/Download composition. UI-056 exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` plus all 26 affected workflows; final comparison artifact `9969057974` was hash-checked and human-reviewed clean with no corrective code change. UI-058 Viewer Upscale implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423` passed focused run `34033506667` and preserved that existing comparison/result hierarchy; artifact `9989427506` (`sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`) was reviewed clean on desktop/narrow states.
 
 ### MediaViewerUpscaleAction
-**Status:** APPROVED
+**Status:** APPROVED historical component. Production Viewer eligibility is disabled under the FIBO-only capability boundary.
 **Source:** `src/features/library/media-viewer-upscale-action.tsx`
 **Origin:** RenderLab Viewer feature-local composition using maintained Button, Alert and Spinner plus ordinary Next.js Link navigation under UI-058.
 **Purpose:** Own the browser-local mutation state for fixed 2× Upscale from one server-eligible durable image without moving job lifecycle ownership into the Viewer.

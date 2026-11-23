@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Layers } from "lucide-react";
 import {
   motion,
   useMotionValueEvent,
@@ -42,7 +42,7 @@ const media = {
 const threadSteps = [
   ["01", "Create", "Start from an idea."],
   ["02", "References", "Shape the same work."],
-  ["03", "Motion", "Turn the frame into movement."],
+  ["03", "Edit", "Refine the image."],
   ["04", "Continue", "Keep it in your Library."],
 ] as const;
 
@@ -50,7 +50,7 @@ const libraryItems = [
   {
     title: "First light study",
     meta: "Image · Saved to Library",
-    actions: ["Edit", "Animate", "Upscale 2×"],
+    actions: ["Edit", "Favorite", "Download"],
     image: media.mountain,
     type: "IMAGE / RESULT",
     style: { left: "0%", top: "4%", width: "44%", height: "47%" },
@@ -58,23 +58,23 @@ const libraryItems = [
   {
     title: "Glass reference",
     meta: "Uploaded image · Reusable reference",
-    actions: ["Use in Create", "Edit", "Animate"],
+    actions: ["Use in Create", "Edit", "Rename"],
     image: media.glass,
     type: "IMAGE / REFERENCE",
     style: { left: "42%", top: "0%", width: "24%", height: "33%" },
   },
   {
-    title: "Motion test",
-    meta: "Video · Saved to Library · 00:05",
+    title: "Coastal study",
+    meta: "Image · Saved to Library",
     actions: ["Open", "Download"],
     image: media.ocean,
-    type: "VIDEO / 00:05",
+    type: "IMAGE / SAVED",
     style: { left: "61%", top: "8%", width: "37%", height: "30%" },
   },
   {
     title: "Atmosphere study",
     meta: "Image · Collection: Ideas",
-    actions: ["Edit", "Animate", "Favorite"],
+    actions: ["Edit", "Rename", "Favorite"],
     image: media.jelly,
     type: "IMAGE / COLLECTION",
     style: { left: "11%", top: "56%", width: "28%", height: "28%" },
@@ -82,7 +82,7 @@ const libraryItems = [
   {
     title: "Material study",
     meta: "Image · Saved to Library",
-    actions: ["Edit", "Upscale 2×", "Download"],
+    actions: ["Edit", "Favorite", "Download"],
     image: media.material,
     type: "IMAGE / SAVED",
     style: { left: "40%", top: "43%", width: "30%", height: "39%" },
@@ -100,7 +100,7 @@ const libraryItems = [
 const resolveTiles = [
   { image: media.mountain, label: "01 · IMAGE", dx: -48, dy: 24, scale: 0.94, rotate: -3 },
   { image: media.glass, label: "02 · REFERENCE", dx: 58, dy: -30, scale: 0.9, rotate: 3 },
-  { image: media.ocean, label: "03 · MOTION", dx: -54, dy: 42, scale: 0.94, rotate: -2 },
+  { image: media.ocean, label: "03 · EDIT", dx: -54, dy: 42, scale: 0.94, rotate: -2 },
   { image: media.jelly, label: "04 · SAVED", dx: 54, dy: 34, scale: 0.92, rotate: 3 },
 ] as const;
 
@@ -200,12 +200,12 @@ export function LandingExperience() {
       <section className={styles.hero} aria-labelledby="landing-hero-title" data-landing-section="hero">
         <div className={styles.heroGrid}>
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>Creative image &amp; video workspace</p>
+            <p className={styles.eyebrow}>Creative image workspace</p>
             <h1 id="landing-hero-title">
               <span>Render what</span>
               <span>you imagine.</span>
             </h1>
-            <p className={styles.dek}>Create images. Shape them with references. Put them in motion. Keep the thread alive.</p>
+            <p className={styles.dek}>Create images. Shape them with references. Save the results and pick up where you left off.</p>
             <div className={styles.heroActions}>
               <Button asChild size="lg" className={styles.heroPrimary}>
                 <Link href="/create">Open Create <ArrowRight aria-hidden="true" /></Link>
@@ -229,7 +229,7 @@ export function LandingExperience() {
             >
               <HeroCell className={styles.heroTopLeft} image={media.glass} index="01" title="Create" detail="Image" />
               <HeroCell className={styles.heroUpperRight} image={media.mountain} index="02" title="Shape" detail="With references" />
-              <HeroCell className={styles.heroBottomLeft} image={media.ocean} index="03" title="Set in motion" detail="Video" motion />
+              <HeroCell className={styles.heroBottomLeft} image={media.ocean} index="03" title="Refine" detail="Image edit" motion />
               <HeroCell className={`${styles.heroBottomRight} ${styles.quarterArc}`} image={media.jelly} index="04" title="Keep" detail="And continue" quarterArc />
               <span className={`${styles.matrixAxis} ${styles.axisX}`} aria-hidden="true" />
               <span className={`${styles.matrixAxis} ${styles.axisY}`} aria-hidden="true" />
@@ -238,7 +238,7 @@ export function LandingExperience() {
           </div>
         </div>
         <div className={styles.heroFoot} aria-hidden="true">
-          <span>CREATE IMAGE</span><span>EDIT IMAGE</span><span>CREATE VIDEO</span><span>ANIMATE IMAGE</span>
+          <span>CREATE IMAGE</span><span>EDIT IMAGE</span><span>USE REFERENCES</span><span>SAVE TO LIBRARY</span>
         </div>
       </section>
 
@@ -246,8 +246,8 @@ export function LandingExperience() {
         <div className={styles.threadPin}>
           <div className={styles.threadCopy}>
             <p className={styles.eyebrow}>One creative thread</p>
-            <h2 id="thread-title">Make it.<br />Shape it.<br />Move it.<br /><span>Keep going.</span></h2>
-            <p className={styles.dek}>RenderLab keeps the work in context. Create an image, bring in references, put it in motion, then continue from the result without starting over.</p>
+            <h2 id="thread-title">Make it.<br />Shape it.<br />Refine it.<br /><span>Keep going.</span></h2>
+            <p className={styles.dek}>RenderLab keeps the work in context. Create an image, edit it with references, then continue from the result without starting over.</p>
             <ol className={styles.threadSteps} aria-label="Creative workflow">
               {threadSteps.map(([number, title, description], index) => (
                 <li key={title} className={index === threadStep ? styles.activeStep : undefined}>
@@ -283,13 +283,13 @@ export function LandingExperience() {
                   </div>
                   <div className={styles.referenceFrame} aria-hidden="true"><i /><i /><i /><i /></div>
                 </ThreadState>
-                <ThreadState index={2} current={threadStep} className={styles.threadMotion} label="03 / MOTION">
+                <ThreadState index={2} current={threadStep} className={styles.threadMotion} label="03 / EDIT">
                   <div className={styles.motionPath} aria-hidden="true"><i /><i /><i /></div>
                   <div className={styles.timeline} aria-hidden="true">
-                    <Play className={styles.timelinePlay} fill="currentColor" />
-                    <span>00:00</span>
+                    <Layers className={styles.timelinePlay} />
+                    <span>SOURCE</span>
                     <b><i /><em /><em /><em /><em /><em /></b>
-                    <span>00:05</span>
+                    <span>EDIT</span>
                   </div>
                 </ThreadState>
                 <ThreadState index={3} current={threadStep} className={styles.threadContinue} label="04 / LIBRARY">
@@ -404,14 +404,14 @@ export function LandingExperience() {
                 })}
               </div>
             </div>
-            <div className={styles.resolveCaption} aria-hidden="true"><span>CREATE</span><i /><span>SHAPE</span><i /><span>MOTION</span><i /><span>KEEP</span></div>
+            <div className={styles.resolveCaption} aria-hidden="true"><span>CREATE</span><i /><span>SHAPE</span><i /><span>EDIT</span><i /><span>KEEP</span></div>
           </div>
         </div>
       </section>
 
       <footer className={styles.siteFooter} data-landing-footer="">
         <Link href="/" aria-label="RenderLab home"><RenderLabBrand markClassName="size-6" textClassName="text-sm" /></Link>
-        <span>Creative image &amp; video workspace · Closed beta</span>
+        <span>Creative image workspace · Closed beta</span>
         <div><Link href="/create">Open Create</Link><Link href="/settings">Sign in</Link></div>
       </footer>
     </main>

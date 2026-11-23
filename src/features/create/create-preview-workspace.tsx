@@ -15,7 +15,7 @@ import { CreatePreviewStage, type StageTurn } from "./create-preview-stage";
 import { previewImageSizes } from "./create-preview-sizes";
 import { loadCreateResultSource } from "./create-result-source";
 
-import { type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
+import { fiboImageAspectRatios, type PresetAspectRatio, type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
 import { isMediaUploadMimeType } from "@/lib/api/media-upload-contract";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import { uploadFiboMaskFile } from "@/lib/browser/fibo-mask-upload-client";
@@ -23,7 +23,7 @@ import { normalizeFiboVgl, resolveFiboVglReferences } from "@/lib/capabilities/f
 import { uploadPersistentImageFile } from "@/lib/browser/media-upload-client";
 
 const hostedJobId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
-const hostedRatios = ["1:1", "4:3", "3:4", "16:9", "9:16"] as const;
+const hostedRatios = fiboImageAspectRatios;
 
 async function hostedRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, { ...init, cache: "no-store" });
@@ -127,7 +127,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount }: { admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1" }: { admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const bookmarkKey = hostedModel && hostedAccountKey ? "renderlab:hosted-fibo-stage:" + hostedAccountKey
     : admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
@@ -302,7 +302,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     } finally { setSavingEdits(false); }
   }
   const [recent, setRecent] = useState<string[]>([]);
-  const [sizeIndex, setSizeIndex] = useState(0);
+  const [sizeIndex, setSizeIndex] = useState(() => Math.max(0, hostedRatios.indexOf(initialAspectRatio)));
   const [inspiration, setInspiration] = useState<File>();
   const [inspirationPreview, setInspirationPreview] = useState<string>();
   const size = previewImageSizes[sizeIndex] ?? previewImageSizes[0];

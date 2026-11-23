@@ -41,8 +41,8 @@ export function MediaViewerRegister({
       <div className={styles.registerPrimary}>
         <div className={styles.registerCopy}>
           <span className={styles.eyebrow}>CONTINUE FROM MEDIA</span>
-          <strong>Keep the result in motion.</strong>
-          <p>Use this durable asset as the starting point for the next creative step.</p>
+          <strong>Work with this result.</strong>
+          <p>Find media details and available actions here.</p>
         </div>
         <div className={styles.continueActions} aria-label="Continue from media">
           {continuation}
