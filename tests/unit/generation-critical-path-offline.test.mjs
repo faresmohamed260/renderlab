@@ -223,6 +223,65 @@ test("P0-05 stale missing-dispatch fallback fails after 15min, without provider 
   assert.equal(runtime.releases,1);
 });
 
+test("R2 unresolved FIBO outbox without provider call is bounded and owner-return releases admission atomically",async(t)=>{
+  fixture(t);await accepted();
+  runtime.outbox.get(JOB_ID).status="unresolved";
+  currentJob().worker_id="fibo";
+  currentJob().provider_job_id=null;
+  const limit=20*60*1000;
+  currentJob().created_at=new Date(FIXED_TIME-limit+1).toISOString();
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"queued");
+  assert.equal(heldReservation(),true);
+  currentJob().created_at=new Date(FIXED_TIME-limit).toISOString();
+  assert.equal(await ownerReturn.settleOwnerGenerationWithinResponse(OWNER_A,"activity"),true);
+  assert.equal(currentJob().status,"failed");
+  assert.equal(currentJob().error_code,"generation_deadline_exceeded");
+  assert.equal(heldReservation(),false);
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+  assert.equal(runtime.providerPolls,0);
+  assert.equal(runtime.dispatchCalls,0);
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"failed");
+  assert.equal(runtime.releases,1);
+});
+
+test("R3 pending FIBO 202 becomes atomic failed at exactly the 420s plus margin deadline",async(t)=>{
+  fixture(t,{providerOutcome:"pending"});await dispatched();
+  const limit=20*60*1000;
+  currentJob().created_at=new Date(FIXED_TIME-limit+1).toISOString();
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"running");
+  assert.equal(runtime.providerPolls,1);
+  currentJob().created_at=new Date(FIXED_TIME-limit).toISOString();
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"failed");
+  assert.equal(currentJob().error_code,"generation_deadline_exceeded");
+  assert.equal(runtime.providerPolls,1,"expired work must not make another upstream call");
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+});
+
+test("R3 persisting FIBO poison state terminalizes before retrying provider or storage",async(t)=>{
+  fixture(t);await dispatched();
+  currentJob().status="persisting";
+  currentJob().created_at=new Date(FIXED_TIME-20*60*1000).toISOString();
+  const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
+  assert.equal(result?.status,"failed");
+  assert.equal(result?.error?.code,"generation_deadline_exceeded");
+  assert.equal(runtime.providerPolls,0);
+  assert.equal(runtime.r2Writes,0);
+  assert.equal(runtime.releases,1);
+});
+
+test("FIBO cancelling deadline follows SQL cancelling -> cancelled and releases atomically",async(t)=>{
+  fixture(t);await dispatched();
+  currentJob().status="cancelling";
+  currentJob().created_at=new Date(FIXED_TIME-20*60*1000).toISOString();
+  const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
+  assert.equal(result?.status,"cancelled");
+  assert.equal(runtime.providerCancels,0);
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+});
+
 test("P0-05 owner-return recovers persisted R2 bytes after interruption, without re-generation",async(t)=>{
   fixture(t,{finalizationFault:"after-primary-write"});await dispatched();
   await assert.rejects(()=>reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID),/OFFLINE_FINALIZATION_FAULT/);

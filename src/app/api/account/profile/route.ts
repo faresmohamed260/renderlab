@@ -40,7 +40,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   const originFailure = enforceSameOriginMutation(request);
   if (originFailure) return originFailure;
-  const owner = await getRenderLabProfileRequestOwner();
+  const owner = await getRenderLabProfileRequestOwner({ requireActive: true });
   if (!owner.ok) return accessError(owner);
 
   let body: unknown;

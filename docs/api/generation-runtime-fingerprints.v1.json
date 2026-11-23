@@ -3,16 +3,16 @@
   "algorithm": "git-blob-sha1",
   "purpose": "Review sentinel: changes to these runtime validators, type boundaries or API route handlers require intentional contract regeneration and compatibility review.",
   "files": {
-    "src/app/api/generation/jobs/route.ts": "157ff5b4da4dd29bd841f1256de7bde542b85479",
+    "src/app/api/generation/jobs/route.ts": "fc6b4010b9439ca355fac4b14b4b41947256c236",
     "src/app/api/generation/jobs/[jobId]/route.ts": "e30fc82ba672bc7c85ce39d77145c877c345b54c",
-    "src/app/api/generation/jobs/[jobId]/cancel/route.ts": "f2e287f92247427b67eb1e632bf27b56be947b91",
-    "src/app/api/generation/jobs/[jobId]/retry/route.ts": "6912b13eee5675269c9113c42c77682fa755b750",
-    "src/app/api/generation/jobs/[jobId]/run-again/route.ts": "0b6ab072a4b81857441d46b4c2b144e079b4206d",
+    "src/app/api/generation/jobs/[jobId]/cancel/route.ts": "f2360c0acdfaa3686e6e6f6d847f0b99713cfcfb",
+    "src/app/api/generation/jobs/[jobId]/retry/route.ts": "247760ce9c68f3ed36b9d8fa706ec225303db363",
+    "src/app/api/generation/jobs/[jobId]/run-again/route.ts": "e4c1105199a92ca78229a37294091ad0ec04e0d9",
     "src/lib/api/generation-contract.ts": "d7ba90518c95c43b81380e6e46d557341b54ca84",
     "src/lib/api/generation-cancel-contract.ts": "84d7baa69349ce6257e6fae0ec910153e76de9e1",
     "src/lib/api/generation-retry-contract.ts": "7e0ff42e844f9b3e2b183343cdb5cd27374817f0",
     "src/lib/api/generation-run-again-contract.ts": "6582b9da443c149935c131c0c56fdfd807a27868",
     "src/lib/capabilities/generation.ts": "5d37e2ef7b18d9becb4cdabe83f0d61b1fbf422b",
-    "src/lib/capabilities/generation-job-state-machine.ts": "bf015bde36bd901239a61153b547e9b7ca626b90"
+    "src/lib/capabilities/generation-job-state-machine.ts": "38a755160997e989177b3421508130c78e2d15ba"
   }
 }

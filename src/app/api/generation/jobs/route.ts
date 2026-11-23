@@ -2,7 +2,7 @@ import { enforceSameOriginMutation } from "@/server/security/same-origin-mutatio
 import { NextResponse } from "next/server";
 import { type SubmitGenerationErrorCode } from "@/lib/api/generation-contract";
 import { generationApiSchemas } from "@/lib/api/generation-api-schemas";
-import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isFiboGenerationAvailable, isFiboMaskGenerationAvailable, isFiboAutoVglAvailable, isGenerationBackendConfigured, submitGeneration } from "@/server/generation/submit-generation";
 
 export const maxDuration = 60;
@@ -33,15 +33,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
   }
 
-  const identity = await getCurrentRenderLabIdentity();
-  if (!identity) {
+  const account = await getCurrentRenderLabAccount();
+  if (!account) {
     return NextResponse.json(
       { ok: false, error: { code: "authentication_required", message: "Sign in to generate and save private media." } },
       { status: 401 },
     );
   }
 
-  const result = await submitGeneration(identity.id, parsed.request);
+  const result = await submitGeneration(account.id, parsed.request);
 
   if (!result.ok) {
     return NextResponse.json(result, { status: submissionStatus(result.error.code) });

@@ -167,7 +167,7 @@ function fixture(t, {
       if (query.get("select") === "id") {
         assert.equal(method, "GET");
         assert.equal(query.get("limit"), "1");
-        assert.equal(query.get("order"), "updated_at.asc,id.asc");
+        assert.equal(query.get("order"), "last_reconciled_at.asc.nullsfirst,updated_at.asc,id.asc");
         assert.match(query.get("or"), /provider_job_id.not.is.null/);
         assert.ok(init.signal instanceof AbortSignal);
         candidateLookups += 1;
@@ -349,6 +349,27 @@ test("the recovery job survives pending and ambiguous responses and persists one
   assert.deepEqual(saved.outputAssetIds, [recovery.media[0].id]);
   assert.deepEqual(recovery.objects.find(({ contentType }) => contentType === "image/png")?.body, png);
   assert.ok(recovery.reservationReleased);
+});
+
+test("FIBO budget and unavailable hints cannot discard a late successful provider result", async (t) => {
+  const job = fixture(t);
+  job.respond(
+    Response.json({ detail: "workspace budget exhausted" }, { status: 402 }),
+    Response.json({ code: "WORKER_UNAVAILABLE", detail: "temporary backend fault" }, { status: 409 }),
+    Response.json({ detail: "temporarily unavailable" }, { status: 409 }),
+    new Response(png, { headers: { "content-type": "image/png" } }),
+  );
+  await assert.rejects(job.poll(), /temporarily unavailable/i);
+  await assert.rejects(job.poll(), /temporarily unavailable/i);
+  assert.equal((await job.poll()).status, "running");
+  assert.deepEqual(job.patches, []);
+  assert.equal(job.reservationReleased, false);
+  const succeeded = await job.poll();
+  assert.equal(succeeded.status, "succeeded");
+  assert.deepEqual(job.patches.map(({ status }) => status), ["persisting", "succeeded"]);
+  assert.equal(job.media.length, 1);
+  assert.ok(job.reservationReleased);
+  assert.equal(job.reads, 4);
 });
 
 test("a generic gateway 500 stays retryable without a failed transition", async (t) => {

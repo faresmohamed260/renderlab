@@ -7,6 +7,9 @@ export function reset(changes={}) {
   access:{userId:A},blocked:false,configured:true,
   lookup:async(owner,id)=>owner===A&&id===ID?{id:ID}:null,
   download:async()=>"https://signed.invalid/download",
+  contentUrl:async()=>"https://signed.invalid/content",
+  reference:async(owner,id)=>owner===A&&id===ID?{id}:null,
+  referenceUrl:async()=>"https://signed.invalid/reference",
   exportDownload:async()=>"https://signed.invalid/export",
   delete:async(owner,id)=>owner===A&&id===ID?{cleanupPending:false}:null,
   ticket:async()=>({uploadId:ID,method:"PUT",uploadUrl:"https://signed.invalid/upload",expiresInSeconds:300}),
@@ -29,13 +32,16 @@ registerHooks({resolve(spec,context,next){
    'export async function getRenderLabAccountAccess(id){S().calls.push(["access",id]);if(S().access instanceof Error)throw S().access;return S().access;}');
  if(spec==="@/server/media/media-assets")return stub(stateCode+
    'export async function getMediaAsset(owner,id){S().calls.push(["get",owner,id]);return S().lookup(owner,id);}'+
-   'export async function getMediaAssetDownloadUrl(a){S().calls.push(["sign",a.id]);return S().download(a);}'+
+   'export async function getMediaAssetDownloadUrl(a){S().calls.push(["sign",a.id]);return S().download(a);}export async function getMediaAssetContentUrl(a,kind){S().calls.push(["sign",a.id,kind]);return S().contentUrl(a,kind);}'+
    'export async function deleteMediaAsset(owner,id){S().calls.push(["delete",owner,id]);return S().delete(owner,id);}'+
    'export function publicMediaAsset(a){return {id:a.id};}');
  if(spec==="@/server/media/media-uploads")return stub(stateCode+
    'export function isMediaUploadConfigured(){return S().configured;}'+
    'export async function createMediaUploadTicket(owner,req){S().calls.push(["ticket",owner,req]);return S().ticket(owner,req);}'+
    'export async function completeMediaUpload(owner,req){S().calls.push(["complete",owner,req]);return S().complete(owner,req);}');
+ if(spec==="@/server/media/reference-uploads")return stub(stateCode+
+   'export async function getReadyReferenceSource(owner,id){S().calls.push(["reference",owner,id]);return S().reference(owner,id);}'+
+   'export async function getReferenceSourceContentUrl(source){S().calls.push(["reference-sign",source.id]);return S().referenceUrl(source);}');
  if(spec==="@/server/media/upload-admission")return stub(
    'export class UploadAdmissionLimitError extends Error{constructor(code,message){super(message);this.code=code;}}');
  if(spec==="@/server/account/account-data-lifecycle")return stub(stateCode+

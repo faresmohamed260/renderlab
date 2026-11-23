@@ -267,20 +267,6 @@ const entries = {
     "encoding": "true",
     "default": false
   },
-  "RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL": {
-    "category": "test-only",
-    "kind": "string"
-  },
-  "RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE": {
-    "category": "test-only",
-    "kind": "boolean",
-    "encoding": "true",
-    "default": false
-  },
-  "RENDERLAB_UPSCALE_WORKER_GATEWAY_URL": {
-    "category": "feature-required",
-    "kind": "string"
-  },
   "RESEND_API_KEY": {
     "category": "production-required",
     "kind": "string"

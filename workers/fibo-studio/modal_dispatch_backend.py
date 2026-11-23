@@ -1,6 +1,8 @@
 """Modal image-worker adapter for the recoverable dispatcher."""
 from __future__ import annotations
 
+import struct
+
 from dispatch_core import Lookup, LookupState, PermanentDispatchError, UnknownDispatchOutcome
 from native_gateway import CALL_ID, validate_payload
 from workload_contract import FIBO_MODEL_KEY, FIBO_MODEL_VERSION, Operation, PRODUCTION_CATALOG
@@ -31,7 +33,9 @@ class ModalImageBackend:
             source_operation = Operation.EDIT_IMAGE if inputs["sources"] else Operation.CREATE_IMAGE
             if source_operation.value != intent.operation:
                 raise ValueError("FIBO operation does not match its bound sources")
-        except (TypeError, ValueError) as error:
+        except (TypeError, ValueError, RecursionError, ZeroDivisionError, struct.error) as error:
+            # Only input validation is permanent; ambiguous provider sends must
+            # still reconcile by attempt ID rather than blindly retry.
             raise PermanentDispatchError(str(error)) from error
         if not self.store.reserve_send(intent.attempt_id):
             raise UnknownDispatchOutcome("Provider submission could not be reserved")

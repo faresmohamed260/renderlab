@@ -13,6 +13,11 @@ export const generationJobStatuses = [
   "persisting", "succeeded", "failed", "cancelled",
 ] as const satisfies readonly GenerationJobStatus[];
 
+/** Modal renderer timeout is 420s; allow 780s for queueing, dispatch, and storage.
+ * The deadline is measured from immutable job creation, never updated_at.
+ */
+export const fiboJobDeadlineMs = (420 + 780) * 1000;
+
 export const generationTerminalStatuses = [
   "succeeded", "failed", "cancelled",
 ] as const satisfies readonly GenerationJobStatus[];
@@ -159,7 +164,8 @@ export type GenerationProviderObservation =
   | { kind: "terminal-failure"; code: string }
   | { kind: "process-exited" }
   | { kind: "ambiguous"; ageMs: number }
-  | { kind: "stale-undispatched"; ageMs: number };
+  | { kind: "stale-undispatched"; ageMs: number }
+  | { kind: "fibo-deadline"; ageMs: number };
 
 /** Mirrors the observed process-exit, ambiguous-stale and missing-dispatch policies. */
 export function projectProviderObservation(
@@ -186,6 +192,12 @@ export function projectProviderObservation(
       return observation.ageMs >= 15 * 60 * 1000 && snapshot.status !== "cancelling"
         ? changeJobStatus(snapshot, "failed", "generation_orchestration_stalled")
         : { decision: "idempotent", next: snapshot, reason: "missing-dispatch-grace" };
+    case "fibo-deadline":
+      return observation.ageMs >= fiboJobDeadlineMs
+        ? snapshot.status === "cancelling"
+          ? changeJobStatus(snapshot, "cancelled")
+          : changeJobStatus(snapshot, "failed", "generation_deadline_exceeded")
+        : { decision: "idempotent", next: snapshot, reason: "fibo-deadline-pending" };
   }
 }
 

@@ -1,4 +1,4 @@
-import { envFlag, envString } from "../../lib/config/runtime-env.ts";
+// Retained read-only metadata for historical upscale jobs; no live worker.
 export const imageUpscaleWorkflowId = "swinir-classical-sr-image-upscale-2x";
 export const imageUpscaleModel = "SwinIR Classical SR · 2×";
 export const imageUpscaleEcosystem = "image-upscale-v1";
@@ -10,21 +10,7 @@ export type ImageUpscaleWorker = {
   gatewayUrl: string;
 };
 
-function normalizedGatewayUrl(value: string | undefined) {
-  const url = value?.trim().replace(/\/$/, "");
-  return url || null;
-}
-
+/** Retired worker cannot be restored by setting a stale environment variable. */
 export function getImageUpscaleWorker(): ImageUpscaleWorker | null {
-  const testGateway = envFlag("RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE")
-    ? normalizedGatewayUrl(envString("RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL"))
-    : null;
-  const gatewayUrl = testGateway || normalizedGatewayUrl(envString("RENDERLAB_UPSCALE_WORKER_GATEWAY_URL"));
-  if (!gatewayUrl) return null;
-
-  return {
-    id: imageUpscaleWorkerId,
-    ecosystem: imageUpscaleEcosystem,
-    gatewayUrl,
-  };
+  return null;
 }

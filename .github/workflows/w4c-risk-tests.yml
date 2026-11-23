@@ -4,7 +4,6 @@ on:
     paths:
       - "tests/unit/w4c-*.test.mjs"
       - "tests/helpers/w4c-*.mjs"
-      - "docs/audits/W4C_RISK_BOUNDARY_TEST_EVIDENCE_2026-11-23.md"
       - ".github/workflows/w4c-risk-tests.yml"
 permissions:
   contents: read
