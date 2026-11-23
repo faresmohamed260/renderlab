@@ -1,0 +1,34 @@
+name: FIBO Gateway Regression
+
+on:
+  pull_request:
+    paths:
+      - "workers/fibo-studio/native_gateway.py"
+      - "workers/fibo-studio/modal_native_production.py"
+      - "workers/fibo-studio/modal_native_candidate.py"
+      - "workers/fibo-studio/test_native_gateway.py"
+      - ".github/workflows/fibo-gateway-regression.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fibo-gateway-regression-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Install offline gateway test dependencies
+        run: |
+          python3 -m venv /tmp/renderlab-fibo-gateway
+          /tmp/renderlab-fibo-gateway/bin/python -m pip install --disable-pip-version-check "modal==1.6.4" "fastapi==0.137.2" "httpx==0.28.1" "Pillow==12.2.0"
+      - name: Test native gateway against real Modal exceptions
+        working-directory: workers/fibo-studio
+        run: /tmp/renderlab-fibo-gateway/bin/python -m unittest test_native_gateway -v

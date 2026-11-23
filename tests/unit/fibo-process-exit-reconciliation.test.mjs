@@ -298,6 +298,21 @@ test("a confirmed FIBO process exit fails the first job exactly once and release
   assert.deepEqual(first.objects, []);
 });
 
+test("an exact FIBO render timeout fails once and releases admission without media", async (t) => {
+  const job = fixture(t);
+  job.respond(Response.json({ detail: "FIBO_RENDER_TIMED_OUT" }, { status: 409 }));
+  const failed = await job.poll();
+  assert.equal(failed.status, "failed");
+  assert.equal(failed.error.code, "generation_failed");
+  assert.match(failed.error.message, /render timed out/i);
+  assert.equal(job.reservationReleased, true);
+  assert.deepEqual(job.patches.map(({ status }) => status), ["failed"]);
+  assert.deepEqual(job.media, []);
+  assert.deepEqual(job.objects, []);
+  assert.deepEqual(await job.poll(), failed);
+  assert.equal(job.reads, 1);
+});
+
 test("the recovery job survives pending and ambiguous responses and persists one image", async (t) => {
   const recovery = fixture(t, { id: "30000000-0000-4000-8000-000000000000", status: "queued" });
   const untrusted = "raw reply with a fixture handle or credential";

@@ -102,7 +102,7 @@ def call_handle_signer(signing_key):
     return sign
 
 
-def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dispatcher=None,
+def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, function_timeout_errors=(), wake_dispatcher=None,
                    allow_direct_submit=True):
     sign_call = call_handle_signer(signing_key)
     api = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
@@ -160,10 +160,14 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dis
         call_id = unwrap(request.headers.get(JOB_HANDLE_HEADER, ""))
         try:
             result = await run_in_threadpool(poll, call_id)
-        except TimeoutError:
-            return JSONResponse({"worker_state": "generating"}, status_code=202)
+        # Modal's terminal errors subclass TimeoutError; only plain get(timeout=0)
+        # pending polls are HTTP 202.
         except expired_errors as exc:
             raise HTTPException(410, "FIBO result expired") from exc
+        except function_timeout_errors as exc:
+            raise HTTPException(409, "FIBO_RENDER_TIMED_OUT") from exc
+        except TimeoutError:
+            return JSONResponse({"worker_state": "generating"}, status_code=202)
         except ValueError as exc:
             raise HTTPException(422, "FIBO rejected the render inputs") from exc
         except Exception as exc:
@@ -179,10 +183,14 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, wake_dis
         call_id = unwrap(request.headers.get(JOB_HANDLE_HEADER, ""))
         try:
             result = await run_in_threadpool(poll, call_id)
-        except TimeoutError:
-            return JSONResponse({"worker_state": "generating"}, status_code=202)
+        # Modal's terminal errors subclass TimeoutError; only plain get(timeout=0)
+        # pending polls are HTTP 202.
         except expired_errors as exc:
             raise HTTPException(410, "FIBO result expired") from exc
+        except function_timeout_errors as exc:
+            raise HTTPException(409, "FIBO_RENDER_TIMED_OUT") from exc
+        except TimeoutError:
+            return JSONResponse({"worker_state": "generating"}, status_code=202)
         except ValueError as exc:
             raise HTTPException(422, "FIBO rejected the render inputs") from exc
         except Exception as exc:

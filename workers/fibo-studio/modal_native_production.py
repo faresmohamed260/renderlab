@@ -86,6 +86,7 @@ def web():
         cancel=lambda call_id: modal.FunctionCall.from_id(call_id).cancel(terminate_containers=True),
         signing_key=os.environ.get("RENDERLAB_FIBO_CALL_SIGNING_KEY", "").encode(),
         expired_errors=(modal.exception.OutputExpiredError, modal.exception.NotFoundError),
+        function_timeout_errors=(modal.exception.FunctionTimeoutError,),
         wake_dispatcher=lambda: dispatch_tick.spawn(trigger="wake").object_id,
         allow_direct_submit=False,
     )
