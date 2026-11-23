@@ -195,6 +195,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/architecture/ARCHITECTURE_DECISIONS.md` — durable non-UI cross-cutting architecture decision and supersession authority.
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
 - `docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md` — two-page browser-to-provider backend context, lifecycle, trust boundaries and local verification entry point.
+- `docs/architecture/OBSERVABILITY_METRICS_DESIGN.md` — proposed bounded FIBO job metrics, trace context, free-tier feasibility and incident-detection design; **not implemented**.
 - `docs/architecture/API_CONTRACT.md` — private generation OpenAPI 3.1, executable schemas, error taxonomy, idempotency and document-versioning policy.
 - `docs/operations/LOCAL_BACKEND_DEMO.md` — credential-free first-hour job-lifecycle CLI and seven deterministic test scenarios.
 - `docs/operations/DATABASE_CONFORMANCE_GATE.md` — optional disposable-Postgres fresh migration, grants/RLS, real SQL RPC and 64-edge state-conformance verifier; named P0-07 expected gaps.
