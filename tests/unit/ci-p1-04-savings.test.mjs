@@ -84,17 +84,25 @@ test("git exact-object positive and mixed-path negative integration with safe fa
     assert.equal(runClassifier(root, { ...vars, CI_BASE_SHA: "0".repeat(40) }), false, "deleted-base fails closed");
     assert.equal(runClassifier(root, { ...vars, CI_EVENT_NAME: "workflow_dispatch" }), false, "manual always full");
     writeFileSync(path.join(root, "src", "change.ts"), "export const changed = true;\n");
-    git(root, ["add", "."]); git(root, ["commit", "-qm", "runtime-mixed"]);
+    git(root, ["add", "src/change.ts"]); git(root, ["commit", "-qm", "runtime-mixed"]);
     const mixed = git(root, ["rev-parse", "HEAD"]);
     assert.equal(runClassifier(root, { ...vars, CI_HEAD_SHA: mixed }), false);
     git(root, ["rm", "src/change.ts"]); git(root, ["commit", "-qm", "remove-runtime"]);
     const deleted = git(root, ["rev-parse", "HEAD"]);
     assert.equal(runClassifier(root, { ...vars, CI_HEAD_SHA: deleted }), true, "net diff contains only evidence");
     writeFileSync(path.join(root, "scripts", "consumer.mjs"), "const audit = 'docs/audits/P1_04_FIXTURE.md';\n");
-    git(root, ["add", "."]); git(root, ["commit", "-qm", "consumer"]);
+    git(root, ["add", "scripts/consumer.mjs"]); git(root, ["commit", "-qm", "consumer"]);
     assert.equal(runClassifier(root, {
       CI_EVENT_NAME: "pull_request", CI_BASE_SHA: base, CI_HEAD_SHA: git(root, ["rev-parse", "HEAD"]),
-    }), false, "script reference or source change forces full run");
+    }), false, "source change forces full run");
+    const referencedBase = git(root, ["rev-parse", "HEAD"]);
+    writeFileSync(evidence, "# record 3\n");
+    git(root, ["add", "docs/audits/P1_04_FIXTURE.md"]);
+    git(root, ["commit", "-qm", "only-referenced-evidence"]);
+    assert.equal(runClassifier(root, {
+      CI_EVENT_NAME: "pull_request", CI_BASE_SHA: referencedBase,
+      CI_HEAD_SHA: git(root, ["rev-parse", "HEAD"]),
+    }), false, "unchanged source reference to audit Markdown forces full run");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
