@@ -201,6 +201,8 @@ RenderLab keeps schema ownership, storage prefixes, orchestration, authorization
 - **Quality:** Oxlint, TypeScript, Node test runner, Playwright, repository-specific contract verifiers
 - **Delivery:** Vercel with guarded production qualification
 
+**Versioned generation API contract:** see [OpenAPI 3.1 source, status/error taxonomy and compatibility policy](docs/architecture/API_CONTRACT.md), generated from the executable FIBO request and response schemas. The API remains invite-only and not a supported public integration.
+
 ## Local development
 
 **One-command offline backend walkthrough:** `npm run demo:backend` (after `npm ci`); see the [seven-scenario demo guide](docs/operations/LOCAL_BACKEND_DEMO.md). No credentials, Docker, GPU or network required.
@@ -283,6 +285,7 @@ Public/product documentation starts with:
 3. [Current public status](docs/STATUS.md)
 2. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
 3. [Backend architecture overview](docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md)
+3. [Private generation API contract (OpenAPI 3.1)](docs/architecture/API_CONTRACT.md)
 3. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
 4. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
 5. [Product/UI foundation](docs/ui/UI_MIGRATION.md)
@@ -306,7 +309,7 @@ Maintainer/agent handoff entry points and execution history remain repository-in
 
 RenderLab is a personal/friends closed beta and an AI Engineer portfolio project. The next work is the **Phase 3 backend professional baseline (P0)**: truthful claims, typed fail-fast configuration, a reviewed trust/owner-isolation model, explicit job-state invariants, and deterministic critical-path tests. The [accepted five-unit contract](docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md) governs implementation order and its exit checks.
 
-Provider adapters, modularization, API contracts and metrics remain subject to a separate **P1 review**; the offline backend demonstration is available now. they are not approved for implementation by this README. Frontend changes and new image/video/audio capabilities remain on hold until the [charter's backend-first exit gate](docs/PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) is met and the owner authorizes resumption. Video remains a genuine **planned** goal, not a current feature.
+The deterministic offline backend demo and private, versioned API contract are independently reviewable engineering follow-ons. Provider adapters, modularization and metrics remain subject to a separate **P1 review**; merging any runtime validator refactor is held until an explicitly approved release window. they are not approved for implementation by this README. Frontend changes and new image/video/audio capabilities remain on hold until the [charter's backend-first exit gate](docs/PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) is met and the owner authorizes resumption. Video remains a genuine **planned** goal, not a current feature.
 
 See [STATUS.md](docs/STATUS.md) for deployed capability and [TECHNICAL_CLAIMS.md](docs/TECHNICAL_CLAIMS.md) for independently checkable statements. Execution history remains historical evidence under repository governance.
 

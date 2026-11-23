@@ -1,0 +1,242 @@
+{
+  "contractVersion": "1.0.0",
+  "requestRequired": [
+    "output",
+    "inputs"
+  ],
+  "requestModel": "fibo2-edit-turbo",
+  "requestKinds": [
+    "image"
+  ],
+  "requestAspectRatios": [
+    "original",
+    "1:1",
+    "4:3",
+    "3:4",
+    "16:9",
+    "9:16"
+  ],
+  "requestMaxInputs": 4,
+  "responseRequired": [
+    "id",
+    "status",
+    "operation",
+    "createdAt",
+    "updatedAt",
+    "outputAssetIds"
+  ],
+  "responseStatuses": [
+    "queued",
+    "preparing",
+    "running",
+    "cancelling",
+    "persisting",
+    "succeeded",
+    "failed",
+    "cancelled"
+  ],
+  "domainErrors": {
+    "submit": [
+      "invalid_request",
+      "generation_access_denied",
+      "generation_disabled",
+      "generation_active_limit_reached",
+      "generation_rate_limit_reached",
+      "generation_backend_unavailable",
+      "generation_submission_failed"
+    ],
+    "cancel": [
+      "job_not_found",
+      "cancel_not_available",
+      "generation_backend_unavailable"
+    ],
+    "retry": [
+      "job_not_found",
+      "retry_not_available",
+      "generation_access_denied",
+      "generation_disabled",
+      "generation_active_limit_reached",
+      "generation_rate_limit_reached",
+      "generation_backend_unavailable",
+      "generation_submission_failed"
+    ],
+    "runAgain": [
+      "job_not_found",
+      "run_again_not_available",
+      "generation_access_denied",
+      "generation_disabled",
+      "generation_active_limit_reached",
+      "generation_rate_limit_reached",
+      "generation_backend_unavailable",
+      "generation_submission_failed"
+    ]
+  },
+  "routes": [
+    {
+      "path": "/api/generation/jobs",
+      "method": "get",
+      "operationId": "getGenerationCapabilities",
+      "successes": [
+        "200"
+      ],
+      "errors": {}
+    },
+    {
+      "path": "/api/generation/jobs",
+      "method": "post",
+      "operationId": "submitGenerationJob",
+      "successes": [
+        "202"
+      ],
+      "errors": {
+        "400": [
+          "invalid_request"
+        ],
+        "401": [
+          "authentication_required"
+        ],
+        "403": [
+          "cross_origin_request_blocked",
+          "generation_access_denied"
+        ],
+        "429": [
+          "generation_active_limit_reached",
+          "generation_rate_limit_reached"
+        ],
+        "502": [
+          "generation_submission_failed"
+        ],
+        "503": [
+          "generation_backend_unavailable",
+          "generation_disabled"
+        ]
+      }
+    },
+    {
+      "path": "/api/generation/jobs/{jobId}",
+      "method": "get",
+      "operationId": "getGenerationJob",
+      "successes": [
+        "200"
+      ],
+      "errors": {
+        "400": [
+          "invalid_request"
+        ],
+        "401": [
+          "authentication_required"
+        ],
+        "404": [
+          "job_not_found"
+        ],
+        "503": [
+          "generation_backend_unavailable"
+        ]
+      }
+    },
+    {
+      "path": "/api/generation/jobs/{jobId}/cancel",
+      "method": "post",
+      "operationId": "cancelGenerationJob",
+      "successes": [
+        "200",
+        "202"
+      ],
+      "errors": {
+        "400": [
+          "invalid_request"
+        ],
+        "401": [
+          "authentication_required"
+        ],
+        "403": [
+          "cross_origin_request_blocked"
+        ],
+        "404": [
+          "job_not_found"
+        ],
+        "409": [
+          "cancel_not_available"
+        ],
+        "503": [
+          "generation_backend_unavailable"
+        ]
+      }
+    },
+    {
+      "path": "/api/generation/jobs/{jobId}/retry",
+      "method": "post",
+      "operationId": "retryGenerationJob",
+      "successes": [
+        "202"
+      ],
+      "errors": {
+        "400": [
+          "invalid_request"
+        ],
+        "401": [
+          "authentication_required"
+        ],
+        "403": [
+          "cross_origin_request_blocked",
+          "generation_access_denied"
+        ],
+        "404": [
+          "job_not_found"
+        ],
+        "409": [
+          "retry_not_available"
+        ],
+        "429": [
+          "generation_active_limit_reached",
+          "generation_rate_limit_reached"
+        ],
+        "502": [
+          "generation_submission_failed"
+        ],
+        "503": [
+          "generation_backend_unavailable",
+          "generation_disabled"
+        ]
+      }
+    },
+    {
+      "path": "/api/generation/jobs/{jobId}/run-again",
+      "method": "post",
+      "operationId": "runAgainGenerationJob",
+      "successes": [
+        "202"
+      ],
+      "errors": {
+        "400": [
+          "invalid_request"
+        ],
+        "401": [
+          "authentication_required"
+        ],
+        "403": [
+          "cross_origin_request_blocked",
+          "generation_access_denied"
+        ],
+        "404": [
+          "job_not_found"
+        ],
+        "409": [
+          "run_again_not_available"
+        ],
+        "429": [
+          "generation_active_limit_reached",
+          "generation_rate_limit_reached"
+        ],
+        "502": [
+          "generation_submission_failed"
+        ],
+        "503": [
+          "generation_backend_unavailable",
+          "generation_disabled"
+        ]
+      }
+    }
+  ],
+  "versionPolicy": "Major for breaking request/response/status/error semantics; minor for backward-compatible optional fields/endpoints; patch for corrections that do not change behavior. Version is documentation metadata, not a routed /v1 public API."
+}

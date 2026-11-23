@@ -1,3 +1,4 @@
+import type { generationApiContractSource } from "@/lib/api/generation-api-source";
 import type { GenerationJob } from "@/lib/capabilities/generation";
 
 export type CancelGenerationSuccess = {
@@ -5,10 +6,7 @@ export type CancelGenerationSuccess = {
   job: GenerationJob;
 };
 
-export type CancelGenerationErrorCode =
-  | "job_not_found"
-  | "cancel_not_available"
-  | "generation_backend_unavailable";
+export type CancelGenerationErrorCode = (typeof generationApiContractSource.domainErrors.cancel)[number];
 
 export type CancelGenerationError = {
   ok: false;

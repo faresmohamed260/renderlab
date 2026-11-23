@@ -1,0 +1,39 @@
+# Generation API contract — private v1 (OpenAPI 3.1)
+
+**Scope:** invite-only beta generation HTTP routes; **contract document version:** 1.0.0. **Deployment:** this repository contract does not attest production rollout. Merging it does not authorize release; the owner will plan the next batched release. It does not enable a public API, add `/v1` routes, new authentication modes or provider features.
+
+## Source and reproducibility
+
+- The single checked-in source is [`generation-api-source.ts`](../../src/lib/api/generation-api-source.ts). It declares plain OpenAPI 3.1-compatible JSON Schemas for admitted input, job, success/error envelopes and capabilities, plus stable error domains, HTTP status mapping and documented semantic refinements. Existing [`parseGenerationRequest`](../../src/lib/api/generation-contract.ts) remains the executable **semantic validator** used via [`generationApiSchemas.request.parse`](../../src/lib/api/generation-api-schemas.ts); it consumes FIBO limits directly from the shared JSON Schema properties, without separately copied constants. The small dependency-free schema matcher interprets the bounded JSON Schema subset used here; success/error envelopes are imported verbatim from the shared schemas and error code enums are specialized per HTTP status. It is not a general-purpose JSON Schema implementation.
+- [`openapi.v1.json`](../api/openapi.v1.json) is deterministically generated from this source by [`generate-generation-api-contract.mjs`](../../scripts/generate-generation-api-contract.mjs); it is *not* hand-edited. The companion [`generation-compatibility.v1.json`](../api/generation-compatibility.v1.json) is the reviewed compatibility snapshot. [`generation-runtime-fingerprints.v1.json`](../api/generation-runtime-fingerprints.v1.json) additionally records Git blob hashes of the exact route handlers, parser, response types, and job status authority so an unrelated source edit cannot silently bypass contract review. All three artifacts are checked by the generator.
+- Run `npm run generate:api-contract` after an **intended** contract change and review the three output diffs. `npm run verify:api-contract` compares all three committed files byte-for-byte. The protected Engineering Quality check executes this same drift gate; the unit compatibility test also checks regeneration, routes, error sets and versioning.
+- The frozen legacy parser in [`tests/fixtures/generation-contract-legacy.ts`](../../tests/fixtures/generation-contract-legacy.ts) is **test-only**. The [corpus](../../tests/helpers/generation-contract-corpus.mjs) has **1,128 deterministic cases**: 104 named, 1,024 fixed-seed generated. The differential suite asserts deep equality of normalized success objects and exact rejection codes **and messages** against the old parser. Future behavior changes require intentionally updating both the compatibility snapshot and the differential baseline in an explicitly reviewed change.
+
+## Contracted routes
+
+| Method | Path | Accepted/success status | Notes |
+| --- | --- | --- | --- |
+| GET | `/api/generation/jobs` | 200 | Capability response: `available` boolean; FIBO flags are **optional true-only** values. |
+| POST | `/api/generation/jobs` | 202 | FIBO image requests only. Auth, admission, owner-scoped inputs, same-origin policy still apply. |
+| GET | `/api/generation/jobs/{jobId}` | 200 | Status for owner-scoped job; read can reconcile. |
+| POST | `/api/generation/jobs/{jobId}/cancel` | 200 or 202 | 200 terminal cancel, 202 pending cancel; other state-dependent errors. |
+| POST | `/api/generation/jobs/{jobId}/retry` | 202 | Failed original only; creates a **new** job. |
+| POST | `/api/generation/jobs/{jobId}/run-again` | 202 | Succeeded original only; creates a **new** job. |
+
+The OpenAPI response map is authoritative **documentation of current handlers**, not a new API router. Stable errors are emitted as `{ ok: false, error: { code, message, details? } }`; codes include `invalid_request`, `authentication_required`, `cross_origin_request_blocked`, `job_not_found`, `generation_access_denied`, `generation_disabled`, `generation_active_limit_reached`, `generation_rate_limit_reached`, `generation_backend_unavailable`, `generation_submission_failed`, `cancel_not_available`, `retry_not_available`, and `run_again_not_available` where permitted by each HTTP status. Never surface raw provider/database messages as API error details. Per-method status-to-code sets live in the schema source, so consumers should inspect the generated OpenAPI rather than assuming every code applies to every route.
+
+### Semantic rules beyond structural JSON Schema
+
+OpenAPI 3.1's structural schema is augmented with `x-renderlab-semantic-rules`: the executable parser additionally trims prompts/input IDs, defaults and de-duplicates aliases, enforces first `primary-image` then reference roles, validates VGL JSON content and references, validates distinct mask source, bounds Unicode versus UTF-16 text accurately, rejects disallowed legacy models/video fields, and requires source-free nonempty text for auto-VGL. JSON Schema cannot faithfully express all reference-dependent checks or their error-precedence behavior. **Do not treat structurally valid JSON alone as a guarantee of admission.** The schema's `parse` function is the final acceptance authority; the differential suite protects its exact behavior.
+
+## Idempotency, settlement, and versioning
+
+**No client request-idempotency promise:** there is no supported `Idempotency-Key` contract. Replaying submit, retry or run-again may create a new job. An *accepted individual job* instead has a durable dispatch/outbox attempt guard. Durable media has a unique output index/recovery path, but neither guarantees exactly one provider execution or one R2 PUT. Cancellation is status-dependent and terminal jobs cannot be reopened. Finished jobs can require **owner-return reconciliation**; no unattended settlement scheduler is promised. These are distinct properties, not interchangeable claims.
+
+**Document semver:** breaking field, error/status, authentication or idempotency behavior requires a new major and explicitly approved migration/release; additive compatible fields/endpoints increment minor; documentation corrections with unchanged behavior increment patch. This is **contract document versioning**, not a new public endpoint version or automatic deployment. A compatibility snapshot change must be deliberate, reviewed, differential-tested and green on the exact head; production release is a separate owner-authorized runbook process.
+
+## Limits and authorization
+
+This is an executable application-level schema with a fake-service/differential validation layer, not proof of SQL transaction isolation or provider reliability. The public API surface is not opened to uninvited clients by the existence of an OpenAPI file. Keep per-owner auth, closed-beta enforcement and same-origin mutation checks unchanged. No credentials, GPU jobs, production configuration, Modal changes or schema migrations are needed to regenerate/verify the contract.
+
+See the [Product Charter](../PRODUCT_CHARTER.md), [state machine spec](P0_04_GENERATION_STATE_MACHINE_SPEC.md), [Unit 5 offline test map](../audits/P0_05_DETERMINISTIC_CRITICAL_PATH_TEST_MAP_2026-11-23.md), and [local backend demo](../operations/LOCAL_BACKEND_DEMO.md).
