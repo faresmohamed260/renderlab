@@ -203,6 +203,9 @@ RenderLab keeps schema ownership, storage prefixes, orchestration, authorization
 
 ## Local development
 
+**One-command offline backend walkthrough:** `npm run demo:backend` (after `npm ci`); see the [seven-scenario demo guide](docs/operations/LOCAL_BACKEND_DEMO.md). No credentials, Docker, GPU or network required.
+
+
 ### Prerequisites
 
 - Node.js **24.x** (see `.nvmrc`)
@@ -303,7 +306,7 @@ Maintainer/agent handoff entry points and execution history remain repository-in
 
 RenderLab is a personal/friends closed beta and an AI Engineer portfolio project. The next work is the **Phase 3 backend professional baseline (P0)**: truthful claims, typed fail-fast configuration, a reviewed trust/owner-isolation model, explicit job-state invariants, and deterministic critical-path tests. The [accepted five-unit contract](docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md) governs implementation order and its exit checks.
 
-Provider adapters, modularization, API contracts, metrics and the local demo follow in a later **P1 review**; they are not approved for implementation by this README. Frontend changes and new image/video/audio capabilities remain on hold until the [charter's backend-first exit gate](docs/PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) is met and the owner authorizes resumption. Video remains a genuine **planned** goal, not a current feature.
+Provider adapters, modularization, API contracts and metrics remain subject to a separate **P1 review**; the offline backend demonstration is available now. they are not approved for implementation by this README. Frontend changes and new image/video/audio capabilities remain on hold until the [charter's backend-first exit gate](docs/PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) is met and the owner authorizes resumption. Video remains a genuine **planned** goal, not a current feature.
 
 See [STATUS.md](docs/STATUS.md) for deployed capability and [TECHNICAL_CLAIMS.md](docs/TECHNICAL_CLAIMS.md) for independently checkable statements. Execution history remains historical evidence under repository governance.
 

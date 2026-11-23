@@ -22,6 +22,10 @@ Before proposing a change:
 4. Run the repository quality checks relevant to the change.
 5. Keep production deployment and provider-spend actions explicitly authorized.
 
+## First-hour backend walkthrough
+
+Run `npm ci --no-audit --no-fund` on Node 24/npm 11, then `npm run demo:backend` for a credential-free, fake-service FIBO job lifecycle. Select seven deterministic scenarios with `-- --scenario <name>` or use `--json` for assertions. See [Local backend demo](docs/operations/LOCAL_BACKEND_DEMO.md) for commands, observed phases and honest limitations.
+
 ## Quality checks
 
 The supported local engineering boundary is Node 24.x + npm 11.x on native Windows or Linux/WSL2. Start with the repository-owned preflights, then install from the lockfile:
