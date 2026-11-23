@@ -68,6 +68,7 @@ const fiboPollDetailCategories = new Map([
   ["FIBO result expired", "result-expired"],
   ["FIBO rejected the render inputs", "inputs-rejected"],
   ["FIBO_PROCESS_EXITED", "process-exited"],
+  ["FIBO_RENDER_TIMED_OUT", "render-timed-out"],
 ]);
 
 export function isNativeGenerationConfigured() {
@@ -728,11 +729,17 @@ export async function pollNativeGeneration(
     const failure = classifyWorkerFailure(response.status, body);
     const fiboProcessExited = row.worker_id === FIBO_DISPATCH_BACKEND
       && response.status === 409 && body.detail === "FIBO_PROCESS_EXITED";
+    const fiboRenderTimedOut = row.worker_id === FIBO_DISPATCH_BACKEND
+      && response.status === 409 && body.detail === "FIBO_RENDER_TIMED_OUT";
     const providerMessage = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
     const diagnostic = providerFailureDiagnostic(row, response.status, failure, providerMessage);
-    if (fiboProcessExited) {
+    if (fiboProcessExited || fiboRenderTimedOut) {
       const failed = await failJob(
-        row, "generation_failed", "The render process exited before generation completed.", diagnostic,
+        row, "generation_failed",
+        fiboRenderTimedOut
+          ? "The render timed out before generation completed."
+          : "The render process exited before generation completed.",
+        diagnostic,
       );
       return toGenerationJob(failed);
     }

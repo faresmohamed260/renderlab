@@ -113,6 +113,35 @@ class GatewayTests(unittest.TestCase):
                     if body is not None:
                         self.assertEqual(response.json(), body)
 
+    def test_real_modal_timeout_and_expiry_exceptions_are_terminal(self):
+        # Exercise the actual Modal 1.6.4 exception inheritance, not fake subclasses.
+        from importlib.metadata import version
+        from modal.exception import FunctionTimeoutError, NotFoundError, OutputExpiredError
+
+        self.assertEqual(version("modal"), "1.6.4")
+        self.assertFalse(issubclass(OutputExpiredError, TimeoutError))
+        self.assertFalse(issubclass(FunctionTimeoutError, TimeoutError))
+        handle = self.submit()
+        for exception, status, body in (
+            (OutputExpiredError("expired"), 410, {"detail": "FIBO result expired"}),
+            (FunctionTimeoutError("render deadline"), 409, {"detail": "FIBO_RENDER_TIMED_OUT"}),
+            (TimeoutError("not yet ready"), 202, {"worker_state": "generating"}),
+        ):
+            def poll(_):
+                raise exception
+
+            client = TestClient(create_gateway(
+                spawn=lambda **_: self.call_id, poll=poll, cancel=lambda _: None,
+                signing_key=b"test-only-signing-key" * 2,
+                expired_errors=(OutputExpiredError, NotFoundError),
+                function_timeout_errors=(FunctionTimeoutError,),
+            ))
+            for route in ("/jobs", "/jobs/vgl"):
+                with self.subTest(route=route, exception=type(exception).__name__):
+                    response = client.get(route, headers={JOB_HANDLE_HEADER: handle})
+                    self.assertEqual(response.status_code, status)
+                    self.assertEqual(response.json(), body)
+
     def test_dispatch_wake_carries_no_render_payload(self):
         response = self.client.post("/dispatch/wake", content=b"")
         self.assertEqual(response.status_code, 202)
