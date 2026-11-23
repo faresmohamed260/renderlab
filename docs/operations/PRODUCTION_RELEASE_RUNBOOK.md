@@ -62,6 +62,10 @@ Before qualifying the alert, confirm Vercel exposes `VERCEL_ENV=production` to t
 
 For a provider degradation alert with `gateway_auth_rejected`, confirm repeated HTTP 401 or 403 on the production Modal status poll in Admin Health and Vercel logs. Check that Vercel Production's `RENDERLAB_GENERATION_GATEWAY_URL`, `RENDERLAB_FIBO_MODAL_KEY`, and `RENDERLAB_FIBO_MODAL_SECRET` point to the intended Modal gateway and current proxy-token pair. Verify the workspace and environment scope in Modal. Keep credential values out of incident notes. After an approved correction, verify an authorized job reaches a terminal result through the gateway.
 
+### Modal proxy credential record
+
+Fares, the RenderLab owner, approved revocation of `renderlab-production-fibo-gateway`, created November 18. On November 23 Cairo time, Modal confirmed it absent from workspace `faresmohamed260` at `2026-11-22T23:48:07.355Z`. The production token `renderlab-app-2026-11-22` was retained.
+
 ## Record ownership
 
 [docs/production/current.json](../production/current.json) is the canonical repository record of the accepted web release. `PROJECT.md`, `docs/STATUS.md`, `docs/ui/UI_MIGRATION.md`, `docs/ui/SCREEN_REGISTRY.md`, and `docs/architecture/INFRASTRUCTURE.md` mirror it. Provider read-back is the evidence for a changed alias or runtime. Link the Modal app history, workflow or local checkout provenance and the separately verified lifecycle result from the release's dated audit evidence.
