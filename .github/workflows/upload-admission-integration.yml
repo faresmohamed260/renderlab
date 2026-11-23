@@ -2,25 +2,6 @@ name: Upload Admission Integration
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/upload-admission-integration.yml"
-      - "scripts/lib/configured-test-account.mjs"
-      - "scripts/verify-upload-admission.mjs"
-      - "src/app/api/assets/reference/upload-tickets/route.ts"
-      - "src/app/api/media/uploads/upload-tickets/route.ts"
-      - "src/lib/api/media-upload-contract.ts"
-      - "src/lib/api/reference-upload-contract.ts"
-      - "src/server/data/supabase-rest.ts"
-      - "src/server/media/media-uploads.ts"
-      - "src/server/media/reference-uploads.ts"
-      - "src/server/media/upload-admission.ts"
-      - "src/server/security/**"
-      - "src/server/storage/r2.ts"
-      - "supabase/migrations/0024_renderlab_upload_admission.sql"
-      - "supabase/migrations/0025_renderlab_upload_admission_account_lifecycle.sql"
-      - "supabase/migrations/0026_renderlab_upload_admission_concurrency_fix.sql"
-      - "supabase/migrations/0027_renderlab_upload_admission_account_finalizer_fix.sql"
   push:
     branches: [main]
     paths:
@@ -44,7 +25,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: renderlab-upload-admission-${{ github.event.pull_request.number || github.ref }}
+  group: renderlab-upload-admission-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

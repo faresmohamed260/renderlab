@@ -2,24 +2,6 @@ name: Reference Upload Integration
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/reference-upload-integration.yml"
-      - "scripts/lib/configured-test-account.mjs"
-      - "scripts/verify-reference-upload.mjs"
-      - "src/lib/supabase/**"
-      - "src/app/api/assets/reference/**"
-      - "src/server/media/reference-uploads.ts"
-      - "src/server/storage/**"
-      - "src/server/data/**"
-      - "src/lib/api/reference-upload-contract.ts"
-      - "supabase/migrations/0004_core_account_ownership_prepare.sql"
-      - "supabase/migrations/0005_core_account_ownership_enforce.sql"
-      - "supabase/migrations/0017_staging_cleanup_claims.sql"
-      - "supabase/migrations/0024_renderlab_upload_admission.sql"
-      - "supabase/migrations/0025_renderlab_upload_admission_account_lifecycle.sql"
-      - "supabase/migrations/0026_renderlab_upload_admission_concurrency_fix.sql"
-      - "package.json"
   push:
     branches: [main]
     paths:
@@ -39,8 +21,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: renderlab-reference-upload-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: renderlab-reference-upload-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   reference-upload:

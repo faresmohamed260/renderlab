@@ -1,7 +1,8 @@
 name: Account Ownership
 
 on:
-  pull_request:
+  push:
+    branches: [main]
     paths:
       - "package.json"
       - "proxy.ts"
