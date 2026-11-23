@@ -1,7 +1,7 @@
 import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
 import type { RetryGenerationErrorCode } from "@/lib/api/generation-retry-contract";
-import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { retryGeneration } from "@/server/generation/retry-generation";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -29,8 +29,8 @@ export async function POST(
     );
   }
 
-  const identity = await getCurrentRenderLabIdentity();
-  if (!identity) {
+  const account = await getCurrentRenderLabAccount();
+  if (!account) {
     return NextResponse.json(
       { ok: false, error: { code: "authentication_required", message: "Sign in to retry your generation jobs." } },
       { status: 401 },
@@ -38,7 +38,7 @@ export async function POST(
   }
 
   try {
-    const result = await retryGeneration(identity.id, jobId);
+    const result = await retryGeneration(account.id, jobId);
     if (!result.ok) {
       return NextResponse.json(result, { status: retryStatus(result.error.code) });
     }
