@@ -7,7 +7,7 @@
 <h1 align="center">RenderLab</h1>
 
 <p align="center">
-  <strong>A production AI media workspace that turns complex ComfyUI pipelines into durable image workflows.</strong>
+  <strong>An invite-only AI media workspace for durable FIBO image creation and editing, built with Next.js, Supabase, R2 and Modal/ComfyUI.</strong>
 </p>
 
 <p align="center">
@@ -280,19 +280,21 @@ GitHub's secret-free **Unit Coverage** workflow runs the same Node 24 path, publ
 
 Public/product documentation starts with:
 
-1. [Product charter and planned scope](docs/PRODUCT_CHARTER.md)
-2. [Evidence-linked technical claims](docs/TECHNICAL_CLAIMS.md)
-3. [Current public status](docs/STATUS.md)
-2. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
-3. [Backend architecture overview](docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md)
-3. [Private generation API contract (OpenAPI 3.1)](docs/architecture/API_CONTRACT.md)
-3. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
-4. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
-5. [Product/UI foundation](docs/ui/UI_MIGRATION.md)
-6. [Durable UI decisions](docs/ui/UI_DECISIONS.md)
-7. [Visual north star](docs/ui/VISUAL_NORTH_STAR.md)
-8. [Security reporting](SECURITY.md)
-9. [Contribution policy](CONTRIBUTING.md)
+1. [Engineering practices and verification evidence](docs/ENGINEERING_PRACTICES.md)
+2. [Product charter and planned scope](docs/PRODUCT_CHARTER.md)
+3. [Evidence-linked technical claims](docs/TECHNICAL_CLAIMS.md)
+4. [Current public status](docs/STATUS.md)
+5. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
+6. [Backend architecture overview](docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md)
+7. [Private generation API contract (OpenAPI 3.1)](docs/architecture/API_CONTRACT.md)
+8. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
+9. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
+10. [Product/UI foundation](docs/ui/UI_MIGRATION.md)
+11. [Durable UI decisions](docs/ui/UI_DECISIONS.md)
+12. [Visual north star](docs/ui/VISUAL_NORTH_STAR.md)
+13. [Security reporting](SECURITY.md)
+14. [Contribution policy](CONTRIBUTING.md)
+15. [Release notes and production history](CHANGELOG.md)
 
 Maintainer/agent handoff entry points and execution history remain repository-internal navigation rather than part of this public documentation path.
 
@@ -307,9 +309,9 @@ Maintainer/agent handoff entry points and execution history remain repository-in
 
 ## Current direction — backend first
 
-RenderLab is a personal/friends closed beta and an AI Engineer portfolio project. The next work is the **Phase 3 backend professional baseline (P0)**: truthful claims, typed fail-fast configuration, a reviewed trust/owner-isolation model, explicit job-state invariants, and deterministic critical-path tests. The [accepted five-unit contract](docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md) governs implementation order and its exit checks.
+RenderLab remains a personal/friends closed beta and an AI Engineer portfolio project. Its **backend-first** policy and explicit [exit gate](docs/PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) remain in force. The [P0 baseline contract](docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md) records the original five-unit scope; [technical claims](docs/TECHNICAL_CLAIMS.md) and [current production record](docs/production/current.json) distinguish accepted code, verified evidence, and what actually shipped.
 
-The deterministic offline backend demo and private, versioned API contract are independently reviewable engineering follow-ons. Provider adapters, modularization and metrics remain subject to a separate **P1 review**; merging any runtime validator refactor is held until an explicitly approved release window. they are not approved for implementation by this README. Frontend changes and new image/video/audio capabilities remain on hold until the [charter's backend-first exit gate](docs/PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate) is met and the owner authorizes resumption. Video remains a genuine **planned** goal, not a current feature.
+The offline backend demo and private API contract are reviewable. A typed [provider-adapter boundary](docs/architecture/PROVIDER_ADAPTER_BOUNDARY.md) and its fake-utility conformance proof are merged but **unwired**; they enable no new provider route or user-facing operation. New models, upscale, face swap, background removal, video and audio still require independent qualification and an owner-authorized release. Frontend changes remain on hold until the backend exit gate is met and the owner expressly resumes that phase.
 
 See [STATUS.md](docs/STATUS.md) for deployed capability and [TECHNICAL_CLAIMS.md](docs/TECHNICAL_CLAIMS.md) for independently checkable statements. Execution history remains historical evidence under repository governance.
 
