@@ -24,7 +24,7 @@ BEGIN
     SELECT 1 FROM pg_proc p
     WHERE p.oid=to_regprocedure(v_rpc)
       AND p.prosecdef
-      AND 'search_path='=ANY(p.proconfig)
+      AND p.proconfig && ARRAY['search_path=', 'search_path=""']::text[]
   ) THEN RAISE EXCEPTION 'P1-05: 0031 SECURITY DEFINER / empty search_path drift'; END IF;
 
   INSERT INTO auth.users(id,email) VALUES
