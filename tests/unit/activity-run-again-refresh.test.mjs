@@ -2,12 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const source = readFileSync("src/server/generation/generation-activity.ts", "utf8");
-
-test("Activity Run Again eligibility uses the refreshed terminal status", () => {
-  assert.match(source, /pageRows\.map\(async \(row, index\) =>/);
-  assert.match(source, /const effectiveStatus = refreshedItems\[index\]\?\.status \?\? row\.status/);
-  assert.match(source, /if \(effectiveStatus !== "succeeded"\) return null/);
-  assert.match(source, /\{ \.\.\.row, status: effectiveStatus \}/);
-  assert.doesNotMatch(source, /if \(row\.status !== "succeeded"\) return null/);
+test("Activity reads durable status after its one bounded settlement attempt", () => {
+  const page = readFileSync("src/app/(app)/activity/page.tsx", "utf8");
+  const list = readFileSync("src/server/generation/generation-activity.ts", "utf8");
+  assert.match(page, /await settleOwnerGenerationWithinResponse\(account\.id, "activity"\)[\s\S]*await listGenerationActivity\(/);
+  assert.doesNotMatch(list, /pollGenerationJob\(/);
 });

@@ -1,21 +1,60 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { registerHooks } from "node:module";
 import test from "node:test";
 import sharp from "sharp";
+import { transformSync } from "next/dist/build/swc/index.js";
 
 const afterKey = Symbol.for("renderlab.gateway-auth-alert.after");
+const ownerId = "10000000-0000-4000-8000-000000000000";
+const foreignJobId = "90000000-0000-4000-8000-000000000001";
+const afterCallbacksKey = Symbol.for("renderlab.owner-settlement.after");
+
+function stub(source) {
+  return { url: "data:text/javascript," + encodeURIComponent(source), shortCircuit: true };
+}
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
     if (specifier === "server-only") return nextResolve("data:text/javascript,export{};", context);
     if (specifier === "next/server") {
-      const source = "export function after(callback) { globalThis[Symbol.for('renderlab.gateway-auth-alert.after')](callback); }";
-      return { url: "data:text/javascript," + encodeURIComponent(source), shortCircuit: true };
+      return stub("export const NextResponse = Response; export function after(callback) {"
+        + " (globalThis[Symbol.for('renderlab.gateway-auth-alert.after')]"
+        + " ?? globalThis[Symbol.for('renderlab.owner-settlement.after')])(callback); }");
+    }
+    if (specifier === "@/lib/supabase/server") {
+      return stub(`export async function getCurrentRenderLabAccount() { return { id: "${ownerId}" }; }
+        export const getCurrentRenderLabIdentity = getCurrentRenderLabAccount;`);
+    }
+    if (specifier === "@/server/hosted-create") {
+      return stub("export const getCreatePreviewOwner = () => null, getHostedCreateMedia = () => null,"
+        + " getHostedCreatePreferences = () => null, getHostedCreateState = () => null;");
+    }
+    if (specifier === "@/server/create-preview-mode") {
+      return stub("export const isCreatePreview = () => false;");
+    }
+    const views = {
+      "@/features/library/library-view": "LibraryView",
+      "@/features/activity/activity-view": "ActivityView",
+      "@/features/create/create-workspace": "CreateWorkspace",
+      "@/features/create/create-preview-workspace": "CreatePreviewWorkspace",
+    };
+    if (views[specifier]) {
+      return stub(`export function ${views[specifier]}() {}`);
     }
     if (specifier.startsWith("@/")) {
       return nextResolve(new URL("../../src/" + specifier.slice(2) + ".ts", import.meta.url).href, context);
     }
     return nextResolve(specifier, context);
+  },
+  load(url, context, nextLoad) {
+    if (url.startsWith(new URL("../../src/app/(app)/", import.meta.url).href) && url.endsWith("/page.tsx")) {
+      const source = transformSync(readFileSync(new URL(url), "utf8"), {
+        jsc: { parser: { syntax: "typescript", tsx: true }, transform: { react: { runtime: "automatic" } } },
+      }).code;
+      return { format: "module", shortCircuit: true, source };
+    }
+    return nextLoad(url, context);
   },
 });
 
@@ -29,17 +68,29 @@ process.env.CLOUDFLARE_R2_ACCESS_KEY_ID = "offline-r2-key";
 process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY = "offline-r2-secret";
 process.env.CLOUDFLARE_R2_BUCKET = "offline-bucket";
 process.env.GITHUB_ACTIONS = "true";
+process.env.RENDERLAB_FIBO_GENERATION = "1";
 delete process.env.RENDERLAB_TEST_OBSERVABILITY_PERSIST;
 
 const { reconcileNativeGeneration } = await import("../../src/server/generation/reconcile-generation.ts");
 const { pollNativeGeneration } = await import("../../src/server/generation/native-generation.ts");
 const { adminDiagnosticProjection } = await import("../../src/server/observability/diagnostic-store.ts");
-const ownerId = "10000000-0000-4000-8000-000000000000";
+const { POST: submitRoute } = await import("../../src/app/api/generation/jobs/route.ts");
+const { default: loadCreate, maxDuration: createDuration } = await import("../../src/app/(app)/create/page.tsx");
+const { default: loadLibrary, maxDuration: libraryDuration } = await import("../../src/app/(app)/library/page.tsx");
+const { default: loadActivity, maxDuration: activityDuration } = await import("../../src/app/(app)/activity/page.tsx");
+const { settleOwnerGenerationWithinResponse } = await import("../../src/server/generation/owner-generation-settlement.ts");
 const png = await sharp({
   create: { width: 16, height: 16, channels: 3, background: "#ffffff" },
 }).png().toBuffer();
 
-function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "running", handleDiagnosticRequest } = {}) {
+function fixture(t, {
+  id = "20000000-0000-4000-8000-000000000000",
+  status = "running",
+  handleDiagnosticRequest,
+  lookupError,
+  holdWrite,
+  denyRetry,
+} = {}) {
   const timestamp = new Date().toISOString();
   const row = {
     id,
@@ -52,7 +103,7 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
     model: "fibo-2.0-turbo",
     ecosystem: "fibo2-edit-turbo",
     inputs: [],
-    parameters: {},
+    parameters: { output: { kind: "image", aspectRatio: "1:1" } },
     worker_id: "fibo",
     provider_job_id: "fc-offline-fixture-handle",
     worker_state: status === "queued" ? "queued" : "generating",
@@ -71,9 +122,15 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
   const objects = [];
   const warnings = [];
   const claims = [];
+  const afterCallbacks = [];
+  const admissionSteps = [];
   let reservationReleased = false;
+  let releases = 0;
+  let candidateLookups = 0;
   let reads = 0;
 
+  globalThis[afterCallbacksKey] = (callback) => afterCallbacks.push(callback);
+  t.after(() => { delete globalThis[afterCallbacksKey]; });
   t.mock.method(console, "info", () => {});
   t.mock.method(console, "warn", (message) => warnings.push(message));
   t.mock.method(globalThis, "fetch", async (input, init = {}) => {
@@ -84,7 +141,8 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
       assert.equal(new Headers(init.headers).get("X-RenderLab-Job-Handle"), row.provider_job_id);
       reads += 1;
       assert.ok(responses.length, "Unexpected gateway poll");
-      return responses.shift();
+      const reply = responses.shift();
+      return typeof reply === "function" ? reply(init.signal) : reply;
     }
 
     if (url.hostname === "offline-bucket.offline-account.r2.cloudflarestorage.com") {
@@ -93,6 +151,7 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
         contentType: new Headers(init.headers).get("content-type"),
         body: Buffer.from(init.body),
       });
+      if (objects.length === 1 && holdWrite) await holdWrite();
       return new Response(null, { status: 200 });
     }
 
@@ -104,7 +163,27 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
     const body = init.body ? JSON.parse(init.body) : undefined;
     if (url.pathname === "/rest/v1/generation_jobs") {
       assert.equal(url.searchParams.get("owner_id"), "eq." + ownerId);
-      assert.equal(url.searchParams.get("id"), "eq." + id);
+      const query = url.searchParams;
+      if (query.get("select") === "id") {
+        assert.equal(method, "GET");
+        assert.equal(query.get("limit"), "1");
+        assert.equal(query.get("order"), "updated_at.asc,id.asc");
+        assert.match(query.get("or"), /provider_job_id.not.is.null/);
+        assert.ok(init.signal instanceof AbortSignal);
+        candidateLookups += 1;
+        if (lookupError) return lookupError();
+        const candidates = [row, { ...row, id: foreignJobId, owner_id: "foreign-owner" }];
+        return Response.json(candidates.filter((item) => query.get("owner_id") === "eq." + item.owner_id
+          && (!query.has("id") || query.get("id") === `in.(${item.id})`)
+          && query.get("status").includes(item.status)
+          && (item.status === "persisting" || item.provider_job_id)).slice(0, 1));
+      }
+      if (query.has("offset")) {
+        assert.equal(method, "GET");
+        return Response.json([row]);
+      }
+
+      assert.equal(query.get("id"), "eq." + id);
       if (method === "PATCH") {
         patches.push(body);
         Object.assign(row, body);
@@ -117,6 +196,7 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
       assert.equal(method, "POST");
       assert.equal(body.p_owner_id, ownerId);
       assert.equal(body.p_job_id, id);
+      if (claims.length) return Response.json(false);
       claims.push(body.p_token);
       return Response.json(true);
     }
@@ -126,11 +206,45 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
       return Response.json(true);
     }
     if (url.pathname === "/rest/v1/generation_admission_reservations") {
+      assert.equal(url.searchParams.get("owner_id"), "eq." + ownerId);
+      assert.equal(url.searchParams.get("released_at"), "is.null");
+      if (method === "GET") {
+        assert.match(url.searchParams.get("expires_at"), /^gt\./);
+        assert.equal(url.searchParams.get("job_id"), "not.is.null");
+        admissionSteps.push("lookup");
+        return Response.json(reservationReleased ? [] : [{ job_id: id }]);
+      }
       assert.equal(method, "PATCH");
       assert.equal(url.searchParams.get("job_id"), "eq." + id);
       if (reservationReleased) return Response.json([]);
+      releases += 1;
       reservationReleased = true;
+      admissionSteps.push("release");
       return Response.json([{ id: "admission" }]);
+    }
+    if (url.pathname === "/rest/v1/rpc/renderlab_reserve_generation_admission") {
+      assert.equal(body.p_owner_id, ownerId);
+      admissionSteps.push("reserve");
+      return reservationReleased && !denyRetry
+        ? Response.json([{ reservation_id: "new-admission" }])
+        : Response.json({ message: "renderlab_generation_active_limit_reached" }, { status: 400 });
+    }
+    if (url.pathname === "/rest/v1/rpc/renderlab_accept_generation_dispatch") {
+      assert.equal(body.p_owner_id, ownerId);
+      admissionSteps.push("commit");
+      return Response.json([{ ...row, id: "new-job", status: "queued", output_asset_ids: [] }]);
+    }
+    if (url.pathname === "/rest/v1/rpc/renderlab_bind_generation_admission") {
+      assert.equal(body.p_owner_id, ownerId);
+      assert.equal(body.p_reservation_id, "new-admission");
+      assert.equal(body.p_job_id, "new-job");
+      admissionSteps.push("bind");
+      return Response.json(true);
+    }
+    if (url.pathname === "/rest/v1/media_collections") {
+      assert.equal(method, "GET");
+      assert.equal(url.searchParams.get("owner_id"), "eq." + ownerId);
+      return Response.json([]);
     }
     if (url.pathname === "/rest/v1/media_assets") {
       if (method === "POST") {
@@ -139,13 +253,16 @@ function fixture(t, { id = "20000000-0000-4000-8000-000000000000", status = "run
         return new Response(null, { status: 204 });
       }
       assert.equal(method, "GET");
+      assert.equal(url.searchParams.get("owner_id"), "eq." + ownerId);
       return Response.json(media);
     }
     assert.fail("Unexpected database request: " + method + " " + url.pathname);
   });
 
   return {
-    row, patches, media, objects, warnings,
+    row, patches, media, objects, warnings, afterCallbacks, admissionSteps,
+    get candidateLookups() { return candidateLookups; },
+    get releases() { return releases; },
     poll: () => reconcileNativeGeneration(ownerId, id),
     pollNative: () => pollNativeGeneration(ownerId, id),
     respond: (...items) => responses.push(...items),
@@ -381,4 +498,187 @@ test("preview Modal auth rejections preserve the ambiguous response without a pr
   assert.equal(job.warnings.length, 1);
   assert.match(job.warnings[0], /"code":"provider-unconfirmed"/);
   assert.equal(callbacks.length, 0);
+});
+
+function pngResult() {
+  return new Response(png, { headers: { "content-type": "image/png" } });
+}
+
+function pageInput() {
+  return { searchParams: Promise.resolve({}) };
+}
+
+function submitAnotherGeneration() {
+  const origin = "https://renderlab.example.invalid";
+  return submitRoute(new Request(origin + "/api/generation/jobs", {
+    method: "POST",
+    headers: { origin, "content-type": "application/json" },
+    body: JSON.stringify({
+      prompt: "Test fixture",
+      inputs: [],
+      output: { kind: "image", aspectRatio: "1:1" },
+    }),
+  }));
+}
+
+test("Library settles one owned result before reading the list", async (t) => {
+  const job = fixture(t);
+  job.respond(pngResult());
+  const view = await loadLibrary(pageInput());
+
+  assert.equal(libraryDuration, 30);
+  assert.equal(view.props.available, true);
+  assert.equal(view.props.items.length, 1);
+  assert.equal(view.props.items[0].generationJobId, job.row.id);
+  assert.equal(job.row.status, "succeeded");
+  assert.equal(job.candidateLookups, 1);
+  assert.equal(job.reads, 1);
+  assert.equal(job.releases, 1);
+  assert.deepEqual(job.afterCallbacks, []);
+});
+
+test("production Create returns before settling the owner's result", async (t) => {
+  const job = fixture(t);
+  job.respond(pngResult());
+  const originalNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  t.after(() => {
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  const page = await loadCreate(pageInput());
+  const pageShell = page.type();
+  const view = await pageShell.props.children.type();
+
+  assert.equal(createDuration, 30);
+  assert.equal(view.props.admitted, true);
+  assert.equal(job.candidateLookups, 0);
+  assert.equal(job.reads, 0);
+  assert.equal(job.afterCallbacks.length, 1);
+  await job.afterCallbacks[0]();
+  assert.equal(job.row.status, "succeeded");
+  assert.equal(job.media.length, 1);
+  assert.equal(job.releases, 1);
+});
+
+test("Activity bounds reconciliation and lists a fresh successful result", async (t) => {
+  const job = fixture(t);
+  job.respond(pngResult());
+  const view = await loadActivity(pageInput());
+
+  assert.equal(activityDuration, 30);
+  assert.equal(view.props.available, true);
+  assert.equal(view.props.hasActive, false);
+  assert.equal(view.props.items[0].status, "succeeded");
+  assert.equal(view.props.items[0].canRunAgain, true);
+  assert.equal(job.candidateLookups, 1);
+  assert.equal(job.reads, 1);
+});
+
+for (const denyRetry of [false, true]) {
+  test("occupied admission retries once after settlement " + (denyRetry ? "even if still occupied" : "and accepts the next job"), async (t) => {
+    const job = fixture(t, { denyRetry });
+    job.respond(pngResult());
+    const response = await submitAnotherGeneration();
+
+    assert.equal(response.status, denyRetry ? 429 : 202);
+    assert.equal(job.row.status, "succeeded");
+    assert.deepEqual(job.admissionSteps, [
+      "reserve", "lookup", "release", "reserve", ...(denyRetry ? [] : ["commit", "bind"]),
+    ]);
+    assert.equal(job.reads, 1);
+  });
+}
+
+test("concurrent Library responses use one claim, asset, primary write and release", async (t) => {
+  let startRead;
+  let finishRead;
+  const reading = new Promise((resolve) => { startRead = resolve; });
+  const result = new Promise((resolve) => { finishRead = resolve; });
+  const job = fixture(t);
+  job.respond(() => { startRead(); return result; });
+
+  const first = loadLibrary(pageInput());
+  await reading;
+  const second = await loadLibrary(pageInput());
+  assert.equal(second.props.available, true);
+  assert.deepEqual(second.props.items, []);
+  finishRead(pngResult());
+  assert.equal((await first).props.items.length, 1);
+  assert.equal(job.candidateLookups, 2);
+  assert.equal(job.reads, 1);
+  assert.equal(job.media.length, 1);
+  assert.equal(job.objects.filter(({ contentType }) => contentType === "image/png").length, 1);
+  assert.equal(job.releases, 1);
+  assert.deepEqual(job.patches.map(({ status }) => status), ["persisting", "succeeded"]);
+});
+
+test("Library returns normally at six seconds while the claimed PNG write finishes after the response", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let startedWrite;
+  let finishWrite;
+  const writing = new Promise((resolve) => { startedWrite = resolve; });
+  const write = new Promise((resolve) => { finishWrite = resolve; });
+  const job = fixture(t, { holdWrite: () => { startedWrite(); return write; } });
+  job.respond(pngResult());
+
+  const page = loadLibrary(pageInput());
+  await writing;
+  t.mock.timers.tick(6_000);
+  const view = await page;
+  assert.equal(view.props.available, true);
+  assert.deepEqual(view.props.items, []);
+  assert.equal(job.row.status, "persisting");
+  assert.equal(job.afterCallbacks.length, 1);
+  assert.ok(job.warnings.some((warning) => warning.includes("response_wait_expired")));
+
+  finishWrite();
+  await job.afterCallbacks[0]();
+  assert.equal(job.row.status, "succeeded");
+  assert.equal(job.media.length, 1);
+  assert.equal(job.releases, 1);
+});
+
+test("lookup failure leaves Activity available without a second provider poll", async (t) => {
+  const job = fixture(t, { lookupError: () => Response.json({ message: "private-error" }, { status: 503 }) });
+  const view = await loadActivity(pageInput());
+
+  assert.equal(view.props.available, true);
+  assert.equal(view.props.items[0].status, "running");
+  assert.equal(job.reads, 0);
+  assert.ok(job.warnings.some((warning) => warning.includes("settlement_failed")));
+  assert.ok(job.warnings.every((warning) => !warning.includes("private-error")));
+});
+
+test("a provider deadline preserves the original occupied response and job state", async (t) => {
+  const requestedDeadlines = [];
+  t.mock.method(AbortSignal, "timeout", (ms) => {
+    requestedDeadlines.push(ms);
+    const controller = new AbortController();
+    if (ms === 4_000) controller.abort(new DOMException("private-timeout", "TimeoutError"));
+    return controller.signal;
+  });
+  const job = fixture(t);
+  job.respond((signal) => { signal.throwIfAborted(); });
+  const response = await submitAnotherGeneration();
+
+  assert.equal(response.status, 429);
+  assert.equal((await response.json()).error.code, "generation_active_limit_reached");
+  assert.deepEqual(job.admissionSteps, ["reserve", "lookup"]);
+  assert.deepEqual(job.patches, []);
+  assert.equal(requestedDeadlines.at(-1), 4_000);
+  assert.ok(requestedDeadlines.slice(0, -1).every((ms) => ms === 1_500));
+  assert.ok(job.warnings.some((warning) => warning.includes("lookup_or_provider_timeout")));
+  assert.ok(job.warnings.every((warning) => !warning.includes("private-timeout")));
+});
+
+test("a confirmed expired result releases an occupied slot without producing media", async (t) => {
+  const job = fixture(t);
+  job.respond(Response.json({ detail: "FIBO result expired" }, { status: 410 }));
+
+  assert.equal(await settleOwnerGenerationWithinResponse(ownerId, "submit"), true);
+  assert.equal(job.row.status, "failed");
+  assert.equal(job.releases, 1);
+  assert.deepEqual(job.media, []);
 });

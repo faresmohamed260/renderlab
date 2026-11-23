@@ -53,6 +53,15 @@ export async function reserveGenerationAdmission(ownerId: string): Promise<Gener
   }
 }
 
+export async function listActiveBoundGenerationJobIds(ownerId: string, signal: AbortSignal): Promise<string[]> {
+  const now = encodeURIComponent(new Date().toISOString());
+  const rows = await supabaseRest<Array<{ job_id: string }>>(
+    `generation_admission_reservations?owner_id=eq.${encodeURIComponent(ownerId)}&released_at=is.null&expires_at=gt.${now}&job_id=not.is.null&select=job_id`,
+    { method: "GET", signal },
+  );
+  return rows.map((row) => row.job_id);
+}
+
 export async function bindGenerationAdmission(
   ownerId: string,
   reservationId: string,

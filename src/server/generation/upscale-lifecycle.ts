@@ -57,8 +57,10 @@ function providerFailureDiagnostic(
 export async function pollNativeUpscaleGeneration(
   ownerId: string,
   jobId: string,
+  providerTimeoutMs?: number,
+  lookupSignal?: AbortSignal,
 ): Promise<GenerationJob | null> {
-  const row = await getJobRow(ownerId, jobId);
+  const row = await getJobRow(ownerId, jobId, lookupSignal);
   if (!row || row.operation !== "upscale-image") return null;
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
 
@@ -96,14 +98,16 @@ export async function pollNativeUpscaleGeneration(
   }
 
   let response: Response;
+  const signal = AbortSignal.timeout(providerTimeoutMs ?? providerPollTimeoutMs);
   try {
     response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`, {
       method: "GET",
       headers: { accept: "image/png, application/json" },
       cache: "no-store",
-      signal: AbortSignal.timeout(providerPollTimeoutMs),
+      signal,
     });
   } catch (error) {
+    if (providerTimeoutMs) signal.throwIfAborted();
     const providerMessage = error instanceof Error ? error.message : String(error);
     const diagnostic = providerFailureDiagnostic(row, null, "WORKER_UNAVAILABLE", providerMessage);
     if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
@@ -120,6 +124,7 @@ export async function pollNativeUpscaleGeneration(
 
   if (response.status === 202) {
     const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
+    if (providerTimeoutMs) signal.throwIfAborted();
     const next = await patchJob(row.owner_id, row.id, {
       status: "running",
       worker_state: payload.worker_state || payload.workerState || "generating",
@@ -129,6 +134,7 @@ export async function pollNativeUpscaleGeneration(
 
   if (!response.ok) {
     const body = await errorBody(response);
+    if (providerTimeoutMs) signal.throwIfAborted();
     const failure = classifyWorkerFailure(response.status, body);
     const providerMessage = String(body.error || body.detail || `Upscale worker status unavailable (${response.status}).`);
     const diagnostic = providerFailureDiagnostic(row, response.status, failure.code, providerMessage);

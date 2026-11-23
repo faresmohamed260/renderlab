@@ -249,10 +249,10 @@ export async function wakeFiboDispatcher() {
   if (!response.ok) throw new Error("Dispatcher wake was not accepted.");
 }
 
-export async function getJobRow(ownerId: string, jobId: string) {
+export async function getJobRow(ownerId: string, jobId: string, signal?: AbortSignal) {
   const rows = await supabaseRest<JobRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`,
-    { method: "GET" },
+    { method: "GET", signal },
   );
   return rows?.[0] ?? null;
 }
@@ -687,8 +687,8 @@ export async function persistResult(row: JobRow, bytes: Buffer, contentType: str
  */
 class InvalidGeneratedFiboSidecarError extends Error {}
 
-async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string): Promise<string> {
-  const { url, options } = workerJobRequest(worker, callId, "/vgl");
+async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string, timeoutMs?: number): Promise<string> {
+  const { url, options } = workerJobRequest(worker, callId, "/vgl", timeoutMs);
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
   const response = await fetch(url, {
@@ -700,15 +700,17 @@ async function getGeneratedFiboCaption(worker: GenerationWorker, callId: string)
   }
   if (!response.ok) throw new Error("Generated FIBO VGL sidecar is temporarily unavailable.");
   const payload: unknown = await response.json().catch(() => null);
+  if (timeoutMs) options.signal?.throwIfAborted();
   const caption = parseGeneratedFiboSidecar(payload);
   if (!caption) throw new InvalidGeneratedFiboSidecarError("Generated FIBO VGL sidecar returned invalid JSON.");
   return caption;
 }
 
-async function fetchPoster(worker: GenerationWorker, callId: string) {
+async function fetchPoster(worker: GenerationWorker, callId: string, timeoutMs?: number) {
   try {
     const response = await fetch(`${worker.gatewayUrl}/jobs/${encodeURIComponent(callId)}/poster`, {
       headers: { accept: "image/*, application/json" },
+      signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
       cache: "no-store",
     });
     if (!response.ok) return null;
@@ -872,8 +874,13 @@ function providerFailureDiagnostic(
   };
 }
 
-export async function pollNativeGeneration(ownerId: string, jobId: string): Promise<GenerationJob | null> {
-  const row = await getJobRow(ownerId, jobId);
+export async function pollNativeGeneration(
+  ownerId: string,
+  jobId: string,
+  providerTimeoutMs?: number,
+  lookupSignal?: AbortSignal,
+): Promise<GenerationJob | null> {
+  const row = await getJobRow(ownerId, jobId, lookupSignal);
   if (!row) return null;
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
 
@@ -910,7 +917,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     return toGenerationJob(failed);
   }
 
-  const { url, options } = workerJobRequest(worker, row.provider_job_id);
+  const { url, options } = workerJobRequest(worker, row.provider_job_id, "", providerTimeoutMs);
   const headers = new Headers(options.headers);
   headers.set("accept", row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json");
   const response = await fetch(url, {
@@ -939,6 +946,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     // Durable worker admission owns the queued-to-running transition.
     if (row.worker_id === FIBO_DISPATCH_BACKEND) return toGenerationJob(row);
     const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
+    if (providerTimeoutMs) options.signal?.throwIfAborted();
     const next = await patchJob(row.owner_id, row.id, {
       status: "running",
       worker_state: payload.worker_state || payload.workerState || "generating",
@@ -948,6 +956,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
 
   if (!response.ok) {
     const body = await errorBody(response) ?? {};
+    if (providerTimeoutMs) options.signal?.throwIfAborted();
     const failure = classifyWorkerFailure(response.status, body);
     const fiboProcessExited = row.worker_id === FIBO_DISPATCH_BACKEND
       && response.status === 409 && body.detail === "FIBO_PROCESS_EXITED";
@@ -1039,8 +1048,9 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
   let generatedVgl: string | null = null;
   if (row.parameters.autoVgl === true) {
     try {
-      generatedVgl = await getGeneratedFiboCaption(worker, row.provider_job_id);
+      generatedVgl = await getGeneratedFiboCaption(worker, row.provider_job_id, providerTimeoutMs);
     } catch (error) {
+      if (providerTimeoutMs && error instanceof Error && error.name === "TimeoutError") throw error;
       if (error instanceof InvalidGeneratedFiboSidecarError) {
         const failed = await failJob(row, "generation_vgl_invalid", "Generated FIBO scene JSON could not be verified.");
         return toGenerationJob(failed);
@@ -1070,7 +1080,7 @@ export async function pollNativeGeneration(ownerId: string, jobId: string): Prom
     status: persisting.status,
   });
   const bytes = Buffer.from(await response.arrayBuffer());
-  const poster = row.output_kind === "video" ? await fetchPoster(worker, row.provider_job_id) : null;
+  const poster = row.output_kind === "video" ? await fetchPoster(worker, row.provider_job_id, providerTimeoutMs) : null;
   const completed = await persistResult(persisting, bytes, contentType, poster);
   await emitDiagnosticEvent({
     event: "generation.reconciliation",

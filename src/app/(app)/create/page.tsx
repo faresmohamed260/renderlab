@@ -27,8 +27,10 @@ import { isFiboGenerationAvailable, isFiboMaskGenerationAvailable, isGenerationB
 import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
+import { scheduleOwnerGenerationSettlement } from "@/server/generation/owner-generation-settlement";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -76,6 +78,7 @@ export default async function CreatePage({
   const params = await searchParams;
   const hosted = await getHostedCreateState();
   const account = hosted ? null : await getCurrentRenderLabAccount();
+  if (account && isSupabaseConfigured()) scheduleOwnerGenerationSettlement(account.id);
   const accountAvailable = hosted?.accountAvailable ?? Boolean(account);
   const recipeId = firstValue(params.recipe);
   const sourceId = firstValue(params.source);
@@ -173,6 +176,7 @@ function ProductionCreatePage() {
 
 async function Create() {
   const account = await getCurrentRenderLabAccount();
+  if (account && isSupabaseConfigured()) scheduleOwnerGenerationSettlement(account.id);
   const accountKey = account ? createHash("sha256").update("create-stage:" + account.id).digest("hex") : undefined;
   const ready = !!account && isFiboGenerationAvailable() && isMediaUploadConfigured();
   return <CreatePreviewWorkspace key={accountKey ?? "guest"} admitted={!!account} hostedOnly

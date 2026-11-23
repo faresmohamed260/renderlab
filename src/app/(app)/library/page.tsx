@@ -13,8 +13,10 @@ import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
 import { listMediaCollections } from "@/server/media/media-collections";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
+import { settleOwnerGenerationWithinResponse } from "@/server/generation/owner-generation-settlement";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const pageSize = 24;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -76,42 +78,45 @@ export default async function LibraryPage({
   let collectionMissing = false;
 
   if (account && isSupabaseConfigured()) {
-  const assetsPromise = available
-    ? listMediaAssets({
-        ownerId: account.id,
-        origin: tab === "uploads" ? "uploaded" : "generated",
-        ...(kind === "all" ? {} : { kind }),
-        ...(searchQuery ? { search: searchQuery } : {}),
-        ...(favoriteOnly ? { favoriteOnly: true } : {}),
-        ...(selectedCollectionId ? { collectionId: selectedCollectionId } : {}),
-        sort,
-        limit: pageSize,
-        offset,
-      })
-    : Promise.resolve(null);
+    const assetsPromise = available
+      ? (async () => {
+        await settleOwnerGenerationWithinResponse(account.id, "library");
+        return listMediaAssets({
+          ownerId: account.id,
+          origin: tab === "uploads" ? "uploaded" : "generated",
+          ...(kind === "all" ? {} : { kind }),
+          ...(searchQuery ? { search: searchQuery } : {}),
+          ...(favoriteOnly ? { favoriteOnly: true } : {}),
+          ...(selectedCollectionId ? { collectionId: selectedCollectionId } : {}),
+          sort,
+          limit: pageSize,
+          offset,
+        });
+      })()
+      : Promise.resolve(null);
 
-  const [collectionsResult, assetsResult] = await Promise.allSettled([
-    listMediaCollections(account.id),
-    assetsPromise,
-  ]);
+    const [collectionsResult, assetsResult] = await Promise.allSettled([
+      listMediaCollections(account.id),
+      assetsPromise,
+    ]);
 
-  if (collectionsResult.status === "fulfilled") {
-    collections = collectionsResult.value;
-    collectionMissing = Boolean(
-      selectedCollectionId && !collections.some((collection) => collection.id === selectedCollectionId),
-    );
-  } else {
-    collectionsAvailable = false;
-    available = false;
+    if (collectionsResult.status === "fulfilled") {
+      collections = collectionsResult.value;
+      collectionMissing = Boolean(
+        selectedCollectionId && !collections.some((collection) => collection.id === selectedCollectionId),
+      );
+    } else {
+      collectionsAvailable = false;
+      available = false;
+    }
+
+    if (assetsResult.status === "rejected") {
+      available = false;
+    } else if (assetsResult.value && available && !collectionMissing) {
+      items = assetsResult.value.items.map(publicMediaAsset);
+      hasMore = assetsResult.value.page.hasMore;
+    }
   }
-
-  if (assetsResult.status === "rejected") {
-    available = false;
-  } else if (assetsResult.value && available && !collectionMissing) {
-    items = assetsResult.value.items.map(publicMediaAsset);
-    hasMore = assetsResult.value.page.hasMore;
-  }
-}
 
   return (
     <LibraryView

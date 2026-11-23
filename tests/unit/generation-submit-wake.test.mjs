@@ -92,6 +92,13 @@ function fixture(t, { admissionError, bound = true, wake = "ok", scheduleFails =
   });
   t.mock.method(globalThis, "fetch", async (input, init) => {
     const url = new URL(input);
+    if (url.pathname === "/rest/v1/generation_admission_reservations") {
+      assert.equal(init.method, "GET");
+      assert.equal(url.searchParams.get("owner_id"), "eq." + ownerId);
+      assert.equal(url.searchParams.get("released_at"), "is.null");
+      steps.push("lookup");
+      return Response.json([]);
+    }
     assert.equal(init.method, "POST");
     if (url.href === "https://fixture.modal.run/dispatch/wake") {
       steps.push("wake");
@@ -189,7 +196,7 @@ for (const admissionError of ["generation_active_limit_reached", "generation_rat
     const response = await submit();
     assert.equal(response.status, 429);
     assert.equal((await response.json()).error.code, admissionError);
-    assert.deepEqual(f.steps, ["reserve"]);
+    assert.deepEqual(f.steps, admissionError === "generation_active_limit_reached" ? ["reserve", "lookup"] : ["reserve"]);
     assert.deepEqual(f.tasks, []);
   });
 }
