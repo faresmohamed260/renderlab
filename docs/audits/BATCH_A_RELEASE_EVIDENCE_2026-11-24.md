@@ -1,6 +1,6 @@
 # Batch A production release evidence — 24 November 2026
 
-**State: production cutover completed; canonical repository record and hosted fixture verification NOT YET CLOSED.** This is a provisional, sanitized operator audit. Do not merge this record until the verified alias timestamp is supplied, the canonical manifest and its five mirrors are updated, the documentation sync passes, and the approved one-call fixture is independently verified.
+**State: production cutover completed and canonical release record prepared; authenticated provider documentation sync and one approved hosted fixture remain pending until verified.** The release record is closed separately from hosted lifecycle acceptance; do not claim fixture success before the one-call run and independent read-back.
 
 ## Exact boundaries
 
@@ -8,7 +8,7 @@
 - Worker tree: `614ad3132a27b60dee17017462886fae0dec24c7`; renderer-specific dependency `native_graph.py` changed. `FiboInputRejected` extends `ValueError`.
 - New Production Vercel deployment: `dpl_HSCgbGPfxTpkGRzuLPEhicaATwX6`, `https://renderlab-qbu4lqk2v-faresmohamedsalah10-1681.vercel.app`, READY and marked Current for `renderlab.faresuniform.uk`. Deployment was staged before promotion with automatic custom-domain assignment disabled.
 - Previous known-good Vercel deployment and rollback anchor: `dpl_2J4BXM3Y4xF9JWo1cdj38Da5CWJR`, SHA `b548fe40ac274bb4d5bc6d2674ce7bfac556bfcf`.
-- **Pending read-back:** Vercel alias `updatedAt` in canonical UTC; do not infer from build/deploy times.
+- **Verified cutover read-back (team account):** Vercel alias `updatedAt` = `2026-11-23T23:25:33.592Z`; exact custom domain `renderlab.faresuniform.uk`, deployment `dpl_HSCgbGPfxTpkGRzuLPEhicaATwX6`, project `prj_APU35jTnge27D2MAFjuc7GP0Dd6I`.
 
 ## Additive migrations and credentials
 
@@ -19,7 +19,7 @@
 ## Qualification and application cutover
 
 - Protected-main exact-head required check run IDs: quality `138061953720`; governance `138061952455`; unit coverage `138061953393`; javascript-typescript `138061953311`; Ubuntu clean-room `138061953290`; Windows clean-room `138061953776`; all passed.
-- Deployment Readiness: [run 45287742956](https://github.com/faresmohamed260/renderlab/actions/runs/45287742956), completed green `2026-11-23T23:19:40Z` for exact released SHA.
+- Deployment Readiness: [run 45287742956](https://github.com/faresmohamed260/renderlab/actions/runs/45287742956), completed green `2026-11-23T23:19:40Z` for exact released SHA; latest of all six protected-check completions and readiness was `2026-11-23T23:19:40.000Z` **before** the verified cutover at `2026-11-23T23:25:33.592Z` (5m 53.592s margin).
 - Modal renderer `renderlab-image-generation` app `ap-wS5WKruuipwssNGHf7Eo6k`: v10, deployed `2026-11-23T23:29:59Z`, tag `e28b419`; rollback renderer v9 tagged `decd2f6`.
 - Modal gateway plus dispatcher `renderlab-generation-gateway` app `ap-UfrkwIijsdz6xiGiQwtMlB`: v11, deployed `2026-11-23T23:30:29Z`, tag `e28b419`; rollback gateway v10 tagged `decd2f6`.
 - Both Modal apps matched expected IDs in environment `main`; no other Modal deployment was performed.
@@ -31,6 +31,10 @@
 - Privileged read-only Admin/dispatch RPCs reported **0 active jobs, 0 unresolved dispatches, 0 expired claims, 0 held active reservations**, and a healthy scheduled heartbeat (18 seconds old when measured). This is not a substitute for a signed-in browser Admin Health session.
 - **Not yet proven:** authenticated gateway invalid-status poll, the one approved FIBO generation, one atomic terminalization call, unchanged second Library load, fixture cleanup and zero residue, and the canonical documentation sync.
 
+## Canonical record and mirrors
+
+- Canonical `docs/production/current.json` and the five human-readable mirrors were advanced to `e28b419` with the exact Vercel alias cutover, six protected check IDs, readiness completion, migrations 0032/0033, worker versions, and rollback anchors. GitHub merge, production documentation sync, and the hosted fixture each require their own later proof; this statement does not assert they have passed.
+
 ## Release stop state
 
-No further merges or unrelated PRs are included. **Batch B and TLS canary remain blocked pending batch A record closure and verified hosted acceptance.** On a real runtime/auth/data/dispatch regression, stop without repeating provider work, roll back the web deployment and restore the previous renderer then gateway versions; installed additive migrations remain.
+No further merges or unrelated PRs are included. **Batch B and TLS canary remain blocked pending the production documentation sync and verified hosted acceptance.** On a real runtime/auth/data/dispatch regression, stop without repeating provider work, roll back the web deployment and restore the previous renderer then gateway versions; installed additive migrations remain.
