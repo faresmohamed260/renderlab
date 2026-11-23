@@ -54,11 +54,11 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_proc WHERE oid = to_regprocedure(v_rpc)
       AND prosecdef
-      AND 'search_path=' = ANY(proconfig)
+      AND proconfig && ARRAY['search_path=', 'search_path=""']::text[]
   ) OR NOT EXISTS (
     SELECT 1 FROM pg_proc WHERE oid = to_regprocedure(v_lookup)
       AND prosecdef
-      AND 'search_path=' = ANY(proconfig)
+      AND proconfig && ARRAY['search_path=', 'search_path=""']::text[]
   ) THEN RAISE EXCEPTION 'R8 RPC must be SECURITY DEFINER with empty search_path'; END IF;
 
   INSERT INTO auth.users(id,email) VALUES
