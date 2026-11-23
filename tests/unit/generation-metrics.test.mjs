@@ -111,7 +111,13 @@ test("observe-only alert predicates require sample floor and use proposed bounda
   assert.equal(measure("renderlab_generation_finalization_duration_seconds", Array(10).fill(31)), "warning");
   assert.equal(measure("renderlab_generation_provider_to_settle_seconds", Array(10).fill(121)), "warning");
   assert.equal(measure("renderlab_generation_active_age_seconds", [3600]), "warning");
-  assert.equal(measure("renderlab_generation_terminal_held_reservations", [301]), "critical");
+  // A reservation-count gauge cannot be compared to a five-minute duration.
+  assert.equal(generationMetricAlertThreshold("renderlab_generation_terminal_held_reservations",
+    { values: [1], oldestHeldSeconds: 301 }), "critical");
+  assert.equal(generationMetricAlertThreshold("renderlab_generation_terminal_held_reservations",
+    { values: [301], oldestHeldSeconds: 30 }), "ok");
+  assert.equal(generationMetricAlertThreshold("renderlab_generation_terminal_held_reservations",
+    { values: [1], oldestHeldSeconds: null }), "no_data");
   assert.equal(measure("renderlab_generation_provider_rejections_total", [1], "auth"), "critical");
   assert.equal(measure("renderlab_generation_admission_release_total", [1], "failed"), "critical");
   assert.equal(measure("renderlab_generation_provider_rejections_total", [1], "other"), "ok");
