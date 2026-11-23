@@ -63,3 +63,30 @@ The dispatch outbox is **not** the generation job state. Migration [0030](../../
 ## Review/acceptance
 
 Run (1) node --test tests/unit/generation-job-state-machine.test.mjs tests/unit/generation-job-sql-conformance.test.mjs, (2) full npm run test:unit, (3) npm run typecheck, build, verify:ui-purity, verify:docs-governance and engineering-quality, then exact-head six required checks plus CodeQL before a docs/tests/pure-library-only merge. No release. **Unit 5 remains separate and cannot take credit for a runtime wiring change that was not implemented.**
+
+## Post-Unit-4 correctness follow-up: bounded FIBO generation deadline (R2/R3)
+
+The unit inventory above is historical. The subsequent FIBO runtime deadline is
+**20 minutes from `generation_jobs.created_at`**: Modal's renderer timeout is
+**420 seconds (7 minutes)**, plus **780 seconds (13 minutes)** of bounded allowance
+for durable outbox dispatch, GPU queue/startup, return transit and persistence.
+Using immutable creation time prevents repeated provider HTTP 202 responses,
+reconciliation attempts, or poison output from extending this cutoff.
+
+For a FIBO job in queued, preparing, running or persisting, expiry triggers one
+owner-scoped **migration 0031 atomic terminalize-and-release** call with error code
+`generation_deadline_exceeded`, before making further provider or storage calls.
+A FIBO job already **cancelling** follows the existing legal
+`cancelling -> cancelled` SQL edge, still using the same atomic release;
+SQL 0031 intentionally does not allow `cancelling -> failed`.
+Retired/non-FIBO workflows keep their previous 2-hour ambiguous-response and
+15-minute undispatched policies. The cutoff applies even to an unresolved
+durable outbox with no backend call ID: both owner-return and global candidate
+selectors include aged FIBO rows without handles.
+
+This follow-up requires production schema 0031 before release (already applied,
+but worker 1 alone verifies/coordinates runtime deployment). The code refuses
+to downgrade deadline settlement to non-atomic PATCH on a missing RPC.
+Terminal races remain protected by status + reconciliation-token compare-and-swap.
+Tests cover the exact deadline boundary, pending HTTP 202, unresolved queued,
+persisting and cancelling, one reservation release and zero new provider calls.

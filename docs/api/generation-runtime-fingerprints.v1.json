@@ -13,6 +13,6 @@
     "src/lib/api/generation-retry-contract.ts": "7e0ff42e844f9b3e2b183343cdb5cd27374817f0",
     "src/lib/api/generation-run-again-contract.ts": "6582b9da443c149935c131c0c56fdfd807a27868",
     "src/lib/capabilities/generation.ts": "5d37e2ef7b18d9becb4cdabe83f0d61b1fbf422b",
-    "src/lib/capabilities/generation-job-state-machine.ts": "bf015bde36bd901239a61153b547e9b7ca626b90"
+    "src/lib/capabilities/generation-job-state-machine.ts": "38a755160997e989177b3421508130c78e2d15ba"
   }
 }

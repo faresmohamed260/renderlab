@@ -652,7 +652,7 @@
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
     },
     {
-      "id": "src/server/generation/reconcile-generation.ts:57:22",
+      "id": "src/server/generation/reconcile-generation.ts:58:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -661,7 +661,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/reconcile-generation.ts:83:22",
+      "id": "src/server/generation/reconcile-generation.ts:84:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -670,7 +670,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/reconcile-generation.ts:125:22",
+      "id": "src/server/generation/reconcile-generation.ts:161:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -679,7 +679,7 @@
       "ownerEvidence": "owner-filter-URLSearchParams"
     },
     {
-      "id": "src/server/generation/reconcile-generation.ts:213:10",
+      "id": "src/server/generation/reconcile-generation.ts:257:10",
       "tableOrRpc": "generation_jobs",
       "classification": "internal",
       "family": "jobs",
