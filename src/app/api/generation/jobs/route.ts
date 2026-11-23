@@ -39,7 +39,8 @@ export async function POST(request: Request) {
     metricOutcome = "rejected";
     return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
   }
-  metricOperation = resolveCreativeOperation(parsed.request);
+  // Metric derivation must not reject a request, including mocked/parser-skew cases.
+  try { metricOperation = resolveCreativeOperation(parsed.request); } catch { /* observe-only */ }
 
   const account = await getCurrentRenderLabAccount();
   if (!account) {
