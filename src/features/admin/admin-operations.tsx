@@ -30,7 +30,7 @@ function displayDate(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.valueOf())
     ? value
-    : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+    : `${new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(date)} UTC`;
 }
 
 function titleCase(value: string) {
