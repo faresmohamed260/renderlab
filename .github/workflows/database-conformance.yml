@@ -12,6 +12,8 @@ on:
       - "tests/fixtures/database-conformance.sql"
       - "tests/fixtures/invitation-claim-conformance.sql"
       - "tests/fixtures/atomic-terminalize-conformance.sql"
+      - "tests/fixtures/database-0031-version-skew.sql"
+      - "scripts/verify-0031-ent007-isolated-restore.mjs"
       - "scripts/verify-atomic-terminalize-concurrency.mjs"
       - "scripts/verify-database-conformance.mjs"
       - ".github/workflows/database-conformance.yml"
@@ -24,6 +26,8 @@ on:
       - "tests/fixtures/disposable-supabase-bootstrap.sql"
       - "tests/fixtures/database-conformance.sql"
       - "tests/fixtures/atomic-terminalize-conformance.sql"
+      - "tests/fixtures/database-0031-version-skew.sql"
+      - "scripts/verify-0031-ent007-isolated-restore.mjs"
       - "scripts/verify-atomic-terminalize-concurrency.mjs"
       - "scripts/verify-database-conformance.mjs"
       - ".github/workflows/database-conformance.yml"
@@ -51,6 +55,17 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d renderlab_conformance"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+      postgres_restore:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: renderlab_conformance_restore_0031
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d renderlab_conformance_restore_0031"
           --health-interval 5s --health-timeout 3s --health-retries 12
     env:
       PGHOST: 127.0.0.1
