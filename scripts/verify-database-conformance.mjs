@@ -92,9 +92,15 @@ const rows = expectedGaps.map(e =>
 const template = await readFile(join(root, "tests", "fixtures", "database-conformance.sql"), "utf8");
 assert.equal(template.split("/* MODEL_EDGE_ROWS */").length, 2);
 psql([], template.replace("/* MODEL_EDGE_ROWS */", rows));
+const atomicTemplate = await readFile(join(root, "tests", "fixtures", "atomic-terminalize-conformance.sql"), "utf8");
+assert.equal(atomicTemplate.split("/* MODEL_EDGE_ROWS */").length, 2);
+psql([], atomicTemplate.replace("/* MODEL_EDGE_ROWS */", rows));
+execFileSync(process.execPath, [join(root, "scripts", "verify-atomic-terminalize-concurrency.mjs")], {
+  cwd: root, env, stdio: "inherit", timeout: 60_000,
+});
 console.log("PASS: " + names.length + " migrations from scratch; second pass skipped "
   + second.skipped + " with verified checksums.");
-console.log("PASS: real DB constraints, RPCs, privileges, RLS and all 64 model state pairs.");
+console.log("PASS: real DB constraints, RPCs, privileges, RLS and all 64 model state pairs; new atomic RPC and two-connection races.");
 console.log("EXPECTED GAP: generic SQL UPDATE permits "
   + expectedGaps.filter(e => e.decision === "forbidden").length
   + " forbidden model edges; terminal/reservation release is not atomic (P0-07).");
