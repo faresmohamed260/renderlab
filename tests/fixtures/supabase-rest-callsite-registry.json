@@ -274,15 +274,6 @@
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
     },
     {
-      "id": "src/server/account/account-profile.ts:286:22",
-      "tableOrRpc": "renderlab_account_profiles",
-      "classification": "internal",
-      "family": "account-lifecycle",
-      "negativeHarness": "I2/O7",
-      "principalDerivation": "Server-only scheduled account lifecycle / profile-avatar cleanup, bounded DB-selected rows rather than browser-supplied owner",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
-    },
-    {
       "id": "src/server/account/account-profile.ts:81:22",
       "tableOrRpc": "renderlab_account_profiles",
       "classification": "owner-scoped",
@@ -308,6 +299,15 @@
       "negativeHarness": "O7/A1",
       "principalDerivation": "Server-authenticated account ID supplied as ownerId/userId; writes set matching owner_id",
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
+    },
+    {
+      "id": "src/server/account/account-profile.ts:286:22",
+      "tableOrRpc": "renderlab_account_profiles",
+      "classification": "internal",
+      "family": "account-lifecycle",
+      "negativeHarness": "I2/O7",
+      "principalDerivation": "Server-only scheduled account lifecycle / profile-avatar cleanup, bounded DB-selected rows rather than browser-supplied owner",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
       "id": "src/server/admin/admin-operations.ts:161:22",
@@ -445,6 +445,24 @@
       "ownerEvidence": "actor-derived-RPC-p_owner_id"
     },
     {
+      "id": "src/server/generation/cancel-generation.ts:63:22",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/generation/cancel-generation.ts:71:22",
+      "tableOrRpc": "media_assets",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
       "id": "src/server/generation/cancel-generation.ts:151:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
@@ -481,16 +499,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/cancel-generation.ts:63:22",
-      "tableOrRpc": "generation_jobs",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/generation/cancel-generation.ts:71:22",
+      "id": "src/server/generation/generation-activity.ts:75:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -506,24 +515,6 @@
       "negativeHarness": "O1/O3",
       "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
       "ownerEvidence": "owner-filter-URLSearchParams"
-    },
-    {
-      "id": "src/server/generation/generation-activity.ts:75:22",
-      "tableOrRpc": "media_assets",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/generation/generation-admission.ts:101:24",
-      "tableOrRpc": "generation_admission_reservations",
-      "classification": "owner-scoped",
-      "family": "admission",
-      "negativeHarness": "O3/O8",
-      "principalDerivation": "Fresh session-derived ownerId bound to admission RPC p_owner_id and reservation reads",
-      "ownerEvidence": "owner-filter-query"
     },
     {
       "id": "src/server/generation/generation-admission.ts:42:24",
@@ -562,6 +553,15 @@
       "ownerEvidence": "actor-derived-RPC-p_owner_id"
     },
     {
+      "id": "src/server/generation/generation-admission.ts:101:24",
+      "tableOrRpc": "generation_admission_reservations",
+      "classification": "owner-scoped",
+      "family": "admission",
+      "negativeHarness": "O3/O8",
+      "principalDerivation": "Fresh session-derived ownerId bound to admission RPC p_owner_id and reservation reads",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
       "id": "src/server/generation/generation-recipe.ts:35:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
@@ -569,15 +569,6 @@
       "negativeHarness": "O1/O3",
       "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
       "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/generation/generation-reconciliation-claim.ts:20:18",
-      "tableOrRpc": "rpc/renderlab_release_generation_reconciliation",
-      "classification": "internal",
-      "family": "jobs",
-      "negativeHarness": "I2/O1",
-      "principalDerivation": "Server-only reconciliation lock uses validated jobId and fixed worker ID",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
       "id": "src/server/generation/generation-reconciliation-claim.ts:6:10",
@@ -589,34 +580,16 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation.ts:175:22",
-      "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
+      "id": "src/server/generation/generation-reconciliation-claim.ts:20:18",
+      "tableOrRpc": "rpc/renderlab_release_generation_reconciliation",
       "classification": "internal",
       "family": "jobs",
       "negativeHarness": "I2/O1",
-      "principalDerivation": "Server-owned durable dispatch RPC with authenticated or stored generation row owner_id",
+      "principalDerivation": "Server-only reconciliation lock uses validated jobId and fixed worker ID",
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation.ts:220:22",
-      "tableOrRpc": "generation_jobs",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/generation/native-generation.ts:264:22",
-      "tableOrRpc": "generation_jobs",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/generation/native-generation.ts:288:26",
+      "id": "src/server/generation/native-generation-worker-inputs.ts:18:26",
       "tableOrRpc": "generation_sources",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -625,7 +598,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:299:26",
+      "id": "src/server/generation/native-generation-worker-inputs.ts:29:26",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -634,7 +607,34 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:513:22",
+      "id": "src/server/generation/native-generation.ts:172:22",
+      "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
+      "classification": "internal",
+      "family": "jobs",
+      "negativeHarness": "I2/O1",
+      "principalDerivation": "Server-owned durable dispatch RPC with authenticated or stored generation row owner_id",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
+    },
+    {
+      "id": "src/server/generation/native-generation.ts:217:22",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/generation/native-generation.ts:261:22",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/generation/native-generation.ts:467:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -643,31 +643,13 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:549:11",
+      "id": "src/server/generation/native-generation.ts:503:11",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
       "negativeHarness": "O1/O3",
       "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
-    },
-    {
-      "id": "src/server/generation/reconcile-generation.ts:125:22",
-      "tableOrRpc": "generation_jobs",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-URLSearchParams"
-    },
-    {
-      "id": "src/server/generation/reconcile-generation.ts:213:10",
-      "tableOrRpc": "generation_jobs",
-      "classification": "internal",
-      "family": "jobs",
-      "negativeHarness": "I2/O1",
-      "principalDerivation": "Server-only active-generation reconciler selects bounded candidates, then rechecks per-row owner_id and jobId",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
       "id": "src/server/generation/reconcile-generation.ts:57:22",
@@ -688,8 +670,44 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
+      "id": "src/server/generation/reconcile-generation.ts:125:22",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-URLSearchParams"
+    },
+    {
+      "id": "src/server/generation/reconcile-generation.ts:213:10",
+      "tableOrRpc": "generation_jobs",
+      "classification": "internal",
+      "family": "jobs",
+      "negativeHarness": "I2/O1",
+      "principalDerivation": "Server-only active-generation reconciler selects bounded candidates, then rechecks per-row owner_id and jobId",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
+    },
+    {
       "id": "src/server/generation/submit-generation.ts:92:24",
       "tableOrRpc": "generation_sources",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/generation/submit-upscale.ts:66:22",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
+    },
+    {
+      "id": "src/server/generation/submit-upscale.ts:97:27",
+      "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
       "negativeHarness": "O1/O3",
@@ -715,22 +733,40 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/submit-upscale.ts:66:22",
-      "tableOrRpc": "generation_jobs",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
+      "id": "src/server/maintenance/renderlab-maintenance.ts:75:10",
+      "tableOrRpc": "rpc/renderlab_generation_source_is_referenced",
+      "classification": "internal",
+      "family": "maintenance",
+      "negativeHarness": "I1/I2",
+      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/submit-upscale.ts:97:27",
-      "tableOrRpc": "generation_jobs",
-      "classification": "owner-scoped",
-      "family": "jobs",
-      "negativeHarness": "O1/O3",
-      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
+      "id": "src/server/maintenance/renderlab-maintenance.ts:82:10",
+      "tableOrRpc": "rpc/renderlab_claim_generation_source_cleanup",
+      "classification": "internal",
+      "family": "maintenance",
+      "negativeHarness": "I1/I2",
+      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
+    },
+    {
+      "id": "src/server/maintenance/renderlab-maintenance.ts:89:10",
+      "tableOrRpc": "rpc/renderlab_restore_generation_source_cleanup",
+      "classification": "internal",
+      "family": "maintenance",
+      "negativeHarness": "I1/I2",
+      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
+    },
+    {
+      "id": "src/server/maintenance/renderlab-maintenance.ts:96:10",
+      "tableOrRpc": "rpc/renderlab_claim_media_upload_cleanup",
+      "classification": "internal",
+      "family": "maintenance",
+      "negativeHarness": "I1/I2",
+      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
       "id": "src/server/maintenance/renderlab-maintenance.ts:114:10",
@@ -832,42 +868,6 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/maintenance/renderlab-maintenance.ts:75:10",
-      "tableOrRpc": "rpc/renderlab_generation_source_is_referenced",
-      "classification": "internal",
-      "family": "maintenance",
-      "negativeHarness": "I1/I2",
-      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
-    },
-    {
-      "id": "src/server/maintenance/renderlab-maintenance.ts:82:10",
-      "tableOrRpc": "rpc/renderlab_claim_generation_source_cleanup",
-      "classification": "internal",
-      "family": "maintenance",
-      "negativeHarness": "I1/I2",
-      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
-    },
-    {
-      "id": "src/server/maintenance/renderlab-maintenance.ts:89:10",
-      "tableOrRpc": "rpc/renderlab_restore_generation_source_cleanup",
-      "classification": "internal",
-      "family": "maintenance",
-      "negativeHarness": "I1/I2",
-      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
-    },
-    {
-      "id": "src/server/maintenance/renderlab-maintenance.ts:96:10",
-      "tableOrRpc": "rpc/renderlab_claim_media_upload_cleanup",
-      "classification": "internal",
-      "family": "maintenance",
-      "negativeHarness": "I1/I2",
-      "principalDerivation": "Dedicated internal maintenance bearer secret, then server-selected cleanup rows and owner fields",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
-    },
-    {
       "id": "src/server/media/media-assets.ts:146:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
@@ -931,6 +931,51 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
+      "id": "src/server/media/media-collections.ts:38:22",
+      "tableOrRpc": "media_collections",
+      "classification": "owner-scoped",
+      "family": "collections",
+      "negativeHarness": "O5",
+      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/media/media-collections.ts:46:22",
+      "tableOrRpc": "media_collection_items",
+      "classification": "owner-scoped",
+      "family": "collections",
+      "negativeHarness": "O5",
+      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/media/media-collections.ts:54:22",
+      "tableOrRpc": "media_collections",
+      "classification": "owner-scoped",
+      "family": "collections",
+      "negativeHarness": "O5",
+      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/media/media-collections.ts:61:34",
+      "tableOrRpc": "media_collection_items",
+      "classification": "owner-scoped",
+      "family": "collections",
+      "negativeHarness": "O5",
+      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/media/media-collections.ts:79:24",
+      "tableOrRpc": "media_collections",
+      "classification": "owner-scoped",
+      "family": "collections",
+      "negativeHarness": "O5",
+      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
+      "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
+    },
+    {
       "id": "src/server/media/media-collections.ts:105:24",
       "tableOrRpc": "media_collections",
       "classification": "owner-scoped",
@@ -976,48 +1021,12 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/media/media-collections.ts:38:22",
-      "tableOrRpc": "media_collections",
+      "id": "src/server/media/media-uploads.ts:88:24",
+      "tableOrRpc": "media_upload_sessions",
       "classification": "owner-scoped",
-      "family": "collections",
-      "negativeHarness": "O5",
-      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/media/media-collections.ts:46:22",
-      "tableOrRpc": "media_collection_items",
-      "classification": "owner-scoped",
-      "family": "collections",
-      "negativeHarness": "O5",
-      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/media/media-collections.ts:54:22",
-      "tableOrRpc": "media_collections",
-      "classification": "owner-scoped",
-      "family": "collections",
-      "negativeHarness": "O5",
-      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/media/media-collections.ts:61:34",
-      "tableOrRpc": "media_collection_items",
-      "classification": "owner-scoped",
-      "family": "collections",
-      "negativeHarness": "O5",
-      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/media/media-collections.ts:79:24",
-      "tableOrRpc": "media_collections",
-      "classification": "owner-scoped",
-      "family": "collections",
-      "negativeHarness": "O5",
-      "principalDerivation": "Fresh member ownerId, and collection + asset IDs checked together; insertion payload includes owner_id",
+      "family": "uploads",
+      "negativeHarness": "O6",
+      "principalDerivation": "Fresh member ownerId, and scoped upload row.owner_id; signing/storage keys bound to the scoped row",
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
     },
     {
@@ -1075,13 +1084,31 @@
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
     },
     {
-      "id": "src/server/media/media-uploads.ts:88:24",
-      "tableOrRpc": "media_upload_sessions",
+      "id": "src/server/media/reference-uploads.ts:53:22",
+      "tableOrRpc": "generation_sources",
       "classification": "owner-scoped",
-      "family": "uploads",
-      "negativeHarness": "O6",
-      "principalDerivation": "Fresh member ownerId, and scoped upload row.owner_id; signing/storage keys bound to the scoped row",
-      "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
+      "family": "references",
+      "negativeHarness": "O6/O3",
+      "principalDerivation": "Fresh member ownerId, and scoped source row.owner_id; new source insert sets owner_id",
+      "ownerEvidence": "owner-filter-URLSearchParams"
+    },
+    {
+      "id": "src/server/media/reference-uploads.ts:66:22",
+      "tableOrRpc": "generation_sources",
+      "classification": "owner-scoped",
+      "family": "references",
+      "negativeHarness": "O6/O3",
+      "principalDerivation": "Fresh member ownerId, and scoped source row.owner_id; new source insert sets owner_id",
+      "ownerEvidence": "owner-filter-URLSearchParams"
+    },
+    {
+      "id": "src/server/media/reference-uploads.ts:87:9",
+      "tableOrRpc": "generation_sources",
+      "classification": "owner-scoped",
+      "family": "references",
+      "negativeHarness": "O6/O3",
+      "principalDerivation": "Fresh member ownerId, and scoped source row.owner_id; new source insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
     },
     {
       "id": "src/server/media/reference-uploads.ts:128:24",
@@ -1103,33 +1130,6 @@
     },
     {
       "id": "src/server/media/reference-uploads.ts:245:25",
-      "tableOrRpc": "generation_sources",
-      "classification": "owner-scoped",
-      "family": "references",
-      "negativeHarness": "O6/O3",
-      "principalDerivation": "Fresh member ownerId, and scoped source row.owner_id; new source insert sets owner_id",
-      "ownerEvidence": "owner-filter-query"
-    },
-    {
-      "id": "src/server/media/reference-uploads.ts:53:22",
-      "tableOrRpc": "generation_sources",
-      "classification": "owner-scoped",
-      "family": "references",
-      "negativeHarness": "O6/O3",
-      "principalDerivation": "Fresh member ownerId, and scoped source row.owner_id; new source insert sets owner_id",
-      "ownerEvidence": "owner-filter-URLSearchParams"
-    },
-    {
-      "id": "src/server/media/reference-uploads.ts:66:22",
-      "tableOrRpc": "generation_sources",
-      "classification": "owner-scoped",
-      "family": "references",
-      "negativeHarness": "O6/O3",
-      "principalDerivation": "Fresh member ownerId, and scoped source row.owner_id; new source insert sets owner_id",
-      "ownerEvidence": "owner-filter-URLSearchParams"
-    },
-    {
-      "id": "src/server/media/reference-uploads.ts:87:9",
       "tableOrRpc": "generation_sources",
       "classification": "owner-scoped",
       "family": "references",
@@ -1163,6 +1163,15 @@
       "negativeHarness": "O3/O8",
       "principalDerivation": "Fresh session-derived ownerId bound to admission RPC p_owner_id and reservation reads",
       "ownerEvidence": "actor-derived-RPC-p_owner_id"
+    },
+    {
+      "id": "src/server/observability/diagnostic-store.ts:97:22",
+      "tableOrRpc": "renderlab_diagnostic_events",
+      "classification": "internal",
+      "family": "observability",
+      "negativeHarness": "I1/I2",
+      "principalDerivation": "Privileged server diagnostics/health/alert process, no browser-selected owner",
+      "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
       "id": "src/server/observability/diagnostic-store.ts:111:22",
@@ -1239,15 +1248,6 @@
     {
       "id": "src/server/observability/diagnostic-store.ts:258:10",
       "tableOrRpc": "renderlab_operational_alerts",
-      "classification": "internal",
-      "family": "observability",
-      "negativeHarness": "I1/I2",
-      "principalDerivation": "Privileged server diagnostics/health/alert process, no browser-selected owner",
-      "ownerEvidence": "server-internal-secret-or-verified-worker"
-    },
-    {
-      "id": "src/server/observability/diagnostic-store.ts:97:22",
-      "tableOrRpc": "renderlab_diagnostic_events",
       "classification": "internal",
       "family": "observability",
       "negativeHarness": "I1/I2",
