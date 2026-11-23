@@ -194,6 +194,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `SECURITY.md` — vulnerability reporting, security severity/response expectations, and coordinated disclosure; human security/production authority remains in `GOVERNANCE.md`.
 - `docs/architecture/ARCHITECTURE_DECISIONS.md` — durable non-UI cross-cutting architecture decision and supersession authority.
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
+- `docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md` — two-page browser-to-provider backend context, lifecycle, trust boundaries and local verification entry point.
 - `docs/architecture/INFRASTRUCTURE.md` — infrastructure/resource/security boundaries plus exact current-production authority.
 - `docs/architecture/RUNTIME_ENV_CONFIGURATION.md` — P0-02 typed runtime variable schema, safe fail-fast boundaries, 16-name Production inventory, and rollback.
 - `docs/PRODUCT_CHARTER.md` — normative product purpose, audience, planned vs current capabilities, and backend-first execution gate.

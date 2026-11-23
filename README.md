@@ -176,7 +176,7 @@ flowchart TB
     JOB --> OBJ
 ```
 
-RenderLab keeps schema ownership, storage prefixes, orchestration, authorization, and product contracts explicitly separated from underlying shared infrastructure. See [Infrastructure](docs/architecture/INFRASTRUCTURE.md) and [Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md) for the deeper contracts.
+RenderLab keeps schema ownership, storage prefixes, orchestration, authorization, and product contracts explicitly separated from underlying shared infrastructure. Start with the [two-page backend architecture overview](docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md), then read [Infrastructure](docs/architecture/INFRASTRUCTURE.md) and [Frontend Architecture](docs/architecture/FRONTEND_ARCHITECTURE.md) for the deeper contracts.
 
 ## Security and reliability
 
@@ -279,6 +279,7 @@ Public/product documentation starts with:
 2. [Evidence-linked technical claims](docs/TECHNICAL_CLAIMS.md)
 3. [Current public status](docs/STATUS.md)
 2. [Product capabilities](docs/architecture/PRODUCT_CAPABILITIES.md)
+3. [Backend architecture overview](docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md)
 3. [Frontend architecture](docs/architecture/FRONTEND_ARCHITECTURE.md)
 4. [Infrastructure and security boundaries](docs/architecture/INFRASTRUCTURE.md)
 5. [Product/UI foundation](docs/ui/UI_MIGRATION.md)
