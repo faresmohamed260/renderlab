@@ -1,5 +1,6 @@
 import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
 import { NextResponse } from "next/server";
+import { supabaseErrorClassification } from "@/server/data/supabase-rest";
 import {
   hasRecentRenderLabTotpStepUp,
   isRenderLabMfaEnrolled,
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
       process,
     }, { status: 202 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
+    const message = supabaseErrorClassification(error);
     if (message.includes("renderlab_last_active_admin")) {
       return NextResponse.json({ ok: false, error: { code: "last_active_admin" } }, { status: 409 });
     }

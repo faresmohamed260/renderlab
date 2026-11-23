@@ -72,7 +72,7 @@ export async function PATCH(
         ok: false,
         error: {
           code: "media_unavailable",
-          message: error instanceof Error ? error.message : "Collection could not be renamed.",
+          message: "Collection could not be renamed.",
         },
       },
       { status: 503 },
@@ -103,7 +103,7 @@ export async function DELETE(
         ok: false,
         error: {
           code: "media_unavailable",
-          message: error instanceof Error ? error.message : "Collection could not be deleted.",
+          message: "Collection could not be deleted.",
         },
       },
       { status: 503 },

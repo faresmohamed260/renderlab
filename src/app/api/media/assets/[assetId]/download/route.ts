@@ -19,7 +19,7 @@ export async function GET(
     return response;
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Media download is unavailable." },
+      { code: "media_unavailable", error: "Media download is unavailable." },
       { status: 503 },
     );
   }

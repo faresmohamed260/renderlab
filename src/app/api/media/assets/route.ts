@@ -92,7 +92,7 @@ export async function GET(request: Request) {
         ok: false,
         error: {
           code: "media_unavailable",
-          message: error instanceof Error ? error.message : "Media could not be loaded.",
+          message: "Media could not be loaded.",
         },
       },
       { status: 503 },

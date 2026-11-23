@@ -19,6 +19,6 @@ export async function GET(
     response.headers.set("Cache-Control", "private, max-age=240");
     return response;
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Media thumbnail is unavailable." }, { status: 503 });
+    return NextResponse.json({ code: "media_unavailable", error: "Media thumbnail is unavailable." }, { status: 503 });
   }
 }

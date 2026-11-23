@@ -3,7 +3,7 @@ import {
   normalizeMediaCollectionName,
   type PublicMediaCollection,
 } from "@/lib/api/media-collections-contract";
-import { supabaseRest } from "@/server/data/supabase-rest";
+import { supabaseErrorClassification, supabaseRest } from "@/server/data/supabase-rest";
 import { getMediaAsset } from "@/server/media/media-assets";
 
 export type MediaCollectionRecord = {
@@ -83,7 +83,7 @@ export async function createMediaCollection(ownerId: string, requestedName: stri
     });
     return rows?.[0] ?? null;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('"23505"')) {
+    if (supabaseErrorClassification(error) === "23505") {
       throw new RangeError("A collection with that name already exists.");
     }
     throw error;
@@ -112,7 +112,7 @@ export async function renameMediaCollection(ownerId: string, collectionId: strin
     );
     return rows?.[0] ?? null;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('"23505"')) {
+    if (supabaseErrorClassification(error) === "23505") {
       throw new RangeError("A collection with that name already exists.");
     }
     throw error;

@@ -129,7 +129,7 @@ export async function createMediaUploadTicket(
             status: "failed",
             updated_at: new Date().toISOString(),
             metadata: {
-              signingError: error instanceof Error ? error.message : "Upload signing failed.",
+              signingError: "upload_signing_failed",
             },
           }),
         },

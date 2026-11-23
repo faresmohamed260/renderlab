@@ -39,7 +39,7 @@ export async function GET(
         ok: false,
         error: {
           code: "generation_backend_unavailable",
-          message: error instanceof Error ? error.message : "Generation status could not be loaded.",
+          message: "Generation status could not be loaded.",
         },
       },
       { status: 503 },
