@@ -53,8 +53,10 @@ for (const [scenario, status, errorCode, phases, releases, mediaAssets] of matri
         "/dispatch/wake",
       ].map((operation) => operations.indexOf(operation));
       assert.ok(ordered.every((value, index) => value >= 0 && (!index || value > ordered[index - 1])));
-      assert.ok(operations.includes("rpc/renderlab_release_generation_admission")
-        || result.trace.some((item) => item.operation === "generation_admission_reservations" && item.method === "PATCH"));
+      assert.ok(operations.includes("rpc/renderlab_terminalize_generation_and_release")
+        || operations.includes("rpc/renderlab_release_generation_admission")
+        || result.trace.some((item) => item.operation === "generation_admission_reservations" && item.method === "PATCH"),
+        "terminalization must release the bound reservation through the atomic or legacy path");
     }
     if (mediaAssets === 1) {
       assert.ok(result.trace.some((item) => item.operation === "media_assets" && item.method === "POST"));
