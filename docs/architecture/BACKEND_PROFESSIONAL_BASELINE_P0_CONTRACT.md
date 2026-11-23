@@ -1,6 +1,6 @@
 # Phase 3 — Backend professional baseline (P0) contract
 
-**Execution:** Owner-approved five-unit P0 sequence; only one small PR at a time. **Repository:** This contract must merge before Unit 1 begins. **Deployment:** Not applicable for this docs-only contract. **Owner:** Engineering / Project Owner. **Accepted:** 2026-11-23.
+**Scope:** Owner-approved five-unit P0 sequence; only one small PR at a time, with Unit 1 starting after contract merge. **Change type:** Docs-only contract, no production deployment. **Owner:** Engineering / Project Owner. **Accepted:** 2026-11-23.
 
 ## Goal, audience and verified baseline
 
