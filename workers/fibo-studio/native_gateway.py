@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-from native_graph import build_graph
+from native_graph import FiboInputRejected, build_graph
 from native_generated_vgl import validate_generated_vgl
 
 MAX_BODY = 46 * 1024 * 1024
@@ -168,7 +168,7 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, function
             raise HTTPException(409, "FIBO_RENDER_TIMED_OUT") from exc
         except TimeoutError:
             return JSONResponse({"worker_state": "generating"}, status_code=202)
-        except ValueError as exc:
+        except FiboInputRejected as exc:
             raise HTTPException(422, "FIBO rejected the render inputs") from exc
         except Exception as exc:
             raise HTTPException(500, "FIBO job failed or could not be read") from exc
@@ -191,7 +191,7 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, function
             raise HTTPException(409, "FIBO_RENDER_TIMED_OUT") from exc
         except TimeoutError:
             return JSONResponse({"worker_state": "generating"}, status_code=202)
-        except ValueError as exc:
+        except FiboInputRejected as exc:
             raise HTTPException(422, "FIBO rejected the render inputs") from exc
         except Exception as exc:
             raise HTTPException(500, "FIBO job failed or could not be read") from exc

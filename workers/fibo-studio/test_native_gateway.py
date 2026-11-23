@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import runpy
 import sys
@@ -17,6 +18,7 @@ from dispatch_core import DispatchIntent
 from modal_dispatch_backend import ModalImageBackend
 from native_comfy_session import ComfySession
 from native_gateway import JOB_HANDLE_HEADER, call_handle_signer, create_gateway
+from native_graph import FiboInputRejected, build_graph
 from workload_contract import FIBO_MODEL_KEY, FIBO_MODEL_VERSION
 
 
@@ -101,7 +103,9 @@ class GatewayTests(unittest.TestCase):
             (TimeoutError(), 202, {"worker_state": "generating"}),
             (RuntimeError("private exception text"), 500, {"detail": "FIBO job failed or could not be read"}),
             (KeyError(), 410, {"detail": "FIBO result expired"}),
-            (ValueError(), 422, {"detail": "FIBO rejected the render inputs"}),
+            (FiboInputRejected("unsupported input"), 422, {"detail": "FIBO rejected the render inputs"}),
+            (ValueError("unexpected ComfyUI response shape"), 500, {"detail": "FIBO job failed or could not be read"}),
+            (json.JSONDecodeError("invalid ComfyUI JSON", "{", 0), 500, {"detail": "FIBO job failed or could not be read"}),
             ({"outcome": "process_exited", "unexpected": True}, 502, None),
         ):
             self.result = result
@@ -141,6 +145,12 @@ class GatewayTests(unittest.TestCase):
                     response = client.get(route, headers={JOB_HANDLE_HEADER: handle})
                     self.assertEqual(response.status_code, status)
                     self.assertEqual(response.json(), body)
+
+    def test_only_graph_validation_is_a_terminal_input_rejection(self):
+        # Infrastructure/protocol ValueError must not become a user 422.
+        with self.assertRaises(FiboInputRejected):
+            build_graph(prompt="Valid", seed=-1, width=512, height=512)
+        self.assertNotIsInstance(ValueError("provider reply was not JSON"), FiboInputRejected)
 
     def test_dispatch_wake_carries_no_render_payload(self):
         response = self.client.post("/dispatch/wake", content=b"")
