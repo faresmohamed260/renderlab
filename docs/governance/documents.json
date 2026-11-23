@@ -390,6 +390,17 @@
       "supersededBy": [
         "docs/ui/UI_MIGRATION.md"
       ]
+    },
+    {
+      "path": "docs/operations/DATABASE_CONFORMANCE_GATE.md",
+      "kind": "operations-runbook",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-23",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
     }
   ]
 }

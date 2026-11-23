@@ -1,0 +1,77 @@
+name: Database Conformance (optional)
+
+# Non-required, offline migration/state gate. No cloud secrets or shared fixtures.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/capabilities/generation-job-state-machine.ts"
+      - "tests/fixtures/disposable-supabase-bootstrap.sql"
+      - "tests/fixtures/database-conformance.sql"
+      - "scripts/verify-database-conformance.mjs"
+      - ".github/workflows/database-conformance.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - "src/lib/capabilities/generation.ts"
+      - "src/lib/capabilities/generation-job-state-machine.ts"
+      - "tests/fixtures/disposable-supabase-bootstrap.sql"
+      - "tests/fixtures/database-conformance.sql"
+      - "scripts/verify-database-conformance.mjs"
+      - ".github/workflows/database-conformance.yml"
+
+permissions:
+  contents: read
+
+# Safe cancellation: each run owns only a throwaway Postgres service container.
+concurrency:
+  group: renderlab-database-conformance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: renderlab_conformance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d renderlab_conformance"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: renderlab_conformance
+      PGPASSWORD: postgres
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Node 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Install PostgreSQL client only
+        shell: bash
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql --version
+
+      - name: Fresh migration, rerun safety and 64-pair SQL conformance
+        run: node scripts/verify-database-conformance.mjs
