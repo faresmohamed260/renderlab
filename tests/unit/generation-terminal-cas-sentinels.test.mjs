@@ -17,9 +17,8 @@ const request = {
 };
 const origin = "https://renderlab.example.invalid";
 
-// PR A deliberately keeps exact-head CI green while retaining independent RED evidence.
-// PR B removes this witness gate and makes all five sentinels permanent normal CI tests.
-const witness = process.env.RENDERLAB_P0_CAS_WITNESS === "1" ? test : test.skip;
+// PR B: all five previously red witnesses run in normal CI.
+const witness = test;
 
 function fixture(t, options = {}) {
   resetRuntime(options);
@@ -138,4 +137,19 @@ witness("P0 CAS: late retry and double owner-return settlement never rewrite ter
   assert.equal(late.current?.status, "succeeded");
   assert.equal(currentJob().status, "succeeded");
   assert.equal(runtime.releases, 1);
+});
+
+test("P0 CAS: direct terminal expected-status update is rejected without a physical PATCH", async (t) => {
+  fixture(t);
+  await dispatched();
+  const job = currentJob();
+  job.status = "succeeded";
+  job.completed_at = new Date().toISOString();
+  const before = runtime.jobPatchAttempts;
+  const outcome = await native.patchJob(OWNER_A, JOB_ID, { status: "failed" }, "succeeded");
+  assert.equal(outcome.ok, false);
+  assert.equal(outcome.reason, "already_terminal_or_changed");
+  assert.equal(outcome.current?.status, "succeeded");
+  assert.equal(runtime.jobPatchAttempts, before);
+  assert.equal(currentJob().status, "succeeded");
 });

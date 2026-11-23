@@ -1,7 +1,7 @@
 import type { GenerationJob } from "@/lib/capabilities/generation";
 import {
   getJobRow,
-  patchJob,
+  patchJobRow,
   persistResult,
   recoverPersistingResult,
   toGenerationJob,
@@ -29,13 +29,13 @@ async function failUpscaleJob(
   message: string,
   diagnostic?: Record<string, unknown>,
 ) {
-  return patchJob(row.owner_id, row.id, {
+  return (await patchJobRow(row, {
     status: "failed",
     error_code: code,
     error_message: message,
     completed_at: new Date().toISOString(),
     ...(diagnostic ? { failover_history: [...(row.failover_history || []), diagnostic] } : {}),
-  });
+  })).row;
 }
 
 function providerFailureDiagnostic(
@@ -125,11 +125,11 @@ export async function pollNativeUpscaleGeneration(
   if (response.status === 202) {
     const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
     if (providerTimeoutMs) signal.throwIfAborted();
-    const next = await patchJob(row.owner_id, row.id, {
+    const next = await patchJobRow(row, {
       status: "running",
       worker_state: payload.worker_state || payload.workerState || "generating",
     });
-    return toGenerationJob(next);
+    return toGenerationJob(next.row);
   }
 
   if (!response.ok) {
@@ -173,10 +173,12 @@ export async function pollNativeUpscaleGeneration(
     return toGenerationJob(failed);
   }
 
-  const persisting = await patchJob(row.owner_id, row.id, {
+  const persistTransition = await patchJobRow(row, {
     status: "persisting",
     worker_state: "finalizing",
   });
+  if (!persistTransition.applied) return toGenerationJob(persistTransition.row);
+  const persisting = persistTransition.row;
   await emitDiagnosticEvent({
     event: "generation.reconciliation",
     correlationId: correlationIdForGenerationJob(row.id),

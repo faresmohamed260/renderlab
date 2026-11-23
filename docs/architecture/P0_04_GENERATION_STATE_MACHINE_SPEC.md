@@ -2,6 +2,8 @@
 
 **Status:** P0 Unit 4, behavior-preserving specification and tests only. **Date:** 2026-11-23. **Authority:** [Backend professional baseline P0 contract](BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md). **Scope:** existing FIBO image beta, retained historical operations and existing Supabase SQL; no runtime wiring, schema migration, secrets, provider calls, generations, or release.
 
+**P0-06 subsequent implementation notice (not yet production-released):** [status-CAS hardening plan](../audits/P0_06_STATUS_CAS_FIX_RELEASE_PLAN_2026-11-23.md) preserves this Unit 4 historical inventory, but adds expected-status database guards to the two generic job writers and a typed lost-CAS response. The pure transition table remains a policy model rather than a SQL transition trigger; status-conditional writes do **not** make terminalization and reservation release atomic. Original Unit 4 gaps below are preserved as the findings at that checkpoint.
+
 ## Verified status and transition inventory
 
 One generation job has exactly **eight** allowed SQL status *values*. The check constraint allows values, **not transitions**. The new pure model in [generation-job-state-machine.ts](../../src/lib/capabilities/generation-job-state-machine.ts) models observed/intended edges but **is not called by production writers**. The exhaustive [transition tests](../../tests/unit/generation-job-state-machine.test.mjs) assert all 64 state pairs; the [SQL conformance tests](../../tests/unit/generation-job-sql-conformance.test.mjs) compare the actual migrations.

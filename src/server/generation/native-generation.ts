@@ -1,4 +1,5 @@
 import { envFlag, envString } from "../../lib/config/runtime-env.ts";
+import { isGenerationTerminalStatus } from "@/lib/capabilities/generation-job-state-machine";
 import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
 import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { fiboMaskMaxBytes, fiboMaskUsage, persistFiboMaskInputs, splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
@@ -258,17 +259,38 @@ export async function getJobRow(ownerId: string, jobId: string, signal?: AbortSi
   return rows?.[0] ?? null;
 }
 
-export async function patchJob(ownerId: string, jobId: string, patch: Record<string, unknown>) {
+export type ConditionalJobUpdateResult =
+  | { ok: true; row: NativeGenerationJobRow }
+  | { ok: false; reason: "already_terminal_or_changed"; current: NativeGenerationJobRow | null };
+
+/** A physical status CAS prevents stale snapshots from rewriting changed jobs. */
+export async function patchJob(
+  ownerId: string,
+  jobId: string,
+  patch: Record<string, unknown>,
+  expectedStatus: JobRow["status"],
+): Promise<ConditionalJobUpdateResult> {
+  if (isGenerationTerminalStatus(expectedStatus)) {
+    return { ok: false, reason: "already_terminal_or_changed", current: await getJobRow(ownerId, jobId) };
+  }
   const rows = await supabaseRest<JobRow[]>(
-    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*`,
+    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&status=eq.${encodeURIComponent(expectedStatus)}&select=*`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
     },
   );
-  if (!rows?.[0]) throw new Error("Generation job could not be updated.");
-  return rows[0];
+  if (rows?.[0]) return { ok: true, row: rows[0] };
+  return { ok: false, reason: "already_terminal_or_changed", current: await getJobRow(ownerId, jobId) };
+}
+
+/** Callers receive both the latest row and whether this PATCH actually committed. */
+export async function patchJobRow(row: JobRow, patch: Record<string, unknown>) {
+  const outcome = await patchJob(row.owner_id, row.id, patch, row.status);
+  if (outcome.ok) return { applied: true as const, row: outcome.row };
+  if (!outcome.current) throw new Error("Generation job disappeared during status-conditional update.");
+  return { applied: false as const, row: outcome.current };
 }
 
 async function resolveInputs(ownerId: string, request: GenerationRequest): Promise<InputBytes[]> {
@@ -508,14 +530,14 @@ async function getGeneratedOutput(row: JobRow, outputIndex: number) {
 }
 
 async function completeJobWithAsset(row: JobRow, assetId: string) {
-  return patchJob(row.owner_id, row.id, {
+  return (await patchJobRow(row, {
     status: "succeeded",
     worker_state: "ready",
     output_asset_ids: [assetId],
     completed_at: new Date().toISOString(),
     error_code: null,
     error_message: null,
-  });
+  })).row;
 }
 
 async function persistGeneratedMedia({
@@ -786,9 +808,11 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
     code: failure.code,
     at,
   };
-  const attempted = await patchJob(row.owner_id, row.id, {
+  const attemptUpdate = await patchJobRow(row, {
     failover_history: [...(row.failover_history || []), attemptEntry],
   });
+  if (!attemptUpdate.applied) return attemptUpdate.row;
+  const attempted = attemptUpdate.row;
   await emitDiagnosticEvent({
     event: "generation.reconciliation",
     level: "warn",
@@ -818,7 +842,7 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
     throw new Error("Standby worker did not return a call ID; RenderLab will not retry the ambiguous reassignment automatically.");
   }
 
-  const reassigned = await patchJob(row.owner_id, row.id, {
+  const reassignedUpdate = await patchJobRow(attempted, {
     status: "running",
     worker_id: candidate.id,
     provider_job_id: payload.call_id,
@@ -835,6 +859,8 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
       },
     ],
   });
+  if (!reassignedUpdate.applied) return reassignedUpdate.row;
+  const reassigned = reassignedUpdate.row;
   await emitDiagnosticEvent({
     event: "generation.reconciliation",
     correlationId: correlationIdForGenerationJob(row.id),
@@ -849,13 +875,13 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
 }
 
 async function failJob(row: JobRow, code: string, message: string, diagnostic?: Record<string, unknown>) {
-  return patchJob(row.owner_id, row.id, {
+  return (await patchJobRow(row, {
     status: "failed",
     error_code: code,
     error_message: message,
     completed_at: new Date().toISOString(),
     ...(diagnostic ? { failover_history: [...(row.failover_history || []), diagnostic] } : {}),
-  });
+  })).row;
 }
 
 function providerFailureDiagnostic(
@@ -948,11 +974,11 @@ export async function pollNativeGeneration(
     if (row.worker_id === FIBO_DISPATCH_BACKEND) return toGenerationJob(row);
     const payload = await response.json().catch(() => ({})) as { worker_state?: string; workerState?: string };
     if (providerTimeoutMs) options.signal?.throwIfAborted();
-    const next = await patchJob(row.owner_id, row.id, {
+    const next = await patchJobRow(row, {
       status: "running",
       worker_state: payload.worker_state || payload.workerState || "generating",
     });
-    return toGenerationJob(next);
+    return toGenerationJob(next.row);
   }
 
   if (!response.ok) {
@@ -1065,13 +1091,15 @@ export async function pollNativeGeneration(
       throw error;
     }
   }
-  const persisting = await patchJob(row.owner_id, row.id, {
+  const persistTransition = await patchJobRow(row, {
     status: "persisting",
     worker_state: "finalizing",
     ...(generatedVgl ? {
       parameters: { ...row.parameters, generatedVgl, generatedVglSource: "fibo-public-qwen3vl" },
     } : {}),
   });
+  if (!persistTransition.applied) return toGenerationJob(persistTransition.row);
+  const persisting = persistTransition.row;
   await emitDiagnosticEvent({
     event: "generation.reconciliation",
     correlationId: correlationIdForGenerationJob(row.id),

@@ -580,7 +580,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation.ts:209:22",
+      "id": "src/server/generation/native-generation.ts:210:22",
       "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
       "classification": "internal",
       "family": "jobs",
@@ -589,7 +589,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation.ts:254:22",
+      "id": "src/server/generation/native-generation.ts:255:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -598,7 +598,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:262:22",
+      "id": "src/server/generation/native-generation.ts:276:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -607,7 +607,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:278:26",
+      "id": "src/server/generation/native-generation.ts:300:26",
       "tableOrRpc": "generation_sources",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -616,7 +616,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:289:26",
+      "id": "src/server/generation/native-generation.ts:311:26",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -625,7 +625,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:503:22",
+      "id": "src/server/generation/native-generation.ts:525:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -634,7 +634,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:539:11",
+      "id": "src/server/generation/native-generation.ts:561:11",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -688,7 +688,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/submit-upscale.ts:65:22",
+      "id": "src/server/generation/submit-upscale.ts:66:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -697,7 +697,25 @@
       "ownerEvidence": "actor-derived-payload-owner_id-or-prior-owner-scoped-row"
     },
     {
-      "id": "src/server/generation/submit-upscale.ts:86:22",
+      "id": "src/server/generation/submit-upscale.ts:97:27",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/generation/submit-upscale.ts:103:22",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "OwnerId from freshly admitted session or owner_id from a previously owner-filtered generation row; persisted insert sets owner_id",
+      "ownerEvidence": "owner-filter-query"
+    },
+    {
+      "id": "src/server/generation/submit-upscale.ts:112:24",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
