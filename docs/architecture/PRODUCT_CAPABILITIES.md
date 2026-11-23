@@ -6,6 +6,8 @@ This document records the capability baseline that informs RenderLab. It disting
 
 ## Current RenderLab capability
 
+The [product charter](../PRODUCT_CHARTER.md) defines direction, including future video and audio. Retired video/animation paths described here refer to **old implementations**, not to abandonment of video as a planned product capability. This document remains the current-state inventory; planned work is not public availability.
+
 New creative work is **FIBO image generation and image editing only**. FLUX, Qwen, REDGraft LTX, video/animation, and image upscale are retired from new submissions. Historical jobs and media remain readable for continuity but are not reusable through a retired provider path.
 
 Historical edit/animate result-to-source comparison remains a read-only, owner-scoped media operation even when an old model recipe is no longer runnable; Retry/Reuse Settings still require current capability validation.

@@ -1,6 +1,6 @@
 # Documentation Index and Authority Taxonomy
 
-Updated: 2026-10-14
+Updated: 2026-11-23
 
 This file is the repository-wide navigation and documentation taxonomy for RenderLab. It explains what each class of document means, how apparently conflicting records are resolved, and what does or does not establish backlog authority. It does not replace the domain-specific authorities it points to.
 
@@ -195,6 +195,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/architecture/ARCHITECTURE_DECISIONS.md` — durable non-UI cross-cutting architecture decision and supersession authority.
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
 - `docs/architecture/INFRASTRUCTURE.md` — infrastructure/resource/security boundaries plus exact current-production authority.
+- `docs/PRODUCT_CHARTER.md` — normative product purpose, audience, planned vs current capabilities, and backend-first execution gate.
 - `docs/architecture/PRODUCT_CAPABILITIES.md` — capability/current product contract registry.
 - `docs/architecture/ACCOUNT_SETTINGS_CAPABILITY_ROADMAP.md` — bounded account/settings roadmap and current workstream tracker.
 - `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` — accepted incident/recovery operating procedure, operator roles, review cadence, and exercise metadata.
