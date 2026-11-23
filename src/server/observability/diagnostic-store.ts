@@ -18,6 +18,7 @@ const diagnosticRetentionDays = 30;
 const diagnosticAdminMaxLimit = 100;
 const generationAlertWindowMs = 15 * 60 * 1000;
 export const generationDispatchHealthAlertKey = "generation-dispatch-health";
+export const oldestActiveJobAlertKey = "generation-oldest-active-job";
 
 // This tuple identifies gateway auth rejections within the deployed diagnostic schema.
 const gatewayAuthStoredCode = "provider-unconfirmed";
@@ -157,6 +158,33 @@ export async function resolveGenerationDispatchHealthAlert(resolvedAt: string) {
   });
 }
 
+/**
+ * Dedicated, non-notifying operational warning for a stalled owner job. Unlike
+ * dispatch-health, this signal must not send production email without separate
+ * authorization. A null diagnostic code prevents contamination of the generic
+ * provider-failure three-event threshold.
+ */
+export async function recordOldestActiveJobAlert(event: DiagnosticEvent) {
+  await supabaseRest("renderlab_diagnostic_events", {
+    method: "POST",
+    body: JSON.stringify(diagnosticInsert(event)),
+  });
+  return recordOperationalAlert({
+    alertKey: oldestActiveJobAlertKey,
+    family: "generation-provider-degradation",
+    severity: "warning",
+  }, event);
+}
+
+export async function resolveOldestActiveJobAlert(resolvedAt: string) {
+  return supabaseRest<boolean>("rpc/renderlab_resolve_operational_alert", {
+    method: "POST",
+    body: JSON.stringify({
+      p_alert_key: scopeObservabilityIdentifier(oldestActiveJobAlertKey, 80),
+      p_resolved_at: resolvedAt,
+    }),
+  });
+}
 export async function pruneDiagnosticEvents(limit = 500) {
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 2000);
   return supabaseRest<number>("rpc/renderlab_prune_diagnostic_events", {
@@ -255,7 +283,11 @@ export function adminDiagnosticProjection(row: StoredDiagnosticEventRow) {
 }
 
 export function adminOperationalAlertProjection(row: OperationalAlertRow) {
+  const label = row.alert_key.endsWith(oldestActiveJobAlertKey) ? "Oldest active job"
+    : row.alert_key.endsWith(generationDispatchHealthAlertKey) ? "Dispatch heartbeat"
+      : row.family.replaceAll("-", " ");
   return {
+    label,
     family: row.family,
     severity: row.severity,
     state: row.state,

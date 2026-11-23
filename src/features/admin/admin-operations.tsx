@@ -261,6 +261,17 @@ export function AdminOperations({
             <div className={styles.metricStrip} aria-label="Primary health metrics">
               <HealthMetric label="Active jobs" value={String(snapshot.health.activeJobs)} />
               <HealthMetric
+                label="Oldest active job"
+                value={displayDuration(snapshot.health.oldestActiveJob.ageSeconds === null
+                  ? null : snapshot.health.oldestActiveJob.ageSeconds * 1000)}
+              />
+              <HealthMetric
+                label="Dispatch heartbeat"
+                value={snapshot.health.dispatchHealth.scheduledHeartbeatMissing
+                  ? "Missing" : displayDuration(snapshot.health.dispatchHealth.scheduledHeartbeatAgeSeconds === null
+                    ? null : snapshot.health.dispatchHealth.scheduledHeartbeatAgeSeconds * 1000)}
+              />
+              <HealthMetric
                 label="Active reservations"
                 value={displayBoundedCount(snapshot.health.capacity.activeReservations)}
               />
@@ -275,11 +286,22 @@ export function AdminOperations({
             </div>
 
             <p className={styles.healthNote}>
-              Completion timing is accepted-to-terminal duration for {snapshot.health.recentJobs.completionTiming.sampleCount} recent jobs; it is not an SLA or ETA.
+              Completion timing is accepted-to-terminal duration for {snapshot.health.recentJobs.completionTiming.sampleCount} recent jobs; it is not an SLA or ETA. Oldest active job age uses immutable UTC creation time across queued, running, cancelling and persisting, with a single 60-minute operator warning band (not an SLA). Dispatch heartbeat is an independent scheduling signal.
             </p>
 
             <div className={styles.diagnostics}>
               <HealthCounts title="Status counts" counts={snapshot.health.statusCounts} />
+              <HealthCounts title="Oldest active by state (seconds)" counts={{
+                Queued: snapshot.health.oldestActiveJob.byStatusSeconds.queued ?? "—",
+                Running: snapshot.health.oldestActiveJob.byStatusSeconds.running ?? "—",
+                Cancelling: snapshot.health.oldestActiveJob.byStatusSeconds.cancelling ?? "—",
+                Persisting: snapshot.health.oldestActiveJob.byStatusSeconds.persisting ?? "—",
+              }} />
+              <HealthCounts title="Dispatch health" counts={{
+                "Due age (seconds)": snapshot.health.dispatchHealth.oldestDueSeconds,
+                "Expired claims": snapshot.health.dispatchHealth.expiredClaims,
+                "Unresolved dispatches": snapshot.health.dispatchHealth.unresolved,
+              }} />
               <HealthCounts title="Operation counts" counts={snapshot.health.operationCounts} />
               <HealthCounts title="Sanitized error codes" counts={snapshot.health.errorCodeCounts} />
               <HealthCounts
@@ -321,7 +343,7 @@ export function AdminOperations({
                   {snapshot.health.operationalAlerts.map((alert) => (
                     <div className={styles.pendingRow} key={`${alert.family}:${alert.firstSeenAt}:${alert.lastSeenAt}`}>
                       <div className={styles.identity}>
-                        <p className={styles.identityTitle}>{titleCase(alert.family)}</p>
+                        <p className={styles.identityTitle}>{alert.label}</p>
                         <p className={styles.identityMeta}>
                           {titleCase(alert.state)} · first {displayDate(alert.firstSeenAt)} · last {displayDate(alert.lastSeenAt)} · {alert.occurrenceCount} occurrences
                         </p>

@@ -455,6 +455,7 @@ Settings, Profile and Preferences retain their approved Trust Register/subordina
 
 Admin retains the UI-079 Settings-derived `01 Access / 02 Generation / 03 Health` structure and all fresh-admin, self-lockout, last-active-admin, invitation, generation-control and bounded-Health contracts. UI-082 raises only reproduced sub-10px operational identity/self-badge/metric/diagnostic labels to the technical-text floor. Account/Admin Operations `35544269607` / artifact `10615716556` (`sha256:7922b507a83e6697873552ba86ae3c8995a5454e0afd3e2f7bca8f88c79c48d5`) passed on the same head and preserved desktop/390px/reduced-motion no-overflow behavior.
 
+**Phase 2 Admin Health implementation candidate:** Within the approved 03 Health composition, the operator-only boundary adds oldest active age by four lifecycle states and a separate dispatch heartbeat metric. It reuses existing HealthMetric and HealthCounts components; no new primitive, navigation or user-visible generation affordance is introduced. The 60-minute age warning is not an SLA. Production status remains governed by the current manifest until a separately verified UI release.
 ### Brand / Landing + AppShell — UI-082 checkpoint 4C
 **Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `EXACT-HEAD VERIFIED`, `HUMAN-REVIEWED`. **Deployment:** `NOT APPLICABLE`.
 
