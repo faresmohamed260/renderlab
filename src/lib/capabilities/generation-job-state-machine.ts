@@ -1,9 +1,9 @@
 /**
  * P0-04: pure, observational policy model of the generation_job lifecycle.
  *
- * This is deliberately NOT wired into existing database writes. SQL CHECK
- * enforces allowed values, not every transition; native-generation.patchJob()
- * is an owner-filtered generic update without a state compare-and-swap.
+ * This transition table remains a pure policy model; it is not globally
+ * enforced by SQL. P0-06 status-conditional job updates now use the shared
+ * terminal-status predicate and a database status compare-and-swap.
  * See docs/architecture/P0_04_GENERATION_STATE_MACHINE_SPEC.md.
  */
 import type { GenerationJobStatus } from "./generation";

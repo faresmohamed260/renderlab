@@ -1,4 +1,5 @@
 import type { GenerationJob } from "@/lib/capabilities/generation";
+import { isGenerationTerminalStatus } from "@/lib/capabilities/generation-job-state-machine";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
 import { createUpscaleImageCommand, imageUpscaleScale } from "@/lib/capabilities/upscale";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
@@ -82,17 +83,37 @@ async function insertUpscaleJob(ownerId: string, source: PreparedUpscaleImageSou
   return rows[0];
 }
 
-async function patchUpscaleJob(ownerId: string, jobId: string, patch: Record<string, unknown>) {
+type ConditionalUpscaleJobUpdate =
+  | { ok: true; row: UpscaleJobRow }
+  | { ok: false; reason: "already_terminal_or_changed"; current: UpscaleJobRow | null };
+
+async function patchUpscaleJob(
+  ownerId: string,
+  jobId: string,
+  patch: Record<string, unknown>,
+  expectedStatus: UpscaleJobRow["status"],
+): Promise<ConditionalUpscaleJobUpdate> {
+  if (isGenerationTerminalStatus(expectedStatus)) {
+    const current = await supabaseRest<UpscaleJobRow[]>(
+      `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`,
+      { method: "GET" },
+    );
+    return { ok: false, reason: "already_terminal_or_changed", current: current?.[0] ?? null };
+  }
   const rows = await supabaseRest<UpscaleJobRow[]>(
-    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*`,
+    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&status=eq.${encodeURIComponent(expectedStatus)}&select=*`,
     {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
     },
   );
-  if (!rows?.[0]) throw new Error("Upscale job could not be updated.");
-  return rows[0];
+  if (rows?.[0]) return { ok: true, row: rows[0] };
+  const latest = await supabaseRest<UpscaleJobRow[]>(
+    `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=*&limit=1`,
+    { method: "GET" },
+  );
+  return { ok: false, reason: "already_terminal_or_changed", current: latest?.[0] ?? null };
 }
 
 async function dispatchUpscaleWorker(source: PreparedUpscaleImageSource) {
@@ -137,24 +158,27 @@ async function submitNativeUpscale(ownerId: string, source: PreparedUpscaleImage
   try {
     job = await insertUpscaleJob(ownerId, source);
     const submitted = await dispatchUpscaleWorker(source);
-    job = await patchUpscaleJob(ownerId, job.id, {
+    const accepted = await patchUpscaleJob(ownerId, job.id, {
       status: "running",
       worker_id: submitted.worker.id,
       provider_job_id: submitted.callId,
       worker_state: submitted.workerState,
       failover_history: [],
       started_at: new Date().toISOString(),
-    });
+    }, job.status);
+    job = accepted.ok ? accepted.row : accepted.current;
+    if (!job) throw new Error("Upscale job vanished during conditional update.");
     return { ok: true, job: toGenerationJob(job) };
   } catch {
     if (job) {
       try {
-        job = await patchUpscaleJob(ownerId, job.id, {
+        const failed = await patchUpscaleJob(ownerId, job.id, {
           status: "failed",
           error_code: "generation_submission_failed",
           error_message: "Upscale could not be started.",
           completed_at: new Date().toISOString(),
-        });
+        }, job.status);
+        job = failed.ok ? failed.row : failed.current ?? job;
       } catch {}
     }
     return {
