@@ -589,7 +589,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation.ts:212:22",
+      "id": "src/server/generation/native-generation.ts:175:22",
       "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
       "classification": "internal",
       "family": "jobs",
@@ -598,7 +598,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation.ts:257:22",
+      "id": "src/server/generation/native-generation.ts:220:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -607,7 +607,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:301:22",
+      "id": "src/server/generation/native-generation.ts:264:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -616,7 +616,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:325:26",
+      "id": "src/server/generation/native-generation.ts:288:26",
       "tableOrRpc": "generation_sources",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -625,7 +625,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:336:26",
+      "id": "src/server/generation/native-generation.ts:299:26",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -634,7 +634,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:550:22",
+      "id": "src/server/generation/native-generation.ts:513:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -643,7 +643,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:586:11",
+      "id": "src/server/generation/native-generation.ts:549:11",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",

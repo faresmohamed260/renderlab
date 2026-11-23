@@ -7,7 +7,6 @@ import { fiboMaskMaxBytes, fiboMaskUsage, persistFiboMaskInputs, splitPersistedF
 import { parseGenerationRequest } from "@/lib/api/generation-contract";
 import { getReadyFiboMaskSource } from "@/server/media/reference-uploads";
 import type {
-  CreativeOperation,
   GenerationJob,
   GenerationRequest,
 } from "@/lib/capabilities/generation";
@@ -48,6 +47,10 @@ import {
   isGatewayAuthRejectionStatus,
 } from "@/server/observability/diagnostics";
 import { randomUUID } from "node:crypto";
+import { toGenerationJob } from "@/server/generation/native-generation-job-projection";
+import type { NativeGenerationJobRow } from "@/server/generation/native-generation-job-projection";
+export { toGenerationJob } from "@/server/generation/native-generation-job-projection";
+export type { NativeGenerationJobRow } from "@/server/generation/native-generation-job-projection";
 
 type WorkflowConfig = {
   id: string;
@@ -66,32 +69,6 @@ type WorkflowConfig = {
     audioEnabled?: boolean;
     frameRate?: number;
   };
-};
-
-export type NativeGenerationJobRow = {
-  id: string;
-  owner_id: string;
-  status: GenerationJob["status"];
-  operation: CreativeOperation;
-  output_kind: "image" | "video";
-  prompt: string | null;
-  workflow_id: string;
-  model: string;
-  ecosystem: string;
-  inputs: unknown[];
-  parameters: Record<string, unknown>;
-  worker_id: string | null;
-  provider_job_id: string | null;
-  worker_state: string | null;
-  failover_history: Array<Record<string, unknown>>;
-  output_asset_ids: string[];
-  error_code: string | null;
-  error_message: string | null;
-  created_at: string;
-  updated_at: string;
-  started_at: string | null;
-  completed_at: string | null;
-  reconcile_token?: string | null;
 };
 
 type JobRow = NativeGenerationJobRow;
@@ -186,20 +163,6 @@ function workflowFor(request: GenerationRequest): WorkflowConfig {
 
 export function isNativeGenerationConfigured() {
   return isSupabaseConfigured() && isR2Configured();
-}
-
-export function toGenerationJob(row: JobRow): GenerationJob {
-  return {
-    id: row.id,
-    status: row.status,
-    operation: row.operation,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    outputAssetIds: row.output_asset_ids ?? [],
-    ...(row.error_message
-      ? { error: { code: row.error_code || "generation_failed", message: row.error_message } }
-      : {}),
-  };
 }
 
 async function acceptDurableDispatch(
