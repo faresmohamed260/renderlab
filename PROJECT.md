@@ -39,7 +39,7 @@ Generation is modeled as:
 
 Generation inputs and media actions use opaque product identities. R2 storage keys, provider IDs and worker routing remain server-side implementation details.
 
-The application must not require a browser session to complete accepted backend work. Once RenderLab accepts a generation, server-owned lifecycle machinery must be able to reconcile it to a truthful terminal state and durable output without relying on the initiating tab remaining open.
+Accepted generation dispatch and recovery do not require the initiating browser to remain open. For this beta, a finished job may settle to a durable terminal state on the owner's next Create, Library, Activity or blocked-submit return; owners who never return are not guaranteed unattended finalization. This is a recorded Phase 2 operational decision, not a new background scheduler.
 
 ## Web product areas
 
@@ -78,9 +78,9 @@ The repository contains extensive exact-SHA workflow, artifact and rollout evide
 
 ## Current work and phase handoff
 
-The [FIBO beta Phase 1 contract](docs/history/contracts/architecture/FIBO_BETA_CORRECTNESS_PHASE_1.md) is closed with exact release and verification evidence. Further operational reliability work is proposed in a Phase 2 draft awaiting owner approval.
+[Phase 1 correctness](docs/history/contracts/architecture/FIBO_BETA_CORRECTNESS_PHASE_1.md) and [Phase 2 operational reliability](docs/history/contracts/architecture/FIBO_OPERATIONAL_RELIABILITY_PHASE_2_CONTRACT.md) are closed with verification evidence. The current **Phase 3 — Backend professional baseline (P0)** is owner-approved, ordered P0-01 through P0-05, and governed by the [active execution contract](docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md). It replaces creative productivity as the next implementation phase. **P0-01 README/claims is the immediate unit; stop after its reviewable merge for owner direction before P0-02.** P1 provider/generalization follow-ons and future creative-productivity/frontend work stay deferred, not canceled. No runtime release is implied by a docs-only merge.
 
-This handoff deliberately does **not** restate completed phase journals or infer a project-wide active phase from historical plans.
+This handoff deliberately does **not** restate completed phase journals or infer new authority from historical plans.
 
 Before starting substantial work:
 1. Re-establish current repository and production reality.
