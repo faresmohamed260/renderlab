@@ -92,13 +92,15 @@ test("auto-VGL remains default-off and is captured before durable image finaliza
   const admission = fs.readFileSync("src/server/generation/submit-generation.ts", "utf8");
   const route = fs.readFileSync("src/app/api/generation/jobs/route.ts", "utf8");
   const engine = fs.readFileSync("src/server/generation/native-generation.ts", "utf8");
+  const persistence = fs.readFileSync("src/server/generation/native-generation-output-persistence.ts", "utf8");
   const recipe = fs.readFileSync("src/server/generation/generation-recipe.ts", "utf8");
   assert.match(admission, /process\.env\.RENDERLAB_FIBO_AUTOVGL_ENABLED === "true"/);
   assert.match(admission, /request\.autoVgl && !isFiboAutoVglAvailable\(\)/);
   assert.match(route, /fiboAutoVglAvailable: true/);
   assert.match(engine, /getGeneratedFiboCaption\(worker, row\.provider_job_id, providerTimeoutMs\)/);
   assert.match(engine, /parameters: \{ \.\.\.row\.parameters, generatedVgl, generatedVglSource:/);
-  assert.match(engine, /generatedVgl: row\.parameters\.generatedVgl/);
+  assert.match(engine, /native-generation-output-persistence/);
+  assert.match(persistence, /generatedVgl: row\.parameters\.generatedVgl/);
   assert.match(engine, /generation_vgl_invalid/);
   assert.match(engine, /generation_vgl_stalled/);
   assert.match(engine, /InvalidGeneratedFiboSidecarError/);
