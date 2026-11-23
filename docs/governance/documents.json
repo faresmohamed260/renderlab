@@ -423,6 +423,17 @@
       "reviewIntervalDays": 120,
       "supersedes": [],
       "supersededBy": []
+    },
+    {
+      "path": "docs/architecture/NATIVE_GENERATION_LIFECYCLE_SPLIT_PLAN.md",
+      "kind": "reference-guide",
+      "authority": "reference",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-23",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
     }
   ]
 }
