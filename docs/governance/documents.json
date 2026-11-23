@@ -160,6 +160,17 @@
       "supersededBy": []
     },
     {
+      "path": "docs/architecture/P0_03_TRUST_BOUNDARIES_AND_OWNER_ISOLATION_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-23",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
       "path": "docs/architecture/RUNTIME_ENV_CONFIGURATION.md",
       "kind": "normative-policy",
       "authority": "normative",
