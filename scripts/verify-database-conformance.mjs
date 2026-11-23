@@ -29,7 +29,7 @@ if (!["127.0.0.1", "localhost", "::1"].includes(host)
 if (!process.env.PGPASSWORD) {
   throw new Error("PGPASSWORD is required for the disposable PostgreSQL service only.");
 }
-if (process.argv.some(arg => arg !== "--check")) {
+if (process.argv.slice(2).some(arg => arg !== "--check")) {
   throw new Error("Usage: node scripts/verify-database-conformance.mjs [--check]");
 }
 const options = ["-X", "-w", "-v", "ON_ERROR_STOP=1", "-h", host, "-p", port, "-U", user, "-d", database];
