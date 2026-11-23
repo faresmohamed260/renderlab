@@ -16,6 +16,12 @@ The active FIBO workspace is one label in the existing reciprocal Modal allocati
 
 <!-- EXTERNAL_FACT: modal-direct-cutover-baseline -->
 
+## Production environment preflight
+
+Before a release or account migration, compare the Vercel Production variable names against the required names in [the build preflight](../../scripts/verify-vercel-env.mjs) and the active [FIBO connection contract](../architecture/INFRASTRUCTURE.md). Check the team, project, and Production scope. Record names only and keep credential values out of logs and release notes.
+
+Production also requires `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED=true` for invitation-only access and `RENDERLAB_FIBO_MASK_ENABLED=true` for masked editing. Confirm both are present in Production and verify effective behavior after cutover with an admitted and a non-admitted fixture and the live capabilities response.
+
 ## Qualify and release
 
 1. **Qualify the exact release source.** Check the six required GitHub Actions contexts and Deployment Readiness on the exact deployed application SHA. Record the six check-run IDs, the Readiness workflow-run ID, and the latest completion time as `qualifiedAt` in canonical UTC. Readiness may require an explicit run because its automatic triggers are path-filtered. See [protected main policy](../governance/github-protection.json) and the [live-state verifier](../../scripts/lib/production-live-state.mjs). Record any required isolated hosted qualification and its evidence or a current owner-approved exception. The [November 20 cutover](MODAL_DIRECT_PRODUCTION_CUTOVER.md) was a one-time exception.
