@@ -2,9 +2,10 @@ import { supabaseRest } from "@/server/data/supabase-rest";
 
 export const generationReconciliationLeaseSeconds = 600;
 
-export async function claimGenerationReconciliation(ownerId: string, jobId: string, token: string) {
+export async function claimGenerationReconciliation(ownerId: string, jobId: string, token: string, signal?: AbortSignal) {
   return supabaseRest<boolean>("rpc/renderlab_claim_generation_reconciliation", {
     method: "POST",
+    signal,
     body: JSON.stringify({
       p_owner_id: ownerId,
       p_job_id: jobId,

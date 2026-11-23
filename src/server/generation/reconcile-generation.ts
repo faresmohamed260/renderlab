@@ -51,10 +51,10 @@ function toGenerationJob(row: JobSnapshotRow): GenerationJob {
   };
 }
 
-async function getSnapshot(ownerId: string, jobId: string) {
+async function getSnapshot(ownerId: string, jobId: string, signal?: AbortSignal) {
   const rows = await supabaseRest<JobSnapshotRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=id,owner_id,status,operation,output_asset_ids,error_code,error_message,worker_id,provider_job_id,created_at,updated_at&limit=1`,
-    { method: "GET" },
+    { method: "GET", signal },
   );
   return rows?.[0] ?? null;
 }
@@ -87,7 +87,39 @@ async function settleTerminalAdmission(job: GenerationJob, ownerId: string) {
   await releaseBoundGenerationAdmission(ownerId, job.id);
 }
 
-export async function reconcileNativeGeneration(ownerId: string, jobId: string): Promise<GenerationJob | null> {
+export async function findOwnerSettlementCandidate(
+  ownerId: string,
+  options: { signal: AbortSignal; jobIds?: string[]; includeActivityRecovery: boolean },
+) {
+  const statuses = options.includeActivityRecovery ? candidateStatuses : "queued,preparing,running,persisting";
+  const eligible = ["status.eq.persisting", "and(worker_id.not.is.null,provider_job_id.not.is.null)"];
+  if (options.includeActivityRecovery) {
+    const stale = new Date(Date.now() - staleMissingDispatchGraceMs).toISOString();
+    eligible.push("status.eq.cancelling", `and(updated_at.lt.${stale},or(worker_id.is.null,worker_id.neq.${FIBO_DISPATCH_BACKEND}))`);
+  }
+
+  const query = new URLSearchParams({
+    owner_id: `eq.${ownerId}`,
+    status: `in.(${statuses})`,
+    or: `(${eligible.join(",")})`,
+    select: "id",
+    order: "updated_at.asc,id.asc",
+    limit: "1",
+  });
+  if (options.jobIds) query.set("id", `in.(${options.jobIds.join(",")})`);
+  const rows = await supabaseRest<Array<{ id: string }>>(`generation_jobs?${query}`, {
+    method: "GET",
+    signal: options.signal,
+  });
+  return rows?.[0]?.id ?? null;
+}
+
+export async function reconcileNativeGeneration(
+  ownerId: string,
+  jobId: string,
+  deadlines?: { lookupMs: number; providerMs: number },
+): Promise<GenerationJob | null> {
+  const lookupSignal = () => deadlines && AbortSignal.timeout(deadlines.lookupMs);
   const startedAt = Date.now();
   const correlationId = correlationIdForGenerationJob(jobId);
   const diagnose = async (job: GenerationJob | null, phase: string, code?: string) => {
@@ -105,7 +137,7 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
     return job;
   };
 
-  const initial = await getSnapshot(ownerId, jobId);
+  const initial = await getSnapshot(ownerId, jobId, lookupSignal());
   if (!initial) return null;
 
   if (terminalStatuses.has(initial.status)) {
@@ -115,18 +147,23 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
   }
 
   const token = randomUUID();
-  const claimed = await claimGenerationReconciliation(ownerId, jobId, token).catch(() => false);
-  if (!claimed) {
-    const current = await getSnapshot(ownerId, jobId);
-    return diagnose(current ? toGenerationJob(current) : null, "claim-busy");
-  }
-
+  let releaseClaim = true;
   try {
-    const claimedSnapshot = await getSnapshot(ownerId, jobId);
+    const claimed = await claimGenerationReconciliation(ownerId, jobId, token, lookupSignal()).catch((error) => {
+      if (deadlines) throw error;
+      return false;
+    });
+    if (!claimed) {
+      releaseClaim = false;
+      const current = await getSnapshot(ownerId, jobId, lookupSignal());
+      return diagnose(current ? toGenerationJob(current) : null, "claim-busy");
+    }
+
+    const claimedSnapshot = await getSnapshot(ownerId, jobId, lookupSignal());
     if (!claimedSnapshot) return null;
 
     if (claimedSnapshot.status === "cancelling") {
-      const job = await reconcileClaimedGenerationCancellation(ownerId, jobId, token);
+      const job = await reconcileClaimedGenerationCancellation(ownerId, jobId, token, deadlines);
       if (job) await settleTerminalAdmission(job, ownerId);
       return diagnose(job, "cancellation");
     }
@@ -139,15 +176,16 @@ export async function reconcileNativeGeneration(ownerId: string, jobId: string):
     }
 
     const job = claimedSnapshot.operation === "upscale-image"
-      ? await pollNativeUpscaleGeneration(ownerId, jobId)
-      : await pollNativeGeneration(ownerId, jobId);
+      ? await pollNativeUpscaleGeneration(ownerId, jobId, deadlines?.providerMs, lookupSignal())
+      : await pollNativeGeneration(ownerId, jobId, deadlines?.providerMs, lookupSignal());
     if (job) await settleTerminalAdmission(job, ownerId);
     return diagnose(job, "polled", job?.error?.code);
   } catch (error) {
     await diagnose(null, "failed", "reconciliation_failed");
     throw error;
   } finally {
-    await releaseGenerationReconciliation(ownerId, jobId, token);
+    // A timed-out claim can have committed before its response was lost.
+    if (releaseClaim) await releaseGenerationReconciliation(ownerId, jobId, token);
   }
 }
 

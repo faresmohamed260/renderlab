@@ -16,6 +16,7 @@ import {
   releaseGenerationAdmission,
   reserveGenerationAdmission,
 } from "@/server/generation/generation-admission";
+import { settleOwnerGenerationWithinResponse } from "@/server/generation/owner-generation-settlement";
 
 const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
 const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
@@ -205,7 +206,11 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
     });
   }
 
-  const admission = await reserveGenerationAdmission(ownerId);
+  let admission = await reserveGenerationAdmission(ownerId);
+  if (!admission.ok && admission.error.code === "generation_active_limit_reached"
+    && await settleOwnerGenerationWithinResponse(ownerId, "submit")) {
+    admission = await reserveGenerationAdmission(ownerId);
+  }
   if (!admission.ok) return reject(admission);
 
   const reservationId = admission.reservation.id;

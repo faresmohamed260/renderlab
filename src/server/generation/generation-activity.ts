@@ -5,7 +5,6 @@ import {
 } from "@/lib/api/generation-activity-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { isSupportedNativeCancellationWorker } from "@/server/generation/cancel-generation";
-import { pollGenerationJob } from "@/server/generation/poll-generation";
 import { reconstructAvailableGenerationRecipeRequest } from "@/server/generation/generation-recipe";
 
 type GenerationActivityRow = {
@@ -84,12 +83,10 @@ export async function listGenerationActivity({
   ownerId,
   limit = 20,
   offset = 0,
-  refreshActive = true,
 }: {
   ownerId: string;
   limit?: number;
   offset?: number;
-  refreshActive?: boolean;
 }) {
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 40);
   const safeOffset = Math.max(Math.trunc(offset), 0);
@@ -103,46 +100,19 @@ export async function listGenerationActivity({
   const rows = await supabaseRest<GenerationActivityRow[]>(`generation_jobs?${params.toString()}`, { method: "GET" });
   const pageRows = rows.slice(0, safeLimit);
 
-  const refreshedItems = await Promise.all(pageRows.map(async (row) => {
-    const fallback = publicGenerationActivity(row);
-    if (!refreshActive || !isActiveGenerationStatus(row.status)) return fallback;
-    try {
-      const refreshed = await pollGenerationJob(ownerId, row.id);
-      if (!refreshed) return fallback;
-      return {
-        ...fallback,
-        status: refreshed.status,
-        updatedAt: refreshed.updatedAt,
-        outputAssetIds: refreshed.outputAssetIds,
-        canCancel: fallback.canCancel && cancellableStatuses.has(refreshed.status) && refreshed.outputAssetIds.length === 0,
-        error: refreshed.status === "failed"
-          ? activityError({
-              status: "failed",
-              error_code: refreshed.error?.code ?? null,
-              error_message: refreshed.error?.message ?? null,
-            })
-          : null,
-      } satisfies PublicGenerationActivity;
-    } catch {
-      return fallback;
-    }
-  }));
+  const pageItems = pageRows.map(publicGenerationActivity);
 
-  const reusableIds = new Set((await Promise.all(pageRows.map(async (row, index) => {
-    const effectiveStatus = refreshedItems[index]?.status ?? row.status;
-    if (effectiveStatus !== "succeeded") return null;
+  const reusableIds = new Set((await Promise.all(pageRows.map(async (row) => {
+    if (row.status !== "succeeded") return null;
     try {
-      return await reconstructAvailableGenerationRecipeRequest(
-        ownerId,
-        { ...row, status: effectiveStatus },
-      ) ? row.id : null;
+      return await reconstructAvailableGenerationRecipeRequest(ownerId, row) ? row.id : null;
     } catch {
       return null;
     }
   }))).filter((id): id is string => Boolean(id)));
 
-  const availableIds = await activeOutputIds(ownerId, refreshedItems);
-  const items = refreshedItems
+  const availableIds = await activeOutputIds(ownerId, pageItems);
+  const items = pageItems
     .filter((item) => !(
       item.status === "succeeded"
       && item.outputAssetIds.length > 0

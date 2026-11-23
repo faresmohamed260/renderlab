@@ -58,18 +58,18 @@ function cancellationError(message: string): CancelGenerationResponse {
   return { ok: false, error: { code: "cancel_not_available", message } };
 }
 
-async function getCancellationRow(ownerId: string, jobId: string) {
+async function getCancellationRow(ownerId: string, jobId: string, signal?: AbortSignal) {
   const rows = await supabaseRest<CancellationRow[]>(
     `generation_jobs?owner_id=eq.${encodeURIComponent(ownerId)}&id=eq.${encodeURIComponent(jobId)}&select=id,owner_id,status,operation,worker_id,provider_job_id,worker_state,failover_history,output_asset_ids,error_code,error_message,reconcile_token,created_at,updated_at,completed_at&limit=1`,
-    { method: "GET" },
+    { method: "GET", signal },
   );
   return rows?.[0] ?? null;
 }
 
-async function hasIndexedDurableOutput(ownerId: string, jobId: string) {
+async function hasIndexedDurableOutput(ownerId: string, jobId: string, signal?: AbortSignal) {
   const rows = await supabaseRest<Array<{ id: string }>>(
     `media_assets?owner_id=eq.${encodeURIComponent(ownerId)}&generation_job_id=eq.${encodeURIComponent(jobId)}&generation_output_index=not.is.null&select=id&limit=1`,
-    { method: "GET" },
+    { method: "GET", signal },
   );
   return Boolean(rows?.[0]);
 }
@@ -109,7 +109,7 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancellationOutcome> {
+async function cancelProviderCall(row: CancellationRow, timeoutMs = providerCancellationTimeoutMs): Promise<ProviderCancellationOutcome> {
   if (!row.worker_id || !row.provider_job_id) {
     return { kind: "retryable", status: null, reason: "missing-dispatch" };
   }
@@ -120,10 +120,10 @@ async function cancelProviderCall(row: CancellationRow): Promise<ProviderCancell
 
   const worker = findWorker(row.worker_id);
   const { url, options } = worker
-    ? workerJobRequest(worker, row.provider_job_id, "", providerCancellationTimeoutMs)
+    ? workerJobRequest(worker, row.provider_job_id, "", timeoutMs)
     : {
         url: `${gatewayUrl}/jobs/${encodeURIComponent(row.provider_job_id)}`,
-        options: { signal: AbortSignal.timeout(providerCancellationTimeoutMs), headers: undefined },
+        options: { signal: AbortSignal.timeout(timeoutMs), headers: undefined },
       };
   const headers = new Headers(options.headers);
   headers.set("accept", "application/json");
@@ -213,15 +213,21 @@ async function recordCancellationRetry(row: CancellationRow, token: string, outc
   return rows?.[0] ?? row;
 }
 
-async function reconcileClaimedCancellationRow(ownerId: string, jobId: string, token: string) {
-  const row = await getCancellationRow(ownerId, jobId);
+async function reconcileClaimedCancellationRow(
+  ownerId: string,
+  jobId: string,
+  token: string,
+  deadlines?: { lookupMs: number; providerMs: number },
+) {
+  const lookupSignal = () => deadlines && AbortSignal.timeout(deadlines.lookupMs);
+  const row = await getCancellationRow(ownerId, jobId, lookupSignal());
   if (!row || row.status !== "cancelling" || row.reconcile_token !== token) return row;
 
-  if (await hasIndexedDurableOutput(ownerId, jobId)) {
+  if (await hasIndexedDurableOutput(ownerId, jobId, lookupSignal())) {
     throw new Error("Cancellation invariant violated: durable output already exists for a cancelling job.");
   }
 
-  const outcome = await cancelProviderCall(row);
+  const outcome = await cancelProviderCall(row, deadlines?.providerMs);
   await emitDiagnosticEvent({
     event: "generation.cancellation",
     level: outcome.kind === "retryable" ? "warn" : "info",
@@ -251,8 +257,9 @@ export async function reconcileClaimedGenerationCancellation(
   ownerId: string,
   jobId: string,
   token: string,
+  deadlines?: { lookupMs: number; providerMs: number },
 ): Promise<GenerationJob | null> {
-  const row = await reconcileClaimedCancellationRow(ownerId, jobId, token);
+  const row = await reconcileClaimedCancellationRow(ownerId, jobId, token, deadlines);
   return row ? toGenerationJob(row) : null;
 }
 

@@ -12,6 +12,8 @@ import {
   verifyCurrentAccountPassword,
 } from "@/server/account/account-data-lifecycle";
 
+export const maxDuration = 30;
+
 type DeleteAccountBody = {
   currentPassword?: unknown;
   confirmation?: unknown;

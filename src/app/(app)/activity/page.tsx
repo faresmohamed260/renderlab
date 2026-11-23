@@ -3,8 +3,10 @@ import type { PublicGenerationActivity } from "@/lib/api/generation-activity-con
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
 import { listGenerationActivity } from "@/server/generation/generation-activity";
+import { settleOwnerGenerationWithinResponse } from "@/server/generation/owner-generation-settlement";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const pageSize = 20;
 
@@ -31,6 +33,7 @@ export default async function ActivityPage({
   let hasActive = false;
 
   if (account && available) {
+    await settleOwnerGenerationWithinResponse(account.id, "activity");
     try {
       const result = await listGenerationActivity({ ownerId: account.id, limit: pageSize, offset });
       items = result.items;
