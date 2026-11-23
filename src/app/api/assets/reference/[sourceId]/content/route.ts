@@ -19,7 +19,9 @@ export async function GET(
   try {
     const source = await getReadyReferenceSource(account.id, sourceId);
     if (!source) return NextResponse.json({ error: "Reference source was not found." }, { status: 404 });
-    return NextResponse.redirect(await getReferenceSourceContentUrl(source), 302);
+    const response = NextResponse.redirect(await getReferenceSourceContentUrl(source), 302);
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
   } catch {
     return NextResponse.json({ error: "Reference content is unavailable." }, { status: 503 });
   }

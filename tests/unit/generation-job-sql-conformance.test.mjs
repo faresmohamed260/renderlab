@@ -96,3 +96,17 @@ test("P0-04 migration conformance is static and does not assert nonexistent trig
     liveCode.match(/export async function patchJob\([\s\S]*?\n}\n/)?.[0] ?? "",
   ), "Generic patchJob should be documented as not globally status-CAS guarded");
 });
+
+test("reconciliation fairness is stored in an owner-scoped atomic claim, without touching updated_at", () => {
+  const sql = migration("0033_generation_reconciliation_fairness.sql");
+  assert.match(sql, /add column if not exists last_reconciled_at timestamptz/i);
+  assert.match(sql, /create index if not exists generation_jobs_reconcile_fairness_idx/i);
+  assert.match(sql, /create or replace function public\.renderlab_claim_generation_reconciliation\s*\(/i);
+  assert.match(sql, /set reconcile_token = p_token,[\s\S]*?reconcile_lease_until\s*=[^\n]+,[\s\S]*?last_reconciled_at = now\(\)/i);
+  assert.match(sql, /job\.owner_id = p_owner_id/i);
+  assert.match(sql, /job\.reconcile_token = p_token/i);
+  assert.doesNotMatch(sql, /set[\s\S]*?updated_at\s*=/i);
+  const reconcile = source("src/server/generation/reconcile-generation.ts");
+  assert.equal((reconcile.match(/order=last_reconciled_at\.asc\.nullsfirst,updated_at\.asc,id\.asc/g) || []).length, 1);
+  assert.match(reconcile, /order: "last_reconciled_at\.asc\.nullsfirst,updated_at\.asc,id\.asc"/);
+});
