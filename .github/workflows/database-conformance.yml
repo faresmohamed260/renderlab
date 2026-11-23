@@ -10,6 +10,8 @@ on:
       - "src/lib/capabilities/generation-job-state-machine.ts"
       - "tests/fixtures/disposable-supabase-bootstrap.sql"
       - "tests/fixtures/database-conformance.sql"
+      - "tests/fixtures/atomic-terminalize-conformance.sql"
+      - "scripts/verify-atomic-terminalize-concurrency.mjs"
       - "scripts/verify-database-conformance.mjs"
       - ".github/workflows/database-conformance.yml"
   push:
@@ -20,6 +22,8 @@ on:
       - "src/lib/capabilities/generation-job-state-machine.ts"
       - "tests/fixtures/disposable-supabase-bootstrap.sql"
       - "tests/fixtures/database-conformance.sql"
+      - "tests/fixtures/atomic-terminalize-conformance.sql"
+      - "scripts/verify-atomic-terminalize-concurrency.mjs"
       - "scripts/verify-database-conformance.mjs"
       - ".github/workflows/database-conformance.yml"
 
