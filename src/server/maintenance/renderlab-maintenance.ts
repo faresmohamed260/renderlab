@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 import { supabaseRest } from "@/server/data/supabase-rest";
 import { deleteMediaAsset } from "@/server/media/media-assets";
 import { deleteR2Object } from "@/server/storage/r2";
@@ -58,8 +59,8 @@ function boundedLimit(limit: number) {
 }
 
 function testOwnerFilter() {
-  if (process.env.RENDERLAB_TEST_MAINTENANCE_OWNER_SCOPE !== "true") return "";
-  const ownerId = process.env.RENDERLAB_TEST_MAINTENANCE_OWNER_ID?.trim();
+  if (!envFlag("RENDERLAB_TEST_MAINTENANCE_OWNER_SCOPE")) return "";
+  const ownerId = envString("RENDERLAB_TEST_MAINTENANCE_OWNER_ID")?.trim();
   if (!ownerId) throw new Error("Maintenance test owner scope is enabled without an owner ID.");
   return `&owner_id=eq.${encodeURIComponent(ownerId)}`;
 }
@@ -99,7 +100,7 @@ async function claimUpload(uploadId: string, cutoff: string) {
 }
 
 async function deleteMaintenanceObject(storageKey: string) {
-  const shouldFault = process.env.RENDERLAB_TEST_MAINTENANCE_FAULTS === "true"
+  const shouldFault = envFlag("RENDERLAB_TEST_MAINTENANCE_FAULTS")
     && storageKey.includes("/maintenance-fail-delete/")
     && !faultedDeleteKeys.has(storageKey);
   if (shouldFault) {

@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../../lib/config/runtime-env.ts";
 import { createHash } from "node:crypto";
 import { Suspense } from "react";
 import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
@@ -73,7 +74,7 @@ export default async function CreatePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (process.env.NODE_ENV === "production") {
+  if (envString("NODE_ENV") === "production") {
     const params = await searchParams;
     const useImageDefault = !params.recipe && !params.source && !params.action;
     return <ProductionCreatePage useImageDefault={useImageDefault} />;
@@ -162,13 +163,13 @@ export default async function CreatePage({
 }
 
 async function CreatePreviewCreate() {
-  const hostedOnly = process.env.RENDERLAB_HOSTED_CREATE === "1";
+  const hostedOnly = envFlag("RENDERLAB_HOSTED_CREATE");
   const owner = await getCreatePreviewOwner().catch(() => null);
   const hosted = hostedOnly && owner ? await getHostedCreateState().catch(() => null) : null;
   const hostedReady = !!(hosted?.fiboAvailable && hosted.mediaUploadAvailable && hosted.accountAvailable && owner);
   const accountKey = owner && hostedReady ? createHash("sha256").update("fibo-hosted-stage:" + owner).digest("hex") : undefined;
   const savedEditsAccount = owner && !hostedOnly ? createHash("sha256").update("fibo-preview-edits:" + owner).digest("hex") : undefined;
-  return <CreatePreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedModel={hostedReady ? { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" } : undefined} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={hostedOnly ? hostedReady && isFiboMaskGenerationAvailable() : process.env.RENDERLAB_CREATE_PREVIEW_MASKS === "1"} advancedPrompt={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT === "1"} variableSteps={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS === "1"} extendedSetup={hostedReady || process.env.RENDERLAB_CREATE_PREVIEW_EXTENDED === "1"} />;
+  return <CreatePreviewWorkspace key={accountKey ?? savedEditsAccount ?? "guest"} hostedModel={hostedReady ? { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" } : undefined} hostedAccountKey={accountKey} savedEditsAccount={savedEditsAccount} admitted={!!owner} hostedOnly={hostedOnly} masksEnabled={hostedOnly ? hostedReady && isFiboMaskGenerationAvailable() : envFlag("RENDERLAB_CREATE_PREVIEW_MASKS")} advancedPrompt={hostedReady || envFlag("RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT")} variableSteps={hostedReady || envFlag("RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS")} extendedSetup={hostedReady || envFlag("RENDERLAB_CREATE_PREVIEW_EXTENDED")} />;
 }
 
 const model = { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" };

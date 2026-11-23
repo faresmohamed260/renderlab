@@ -1,3 +1,4 @@
+import { envString } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 const deletionNoticeSubject = "Your RenderLab account deletion was accepted";
@@ -12,7 +13,7 @@ export type AccountDeletionNotificationResult =
 export async function sendAccountDeletionNotification(
   email: string,
 ): Promise<AccountDeletionNotificationResult> {
-  const resendKey = process.env.RESEND_API_KEY?.trim();
+  const resendKey = envString("RESEND_API_KEY")?.trim();
   if (!resendKey) {
     return { state: "failed", errorCode: "account_deletion_mail_unconfigured" };
   }

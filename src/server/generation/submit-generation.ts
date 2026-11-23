@@ -1,3 +1,4 @@
+import { envFlag, envString, fiboMaskEnabled } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 import { after } from "next/server";
@@ -18,8 +19,8 @@ import {
 } from "@/server/generation/generation-admission";
 import { settleOwnerGenerationWithinResponse } from "@/server/generation/owner-generation-settlement";
 
-const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
-const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
+const backendUrl = envString("RENDERLAB_GENERATION_BACKEND_URL")?.trim();
+const backendToken = envString("RENDERLAB_GENERATION_BACKEND_TOKEN")?.trim();
 
 function isExternalGenerationBackendConfigured() {
   return Boolean(backendUrl && backendToken);
@@ -34,14 +35,16 @@ export function isFiboGenerationAvailable() {
  * a backend operator explicitly enables this server-only gate.
  */
 export function isFiboMaskGenerationAvailable() {
-  return process.env.RENDERLAB_FIBO_MASK_ENABLED === "true" && isFiboGenerationAvailable();
+  // Compatibility: previous strict check was process.env.RENDERLAB_FIBO_MASK_ENABLED === "true".
+  return fiboMaskEnabled() && isFiboGenerationAvailable();
 }
 
 /** Do not route source-free generated-VGL requests to the older deployed
  * PNG-only gateway until the signed result sidecar has been qualified.
  */
 export function isFiboAutoVglAvailable() {
-  return process.env.RENDERLAB_FIBO_AUTOVGL_ENABLED === "true" && isFiboGenerationAvailable();
+  // Compatibility: previous strict check was process.env.RENDERLAB_FIBO_AUTOVGL_ENABLED === "true".
+  return envFlag("RENDERLAB_FIBO_AUTOVGL_ENABLED") && isFiboGenerationAvailable();
 }
 
 export function isGenerationBackendConfigured() {

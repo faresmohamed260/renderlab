@@ -1,9 +1,10 @@
+import { envString } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
 
-const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "").trim();
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+const supabaseUrl = envString("SUPABASE_URL")?.replace(/\/$/, "").trim();
+const supabaseServiceRoleKey = envString("SUPABASE_SERVICE_ROLE_KEY")?.trim();
 
 export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseServiceRoleKey);

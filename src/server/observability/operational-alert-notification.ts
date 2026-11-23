@@ -1,3 +1,4 @@
+import { envString } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
@@ -25,7 +26,7 @@ type OperationalAlertNotificationDependencies = {
 
 function serviceRoleClient() {
   const config = getSupabaseAuthConfig();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const serviceRoleKey = envString("SUPABASE_SERVICE_ROLE_KEY")?.trim();
   if (!config || !serviceRoleKey) return null;
   return createClient(config.url, serviceRoleKey, {
     auth: {
@@ -58,7 +59,7 @@ async function activeAdminEmails() {
 }
 
 async function sendOneOperationalAlert(email: string, alert: OperationalAlertRow) {
-  const resendKey = process.env.RESEND_API_KEY?.trim();
+  const resendKey = envString("RESEND_API_KEY")?.trim();
   if (!resendKey) return false;
   const content = operationalAlertEmailContent({
     family: alert.family,

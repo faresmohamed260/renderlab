@@ -1,23 +1,23 @@
+import { envString, maintenanceBatchLimit } from "../../../../lib/config/runtime-env.ts";
 // ENT-004 same-origin exemption: server-secret internal route authenticated by a dedicated bearer secret.
 import { NextResponse } from "next/server";
 import { runAccountDataLifecycleMaintenance } from "@/server/account/account-data-lifecycle";
 import { runRenderLabMaintenance } from "@/server/maintenance/renderlab-maintenance";
 
 function authorizedMaintenance(request: Request) {
-  const secret = process.env.RENDERLAB_MAINTENANCE_SECRET?.trim();
+  const secret = envString("RENDERLAB_MAINTENANCE_SECRET")?.trim();
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
 function authorizedCron(request: Request) {
-  const secret = process.env.CRON_SECRET?.trim();
+  const secret = envString("CRON_SECRET")?.trim();
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
 function configuredLimit() {
-  const requested = Number(process.env.RENDERLAB_MAINTENANCE_BATCH_LIMIT || 8);
-  return Number.isFinite(requested) ? requested : 8;
+  return maintenanceBatchLimit();
 }
 
 async function runMaintenancePass() {

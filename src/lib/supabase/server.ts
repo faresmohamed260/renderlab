@@ -1,3 +1,4 @@
+import { envString } from "../config/runtime-env.ts";
 import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
@@ -54,7 +55,7 @@ export async function createServerSupabaseClient() {
 
 function createServerSupabaseServiceRoleClient() {
   const config = getSupabaseAuthConfig();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const serviceRoleKey = envString("SUPABASE_SERVICE_ROLE_KEY")?.trim();
   if (!config || !serviceRoleKey) return null;
   return createClient(config.url, serviceRoleKey, {
     auth: {

@@ -1,11 +1,12 @@
+import { envString } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 import type { GenerationJob } from "@/lib/capabilities/generation";
 import { getJobRow, isNativeGenerationConfigured } from "@/server/generation/native-generation";
 import { reconcileNativeGeneration } from "@/server/generation/reconcile-generation";
 
-const backendUrl = process.env.RENDERLAB_GENERATION_BACKEND_URL?.trim();
-const backendToken = process.env.RENDERLAB_GENERATION_BACKEND_TOKEN?.trim();
+const backendUrl = envString("RENDERLAB_GENERATION_BACKEND_URL")?.trim();
+const backendToken = envString("RENDERLAB_GENERATION_BACKEND_TOKEN")?.trim();
 
 function isExternalGenerationBackendConfigured() {
   return Boolean(backendUrl && backendToken);

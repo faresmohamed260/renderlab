@@ -195,6 +195,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/architecture/ARCHITECTURE_DECISIONS.md` — durable non-UI cross-cutting architecture decision and supersession authority.
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
 - `docs/architecture/INFRASTRUCTURE.md` — infrastructure/resource/security boundaries plus exact current-production authority.
+- `docs/architecture/RUNTIME_ENV_CONFIGURATION.md` — P0-02 typed runtime variable schema, safe fail-fast boundaries, 16-name Production inventory, and rollback.
 - `docs/PRODUCT_CHARTER.md` — normative product purpose, audience, planned vs current capabilities, and backend-first execution gate.
 - `docs/TECHNICAL_CLAIMS.md` — portfolio-facing current claim/evidence guide; not a capability or deployment authority.
 - `docs/architecture/PRODUCT_CAPABILITIES.md` — capability/current product contract registry.

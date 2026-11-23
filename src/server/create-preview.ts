@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../lib/config/runtime-env.ts";
 import "server-only";
 import { previewImageSizes } from "@/features/create/create-preview-sizes";
 import { spawn } from "node:child_process";
@@ -31,7 +32,7 @@ const error = (message: string, status: number) => json({ error: message }, stat
 
 type ArchiveRun = { id: string; images: Record<string, unknown>[]; error?: string };
 const archiveLimit = 32 * mb;
-const archiveRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "FiboPreviewHistory");
+const archiveRoot = join(envString("LOCALAPPDATA") || tmpdir(), "RenderLab", "FiboPreviewHistory");
 function archivePath(owner: string) {
   return join(archiveRoot, createHash("sha256").update("fibo-preview-history:" + owner).digest("hex") + ".json");
 }
@@ -84,7 +85,7 @@ async function boundedBody(request: Request, limit: number) {
 
 function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onPreview?: (update: PreviewUpdate) => void): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
-    const configuredPython = process.env.RENDERLAB_CREATE_PREVIEW_PYTHON?.trim();
+    const configuredPython = envString("RENDERLAB_CREATE_PREVIEW_PYTHON")?.trim();
     const useWindowsLauncher = !configuredPython && process.platform === "win32";
     const python = configuredPython || (useWindowsLauncher ? "py.exe" : "python3");
     const args = [...(useWindowsLauncher ? ["-3.10"] : []), join(process.cwd(), "workers/fibo-studio/preview_bridge.py")];
@@ -145,7 +146,7 @@ function bridge(payload: Record<string, unknown>, timeoutMs = 430_000, onPreview
 }
 
 const queueLimit = 48 * mb;
-const queueRoot = join(process.env.LOCALAPPDATA || tmpdir(), "RenderLab", "FiboPreviewQueue");
+const queueRoot = join(envString("LOCALAPPDATA") || tmpdir(), "RenderLab", "FiboPreviewQueue");
 function queueDirectory(owner: string) {
   return join(queueRoot, createHash("sha256").update("fibo-preview-queue:" + owner).digest("hex"));
 }
@@ -236,10 +237,10 @@ async function drainCreatePreviewQueue() {
 
 async function runQueuedRender(job: Job, record: QueueRecord) {
   const { id, count, payload } = record;
-  if ((payload.extended && process.env.RENDERLAB_CREATE_PREVIEW_EXTENDED !== "1")
-    || (payload.mask && process.env.RENDERLAB_CREATE_PREVIEW_MASKS !== "1")
-    || (payload.steps !== 4 && process.env.RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS !== "1")
-    || ((payload.negative_prompt || payload.json_instruction) && process.env.RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT !== "1")) {
+  if ((payload.extended && !envFlag("RENDERLAB_CREATE_PREVIEW_EXTENDED"))
+    || (payload.mask && !envFlag("RENDERLAB_CREATE_PREVIEW_MASKS"))
+    || (payload.steps !== 4 && !envFlag("RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS"))
+    || ((payload.negative_prompt || payload.json_instruction) && !envFlag("RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT"))) {
     job.error = "This waiting render uses a capability no longer enabled in this preview.";
     job.finished = true;
     return;
@@ -256,8 +257,8 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
       job.preview = undefined;
       job.previewBlur = undefined;
       job.caption = undefined;
-      const preview = process.env.RENDERLAB_CREATE_PREVIEW_LIVE_PREVIEW === "1";
-      job.cancelToken = preview && process.env.RENDERLAB_CREATE_PREVIEW_CANCEL === "1" ? randomBytes(16).toString("hex") : undefined;
+      const preview = envFlag("RENDERLAB_CREATE_PREVIEW_LIVE_PREVIEW");
+      job.cancelToken = preview && envFlag("RENDERLAB_CREATE_PREVIEW_CANCEL") ? randomBytes(16).toString("hex") : undefined;
       const result = await bridge({
         ...payload, preview, seed: imageSeed, cancel_token: job.cancelToken,
       }, remaining, preview ? (update) => {
@@ -304,9 +305,9 @@ async function runQueuedRender(job: Job, record: QueueRecord) {
 }
 
 export async function createPreview(request: Request, path: string): Promise<Response> {
-  if (process.env.NODE_ENV !== "development" || process.env.RENDERLAB_CREATE_PREVIEW !== "1"
+  if (envString("NODE_ENV") !== "development" || !envFlag("RENDERLAB_CREATE_PREVIEW")
     || request.headers.get("host") !== "127.0.0.1:3000") return error("Not found.", 404);
-  if (process.env.RENDERLAB_HOSTED_CREATE === "1") return error("The local preview backend is disabled in hosted Create mode.", 503);
+  if (envFlag("RENDERLAB_HOSTED_CREATE")) return error("The local preview backend is disabled in hosted Create mode.", 503);
   if (request.method === "POST" && request.headers.get("origin") !== origin) {
     return error("Same-origin request required.", 403);
   }
@@ -432,7 +433,7 @@ export async function createPreview(request: Request, path: string): Promise<Res
         if (value === null || typeof value !== "object" || Array.isArray(value) || !Object.keys(value).length) throw new Error();
       } catch { return error("Enter a non-empty VGL JSON object.", 422); }
     }
-    if ((vgl || negative.trim()) && process.env.RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT !== "1") {
+    if ((vgl || negative.trim()) && !envFlag("RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT")) {
       return error("Advanced prompts need the private worker update.", 503);
     }
     if (typeof id !== "string" || !/^[a-f0-9]{32}$/.test(id)
@@ -445,7 +446,7 @@ export async function createPreview(request: Request, path: string): Promise<Res
       || typeof count !== "number" || !Number.isInteger(count) || count < 1 || count > 4) {
       return error("Choose 1 to 8 steps and 1 to 4 images.", 422);
     }
-    if (steps !== 4 && process.env.RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS !== "1") {
+    if (steps !== 4 && !envFlag("RENDERLAB_CREATE_PREVIEW_VARIABLE_STEPS")) {
       return error("Adjustable steps need the private worker update.", 503);
     }
     const width = data.width ?? 1024;
@@ -456,7 +457,7 @@ export async function createPreview(request: Request, path: string): Promise<Res
       return error("Use a supported preset without history appends.", 422);
     }
     const extended = mode === "generate" && (width !== 1024 || height !== 1024 || (data.inspiration != null && !vgl));
-    if (extended && process.env.RENDERLAB_CREATE_PREVIEW_EXTENDED !== "1") {
+    if (extended && !envFlag("RENDERLAB_CREATE_PREVIEW_EXTENDED")) {
       return error("Inspiration and non-square renders need the private worker update.", 503);
     }
     let inspiration: string | undefined;
@@ -478,7 +479,7 @@ export async function createPreview(request: Request, path: string): Promise<Res
     let mask: string | undefined;
     if (data.mask != null) {
       if (mode !== "edit" || images.length !== 1) return error("A mask requires one source and no references.", 422);
-      if (process.env.RENDERLAB_CREATE_PREVIEW_MASKS !== "1") return error("Masked edits need the private worker update.", 503);
+      if (!envFlag("RENDERLAB_CREATE_PREVIEW_MASKS")) return error("Masked edits need the private worker update.", 503);
       const region = typeof data.mask === "string" ? state.uploads.get(data.mask) : undefined;
       if (!region || region.owner !== owner) return error("Mask is missing or expired.", 400);
       mask = region.data.toString("base64");

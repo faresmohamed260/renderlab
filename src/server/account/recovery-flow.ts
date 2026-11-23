@@ -1,3 +1,4 @@
+import { envString } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -6,7 +7,7 @@ export const PASSWORD_RECOVERY_COOKIE_NAME = "renderlab_password_recovery";
 export const PASSWORD_RECOVERY_TTL_SECONDS = 10 * 60;
 
 function recoverySecret() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || null;
+  return envString("SUPABASE_SERVICE_ROLE_KEY")?.trim() || null;
 }
 
 function signature(userId: string, expiresAt: number, secret: string) {

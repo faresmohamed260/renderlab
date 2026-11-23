@@ -1,3 +1,4 @@
+import { closedBetaEnforcement } from "../../lib/config/runtime-env.ts";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 
 export type RenderLabAccessRole = "member" | "admin";
@@ -44,8 +45,7 @@ function publicAccess(row: RenderLabAccountAccessRow): RenderLabAccountAccess {
 }
 
 export function isRenderLabAccessEnforcementEnabled() {
-  const value = process.env.RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED?.trim().toLowerCase();
-  return value === "1" || value === "true" || value === "yes" || value === "on";
+  return closedBetaEnforcement();
 }
 
 export async function getRenderLabAccountAccess(userId: string): Promise<RenderLabAccountAccess | null> {

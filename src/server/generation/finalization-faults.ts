@@ -1,12 +1,13 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 export type GenerationFinalizationFaultPoint =
   | "before-primary-write"
   | "after-primary-write"
   | "after-media-insert"
   | "thumbnail-write";
 
-const enabled = process.env.RENDERLAB_TEST_GENERATION_FINALIZATION_FAULTS === "true";
+const enabled = envFlag("RENDERLAB_TEST_GENERATION_FINALIZATION_FAULTS");
 const plannedFaults = enabled
-  ? (process.env.RENDERLAB_TEST_GENERATION_FINALIZATION_FAULT_SEQUENCE || "")
+  ? (envString("RENDERLAB_TEST_GENERATION_FINALIZATION_FAULT_SEQUENCE") || "")
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean) as GenerationFinalizationFaultPoint[]
