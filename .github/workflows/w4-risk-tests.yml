@@ -5,7 +5,6 @@ on:
     paths:
       - "tests/unit/w4-*.test.mjs"
       - "tests/helpers/w4-*.mjs"
-      - "docs/audits/W4_RISK_BOUNDARY_TEST_EVIDENCE_2026-11-23.md"
       - ".github/workflows/w4-risk-tests.yml"
 
 permissions:
