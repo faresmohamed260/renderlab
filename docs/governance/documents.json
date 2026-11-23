@@ -171,6 +171,17 @@
       "supersededBy": []
     },
     {
+      "path": "docs/architecture/P0_04_GENERATION_STATE_MACHINE_SPEC.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-23",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
       "path": "docs/architecture/RUNTIME_ENV_CONFIGURATION.md",
       "kind": "normative-policy",
       "authority": "normative",
