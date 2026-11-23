@@ -64,6 +64,11 @@ The [November 22–23 incident audit](../audits/FIBO_BETA_CORRECTNESS_INCIDENTS_
 - Modal local deploys can leave the history Commit field blank. Record the clean checkout SHA, worker tree SHA, workspace and environment, app IDs, deploy windows, history versions, and source tag when supported.
 - Vercel Hobby projects with Fluid Compute disabled default to 10 seconds for functions. Read the deployed function inventory and confirm an explicit duration for critical routes such as generation submission. [Vercel function limits](https://vercel.com/docs/functions/limitations)
 
+### Oldest active-job operator warning
+
+Admin Health reports the oldest active age by queued, running, cancelling and persisting separately. It derives age from immutable generation_jobs.created_at in UTC, not updated_at (which may advance while a job is stuck). The service issues four exact-status, oldest-first, one-row-only queries supported by the existing (status, created_at DESC) index; no identity, prompt, asset or provider handle enters the response. Empty states report null ages, not invented zero-age jobs.
+
+A single **60-minute warning** is used for all four states because the beta has no separately verified per-state SLA. It is an early operator signal before the historical two-hour stale cleanup, not a generation timeout and not an instruction to release an owner's slot. The dedicated generation-oldest-active-job alert is recorded without sending new production email; it resolves idempotently after no monitored job exceeds the warning. The existing dispatch heartbeat remains a separate signal (due age 180 seconds, expired claims, unresolved dispatch, missing heartbeat). A healthy dispatcher can coexist with an old owner job; this alone does not change the dispatch health endpoint to HTTP 503. Verify both signals before choosing a recovery action. On-owner-return settlement remains the beta decision; no scheduler is enabled.
 ### Gateway authentication alert response
 
 Before qualifying the alert, confirm Vercel exposes `VERCEL_ENV=production` to the Function.

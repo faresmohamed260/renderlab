@@ -63,5 +63,5 @@ test("scheduled dispatch records a server-owned heartbeat and health fails close
   assert.doesNotMatch(heartbeatGrant, /grant execute[\s\S]+to service_role/i);
   assert.match(heartbeatMigration, /last_scheduled_at <= pg_catalog\.now\(\) - interval '3 minutes'/i);
   assert.match(productionGateway, /store\.record_heartbeat\(environment=environment, trigger=trigger, summary=summary\)/);
-  assert.match(reconcileRoute, /!health\.scheduledHeartbeatMissing/);
+  assert.match(reconcileRoute, /dispatchHealthIsHealthy\(health\)/);
 });

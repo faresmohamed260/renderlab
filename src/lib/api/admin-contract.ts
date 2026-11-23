@@ -47,6 +47,7 @@ export type AdminDiagnosticEvent = {
 };
 
 export type AdminOperationalAlert = {
+  label: string;
   family: string;
   severity: "warning" | "critical";
   state: "open" | "resolved";
@@ -70,6 +71,20 @@ export type AdminHealthSnapshot = {
     truncated: boolean;
     completionTiming: { sampleCount: number; p50Ms: number | null; p95Ms: number | null };
     failovers: { jobsWithFailover: number; eventCount: number };
+  };
+  oldestActiveJob: {
+    ageSeconds: number | null;
+    status: "queued" | "running" | "cancelling" | "persisting" | null;
+    byStatusSeconds: Record<"queued" | "running" | "cancelling" | "persisting", number | null>;
+    warningSeconds: number;
+    warning: boolean;
+  };
+  dispatchHealth: {
+    oldestDueSeconds: number;
+    expiredClaims: number;
+    unresolved: number;
+    scheduledHeartbeatAgeSeconds: number | null;
+    scheduledHeartbeatMissing: boolean;
   };
   activeStateAge: {
     sampleSize: number;

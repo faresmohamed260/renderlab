@@ -13,6 +13,8 @@ import type { RenderLabAccountAccess } from "@/server/account/account-access";
 import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
 import { getAdminGenerationSettings } from "@/server/admin/admin-settings";
 import { summarizeActiveAdminJobAge, summarizeRecentAdminJobs, summarizeScopedAdminHealthBase, type AdminHealthJobSample } from "@/server/admin/admin-health-summary";
+import { readOldestActiveJobAge } from "@/server/observability/oldest-active-job-store";
+import type { DispatchHealth } from "@/server/observability/dispatch-health";
 import { getRenderLabMaintenanceBacklog } from "@/server/maintenance/renderlab-maintenance";
 import {
   adminDiagnosticProjection,
@@ -374,6 +376,8 @@ export async function getAdminHealth(
       maintenanceBacklog,
       recentDiagnostics,
       operationalAlerts,
+      oldestActiveJob,
+      dispatchHealth,
     ] = await Promise.all([
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${recentParams.toString()}`),
       supabaseRest<AdminHealthJobSample[]>(`generation_jobs?${activeParams.toString()}`),
@@ -382,6 +386,8 @@ export async function getAdminHealth(
       getRenderLabMaintenanceBacklog(),
       listRecentDiagnosticEvents(diagnosticQuery),
       listOperationalAlerts(),
+      readOldestActiveJobAge(testOwnerId ?? undefined, now.valueOf()),
+      supabaseRest<DispatchHealth>("rpc/renderlab_generation_dispatch_health", { method: "GET" }),
     ]);
 
     const recentTruncated = recentRowsRaw.length > healthSampleLimit;
@@ -398,6 +404,8 @@ export async function getAdminHealth(
       ...scopedBase,
       recentJobs: summarizeRecentAdminJobs(recentRows, recentTruncated),
       activeStateAge: summarizeActiveAdminJobAge(activeRows, activeTruncated, now.valueOf()),
+      oldestActiveJob,
+      dispatchHealth,
       capacity: {
         activeReservations: {
           count: Math.min(reservationRows.length, healthSampleLimit),
