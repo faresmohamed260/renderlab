@@ -154,7 +154,7 @@ export async function findOwnerSettlementCandidate(
     status: `in.(${statuses})`,
     or: `(${eligible.join(",")})`,
     select: "id",
-    order: "updated_at.asc,id.asc",
+    order: "last_reconciled_at.asc.nullsfirst,updated_at.asc,id.asc",
     limit: "1",
   });
   if (options.jobIds) query.set("id", `in.(${options.jobIds.join(",")})`);
@@ -255,7 +255,7 @@ async function listActiveNativeCandidates(limit: number) {
   const ownerFilter = testOwnerId ? `&owner_id=eq.${encodeURIComponent(testOwnerId)}` : "";
   const expiredFibo = new Date(Date.now() - fiboJobDeadlineMs).toISOString();
   return supabaseRest<Array<{ id: string; owner_id: string }>>(
-    `generation_jobs?status=in.(${candidateStatuses})${ownerFilter}&or=(worker_id.is.null,worker_id.neq.${FIBO_DISPATCH_BACKEND},provider_job_id.not.is.null,and(worker_id.eq.${FIBO_DISPATCH_BACKEND},created_at.lte.${expiredFibo}))&select=id,owner_id&order=updated_at.asc,id.asc&limit=${safeLimit}`,
+    `generation_jobs?status=in.(${candidateStatuses})${ownerFilter}&or=(worker_id.is.null,worker_id.neq.${FIBO_DISPATCH_BACKEND},provider_job_id.not.is.null,and(worker_id.eq.${FIBO_DISPATCH_BACKEND},created_at.lte.${expiredFibo}))&select=id,owner_id&order=last_reconciled_at.asc.nullsfirst,updated_at.asc,id.asc&limit=${safeLimit}`,
     { method: "GET" },
   );
 }
