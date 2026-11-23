@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
 import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { fiboMaskMaxBytes, fiboMaskUsage, persistFiboMaskInputs, splitPersistedFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
@@ -409,8 +410,8 @@ async function errorBody(response: Response) {
 }
 
 function gatewayUrlForWorker(worker: GenerationWorker) {
-  if (process.env.RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE === "true") {
-    const override = process.env.RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL?.trim().replace(/\/+$/, "");
+  if (envFlag("RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE")) {
+    const override = envString("RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL")?.trim().replace(/\/+$/, "");
     if (!override) throw new Error("Native worker test override requires a gateway URL.");
     return override;
   }
@@ -926,7 +927,7 @@ export async function pollNativeGeneration(
   });
 
   if (
-    process.env.VERCEL_ENV === "production"
+    envString("VERCEL_ENV") === "production"
     && worker.policy?.transport === "modal-proxy"
     && isGatewayAuthRejectionStatus(response.status)
   ) {

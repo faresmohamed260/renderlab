@@ -1,13 +1,14 @@
+import { envString } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { injectAccountDataLifecycleTestFault } from "@/server/account/account-data-lifecycle-test-faults";
 
-const accountId = (process.env.CLOUDFLARE_R2_ACCOUNT_ID ?? process.env.R2_ACCOUNT_ID)?.trim();
-const accessKeyId = (process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? process.env.R2_ACCESS_KEY_ID)?.trim();
-const secretAccessKey = (process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ?? process.env.R2_SECRET_ACCESS_KEY)?.trim();
-const bucketName = (process.env.CLOUDFLARE_R2_BUCKET ?? process.env.R2_BUCKET_NAME)?.trim();
+const accountId = (envString("CLOUDFLARE_R2_ACCOUNT_ID") ?? envString("R2_ACCOUNT_ID"))?.trim();
+const accessKeyId = (envString("CLOUDFLARE_R2_ACCESS_KEY_ID") ?? envString("R2_ACCESS_KEY_ID"))?.trim();
+const secretAccessKey = (envString("CLOUDFLARE_R2_SECRET_ACCESS_KEY") ?? envString("R2_SECRET_ACCESS_KEY"))?.trim();
+const bucketName = (envString("CLOUDFLARE_R2_BUCKET") ?? envString("R2_BUCKET_NAME"))?.trim();
 
 let client: S3Client | null = null;
 

@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../lib/config/runtime-env.ts";
 import "server-only";
 
 import sharp from "sharp";
@@ -16,8 +17,8 @@ const routes: Record<string, RegExp> = {
 };
 
 function enabled(host: string | null) {
-  return process.env.NODE_ENV === "development"
-    && process.env.RENDERLAB_HOSTED_CREATE === "1" && host === loopback;
+  return envString("NODE_ENV") === "development"
+    && envFlag("RENDERLAB_HOSTED_CREATE") && host === loopback;
 }
 
 async function hostedFetch(path: string, init: RequestInit = {}, accessToken?: string) {
@@ -122,7 +123,7 @@ export async function relayHostedCreate(request: Request, path: string) {
   if (!enabled(request.headers.get("host"))) return null;
   const url = new URL(request.url);
   // Profile reads are preview-only; the upstream still enforces account ownership and MFA.
-  const isPreviewProfile = process.env.RENDERLAB_CREATE_PREVIEW === "1" && request.method === "GET"
+  const isPreviewProfile = envFlag("RENDERLAB_CREATE_PREVIEW") && request.method === "GET"
     && (path === "/api/account/profile" || path === "/api/account/profile/avatar");
   if (!isPreviewProfile && !routes[request.method]?.test(path)) return null;
   const json = { "content-type": "application/json", "cache-control": "no-store" };

@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 export const imageUpscaleWorkflowId = "swinir-classical-sr-image-upscale-2x";
 export const imageUpscaleModel = "SwinIR Classical SR · 2×";
 export const imageUpscaleEcosystem = "image-upscale-v1";
@@ -15,10 +16,10 @@ function normalizedGatewayUrl(value: string | undefined) {
 }
 
 export function getImageUpscaleWorker(): ImageUpscaleWorker | null {
-  const testGateway = process.env.RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE === "true"
-    ? normalizedGatewayUrl(process.env.RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL)
+  const testGateway = envFlag("RENDERLAB_TEST_UPSCALE_WORKER_OVERRIDE")
+    ? normalizedGatewayUrl(envString("RENDERLAB_TEST_UPSCALE_WORKER_GATEWAY_URL"))
     : null;
-  const gatewayUrl = testGateway || normalizedGatewayUrl(process.env.RENDERLAB_UPSCALE_WORKER_GATEWAY_URL);
+  const gatewayUrl = testGateway || normalizedGatewayUrl(envString("RENDERLAB_UPSCALE_WORKER_GATEWAY_URL"));
   if (!gatewayUrl) return null;
 
   return {

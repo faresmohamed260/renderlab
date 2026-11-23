@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 import { randomUUID } from "node:crypto";
 import type { GenerationJob } from "@/lib/capabilities/generation";
 import { supabaseRest } from "@/server/data/supabase-rest";
@@ -191,8 +192,8 @@ export async function reconcileNativeGeneration(
 
 async function listActiveNativeCandidates(limit: number) {
   const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 8);
-  const testOwnerId = process.env.RENDERLAB_TEST_RECONCILER_OWNER_SCOPE === "true"
-    ? process.env.RENDERLAB_TEST_RECONCILER_OWNER_ID?.trim() || null
+  const testOwnerId = envFlag("RENDERLAB_TEST_RECONCILER_OWNER_SCOPE")
+    ? envString("RENDERLAB_TEST_RECONCILER_OWNER_ID")?.trim() || null
     : null;
   const ownerFilter = testOwnerId ? `&owner_id=eq.${encodeURIComponent(testOwnerId)}` : "";
   return supabaseRest<Array<{ id: string; owner_id: string }>>(

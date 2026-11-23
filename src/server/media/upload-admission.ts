@@ -1,3 +1,4 @@
+import { envFlag } from "../../lib/config/runtime-env.ts";
 import { supabaseRest } from "@/server/data/supabase-rest";
 
 export type UploadAdmissionKind = "media" | "reference";
@@ -82,7 +83,7 @@ export async function bindUploadAdmission(
 }
 
 export function injectUploadAdmissionSigningTestFault(kind: UploadAdmissionKind, filename: string) {
-  if (process.env.RENDERLAB_TEST_UPLOAD_ADMISSION_FAULTS !== "true") return;
+  if (!envFlag("RENDERLAB_TEST_UPLOAD_ADMISSION_FAULTS")) return;
   if (filename !== `renderlab-ent004-${kind}-signing-fault.png`) return;
   throw new Error(`Injected ENT-004 ${kind} upload signing failure.`);
 }

@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 export type GenerationWorker = {
   id: string;
   ecosystem: "flux2-klein-9b" | "ltx25-redgraft" | "qwen-image-edit-2511" | "fibo2-edit-turbo";
@@ -26,10 +27,10 @@ export const FIBO_DISPATCH_BACKEND = "fibo";
 export const generationWorkers: GenerationWorker[] = [];
 
 function configuredFiboWorker(): GenerationWorker | null {
-  const url = (process.env.RENDERLAB_GENERATION_GATEWAY_URL?.trim() ||
-    process.env.RENDERLAB_FIBO_GATEWAY_URL?.trim())?.replace(/\/$/, "");
-  const key = process.env.RENDERLAB_FIBO_MODAL_KEY?.trim();
-  const secret = process.env.RENDERLAB_FIBO_MODAL_SECRET?.trim();
+  const url = (envString("RENDERLAB_GENERATION_GATEWAY_URL")?.trim() ||
+    envString("RENDERLAB_FIBO_GATEWAY_URL")?.trim())?.replace(/\/$/, "");
+  const key = envString("RENDERLAB_FIBO_MODAL_KEY")?.trim();
+  const secret = envString("RENDERLAB_FIBO_MODAL_SECRET")?.trim();
   if (!url || !key || !secret || !modalGatewayOriginPattern.test(url)) return null;
   return { id: FIBO_WORKER_ID, ecosystem: "fibo2-edit-turbo", gatewayUrl: url,
     policy: { transport: "modal-proxy", cancellation: true, reassignment: false,
@@ -39,8 +40,8 @@ function configuredFiboWorker(): GenerationWorker | null {
 
 function fiboWorkerHeaders() {
   return {
-    "Modal-Key": process.env.RENDERLAB_FIBO_MODAL_KEY!.trim(),
-    "Modal-Secret": process.env.RENDERLAB_FIBO_MODAL_SECRET!.trim(),
+    "Modal-Key": envString("RENDERLAB_FIBO_MODAL_KEY")!.trim(),
+    "Modal-Secret": envString("RENDERLAB_FIBO_MODAL_SECRET")!.trim(),
   };
 }
 
@@ -81,7 +82,7 @@ function registeredWorkers() {
 }
 
 export function workersForEcosystem(ecosystem: GenerationWorker["ecosystem"]) {
-  if (ecosystem === "fibo2-edit-turbo" && process.env.RENDERLAB_FIBO_GENERATION !== "1") return [];
+  if (ecosystem === "fibo2-edit-turbo" && !envFlag("RENDERLAB_FIBO_GENERATION")) return [];
   return registeredWorkers()
     .filter((worker) => worker.ecosystem === ecosystem && worker.routingStatus === "active")
     .sort((a, b) => (a.role === b.role ? a.id.localeCompare(b.id) : a.role === "primary" ? -1 : 1));

@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 import { createHash, randomUUID } from "node:crypto";
 import type { CreativeOperation } from "@/lib/capabilities/generation";
 
@@ -145,15 +146,15 @@ const diagnosticStatuses = new Set<DiagnosticStatus>([
 const observabilityTestNamespaceMaxLength = 20;
 
 function observabilityTestNamespace() {
-  const raw = process.env.RENDERLAB_TEST_OBSERVABILITY_NAMESPACE?.trim().toLowerCase();
+  const raw = envString("RENDERLAB_TEST_OBSERVABILITY_NAMESPACE")?.trim().toLowerCase();
   if (!raw) return null;
   const normalized = raw.replace(/[^a-z0-9_.:-]/g, "_").slice(0, observabilityTestNamespaceMaxLength);
   return normalized || null;
 }
 
 function durableDiagnosticPersistenceEnabled() {
-  if (process.env.GITHUB_ACTIONS !== "true") return true;
-  return process.env.RENDERLAB_TEST_OBSERVABILITY_PERSIST === "true";
+  if (!envFlag("GITHUB_ACTIONS")) return true;
+  return envFlag("RENDERLAB_TEST_OBSERVABILITY_PERSIST");
 }
 
 export function scopeObservabilityIdentifier(value: string, maxLength: number) {

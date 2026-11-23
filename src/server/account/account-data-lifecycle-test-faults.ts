@@ -1,3 +1,4 @@
+import { envString } from "../../lib/config/runtime-env.ts";
 type AccountDataLifecycleFault =
   | "export-write"
   | "r2-delete"
@@ -5,7 +6,7 @@ type AccountDataLifecycleFault =
   | "auth-delete";
 
 const configuredFaults = new Set(
-  (process.env.RENDERLAB_TEST_ACCOUNT_DATA_LIFECYCLE_FAULTS ?? "")
+  (envString("RENDERLAB_TEST_ACCOUNT_DATA_LIFECYCLE_FAULTS") ?? "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean),

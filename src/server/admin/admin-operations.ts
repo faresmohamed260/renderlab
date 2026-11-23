@@ -1,3 +1,4 @@
+import { envFlag, envString } from "../../lib/config/runtime-env.ts";
 import "server-only";
 
 import { createClient, type User } from "@supabase/supabase-js";
@@ -30,8 +31,8 @@ const invitationLifetimeMs = 60 * 60 * 1000;
 const healthSampleLimit = 200;
 
 function adminHealthTestOwnerId() {
-  if (process.env.RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE !== "true") return null;
-  const ownerId = process.env.RENDERLAB_TEST_ADMIN_HEALTH_OWNER_ID?.trim();
+  if (!envFlag("RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE")) return null;
+  const ownerId = envString("RENDERLAB_TEST_ADMIN_HEALTH_OWNER_ID")?.trim();
   if (!ownerId) throw new Error("Admin Health test owner scope is enabled without an owner ID.");
   return ownerId;
 }
@@ -76,8 +77,8 @@ export class AdminOperationError extends Error {
 }
 
 function supabaseAuthAdminClient() {
-  const url = process.env.SUPABASE_URL?.replace(/\/$/, "").trim();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const url = envString("SUPABASE_URL")?.replace(/\/$/, "").trim();
+  const serviceRoleKey = envString("SUPABASE_SERVICE_ROLE_KEY")?.trim();
   if (!url || !serviceRoleKey) {
     throw new AdminOperationError("admin_backend_unavailable", "Admin operations are temporarily unavailable.");
   }
