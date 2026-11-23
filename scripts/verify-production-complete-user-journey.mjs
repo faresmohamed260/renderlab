@@ -440,6 +440,7 @@ let cleanup = null;
 let publicRoutes = [];
 let accountRoutes = [];
 let libraryDeletion = null;
+let smokeInvariants = null;
 const generations = [];
 const expectedGenerations = smoke ? 1 : 4;
 
@@ -543,7 +544,37 @@ try {
       await waitForViewerMedia(page, "image");
     }
   }
-  if (referenceEdit) {
+  if (smoke && !referenceEdit) {
+    // Exact one-provider-call fixture, observed after the first Library load.
+    // The second Library load is read-only and must not re-finalize or create a new asset.
+    const owner = encodeURIComponent(account.id);
+    async function snapshotTerminalLibrary() {
+      const [jobs, assets, reservations] = await Promise.all([
+        serviceRows("generation_jobs?owner_id=eq." + owner + "&select=id,status,output_asset_ids"),
+        serviceRows("media_assets?owner_id=eq." + owner + "&select=id"),
+        serviceRows("generation_admission_reservations?owner_id=eq." + owner + "&select=id,job_id,released_at"),
+      ]);
+      assert(jobs.length === 1 && jobs[0].id === image.jobId && jobs[0].status === "succeeded"
+        && jobs[0].output_asset_ids?.length === 1 && jobs[0].output_asset_ids[0] === image.assetId,
+        "FIBO smoke did not terminalize exactly one succeeded job with one indexed output.");
+      assert(assets.length === 1 && assets[0].id === image.assetId,
+        "FIBO smoke did not index exactly one owner Library asset.");
+      assert(reservations.length === 1 && reservations[0].job_id === image.jobId
+        && typeof reservations[0].released_at === "string" && reservations[0].released_at.length > 0,
+        "FIBO smoke left a held or unexpected admission reservation.");
+      return { jobId: image.jobId, status: jobs[0].status, outputAssetId: image.assetId,
+        libraryAssetCount: assets.length, reservationId: reservations[0].id,
+        releasedAt: reservations[0].released_at };
+    }
+    const beforeSecondLibraryLoad = await snapshotTerminalLibrary();
+    await page.goto(baseUrl + "/library", { waitUntil: "networkidle", timeout: 60_000 });
+    await page.locator('a[href="/library/' + image.assetId + '"]').first()
+      .waitFor({ state: "visible", timeout: 30_000 });
+    const afterSecondLibraryLoad = await snapshotTerminalLibrary();
+    assert(JSON.stringify(afterSecondLibraryLoad) === JSON.stringify(beforeSecondLibraryLoad),
+      "Second Library load changed output indexing, job status, or admission release.");
+    smokeInvariants = { ...afterSecondLibraryLoad, secondLibraryLoadUnchanged: true };
+  }  if (referenceEdit) {
     await page.getByRole("button", { name: "Favorite", exact: true }).click();
     await page.getByRole("button", { name: "Favorited", exact: true, pressed: true }).waitFor();
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -603,6 +634,7 @@ const manifest = {
   fixtureAccountId: ownerIdentity.id,
   generations,
   libraryDeletion,
+  smokeInvariants,
   publicRoutes,
   accountRoutes,
   cleanup,

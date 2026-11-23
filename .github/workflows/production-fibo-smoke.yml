@@ -18,6 +18,14 @@ on:
         description: Exact live Vercel deployment ID for the approved Modal cutover only; leave blank for routine smoke
         required: false
         type: string
+      app_cutover_deployment_id:
+        description: Exact promoted app-only release deployment ID for pre-manifest verification (never the Modal cutover)
+        required: false
+        type: string
+      app_cutover_readiness_run_id:
+        description: Exact successful Deployment Readiness run ID for the promoted app-only release
+        required: false
+        type: string
       confirm_bounded_fixture_provider_work:
         description: Confirm this run may dispatch exactly one FIBO generation owned by a disposable smoke fixture
         required: true
@@ -80,10 +88,21 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           RENDERLAB_CUTOVER_DEPLOYMENT_ID: ${{ inputs.cutover_deployment_id }}
+          RENDERLAB_APP_CUTOVER_DEPLOYMENT_ID: ${{ inputs.app_cutover_deployment_id }}
+          RENDERLAB_APP_CUTOVER_READINESS_RUN_ID: ${{ inputs.app_cutover_readiness_run_id }}
         run: |
-          if [ -n "$RENDERLAB_CUTOVER_DEPLOYMENT_ID" ]; then
+          if [ -n "$RENDERLAB_CUTOVER_DEPLOYMENT_ID" ] && [ -n "$RENDERLAB_APP_CUTOVER_DEPLOYMENT_ID" ]; then
+            echo "::error::Only one scoped cutover verification method may be selected."
+            exit 1
+          elif [ -n "$RENDERLAB_APP_CUTOVER_DEPLOYMENT_ID" ]; then
+            node scripts/verify-production-app-cutover-smoke-release.mjs
+          elif [ -n "$RENDERLAB_CUTOVER_DEPLOYMENT_ID" ]; then
             node scripts/verify-modal-cutover-smoke-release.mjs
           else
+            if [ -n "$RENDERLAB_APP_CUTOVER_READINESS_RUN_ID" ]; then
+              echo "::error::An app cutover readiness run must be paired with an exact deployment ID."
+              exit 1
+            fi
             node scripts/verify-production-documentation-sync.mjs
             node scripts/verify-production-live-state.mjs
           fi
