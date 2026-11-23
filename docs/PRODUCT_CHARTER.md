@@ -32,6 +32,10 @@ RenderLab is a personal **generative-media tool suite**, now also an **AI Engine
 
 **Portfolio success criteria:** A new engineer can understand the system, run and test its backend, trace a job across services, understand secure configuration, and validate recovery/rollback from checked-in evidence. End-to-end reliability, maintainability, truthful public claims and a professionally defensible architecture matter more than the number of models.
 
+## Near-term roadmap — numbered backend/product reliability cycle
+
+Phase 1 beta correctness and Phase 2 operational reliability are closed. **Phase 3: Backend professional baseline (P0)** is the next owner-approved execution phase, governed by the [five-unit contract](architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md). Execute Units 1–5 in order: truthful README/claims; typed configuration; threat/owner isolation; deterministic state-machine contracts; deterministic critical-path tests. The previously contemplated **creative productivity** phase is deferred until the full backend-first gate. Subsequent P1 provider abstraction and engineering follow-ons are roadmap-level only and are not authorized by this P0 contract.
+
 ## Backend-first policy and exit gate
 
 **Backend only for the next execution cycle.** Do not add new feature UI or redesign surfaces while backend engineering gaps remain; emergency correctness and security repairs are permitted. Use the employer-grade backend assessment to prioritize small, reviewed PRs, per the progressive-phase planning rules in AGENTS.md.

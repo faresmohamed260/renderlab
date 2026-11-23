@@ -149,6 +149,17 @@
       "supersededBy": []
     },
     {
+      "path": "docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-23",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
       "path": "docs/architecture/PRODUCT_CAPABILITIES.md",
       "kind": "current-state-registry",
       "authority": "current-state",

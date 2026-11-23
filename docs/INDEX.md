@@ -201,6 +201,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` — accepted incident/recovery operating procedure, operator roles, review cadence, and exercise metadata.
 - `docs/operations/PRODUCTION_RELEASE_RUNBOOK.md` — current Vercel and Modal release, rollback, and ADR-005 operator procedure.
 - `docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md` — historical one-time planned-outage cutover and recovery evidence.
+- `docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md` — active Phase 3 backend professional baseline (P0) contract; five separately reviewed backend-first units.
 - Active architecture contracts remain beside current architecture while execution requires them. Closed bounded implementation contracts are historical evidence under `docs/history/contracts/architecture/**`; current architecture/roadmaps carry forward any still-binding constraints.
 
 ### UI and design system
