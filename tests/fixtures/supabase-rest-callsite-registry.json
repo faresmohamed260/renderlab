@@ -607,7 +607,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:172:22",
+      "id": "src/server/generation/native-generation.ts:84:22",
       "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
       "classification": "internal",
       "family": "jobs",
@@ -616,7 +616,7 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
-      "id": "src/server/generation/native-generation.ts:217:22",
+      "id": "src/server/generation/native-generation.ts:129:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -625,7 +625,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:261:22",
+      "id": "src/server/generation/native-generation.ts:173:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -634,7 +634,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:467:22",
+      "id": "src/server/generation/native-generation.ts:288:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -643,7 +643,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation.ts:503:11",
+      "id": "src/server/generation/native-generation.ts:324:11",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
