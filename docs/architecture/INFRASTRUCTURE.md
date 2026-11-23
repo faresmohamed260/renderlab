@@ -781,6 +781,11 @@ Actions budget discipline:
 - configured helper accounts use deterministic `GITHUB_RUN_ID`-scoped owner identities (or an explicit test-scope override): reruns of the same workflow can reconstruct their own cleanup, while separate workflow runs cannot delete each other's Auth owner or owned rows;
 - connector-driven repository writes should batch cohesive changes into as few commits as practical so intermediate heads do not launch redundant workflows.
 
+P1-04 CI savings boundary (proposed in an unmerged worker PR; [audit](../audits/CI_P1_04_SAFE_CHANGE_SCOPE_2026-11-24.md)):
+- The six required contexts and CodeQL remain unfiltered at the workflow level for every PR and main push. A checked-out exact-commit change classifier can select an **individual job-step** shortcut only when every changed Git object is a regular, unreferenced, evidence-only `docs/audits/**.md`, `docs/history/**.md` or `docs/archive/**.md` file. Unknown event, missing SHA, symlink, changed source/lock/config, referenced Markdown or classifier failure always runs full validation.
+- On qualifying evidence-only changes, Quality, Unit Coverage and both Portability OS jobs continue to report their existing required check names and run credential-free documentation governance; Quality/Portability also retain developer-toolchain and text-policy validation. They omit their own `npm ci`, full test/coverage and build steps **only** on the verified shortcut. Coverage artifacts are not manufactured for a docs-only run. Governance and CodeQL run fully as before.
+- On all other changes, Quality still independently builds on Ubuntu; Windows Portability still builds on Windows. Only the duplicated **Ubuntu Portability** build is omitted (full lint, typecheck, unit, negatives and install remain). No new cross-workflow artifact trust, shared install, secret, provider usage or cancellation contract is introduced. The before/after step-count and limits are recorded in the linked audit; a postmerge eligible docs-only run is required to measure realized duration/cost.
+
 Retained workflows include:
 - `verify-media-upload.mjs` + `media-upload-integration.yml`
 - `verify-library-batch-delete.mjs` + `library-batch-delete-visual.yml` — page-scoped selection, per-item partial success, R2/database cleanup, ownership isolation, idempotence and responsive confirmation

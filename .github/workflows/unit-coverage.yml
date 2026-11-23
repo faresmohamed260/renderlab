@@ -31,16 +31,31 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      - name: Classify exact-commit change scope (fail closed)
+        id: ci-scope
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/ci-classify-changes.mjs
+
+      - name: Verify evidence-only Markdown without npm install
+        if: steps.ci-scope.outputs.docs_only == 'true'
+        run: npm run verify:docs-governance
       - name: Install dependencies
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm ci --no-audit --no-fund
 
       - name: Run all-source unit coverage
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run test:unit:coverage
 
       - name: Verify coverage report integrity
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run verify:unit-coverage -- --github-summary
 
       - name: Upload bounded unit coverage evidence
+        if: steps.ci-scope.outputs.docs_only != 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unit-coverage-${{ github.run_id }}-${{ github.run_attempt }}

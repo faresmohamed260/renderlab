@@ -34,25 +34,43 @@ jobs:
       - name: Verify repository text policy
         run: npm run verify:text-policy
 
+      - name: Classify exact-commit change scope (fail closed)
+        id: ci-scope
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: node scripts/ci-classify-changes.mjs
+
+      - name: Verify evidence-only Markdown without npm install
+        if: steps.ci-scope.outputs.docs_only == 'true'
+        run: npm run verify:docs-governance
       - name: Install dependencies
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm ci --no-audit --no-fund
 
       - name: Lint
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run lint
 
       - name: Typecheck
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run typecheck
 
       - name: Unit tests
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run test:unit
 
       - name: Verify negative gate fixtures
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run verify:engineering-quality
 
       - name: Verify Modal project ownership boundary
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run verify:modal-project-ownership
 
       - name: Test FIBO deployment guards without secrets
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: |
           python3 -m unittest discover -s scripts/tests -p "test_*.py"
           python3 workers/fibo-studio/test_workload_contract.py
@@ -64,10 +82,13 @@ jobs:
           python3 workers/fibo-studio/test_dispatch_supabase.py
 
       - name: Verify production Modal deploy guards offline
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: python3 scripts/tests/test_fibo_deploy_guards.py
 
       - name: Verify reciprocal S.A.G.A. Modal ownership
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run verify:modal-cross-repo-ownership
 
       - name: Production build
+        if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run build
