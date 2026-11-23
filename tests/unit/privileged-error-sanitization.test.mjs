@@ -4,7 +4,7 @@ import test from "node:test";
 
 // PR A: run red baseline with RENDERLAB_SECURITY_SENTINEL_ENFORCE=1.
 // Skip expected failures on tests-only merge; PR B removes this guard.
-const pendingFix = process.env.RENDERLAB_SECURITY_SENTINEL_ENFORCE !== "1";
+const pendingFix = false; // P0-03a PR B: sentinel assertions are mandatory.
 const pendingReason = "P0-03a expected failure before sanitizer PR B";
 const verify = (name, fn) => test(name, { skip: pendingFix ? pendingReason : false }, fn);
 const markers = ["SQL_DETAIL_SENTINEL", "PRIVILEGED_TOKEN_SENTINEL", "OWNER_B_SENTINEL"];
@@ -29,6 +29,18 @@ registerHooks({
       + "export async function deleteMediaAsset(){throw Error(failure);}"
       + "export function publicMediaAsset(x){return x;}"
       + "export async function ensureMediaAssetThumbnail(){}"
+      + "export async function getMediaAssetContentUrl(){throw Error(failure);}"
+      + "export async function setMediaAssetFavorite(){throw Error(failure);}"
+      + "export async function listMediaAssets(){throw Error(failure);}"
+    );
+    if (spec === "@/server/media/media-collections") return stub(
+      "const failure=" + JSON.stringify(sentinel) + ";"
+      + "export async function listMediaCollections(){throw Error(failure);}"
+      + "export async function createMediaCollection(){throw Error(failure);}"
+      + "export async function renameMediaCollection(){throw Error(failure);}"
+      + "export async function deleteMediaCollection(){throw Error(failure);}"
+      + "export async function setMediaCollectionMembership(){throw Error(failure);}"
+      + "export function publicMediaCollection(x){return x;}"
     );
     if (spec === "@/server/media/upload-admission") return stub(
       "export async function reserveUploadAdmission(){return {id:'fixture-reservation',kind:'media'};}"
@@ -45,7 +57,7 @@ registerHooks({
       + "export async function readR2Object(){return new Uint8Array();}"
     );
     if (spec === "@/server/media/image-upload-validation") return stub("export function inspectUploadedImageBytes(){return {ok:true};}");
-    if (spec === "@/lib/api/media-upload-contract") return stub("export const maxMediaUploadBytes=10485760;");
+    if (spec === "@/lib/api/media-upload-contract") return stub("export const maxMediaUploadBytes=10485760;export const isMediaUploadMimeType=()=>true;");
     if (spec === "@/server/account/account-data-lifecycle-test-faults") return stub("export function injectAccountDataLifecycleTestFault(){}");
     if (spec.startsWith("@/")) return next(new URL("../../src/" + spec.slice(2) + ".ts", import.meta.url).href, context);
     return next(spec, context);
@@ -65,6 +77,13 @@ const jobs=await import("../../src/app/api/generation/jobs/[jobId]/route.ts");
 const media=await import("../../src/app/api/media/assets/[assetId]/route.ts");
 const downloads=await import("../../src/app/api/media/assets/[assetId]/download/route.ts");
 const uploads=await import("../../src/server/media/media-uploads.ts");
+const mediaList=await import("../../src/app/api/media/assets/route.ts");
+const thumbnails=await import("../../src/app/api/media/assets/[assetId]/thumbnail/route.ts");
+const contentRoute=await import("../../src/app/api/media/assets/[assetId]/content/route.ts");
+const favorites=await import("../../src/app/api/media/assets/[assetId]/favorite/route.ts");
+const collectionList=await import("../../src/app/api/media/collections/route.ts");
+const collection=await import("../../src/app/api/media/collections/[collectionId]/route.ts");
+const membership=await import("../../src/app/api/media/collections/[collectionId]/items/[assetId]/route.ts");
 function safe(value){
   const serialized=typeof value==="string"?value:JSON.stringify(value);
   for(const marker of markers)assert.ok(!serialized.includes(marker),"exposed marker "+marker);
@@ -144,3 +163,64 @@ test("E3 alert fanout cannot include privileged upstream error body",async t=>{
   });
   assert.equal(result.accepted,0);assert.equal(fanouts,0);safe(log);
 });
+
+test("E1 safe Postgres classifications survive, without raw DB error content", async t => {
+  const messages = [
+    [{ code: "P0001", message: "renderlab_generation_active_limit_reached " + sentinel }, "renderlab_generation_active_limit_reached"],
+    [{ code: "23505", message: "duplicate " + sentinel }, "23505"],
+    [{ code: "INVALID_" + sentinel, message: sentinel }, ""],
+  ];
+  for (const [body, expected] of messages) {
+    t.mock.method(globalThis, "fetch", async () => Response.json(body, { status: 409 }));
+    let err;try { await db.supabaseRest("fixture?select=id"); } catch (caught) { err = caught; }
+    assert.equal(db.supabaseErrorClassification(err), expected);
+    assert.equal(err.code, "supabase_backend_unavailable");
+    safe({message:err.message, classification:db.supabaseErrorClassification(err), correlationId:err.correlationId});
+    t.mock.restoreAll();
+  }
+});
+for (const [label, handler] of [
+  ["thumbnail GET", thumbnails.GET],
+  ["content GET", contentRoute.GET],
+]) {
+  test("E2 " + label + " emits a stable, sanitized failure", async () => {
+    const res = await handler(new Request("https://example.invalid/api/media/assets/" + id), {params:Promise.resolve({assetId:id})});
+    assert.equal(res.status, 503);
+    const body = await res.json();
+    assert.equal(body.code, "media_unavailable");
+    assert.equal(typeof body.error, "string");
+    safe(body);safe(Object.fromEntries(res.headers));
+  });
+}
+for (const method of ["PUT", "DELETE"]) {
+  test("E2 media favorite " + method + " failure stays sanitized", async () => {
+    const res = await favorites[method](new Request("https://example.invalid/api/media/assets/" + id + "/favorite",{method}),
+      {params:Promise.resolve({assetId:id})});
+    await expectError(res, "media_unavailable");
+  });
+}
+test("E2 media library list privileged failure stays sanitized", async () => {
+  const res = await mediaList.GET(new Request("https://example.invalid/api/media/assets"));
+  await expectError(res, "media_unavailable");
+});
+for (const method of ["GET","POST"]) {
+  test("E2 collections " + method + " privileged failure stays sanitized", async () => {
+    const init = method==="POST"?{method,body:JSON.stringify({name:"Fixture"})}:{method};
+    const res = await collectionList[method](new Request("https://example.invalid/api/media/collections",init));
+    await expectError(res,"media_unavailable");
+  });
+}
+for (const method of ["PATCH","DELETE"]) {
+  test("E2 collection " + method + " privileged failure stays sanitized", async () => {
+    const init=method==="PATCH"?{method,body:JSON.stringify({name:"Fixture"})}:{method};
+    const res=await collection[method](new Request("https://example.invalid/api/media/collections/"+id,init),{params:Promise.resolve({collectionId:id})});
+    await expectError(res,"media_unavailable");
+  });
+}
+for (const method of ["PUT","DELETE"]) {
+  test("E2 collection membership " + method + " privileged failure stays sanitized", async () => {
+    const res=await membership[method](new Request("https://example.invalid/api/media/collections/"+id+"/items/"+ownerId,{method}),
+      {params:Promise.resolve({collectionId:id,assetId:ownerId})});
+    await expectError(res,"media_unavailable");
+  });
+}

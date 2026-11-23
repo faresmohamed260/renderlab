@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         ok: false,
         error: {
           code: "media_unavailable",
-          message: error instanceof Error ? error.message : "Collections could not be loaded.",
+          message: "Collections could not be loaded.",
         },
       },
       { status: 503 },
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         ok: false,
         error: {
           code: "media_unavailable",
-          message: error instanceof Error ? error.message : "Collection could not be created.",
+          message: "Collection could not be created.",
         },
       },
       { status: 503 },

@@ -2,7 +2,7 @@ import type {
   AdminGenerationSettings,
   AdminGenerationSettingsUpdate,
 } from "@/lib/api/admin-contract";
-import { supabaseRest } from "@/server/data/supabase-rest";
+import { supabaseErrorClassification, supabaseRest } from "@/server/data/supabase-rest";
 
 type SettingsRow = {
   generation_enabled: boolean;
@@ -86,7 +86,7 @@ export async function updateAdminGenerationSettings(
     if (!rows?.[0]) throw new Error("settings update missing");
     return publicSettings(rows[0]);
   } catch (error) {
-    const message = String(error);
+    const message = supabaseErrorClassification(error);
     if (message.includes("renderlab_admin_required")) {
       throw new AdminSettingsError("admin_access_required", "Active RenderLab admin access is required.");
     }

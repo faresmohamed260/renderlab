@@ -1,5 +1,5 @@
 import type { SubmitGenerationError } from "@/lib/api/generation-contract";
-import { supabaseRest } from "@/server/data/supabase-rest";
+import { supabaseErrorClassification, supabaseRest } from "@/server/data/supabase-rest";
 
 type ReservationRow = {
   reservation_id: string;
@@ -21,7 +21,7 @@ function admissionError(code: SubmitGenerationError["error"]["code"], message: s
 }
 
 function classifyAdmissionError(error: unknown): SubmitGenerationError {
-  const message = String(error);
+  const message = supabaseErrorClassification(error);
   if (message.includes("renderlab_generation_access_denied")) {
     return admissionError("generation_access_denied", "This account does not currently have access to RenderLab generation.");
   }

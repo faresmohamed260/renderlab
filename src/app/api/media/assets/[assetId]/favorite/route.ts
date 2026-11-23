@@ -44,7 +44,7 @@ async function updateFavorite(
         ok: false,
         error: {
           code: "media_unavailable",
-          message: error instanceof Error ? error.message : "Favorite state could not be updated.",
+          message: "Favorite state could not be updated.",
         },
       },
       { status: 503 },

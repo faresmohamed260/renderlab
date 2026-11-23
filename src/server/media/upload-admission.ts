@@ -1,5 +1,5 @@
 import { envFlag } from "../../lib/config/runtime-env.ts";
-import { supabaseRest } from "@/server/data/supabase-rest";
+import { supabaseErrorClassification, supabaseRest } from "@/server/data/supabase-rest";
 
 export type UploadAdmissionKind = "media" | "reference";
 export type UploadAdmissionLimitCode = "upload_active_limit_reached" | "upload_rate_limit_reached";
@@ -26,7 +26,7 @@ export class UploadAdmissionLimitError extends Error {
 }
 
 function classifyAdmissionFailure(error: unknown): never {
-  const message = String(error);
+  const message = supabaseErrorClassification(error);
   if (message.includes("renderlab_upload_active_limit_reached")) {
     throw new UploadAdmissionLimitError(
       "upload_active_limit_reached",

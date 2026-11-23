@@ -42,7 +42,7 @@ export async function GET(
     return NextResponse.json({ ok: true, asset: publicMediaAsset(asset) });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: { code: "media_unavailable", message: error instanceof Error ? error.message : "Media could not be loaded." } },
+      { ok: false, error: { code: "media_unavailable", message: "Media could not be loaded." } },
       { status: 503 },
     );
   }
@@ -84,7 +84,7 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof RangeError) return invalidRequest(error.message);
     return NextResponse.json(
-      { ok: false, error: { code: "media_unavailable", message: error instanceof Error ? error.message : "Media could not be renamed." } },
+      { ok: false, error: { code: "media_unavailable", message: "Media could not be renamed." } },
       { status: 503 },
     );
   }
@@ -114,7 +114,7 @@ export async function DELETE(
     );
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: { code: "media_unavailable", message: error instanceof Error ? error.message : "Media could not be deleted." } },
+      { ok: false, error: { code: "media_unavailable", message: "Media could not be deleted." } },
       { status: 503 },
     );
   }

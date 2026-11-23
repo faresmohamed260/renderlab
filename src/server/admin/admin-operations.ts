@@ -11,7 +11,7 @@ import type {
   AdminInvitationRecord,
 } from "@/lib/api/admin-contract";
 import type { RenderLabAccountAccess } from "@/server/account/account-access";
-import { isSupabaseConfigured, supabaseRest } from "@/server/data/supabase-rest";
+import { isSupabaseConfigured, supabaseErrorClassification, supabaseRest } from "@/server/data/supabase-rest";
 import { getAdminGenerationSettings } from "@/server/admin/admin-settings";
 import { summarizeActiveAdminJobAge, summarizeRecentAdminJobs, summarizeScopedAdminHealthBase, type AdminHealthJobSample } from "@/server/admin/admin-health-summary";
 import { readOldestActiveJobAge } from "@/server/observability/oldest-active-job-store";
@@ -230,7 +230,7 @@ export async function createAdminInvitation({
       },
     );
   } catch (error) {
-    if (String(error).includes("renderlab_beta_invitations_open_email_idx")) {
+    if (supabaseErrorClassification(error) === "renderlab_beta_invitations_open_email_idx") {
       throw new AdminOperationError("invitation_exists", "A pending RenderLab invitation already exists for that email.");
     }
     throw new AdminOperationError("admin_backend_unavailable", "The invitation could not be recorded right now.");
@@ -276,7 +276,7 @@ export async function revokeAdminInvitation(invitationId: string) {
 }
 
 function classifyAccountMutationError(error: unknown): AdminOperationError {
-  const message = String(error);
+  const message = supabaseErrorClassification(error);
   if (message.includes("renderlab_last_active_admin")) {
     return new AdminOperationError("last_active_admin", "The last active admin cannot be demoted or suspended.");
   }

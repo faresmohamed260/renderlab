@@ -42,6 +42,6 @@ export async function GET(
     if (new URL(request.url).searchParams.get("source") === "1") {
       return NextResponse.json({ error: "Media source is unavailable." }, { status: 502 });
     }
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Media content is unavailable." }, { status: 503 });
+    return NextResponse.json({ code: "media_unavailable", error: "Media content is unavailable." }, { status: 503 });
   }
 }

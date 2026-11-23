@@ -58,7 +58,7 @@ async function updateMembership(
         ok: false,
         error: {
           code: "media_unavailable",
-          message: error instanceof Error ? error.message : "Collection membership could not be updated.",
+          message: "Collection membership could not be updated.",
         },
       },
       { status: 503 },
