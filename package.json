@@ -9,6 +9,7 @@
   },
   "scripts": {
     "doctor": "node scripts/verify-developer-toolchain.mjs",
+    "demo:backend": "node scripts/demo-backend.mjs",
     "verify:text-policy": "node scripts/verify-text-policy.mjs",
     "verify:docs-governance": "node scripts/verify-docs-governance.mjs",
     "dev": "next dev",
