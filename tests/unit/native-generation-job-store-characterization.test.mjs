@@ -9,6 +9,7 @@ import {
 // tests characterize the runtime behavior and trace, not a copied fake module.
 const submitApi = await import("../../src/app/api/generation/jobs/route.ts");
 const native = await import("../../src/server/generation/native-generation.ts");
+const store = await import("../../src/server/generation/native-generation-job-store.ts");
 
 const request = {
   prompt: "Stable native job-store seam",
@@ -45,6 +46,12 @@ const failedPatch = {
 function dbOpsFrom(index) {
   return runtime.traces.slice(index).filter((entry) => entry.side === "db");
 }
+
+test("extracted DB-store owns the existing facade implementation without wrapping or changing exports", () => {
+  for (const name of ["getJobRow", "patchJob", "patchJobRow"]) {
+    assert.equal(native[name], store[name], name);
+  }
+});
 
 test("native-generation public row-store facade has all established function exports", () => {
   for (const key of [

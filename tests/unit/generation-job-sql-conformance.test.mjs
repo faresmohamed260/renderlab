@@ -89,7 +89,9 @@ test("P0-04 materialized media has SQL uniqueness for (job, output_index), and r
 test("P0-04 migration conformance is static and does not assert nonexistent trigger-enforced transitions", () => {
   const sql = migration("0016_generation_cancellation.sql");
   assert.ok(!/create\s+(?:or\s+replace\s+)?trigger\s+generation_jobs_state_transition/i.test(sql));
-  const liveCode = source("src/server/generation/native-generation.ts");
+  const liveCode = source("src/server/generation/native-generation-job-store.ts");
+  const facade = source("src/server/generation/native-generation.ts");
+  assert.match(facade, /export \{ getJobRow, patchJob, patchJobRow \} from "@\/server\/generation\/native-generation-job-store"/);
   assert.match(liveCode, /export async function patchJob\(/);
   assert.match(liveCode, /generation_jobs\?owner_id=eq\.\$\{encodeURIComponent\(ownerId\)\}&id=eq\.\$\{encodeURIComponent\(jobId\)\}&select=\*/);
   assert.ok(!/generation_jobs\?owner_id=eq\.[^'"\n]*&status=in\./.test(
