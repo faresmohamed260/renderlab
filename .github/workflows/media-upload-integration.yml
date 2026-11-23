@@ -1,7 +1,8 @@
 name: Persistent Media Upload Integration
 
 on:
-  pull_request:
+  push:
+    branches: [main]
     paths:
       - "supabase/migrations/0003_persistent_media_uploads.sql"
       - "supabase/migrations/0004_core_account_ownership_prepare.sql"
@@ -26,8 +27,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: renderlab-media-upload-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: renderlab-media-upload-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   integration:
