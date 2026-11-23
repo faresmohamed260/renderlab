@@ -33,7 +33,9 @@ if (process.argv.slice(2).some(arg => arg !== "--check")) {
   throw new Error("Usage: node scripts/verify-database-conformance.mjs [--check]");
 }
 const options = ["-X", "-w", "-v", "ON_ERROR_STOP=1", "-h", host, "-p", port, "-U", user, "-d", database];
-const env = { ...process.env, PGSERVICE: "", PGHOSTADDR: "" };
+const env = { ...process.env };
+delete env.PGSERVICE;
+delete env.PGHOSTADDR;
 function psql(args = [], input) {
   try {
     return execFileSync("psql", [...options, ...args], {
