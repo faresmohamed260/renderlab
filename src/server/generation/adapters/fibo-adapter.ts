@@ -167,3 +167,6 @@ export async function createBoundFiboAdapter(): Promise<ProviderAdapter> {
     requestGenerationCancellation: cancellation.requestGenerationCancellation,
   });
 }
+
+/** Provider-only port; unlike the legacy facade above, these calls never own jobs. */
+export { fiboProvider } from "./fibo-provider-port.ts";
