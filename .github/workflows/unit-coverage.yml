@@ -39,7 +39,7 @@ jobs:
           CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/ci-classify-changes.mjs
 
-      - name: Verify evidence-only Markdown without npm install
+      - name: Verify evidence-only Markdown with dependency-free governance
         if: steps.ci-scope.outputs.docs_only == 'true'
         run: npm run verify:docs-governance
       - name: Install dependencies
