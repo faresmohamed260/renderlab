@@ -42,7 +42,10 @@ export async function runAgainGeneration(
     ) {
       return { ok: false, error: { code, message: submitted.error.message } };
     }
-    if (code === "generation_backend_unavailable") {
+    if (code === "generation_acceptance_unconfirmed") {
+      return { ok: false, error: { code: "generation_backend_unavailable", message: submitted.error.message } };
+    }
+    if (code === "generation_backend_unavailable" || code === "generation_idempotency_unavailable") {
       return {
         ok: false,
         error: {

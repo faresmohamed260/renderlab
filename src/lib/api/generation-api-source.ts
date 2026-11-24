@@ -5,7 +5,7 @@ export const generationApiContractSource = {
   "info": {
     "title": "RenderLab private generation API",
     "version": "1.1.0",
-    "description": "Invite-only FIBO image beta. Optional Idempotency-Key guarantees owner-scoped request identity only after migration 0034 is applied. Unkeyed clients remain legacy. The header is FIBO-only; non-FIBO keyed requests receive 400 invalid_request."
+    "description": "Invite-only FIBO image beta. All FIBO submissions use owner-scoped atomic acceptance after migration 0034. A supplied Idempotency-Key provides cross-request replay identity. Non-FIBO requests supplying the header receive 400 invalid_request before admission or dispatch."
   },
   "schemas": {
     "GenerationRequest": {
@@ -495,12 +495,12 @@ export const generationApiContractSource = {
           "generation_acceptance_unconfirmed"
         ]
       },
-      "description": "Idempotency-Key enables owner-scoped atomic accept: same key/normalized intent returns same job; changed intent is 409. Missing migration fails closed (503), ambiguous acceptance returns 503 Retry-After without releasing any reservation. Retry same key. Without header legacy POST is non-idempotent. No exactly-once provider guarantee. A non-FIBO request with this header is rejected with 400 invalid_request before admission or provider dispatch.",
+      "description": "All FIBO requests use owner-scoped atomic acceptance: same supplied Idempotency-Key/normalized intent returns the same job; changed intent is 409. Without the header the server creates one random per-request key for internal acceptance recovery, not cross-request deduplication. Missing migration fails closed (503), ambiguous acceptance returns 503 Retry-After without releasing any reservation. Retry the same supplied key; otherwise check Activity before another submission. No exactly-once provider guarantee. Non-FIBO requests supplying the header receive 400 invalid_request before admission or dispatch.",
       "requestHeaders": [
         {
           "name": "Idempotency-Key",
           "required": false,
-          "description": "Optional 16–128 ASCII [A-Za-z0-9_-] opaque, cryptographically random per intended Create submission. Reuse only to retry this exact normalized request. Without migration 0034: 503, no non-idempotent fallback. Different request under same owner/key: 409. No guarantees for absent header. A non-FIBO request with this header is rejected with 400 invalid_request before admission or provider dispatch.",
+          "description": "Optional 16–128 ASCII [A-Za-z0-9_-] opaque, cryptographically random per intended Create submission. Reuse only to retry this exact normalized request. Without migration 0034: 503, no non-idempotent fallback. Different request under same owner/key: 409. Omitted header uses a server-generated per-request key; repeated HTTP requests can create distinct jobs. Non-FIBO requests supplying the header receive 400 invalid_request before admission or dispatch.",
           "schema": {
             "type": "string",
             "minLength": 16,
@@ -645,7 +645,7 @@ export const generationApiContractSource = {
     }
   ],
   "idempotency": {
-    "request": "Optional Idempotency-Key on POST /api/generation/jobs: 16–128 safe ASCII characters, strongly random intent key. After 0034 installed, same owner+key+normalized request returns original job and immutable attempt, mismatch is 409, missing function 503 without legacy downgrade, unknown acceptance conservatively unconfirmed (503). Omitted header retains legacy non-idempotent behavior. Retry and Run Again do not reuse the Create POST key. A non-FIBO request with this header is rejected with 400 invalid_request before admission or provider dispatch.",
+    "request": "Optional Idempotency-Key on POST /api/generation/jobs: 16–128 safe ASCII characters, strongly random intent key. After 0034 installed, same owner+key+normalized request returns original job and immutable attempt, mismatch is 409, missing function 503 without legacy downgrade, unknown acceptance conservatively unconfirmed (503). Headerless FIBO requests, including Retry and Run Again, use an internal random key for the atomic acceptance and its recovery within the same request. Repeated HTTP requests without a supplied key remain separate intents, not cross-request idempotent. Non-FIBO requests supplying the header receive 400 invalid_request before admission or dispatch.",
     "dispatch": "An accepted job uses a durable outbox with bounded per-job replay protection; not exactly-once provider execution.",
     "finalization": "Unique output index and owner-return recovery converge on one durable media row; storage writes need not be exactly once.",
     "cancellation": "Terminal replay cannot reopen the original job; repeated cancellation observes or rejects it according to status."

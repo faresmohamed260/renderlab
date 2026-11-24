@@ -75,10 +75,10 @@ test("P0-05 happy path: API submit > admission > durable outbox > wake > poll > 
   assert.equal(runtime.releases,1);
   assert.equal(runtime.providerPolls,1);
   const sequence=runtime.traces.map(x=>x.side==="db"?x.table:x.path);
-  assert.ok(sequence.indexOf("rpc/renderlab_reserve_generation_admission")
-    < sequence.indexOf("rpc/renderlab_accept_generation_dispatch"));
-  assert.ok(sequence.indexOf("rpc/renderlab_accept_generation_dispatch")
-    < sequence.indexOf("rpc/renderlab_bind_generation_admission"));
+  assert.equal(sequence.filter(x=>x==="rpc/renderlab_accept_generation_dispatch_idempotent").length,1);
+  assert.ok(!sequence.includes("rpc/renderlab_reserve_generation_admission"));
+  assert.ok(!sequence.includes("rpc/renderlab_accept_generation_dispatch"));
+  assert.ok(!sequence.includes("rpc/renderlab_bind_generation_admission"));
   assert.ok(sequence.includes("/dispatch/wake"));
   assert.ok(sequence.includes("/jobs"));
   assert.ok(sequence.includes("media_assets"));

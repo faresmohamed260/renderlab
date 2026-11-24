@@ -99,6 +99,13 @@ function fixture(t, { admissionError, bound = true, wake = "ok", scheduleFails =
       steps.push("lookup");
       return Response.json([]);
     }
+    if (url.pathname === "/rest/v1/generation_jobs" && init.method === "GET") {
+      assert.equal(url.searchParams.get("owner_id"),"eq."+ownerId);
+      assert.equal(url.searchParams.get("id"),"eq."+jobId);
+      steps.push("read");
+      return Response.json([{id:jobId,owner_id:ownerId,status:"queued",operation:"create-image",
+        created_at:createdAt,updated_at:createdAt,output_asset_ids:[]}]);
+    }
     assert.equal(init.method, "POST");
     if (url.href === "https://fixture.modal.run/dispatch/wake") {
       steps.push("wake");
@@ -110,22 +117,16 @@ function fixture(t, { admissionError, bound = true, wake = "ok", scheduleFails =
     const body = JSON.parse(init.body);
     assert.equal(body.p_owner_id, ownerId);
     switch (url.pathname) {
-      case "/rest/v1/rpc/renderlab_reserve_generation_admission":
-        steps.push("reserve");
-        return admissionError
-          ? Response.json({ message: "renderlab_" + admissionError }, { status: 400 })
-          : Response.json([{ reservation_id: reservationId }]);
-      case "/rest/v1/rpc/renderlab_accept_generation_dispatch":
-        steps.push("commit");
-        return Response.json([{
-          id: jobId, status: "queued", operation: "create-image", created_at: createdAt,
-          updated_at: createdAt, output_asset_ids: [],
-        }]);
-      case "/rest/v1/rpc/renderlab_bind_generation_admission":
-        steps.push("bind");
-        assert.equal(body.p_reservation_id, reservationId);
-        assert.equal(body.p_job_id, jobId);
-        return Response.json(bound);
+      case "/rest/v1/rpc/renderlab_accept_generation_dispatch_idempotent":
+        steps.push("atomic-accept");
+        assert.match(body.p_request_key,/^[A-Za-z0-9_-]{16,128}$/);
+        if (admissionError) return Response.json({code:"P0001",message:"renderlab_"+admissionError},{status:400});
+        if (!bound) return Response.json({code:"P0001",message:"renderlab_idempotency_admission_bind_failed"},{status:400});
+        return Response.json([{outcome:"accepted",job_id:jobId,attempt_id:body.p_attempt_id,
+          reservation_id:reservationId,admission_deadline:body.p_admission_deadline}]);
+      case "/rest/v1/rpc/renderlab_lookup_generation_request_acceptance":
+        steps.push("acceptance-lookup");
+        return Response.json([{outcome:"not_found",job_id:null,attempt_id:null,reservation_id:null,admission_deadline:null}]);
       default:
         assert.fail("Unexpected network request: " + url.href);
     }
@@ -139,11 +140,11 @@ test("the same 202 body returns before the wake, after the durable commit and bi
   assert.equal(maxDuration, 60);
   assert.equal(response.status, 202);
   assert.deepEqual(await response.json(), expected);
-  assert.deepEqual(f.steps, ["reserve", "commit", "bind", "schedule"]);
+  assert.deepEqual(f.steps, ["atomic-accept", "read", "schedule"]);
   assert.equal(f.tasks.length, 1);
   assert.deepEqual(f.timeouts, []);
   const wake = f.tasks[0]();
-  assert.deepEqual(f.steps, ["reserve", "commit", "bind", "schedule", "wake"]);
+  assert.deepEqual(f.steps, ["atomic-accept", "read", "schedule", "wake"]);
   assert.deepEqual(f.timeouts, [6_000]);
   f.releaseWake();
   await wake;
@@ -157,18 +158,18 @@ for (const [wake, code] of [["error", "dispatcher_wake_failed"], ["timeout", "di
     assert.equal(response.status, 202);
     assert.deepEqual(await response.json(), expected);
     await assert.doesNotReject(f.tasks[0]());
-    assert.deepEqual(f.steps, ["reserve", "commit", "bind", "schedule", "wake"]);
+    assert.deepEqual(f.steps, ["atomic-accept", "read", "schedule", "wake"]);
     assert.deepEqual(f.timeouts, [6_000]);
     assert.deepEqual(f.warnings, [{ event: "generation.dispatch-wake", level: "warn", jobId, code }]);
   });
 }
 
-test("an unconfirmed bind preserves the accepted job and leaves dispatch to the scheduler", async (t) => {
+test("atomic bind failure never reports an accepted job or schedules a wake", async (t) => {
   const f = fixture(t, { bound: false });
   const response = await submit();
-  assert.equal(response.status, 202);
-  assert.deepEqual(await response.json(), expected);
-  assert.deepEqual(f.steps, ["reserve", "commit", "bind"]);
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error.code,"generation_acceptance_unconfirmed");
+  assert.deepEqual(f.steps, ["atomic-accept", "acceptance-lookup"]);
   assert.deepEqual(f.tasks, []);
 });
 
@@ -177,7 +178,7 @@ test("a wake registration failure warns without changing the accepted result", a
   const response = await submit();
   assert.equal(response.status, 202);
   assert.deepEqual(await response.json(), expected);
-  assert.deepEqual(f.steps, ["reserve", "commit", "bind"]);
+  assert.deepEqual(f.steps, ["atomic-accept", "read"]);
   assert.deepEqual(f.warnings, [{
     event: "generation.dispatch-wake", level: "warn", jobId, code: "dispatcher_wake_schedule_failed",
   }]);
@@ -196,7 +197,7 @@ for (const admissionError of ["generation_active_limit_reached", "generation_rat
     const response = await submit();
     assert.equal(response.status, 429);
     assert.equal((await response.json()).error.code, admissionError);
-    assert.deepEqual(f.steps, admissionError === "generation_active_limit_reached" ? ["reserve", "lookup"] : ["reserve"]);
+    assert.deepEqual(f.steps, admissionError === "generation_active_limit_reached" ? ["atomic-accept", "lookup"] : ["atomic-accept"]);
     assert.deepEqual(f.tasks, []);
   });
 }
