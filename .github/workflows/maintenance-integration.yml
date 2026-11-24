@@ -26,6 +26,8 @@ concurrency:
 
 jobs:
   maintenance:
+    # Defense in depth only; owner-managed main-restricted Environment is still required.
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

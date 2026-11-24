@@ -30,6 +30,8 @@ concurrency:
 
 jobs:
   configured-upload-admission:
+    # Defense in depth only; owner-managed main-restricted Environment is still required.
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
