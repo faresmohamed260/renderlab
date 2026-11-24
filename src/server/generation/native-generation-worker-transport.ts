@@ -1,5 +1,5 @@
 import { envFlag, envString } from "../../lib/config/runtime-env.ts";
-import { buildFiboWorkerPayload } from "@/server/generation/fibo-worker-payload";
+import { fiboProvider } from "@/server/generation/adapters/fibo-provider-port";
 import { parseGeneratedFiboSidecar } from "@/lib/capabilities/fibo-generated-vgl";
 import { fiboGenerationModel, type GenerationRequest } from "@/lib/capabilities/generation";
 import { workerGatewayOptions, workerJobRequest, workersForEcosystem, type GenerationWorker } from "@/server/generation/worker-fleet";
@@ -42,7 +42,7 @@ export async function prepareWorkerSubmission(workflow: WorkflowConfig, request:
     throw new Error("FIBO masked edit payload is incomplete or has invalid source slots.");
   }
   if (workflow.ecosystem === fiboGenerationModel) {
-    return buildFiboWorkerPayload(request, sources, maskBytes);
+    return fiboProvider.prepareDurableSubmission(request, sources, maskBytes);
   }
   const prepared = await prepareWorkerPayload(request, workflow, sources);
   return { body: buildForm(request, workflow, prepared) };
