@@ -60,7 +60,7 @@ registerHooks({
 
 process.env.SUPABASE_URL = "https://database.example.invalid";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "offline-fixture-key";
-process.env.RENDERLAB_GENERATION_GATEWAY_URL = "https://fixture.modal.run";
+process.env.RENDERLAB_GENERATION_GATEWAY_URL = "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run";
 process.env.RENDERLAB_FIBO_MODAL_KEY = "offline-proxy-key";
 process.env.RENDERLAB_FIBO_MODAL_SECRET = "offline-proxy-secret";
 process.env.CLOUDFLARE_R2_ACCOUNT_ID = "offline-account";
@@ -135,7 +135,7 @@ function fixture(t, {
   t.mock.method(console, "warn", (message) => warnings.push(message));
   t.mock.method(globalThis, "fetch", async (input, init = {}) => {
     const url = new URL(input);
-    if (url.origin === "https://fixture.modal.run") {
+    if (url.origin === "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run") {
       assert.equal(url.pathname, "/jobs");
       assert.equal(init.method, "GET");
       assert.equal(new Headers(init.headers).get("X-RenderLab-Job-Handle"), row.provider_job_id);

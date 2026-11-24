@@ -1,4 +1,4 @@
-import { envFlag, envString } from "../../lib/config/runtime-env.ts";
+import { envFlag, envString, modalGatewayOriginPattern } from "../../lib/config/runtime-env.ts";
 export type GenerationWorker = {
   id: string;
   ecosystem: "flux2-klein-9b" | "ltx25-redgraft" | "qwen-image-edit-2511" | "fibo2-edit-turbo";
@@ -16,7 +16,12 @@ export type GenerationWorker = {
   routingStatus: "active" | "disabled";
 };
 
-const modalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
+const fixtureModalGatewayOriginPattern = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
+
+// Non-production isolated fixtures retain their existing synthetic origins.
+function isApprovedGatewayOrigin(url: string) {
+  return (envString("VERCEL_ENV") === "production" ? modalGatewayOriginPattern : fixtureModalGatewayOriginPattern).test(url);
+}
 
 const FIBO_WORKER_ID = "renderlab-fibo-native-01";
 export const FIBO_DISPATCH_BACKEND = "fibo";
@@ -31,7 +36,7 @@ function configuredFiboWorker(): GenerationWorker | null {
     envString("RENDERLAB_FIBO_GATEWAY_URL")?.trim())?.replace(/\/$/, "");
   const key = envString("RENDERLAB_FIBO_MODAL_KEY")?.trim();
   const secret = envString("RENDERLAB_FIBO_MODAL_SECRET")?.trim();
-  if (!url || !key || !secret || !modalGatewayOriginPattern.test(url)) return null;
+  if (!url || !key || !secret || !isApprovedGatewayOrigin(url)) return null;
   return { id: FIBO_WORKER_ID, ecosystem: "fibo2-edit-turbo", gatewayUrl: url,
     policy: { transport: "modal-proxy", cancellation: true, reassignment: false,
       retryAmbiguousSubmit: false, resultMime: "image/png", timeoutMs: 30_000 },
@@ -50,6 +55,10 @@ export function workerSupportsCancellation(worker: GenerationWorker) {
 }
 
 export function workerGatewayOptions(worker: GenerationWorker, timeoutMs = worker.policy?.timeoutMs): RequestInit {
+  if (worker.policy?.transport === "modal-proxy" && envString("VERCEL_ENV") === "production" &&
+      !isApprovedGatewayOrigin(worker.gatewayUrl)) {
+    throw new Error("Generation gateway must use the approved Modal origin");
+  }
   return {
     ...(worker.policy?.transport === "modal-proxy" ? { headers: fiboWorkerHeaders(), redirect: "error" as const } : {}),
     ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
