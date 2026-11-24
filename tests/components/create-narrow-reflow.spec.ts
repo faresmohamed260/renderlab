@@ -10,12 +10,12 @@ async function overflow(page: Page) {
     const elements = [root, ...root.querySelectorAll("*")];
     return elements.flatMap(node => {
       if (!(node instanceof HTMLElement) || !node.clientWidth || !node.getClientRects().length
-        || node.closest("[inert], [hidden], .sr-only") || getComputedStyle(node).visibility !== "visible"
+        || node.closest("[inert], [hidden], .sr-only, details:not([open]) > :not(summary)") || getComputedStyle(node).visibility !== "visible"
         || node.matches("input:not([type=range]), select")) return [];
       if (node.scrollWidth <= node.clientWidth) return [];
       return [{ tag: node.tagName, classes: node.className, id: node.id,
         clientWidth: node.clientWidth, scrollWidth: node.scrollWidth,
-        text: node.textContent?.trim().slice(0, 80) }];
+        text: node.textContent?.trim().slice(0, 80), children: [...node.children].map(child => ({ tag: child.tagName, class: child.getAttribute("class"), id: child.id, width: Math.round(child.getBoundingClientRect().width), right: Math.round(child.getBoundingClientRect().right - node.getBoundingClientRect().right) })) }];
     });
   });
 }
