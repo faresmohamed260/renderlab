@@ -2,11 +2,37 @@
 from __future__ import annotations
 
 from datetime import datetime
+from hashlib import sha256
+import json
 import os
+from pathlib import Path
+import ssl
 from urllib.parse import urlsplit
 from uuid import uuid4
 
 from dispatch_core import DispatchIntent, Lookup, LookupState
+
+
+TLS_MODE = "verify-full"
+CA_DIRECTORY = Path("/opt/renderlab/certs") if os.environ.get("MODAL_IS_REMOTE") == "1" else Path(__file__).with_name("certs")
+CA_SOURCE = "Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate"
+
+
+def verified_ca_path(directory=None):
+    """Only the reviewed, packaged Supabase CA may establish database trust."""
+    directory = CA_DIRECTORY if directory is None else directory
+    pem = directory / "supabase-root-ca.pem"
+    try:
+        raw = pem.read_bytes()
+        provenance = json.loads((directory / "supabase-root-ca.json").read_text(encoding="utf-8"))
+        if (provenance.get("source") != CA_SOURCE or provenance.get("sha256") != sha256(raw).hexdigest()
+                or b"PRIVATE KEY" in raw or b"-----BEGIN CERTIFICATE-----" not in raw):
+            raise ValueError("invalid CA provenance")
+        if ssl.create_default_context(cafile=str(pem)).cert_store_stats()["x509_ca"] < 1:
+            raise ValueError("not a CA certificate")
+    except (OSError, ValueError, TypeError, AttributeError):
+        raise RuntimeError("Dispatcher PostgreSQL TLS trust root is unavailable; check the packaged Supabase CA and provenance (verification was not downgraded)") from None
+    return str(pem)
 
 
 class SupabaseDispatchStore:
@@ -21,13 +47,22 @@ class SupabaseDispatchStore:
         import psycopg
         from psycopg.rows import dict_row
 
-        return psycopg.connect(
-            self.database_url,
-            connect_timeout=15,
-            sslmode="require",
-            application_name="renderlab-modal-dispatch",
-            row_factory=dict_row,
-        )
+        ca = verified_ca_path()
+        try:
+            return psycopg.connect(
+                self.database_url,
+                connect_timeout=15,
+                sslmode=TLS_MODE,
+                sslrootcert=ca,
+                application_name="renderlab-modal-dispatch",
+                row_factory=dict_row,
+            )
+        except psycopg.OperationalError:
+            raise RuntimeError(
+                "Dispatcher PostgreSQL connection failed under sslmode=" + TLS_MODE
+                + "; check DB reachability, pooler hostname, server certificate and CA bundle; "
+                + "dispatch halted without lowering TLS verification"
+            ) from None
 
     def _query(self, statement, parameters):
         with self._connect() as connection:

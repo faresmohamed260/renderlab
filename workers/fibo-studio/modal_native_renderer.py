@@ -31,6 +31,8 @@ image = (
     .add_local_file(str(Path(__file__).with_name("native_generated_vgl.py")), "/opt/renderlab/native_generated_vgl.py")
     .add_local_file(str(Path(__file__).with_name("dispatch_core.py")), "/opt/renderlab/dispatch_core.py")
     .add_local_file(str(Path(__file__).with_name("dispatch_supabase.py")), "/opt/renderlab/dispatch_supabase.py")
+    .add_local_file(str(Path(__file__).parent / "certs" / "supabase-root-ca.pem"), "/opt/renderlab/certs/supabase-root-ca.pem")
+    .add_local_file(str(Path(__file__).parent / "certs" / "supabase-root-ca.json"), "/opt/renderlab/certs/supabase-root-ca.json")
     .add_local_file(str(Path(__file__).with_name("workload_contract.py")), "/opt/renderlab/workload_contract.py")
     .add_local_file(str(Path(__file__).with_name("native_comfy_session.py")), "/opt/renderlab/native_comfy_session.py")
     .add_local_file(str(Path(__file__).with_name("native_render_errors.py")), "/opt/renderlab/native_render_errors.py")
