@@ -30,14 +30,23 @@ def classify_cli_failure(output):
     if any(x in lower for x in ("no such option", "no such command", "multiple entrypoints",
                                  "could not find function", "could not find a modal", "usage:")):
         return "modal_invocation_failed"
-    if "secret" in lower and any(x in lower for x in ("not found", "does not exist", "permission denied")):
-        return "modal_secret_unavailable"
+    # Match a resource noun as a word, not a substring of an identifier,
+    # and associate the failure with that resource on the same line.
+    # For example, "Environment not found SENTINEL_SECRET" is an
+    # environment error, not a secret error.
+    missing = r"(?:not found|does not exist|permission denied|does not match)"
+    resource_failure = re.compile(
+        r"\b(secret|environment)\b[^\r\n]*?\b" + missing + r"\b"
+    )
+    for line in lower.splitlines():
+        match = resource_failure.search(line)
+        if match:
+            return ("modal_secret_unavailable" if match.group(1) == "secret"
+                    else "modal_environment_unavailable")
     if any(x in lower for x in ("image build failed", "image build failure", "failed to build image")):
         return "modal_image_build_failed"
     if any(x in lower for x in ("authentication", "not authenticated", "invalid token", "permission denied")):
         return "modal_auth_or_permission_failed"
-    if "environment" in lower and any(x in lower for x in ("not found", "does not exist", "does not match")):
-        return "modal_environment_unavailable"
     return "modal_failed_before_marker"
 
 

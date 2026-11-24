@@ -53,6 +53,12 @@ class LauncherTest(unittest.TestCase):
             ("Image build failed SENTINEL_SECRET", "modal_image_build_failed"),
             ("Not authenticated SENTINEL_SECRET", "modal_auth_or_permission_failed"),
             ("Environment not found SENTINEL_SECRET", "modal_environment_unavailable"),
+            ("Environment 'fixture-secret' not found SENTINEL_SECRET", "modal_environment_unavailable"),
+            ("Secret 'fixture-environment' does not exist in environment 'main' SENTINEL_SECRET", "modal_secret_unavailable"),
+            ("Environment 'main' does not exist; secret attachment skipped SENTINEL_SECRET", "modal_environment_unavailable"),
+            ("Secret permission denied SENTINEL_SECRET", "modal_secret_unavailable"),
+            ("Unexpected traceback SENTINEL_SECRET not found", "modal_failed_before_marker"),
+            ("Environment configuration loaded\nUnexpected file not found SENTINEL_SECRET", "modal_failed_before_marker"),
             ("Unexpected SDK traceback SENTINEL_SECRET", "modal_failed_before_marker"),
         ]:
             with self.subTest(reason=reason):
