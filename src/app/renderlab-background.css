@@ -545,8 +545,16 @@
 .create-preview-extra details { margin-block-start: 12px; font-size: 14px; line-height: normal; }
 .create-preview-workspace .create-preview-extra summary {
   display: list-item;
+  min-block-size: 32px;
+  padding-block: 6px;
   border-radius: 0;
   color: rgb(235 232 255 / 55%);
+}
+@media (max-width: 700px) {
+  .create-preview-workspace .create-preview-extra summary {
+    min-block-size: 44px;
+    padding-block: 12px;
+  }
 }
 .create-preview-workspace .create-preview-extra summary:hover {
   color: #a5b4fc;
@@ -1450,4 +1458,53 @@
   padding: 16px clamp(16px, 2.2vw, 40px);
   font-size: 13px;
   color: var(--color-text-muted);
+}
+
+/* FQA-12: preserve the ordinary Create layout; reflow only when the available
+   CSS viewport is extremely narrow (including 390px at real 200% zoom). */
+@media (max-width: 320px) {
+  .create-preview-toolbar { min-inline-size: 0; }
+  .create-preview-tools { flex-wrap: wrap; justify-content: flex-end; max-inline-size: 100%; }
+  .create-preview-grid, .create-preview-fields, .create-preview-dock,
+  .create-preview-setup-slot, .create-preview-settings, .create-preview-seed {
+    min-inline-size: 0;
+  }
+  .create-preview-setup-slot > [inert] { display: none; }
+  .create-preview-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .create-preview-workspace .create-preview-tile > button:first-child {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    aspect-ratio: auto;
+    block-size: 100%;
+    overflow-wrap: anywhere;
+  }
+  .create-preview-tile > button:first-child > span {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+  }
+  .create-preview-size { grid-template-columns: minmax(0, 1fr); }
+  .create-preview-aspect { grid-column: 1 / -1; }
+  .create-preview-prompt-heading { position: relative; }
+  .create-preview-recents { position: static; }
+  .create-preview-recents > div {
+    inset-inline: 0;
+    inline-size: 100%;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+  .create-preview-recents button { white-space: normal; overflow-wrap: anywhere; }
+  .create-preview-settings { grid-template-columns: minmax(0, 1fr); }
+  .create-preview-workspace .create-preview-submit-actions > button {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .create-preview-generate kbd { white-space: normal; overflow-wrap: anywhere; }
+  .create-preview-controls :is(p, label, summary) { overflow-wrap: anywhere; }
+  .create-preview-workspace .create-preview-history button { white-space: normal; overflow-wrap: anywhere; }
+  .create-preview-workspace .create-preview-canvas-upload { white-space: normal; overflow-wrap: anywhere; }
 }
