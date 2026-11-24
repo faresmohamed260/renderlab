@@ -275,6 +275,7 @@ export async function pollNativeGeneration(
   jobId: string,
   providerTimeoutMs?: number,
   lookupSignal?: AbortSignal,
+  finalFiboObservation = false,
 ): Promise<GenerationJob | null> {
   const row = await getJobRow(ownerId, jobId, lookupSignal);
   if (!row) return null;
@@ -295,8 +296,12 @@ export async function pollNativeGeneration(
 
   if (!row.worker_id || !row.provider_job_id) return toGenerationJob(row);
 
+  // Only the expired claimed FIBO path converts unconfirmed provider reads
+  // into an active snapshot for the caller's atomic deadline CAS.
+  const finalObservation = finalFiboObservation && row.worker_id === FIBO_DISPATCH_BACKEND;
   const worker = findWorker(row.worker_id);
   if (!worker) {
+    if (finalObservation) return toGenerationJob(row);
     if (Date.now() - Date.parse(row.updated_at) < invalidWorkerGraceMs) {
       throw new Error("Assigned generation worker is temporarily unavailable.");
     }
@@ -318,9 +323,14 @@ export async function pollNativeGeneration(
   let response: Response;
   let options: RequestInit;
   if (row.worker_id === FIBO_DISPATCH_BACKEND) {
-    const observed = await fiboProvider.status(worker, row.provider_job_id, row.output_kind, providerTimeoutMs);
-    response = observed.response;
-    options = observed.options;
+    try {
+      const observed = await fiboProvider.status(worker, row.provider_job_id, row.output_kind, providerTimeoutMs);
+      response = observed.response;
+      options = observed.options;
+    } catch (error) {
+      if (finalObservation) return toGenerationJob(row);
+      throw error;
+    }
   } else {
     const request = workerJobRequest(worker, row.provider_job_id, "", providerTimeoutMs);
     options = request.options;
@@ -363,6 +373,7 @@ export async function pollNativeGeneration(
 
   if (!response.ok) {
     const body = await errorBody(response) ?? {};
+    if (finalObservation && options.signal?.aborted) return toGenerationJob(row);
     if (providerTimeoutMs) options.signal?.throwIfAborted();
     const fiboSignals = row.worker_id === FIBO_DISPATCH_BACKEND
       ? fiboProvider.interpretFailure(response.status, body)
@@ -415,6 +426,7 @@ export async function pollNativeGeneration(
     }
 
     if (failure.retryable || unconfirmedFiboResponse) {
+      if (finalObservation) return toGenerationJob(row);
       if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
         const failed = await failJob(
           row,
@@ -452,6 +464,9 @@ export async function pollNativeGeneration(
     .split(";")[0]
     .trim()
     .toLowerCase();
+  if (finalObservation && ((worker.policy?.resultMime && contentType !== worker.policy.resultMime)
+    || (row.output_kind === "image" && !contentType.startsWith("image/"))
+    || (row.output_kind === "video" && !contentType.startsWith("video/")))) return toGenerationJob(row);
   if (worker.policy?.resultMime && contentType !== worker.policy.resultMime) throw new Error("Worker returned an unexpected result format.");
   if (row.output_kind === "image" && !contentType.startsWith("image/")) throw new Error("Worker returned a non-image result.");
   if (row.output_kind === "video" && !contentType.startsWith("video/")) throw new Error("Worker returned a non-video result.");
@@ -461,11 +476,12 @@ export async function pollNativeGeneration(
     try {
       generatedVgl = await getGeneratedFiboCaption(worker, row.provider_job_id, providerTimeoutMs);
     } catch (error) {
-      if (providerTimeoutMs && error instanceof Error && error.name === "TimeoutError") throw error;
+      if (!finalObservation && providerTimeoutMs && error instanceof Error && error.name === "TimeoutError") throw error;
       if (error instanceof InvalidGeneratedFiboSidecarError) {
         const failed = await failJob(row, "generation_vgl_invalid", "Generated FIBO scene JSON could not be verified.");
         return toGenerationJob(failed);
       }
+      if (finalObservation) return toGenerationJob(row);
       // Transient sidecar fetch problems keep normal polling retryable, but
       // never strand a ready worker output forever after a lost sidecar.
       if (Date.now() - Date.parse(row.updated_at) >= retryableProviderStaleMs) {
@@ -473,6 +489,18 @@ export async function pollNativeGeneration(
         return toGenerationJob(failed);
       }
       throw error;
+    }
+  }
+  // Confirm the final observation's response body before transitioning to
+  // persisting. A provider read failure is different from a failed DB/R2 write;
+  // persistence/recovery exceptions must escape for a future claimed recovery.
+  let observedBytes: Buffer | undefined;
+  if (finalObservation) {
+    try {
+      observedBytes = Buffer.from(await response.arrayBuffer());
+      options.signal?.throwIfAborted();
+    } catch {
+      return toGenerationJob(row);
     }
   }
   // The gateway response is the first observed ready result, not the provider's
@@ -505,7 +533,7 @@ export async function pollNativeGeneration(
     phase: "provider-ready",
     status: persisting.status,
   });
-  const bytes = Buffer.from(await response.arrayBuffer());
+  const bytes = observedBytes ?? Buffer.from(await response.arrayBuffer());
   const poster = row.output_kind === "video" ? await fetchPoster(worker, row.provider_job_id, providerTimeoutMs) : null;
   const completed = await persistResult(persisting, bytes, contentType, poster);
   if (completed.status === "succeeded") {

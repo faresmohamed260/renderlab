@@ -98,15 +98,18 @@ async function failStaleUndispatchedJob(row: JobSnapshotRow, token: string) {
   return rows?.[0] ?? null;
 }
 
+function isExpiredFiboJob(row: JobSnapshotRow) {
+  return row.worker_id === FIBO_DISPATCH_BACKEND
+    && Date.now() - Date.parse(row.created_at) >= fiboJobDeadlineMs;
+}
+
 /**
- * All FIBO states have one immutable, absolute cutoff. A lost provider handle,
- * repeated 202, and stalled persistence all converge on the same atomic SQL
- * terminalization plus reservation release, without another provider request.
+ * The immutable deadline bounds pending/unconfirmed work, not unread results.
+ * Invoke only after final observation/recovery (or with no handle to observe).
  * Cancellation retains the only legal SQL terminal edge (cancelled).
  */
 async function failExpiredFiboJob(row: JobSnapshotRow, token: string) {
-  if (row.worker_id !== FIBO_DISPATCH_BACKEND
-    || Date.now() - Date.parse(row.created_at) < fiboJobDeadlineMs) return null;
+  if (!isExpiredFiboJob(row)) return null;
 
   const cancelling = row.status === "cancelling";
   const outcome = await tryAtomicTerminalizeGeneration({
@@ -213,11 +216,30 @@ export async function reconcileNativeGeneration(
     const claimedSnapshot = await getSnapshot(ownerId, jobId, lookupSignal());
     if (!claimedSnapshot) return null;
 
-    const expired = await failExpiredFiboJob(claimedSnapshot, token);
-    if (expired) {
-      const job = toGenerationJob(expired);
-      await settleTerminalAdmission(job, ownerId);
-      return diagnose(job, "deadline", "generation_deadline_exceeded");
+    if (isExpiredFiboJob(claimedSnapshot)) {
+      // Preserve cancellation semantics; never persist a result for a cancelling job.
+      // The same claimed poll first recovers persisting output, then (if needed)
+      // observes the existing handle once, using the owner-return short budgets.
+      if (claimedSnapshot.status !== "cancelling"
+        && (claimedSnapshot.provider_job_id || claimedSnapshot.status === "persisting")) {
+        const observed = await pollNativeGeneration(
+          ownerId, jobId, deadlines?.providerMs ?? 4_000,
+          lookupSignal() ?? AbortSignal.timeout(1_500), true,
+        );
+        if (!observed || terminalStatuses.has(observed.status)
+          || observed.status !== claimedSnapshot.status) {
+          // A competing status CAS may win; do not fail its newer snapshot.
+          if (observed) await settleTerminalAdmission(observed, ownerId);
+          return diagnose(observed, "polled", observed?.error?.code);
+        }
+      }
+      const expired = await failExpiredFiboJob(claimedSnapshot, token);
+      if (expired) {
+        const job = toGenerationJob(expired);
+        await settleTerminalAdmission(job, ownerId);
+        return diagnose(job, "deadline", job.error?.code);
+      }
+      return diagnose(null, "deadline");
     }
 
     if (claimedSnapshot.status === "cancelling") {
