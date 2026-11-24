@@ -66,30 +66,52 @@ Run (1) node --test tests/unit/generation-job-state-machine.test.mjs tests/unit/
 
 ## Post-Unit-4 correctness follow-up: bounded FIBO generation deadline (R2/R3)
 
-The unit inventory above is historical. The subsequent FIBO runtime deadline is
-**20 minutes from `generation_jobs.created_at`**: Modal's renderer timeout is
-**420 seconds (7 minutes)**, plus **780 seconds (13 minutes)** of bounded allowance
-for durable outbox dispatch, GPU queue/startup, return transit and persistence.
-Using immutable creation time prevents repeated provider HTTP 202 responses,
-reconciliation attempts, or poison output from extending this cutoff.
+The unit inventory above is historical. The immutable FIBO application deadline is
+**20 minutes from `generation_jobs.created_at`**. The admission deadline is
+**12 minutes 30 seconds from acceptance**, leaving 420 seconds (7 minutes) for
+the renderer and 30 seconds of margin before the application cutoff; see
+[fibo-admission-deadline.ts](../../src/server/generation/fibo-admission-deadline.ts).
+Replays retain the original admission deadline. Pending responses and updates
+cannot extend either deadline. Migration
+[0035](../../supabase/migrations/0035_dispatch_delivery_cap.sql) caps durable
+dispatcher claims at four deliveries per attempt (including redeliveries);
+exhausted due rows with expired/no live leases are quarantined as unresolved
+without discarding execution/acceptance evidence. That is a delivery ceiling,
+not a guarantee of four provider sends or of exactly-once execution.
 
-For a FIBO job in queued, preparing, running or persisting, expiry triggers one
-owner-scoped **migration 0031 atomic terminalize-and-release** call with error code
-`generation_deadline_exceeded`, before making further provider or storage calls.
-A FIBO job already **cancelling** follows the existing legal
-`cancelling -> cancelled` SQL edge, still using the same atomic release;
-SQL 0031 intentionally does not allow `cancelling -> failed`.
-Retired/non-FIBO workflows keep their previous 2-hour ambiguous-response and
-15-minute undispatched policies. The cutoff applies even to an unresolved
-durable outbox with no backend call ID: both owner-return and global candidate
-selectors include aged FIBO rows without handles.
+The H1 correction distinguishes unread results from unfinished work. On an
+expired FIBO job, under its owner-scoped reconciliation claim, recover any
+already-persisted output first and, when necessary, observe the existing
+provider handle once with bounded lookup/provider deadlines. A ready result or
+confirmed terminal result follows normal settlement; no new generation is
+submitted. Only pending, unconfirmed or undispatched work is deadline-failed
+with `generation_deadline_exceeded`. Expired cancelling jobs use the legal
+`cancelling -> cancelled` edge rather than failed. See
+[reconciliation](../../src/server/generation/reconcile-generation.ts),
+[technical claims](../TECHNICAL_CLAIMS.md) and
+[C1 late-return production evidence](../audits/C1_RELEASE_EVIDENCE_2026-11-24.md).
 
-This follow-up requires production schema 0031 before release (already applied,
-but worker 1 alone verifies/coordinates runtime deployment). The code refuses
-to downgrade deadline settlement to non-atomic PATCH on a missing RPC.
-Terminal races remain protected by status + reconciliation-token compare-and-swap.
-Tests cover the exact deadline boundary, pending HTTP 202, unresolved queued,
-persisting and cancelling, one reservation release and zero new provider calls.
+Deadline settlement uses the service-role atomic terminalize-and-release RPC
+introduced by 0031 and updated by
+[0036](../../supabase/migrations/0036_terminal_outbox_and_asset_guard.sql).
+0036 locks the outbox before the job, closes eligible unstarted outbox rows
+when failed/cancelled, preserves started-execution evidence, and refuses
+failure/cancellation when a canonical output already exists. Reservation release,
+job terminalization and eligible outbox closure are in one transaction.
+Status and reconcile-token CAS protect terminal races; a missing RPC must not
+downgrade to a non-atomic PATCH. Retired/non-FIBO workflows retain their prior
+two-hour ambiguous-response and 15-minute undispatched policies. Candidate
+selectors include aged FIBO rows without handles. Owner-return settlement is
+not an always-on scheduler or a guarantee beyond provider result retention.
+
+Tests cover the exact deadline boundary, final bounded provider observation,
+ready/persisting recovery, pending HTTP 202, unresolved queued, cancelling,
+atomic release and unstarted outbox closure. The retained late result was
+verified after 1321 seconds with one Library return and no prior polling in
+[C1](https://github.com/faresmohamed260/renderlab/actions/runs/45320628441);
+[batch D](../audits/BATCH_D_RELEASE_EVIDENCE_2026-11-24.md) records 0035/0036
+qualification and live release. No claim of zero provider/storage calls on
+expired reconciliation is warranted.
 
 ## Post-Unit-4 fairness follow-up: last-claimed reconciliation ordering
 
