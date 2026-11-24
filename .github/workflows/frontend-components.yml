@@ -39,11 +39,46 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Read prior overflow baseline (PR only)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .overflow-baseline-base
+          sparse-checkout: tests/components/create-overflow-baseline.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: npm
+      - name: Enforce shrink-only overflow debt (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          node --input-type=module <<'NODE'
+          import { existsSync, readFileSync } from "node:fs";
+          const path = "tests/components/create-overflow-baseline.json";
+          const prior = ".overflow-baseline-base/" + path;
+          const current = JSON.parse(readFileSync(path, "utf8"));
+          if (!existsSync(prior)) {
+            console.log("Initial baseline introduction; exact browser calibration required.");
+          } else {
+            const previous = JSON.parse(readFileSync(prior, "utf8"));
+            for (const [width, states] of Object.entries(current)) {
+              for (const [state, entries] of Object.entries(states)) {
+                for (const entry of entries) {
+                  const old = previous[width]?.[state]?.find(x => x.selector === entry.selector && x.kind === entry.kind);
+                  if (!old || !Number.isInteger(entry.pixels) || entry.pixels <= 0 || entry.pixels > old.pixels) {
+                    throw new Error("Overflow baseline cannot grow: " + JSON.stringify({ width, state, entry, old }));
+                  }
+                }
+              }
+            }
+            console.log("Overflow baseline is unchanged or reduced relative to PR base.");
+          }
+          NODE
+          rm -rf .overflow-baseline-base
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Install Chromium only

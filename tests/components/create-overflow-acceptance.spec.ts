@@ -35,7 +35,8 @@ async function geometry(page: Page) {
     const address = (el: HTMLElement) => {
       if (el.id) return el.tagName.toLowerCase() + "#" + el.id;
       const componentClass = [...el.classList].find(c => c.startsWith("create-preview-") || c.startsWith("preview-"));
-      const selector = componentClass ? "." + componentClass : el.tagName.toLowerCase();
+      const label = el.getAttribute("aria-label");
+      const selector = componentClass ? "." + componentClass : label ? el.tagName.toLowerCase() + "[aria-label=" + JSON.stringify(label) + "]" : el.tagName.toLowerCase();
       const matches = [...shell.querySelectorAll(selector)];
       if (shell.matches(selector)) matches.unshift(shell);
       return matches.length === 1 ? selector : selector + "[" + (matches.indexOf(el) + 1) + "]";

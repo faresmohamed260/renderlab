@@ -267,5 +267,150 @@
   },
   "320": {},
   "390": {},
-  "1440": {}
+  "1440": {
+    "empty/edit": [
+      {
+        "selector": ".create-preview-canvas-upload",
+        "kind": "scroll",
+        "pixels": 3
+      },
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 3
+      }
+    ],
+    "empty/generate": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "empty/recents": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "empty/advanced": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "populated/edit": [
+      {
+        "selector": ".create-preview-canvas-upload",
+        "kind": "scroll",
+        "pixels": 3
+      },
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 3
+      }
+    ],
+    "populated/generate": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "populated/recents": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "populated/advanced": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "populated-auto-vgl/edit": [
+      {
+        "selector": ".create-preview-canvas-upload",
+        "kind": "scroll",
+        "pixels": 3
+      },
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 3
+      }
+    ],
+    "populated-auto-vgl/generate": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "populated-auto-vgl/recents": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ],
+    "populated-auto-vgl/advanced": [
+      {
+        "selector": ".create-preview-stage-surface",
+        "kind": "scroll",
+        "pixels": 38
+      },
+      {
+        "selector": "button[aria-label=\"Inspiration unavailable\"]",
+        "kind": "scroll",
+        "pixels": 2
+      }
+    ]
+  }
 }
