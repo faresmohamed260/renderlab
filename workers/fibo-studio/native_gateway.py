@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from native_graph import FiboInputRejected, build_graph
+from native_render_errors import FiboRenderTimeout
 from native_generated_vgl import validate_generated_vgl
 
 MAX_BODY = 46 * 1024 * 1024
@@ -160,11 +161,12 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, function
         call_id = unwrap(request.headers.get(JOB_HANDLE_HEADER, ""))
         try:
             result = await run_in_threadpool(poll, call_id)
-        # Modal's terminal errors subclass TimeoutError; only plain get(timeout=0)
-        # pending polls are HTTP 202.
+        # Modal 1.6.4 terminal errors are distinct from built-in TimeoutError.
+        # The renderer types completed execution timeouts before they cross the
+        # remote boundary; bare get(timeout=0) TimeoutError remains pending.
         except expired_errors as exc:
             raise HTTPException(410, "FIBO result expired") from exc
-        except function_timeout_errors as exc:
+        except (FiboRenderTimeout, *function_timeout_errors) as exc:
             raise HTTPException(409, "FIBO_RENDER_TIMED_OUT") from exc
         except TimeoutError:
             return JSONResponse({"worker_state": "generating"}, status_code=202)
@@ -183,11 +185,12 @@ def create_gateway(*, spawn, poll, cancel, signing_key, expired_errors, function
         call_id = unwrap(request.headers.get(JOB_HANDLE_HEADER, ""))
         try:
             result = await run_in_threadpool(poll, call_id)
-        # Modal's terminal errors subclass TimeoutError; only plain get(timeout=0)
-        # pending polls are HTTP 202.
+        # Modal 1.6.4 terminal errors are distinct from built-in TimeoutError.
+        # The renderer types completed execution timeouts before they cross the
+        # remote boundary; bare get(timeout=0) TimeoutError remains pending.
         except expired_errors as exc:
             raise HTTPException(410, "FIBO result expired") from exc
-        except function_timeout_errors as exc:
+        except (FiboRenderTimeout, *function_timeout_errors) as exc:
             raise HTTPException(409, "FIBO_RENDER_TIMED_OUT") from exc
         except TimeoutError:
             return JSONResponse({"worker_state": "generating"}, status_code=202)

@@ -18,7 +18,7 @@ gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install(
 )
 gateway_image = gateway_image.add_local_python_source(
     "dispatch_core", "dispatch_monitor", "dispatch_supabase", "modal_dispatch_backend", "native_gateway", "native_graph",
-    "native_generated_vgl", "native_mask", "workload_contract", "workload_environment"
+    "native_generated_vgl", "native_mask", "native_render_errors", "workload_contract", "workload_environment"
 )
 
 

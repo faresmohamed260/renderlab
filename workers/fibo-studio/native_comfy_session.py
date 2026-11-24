@@ -15,6 +15,8 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 from uuid import UUID, uuid4
 
+from native_render_errors import FiboRenderTimeout
+
 
 @dataclass(frozen=True)
 class JobFiles:
@@ -128,7 +130,7 @@ class ComfySession:
             except (URLError, TimeoutError):
                 pass
             sleep(1)
-        raise TimeoutError("ComfyUI did not become ready")
+        raise FiboRenderTimeout("ComfyUI did not become ready")
 
     def _require_empty_queue(self):
         queue = self._request("/queue")
@@ -146,7 +148,7 @@ class ComfySession:
                     raise RuntimeError("ComfyUI execution failed")
                 return record
             sleep(2)
-        raise TimeoutError("ComfyUI did not finish the job")
+        raise FiboRenderTimeout("ComfyUI did not finish the job")
 
     def _reset(self):
         server = self._server
