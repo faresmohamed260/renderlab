@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library — three-panel layout</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;overflow:hidden;background:#07060b;color:#f5f5f7;font-family:'Inter',-apple-system,system-ui,sans-serif;letter-spacing:-0.01em">
+
+<div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(45% 45% at 78% 6%,rgba(117,94,210,.34),rgba(117,94,210,0) 70%),radial-gradient(40% 45% at 8% 96%,rgba(217,100,160,.18),rgba(217,100,160,0) 70%)"></div>
+
+<div style="position:absolute;left:28px;top:20px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600"><div aria-hidden="true" style="width:26px;height:26px;border-radius:9px;background:linear-gradient(135deg,#a89bff,#6251c7)"></div>RenderLab</div>
+<nav aria-label="Main" style="position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:34px;font-size:15px">
+<a href="#" style="color:rgba(245,245,247,.68);text-decoration:none;padding-bottom:8px">Create</a>
+<a href="#" aria-current="page" style="position:relative;color:#fff;font-weight:500;text-decoration:none;padding-bottom:8px">Library<span aria-hidden="true" style="position:absolute;left:50%;bottom:-2px;width:5px;height:5px;margin-left:-2px;border-radius:50%;background:#a89bff"></span></a>
+</nav>
+<div style="position:absolute;right:28px;top:14px;display:flex;align-items:center;gap:10px">
+<button type="button" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px 0 14px;border-radius:20px;border:0;background:rgba(255,255,255,.07);color:rgba(245,245,247,.78);font:500 14px/1 'Inter',sans-serif;cursor:pointer">Search actions<span style="padding:4px 7px;border-radius:7px;background:rgba(255,255,255,.1);font-size:11px;color:rgba(245,245,247,.8)">Ctrl K</span></button>
+<button type="button" style="height:40px;padding:0 16px;border-radius:20px;border:0;background:rgba(255,255,255,.07);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Queue</button>
+<button type="button" aria-label="Account" style="width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.07);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg></button>
+</div>
+
+<!-- LEFT: organize -->
+<aside aria-label="Library navigation" style="position:absolute;left:24px;top:76px;width:260px;height:808px;box-sizing:border-box;padding:18px 14px;border-radius:28px;background:rgba(255,255,255,.055);backdrop-filter:blur(30px) saturate(1.5);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 30px 90px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:21px;background:rgba(255,255,255,.06);margin-bottom:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(245,245,247,.62)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><input aria-label="Search your library" placeholder="Search your library" style="flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f5f5f7;font:400 14px/1 'Inter',sans-serif"></div>
+
+<a href="#" aria-current="page" style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-radius:14px;background:rgba(255,255,255,.10);color:#fff;font-size:14px;font-weight:500;text-decoration:none"><span style="flex:1">All media</span><span style="font-size:12px;color:rgba(245,245,247,.68)">128</span></a>
+<a href="#" style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-radius:14px;color:rgba(245,245,247,.82);font-size:14px;text-decoration:none"><span style="flex:1">Favorites</span><span style="font-size:12px;color:rgba(245,245,247,.62)">19</span></a>
+<a href="#" style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-radius:14px;color:rgba(245,245,247,.82);font-size:14px;text-decoration:none"><span style="flex:1">Uploads</span><span style="font-size:12px;color:rgba(245,245,247,.62)">23</span></a>
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:18px 14px 6px"><h2 style="margin:0;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:rgba(245,245,247,.62)">Collections</h2><button type="button" aria-label="New collection" style="width:32px;height:32px;border-radius:16px;border:0;background:rgba(255,255,255,.07);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+<a href="#" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:14px;color:rgba(245,245,247,.82);font-size:14px;text-decoration:none"><span aria-hidden="true" style="width:14px;height:14px;border-radius:5px;background:linear-gradient(135deg,#d9a98a,#c07f5d)"></span><span style="flex:1">Desert studies</span><span style="font-size:12px;color:rgba(245,245,247,.62)">14</span></a>
+<a href="#" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:14px;color:rgba(245,245,247,.82);font-size:14px;text-decoration:none"><span aria-hidden="true" style="width:14px;height:14px;border-radius:5px;background:linear-gradient(135deg,#7a6cc2,#d98fb0)"></span><span style="flex:1">Portraits</span><span style="font-size:12px;color:rgba(245,245,247,.62)">31</span></a>
+<a href="#" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:14px;color:rgba(245,245,247,.82);font-size:14px;text-decoration:none"><span aria-hidden="true" style="width:14px;height:14px;border-radius:5px;background:linear-gradient(135deg,#3f8f7b,#c4e2b4)"></span><span style="flex:1">Nature</span><span style="font-size:12px;color:rgba(245,245,247,.62)">9</span></a>
+<a href="#" style="display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:14px;color:rgba(245,245,247,.82);font-size:14px;text-decoration:none"><span aria-hidden="true" style="width:14px;height:14px;border-radius:5px;background:linear-gradient(135deg,#a8445a,#f0a98a)"></span><span style="flex:1">Client work</span><span style="font-size:12px;color:rgba(245,245,247,.62)">6</span></a>
+
+<div style="flex:1"></div>
+<div style="display:flex;gap:6px;align-items:center;padding:0 6px;font-size:12px;color:rgba(245,245,247,.62)"><span style="padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.1)">Ctrl F</span>search<span style="padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.1)">S</span>select</div>
+</aside>
+
+<!-- CENTER: grid -->
+<main style="position:absolute;left:300px;top:76px;width:760px;height:808px">
+<div style="display:flex;align-items:center;gap:10px;height:48px;margin-bottom:14px">
+<h1 style="margin:0;font-size:22px;font-weight:600">All media</h1>
+<span style="font-size:14px;color:rgba(245,245,247,.62)">128 items</span>
+<div style="flex:1"></div>
+<button type="button" style="height:40px;padding:0 16px;border-radius:20px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Select</button>
+<button type="button" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 16px;border-radius:20px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Newest first<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+<div role="radiogroup" aria-label="Grid size" style="display:flex;padding:3px;border-radius:20px;background:rgba(0,0,0,.32)">
+<button type="button" role="radio" aria-checked="false" aria-label="Small tiles" style="width:36px;height:34px;border-radius:17px;border:0;background:transparent;color:rgba(245,245,247,.72);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="10" y="3" width="5" height="5" rx="1"/><rect x="17" y="3" width="4" height="5" rx="1"/><rect x="3" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/><rect x="17" y="10" width="4" height="5" rx="1"/></svg></button>
+<button type="button" role="radio" aria-checked="true" aria-label="Medium tiles" style="width:36px;height:34px;border-radius:17px;border:0;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></button>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+<button type="button" aria-label="Sandstone arch, selected" aria-pressed="true" style="position:relative;aspect-ratio:1/1;padding:0;border-radius:20px;border:3px solid #fff;background:linear-gradient(160deg,#6f8196,#d9a98a 60%,#c07f5d);cursor:pointer"><span aria-hidden="true" style="position:absolute;right:8px;top:8px;width:24px;height:24px;border-radius:12px;background:#7c6cf2;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span></button>
+<button type="button" aria-label="Twilight skyline" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#2c3e63,#7a6cc2 60%,#d98fb0);cursor:pointer"></button>
+<button type="button" aria-label="Misty pine forest" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#17332e,#3f8f7b 60%,#c4e2b4);cursor:pointer"></button>
+<button type="button" aria-label="Studio portrait" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#3b1f2b,#a8445a 60%,#f0a98a);cursor:pointer"></button>
+<button type="button" aria-label="Dunes at dusk" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#4b3d6b,#c4806a 65%,#f0c79a);cursor:pointer"></button>
+<button type="button" aria-label="Harbor lights" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#10243a,#2f6f9c 60%,#9fd3e8);cursor:pointer"></button>
+<button type="button" aria-label="Stone pedestal" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#4a4a52,#b9b4ac 60%,#ece6dc);cursor:pointer"></button>
+<button type="button" aria-label="Autumn lane" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#4a2a14,#c2661f 60%,#f0c070);cursor:pointer"></button>
+<button type="button" aria-label="Orchid macro" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#2b1240,#a24fb8 60%,#f0b5e0);cursor:pointer"></button>
+<button type="button" aria-label="Glacier" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#16303f,#6cb4cf 60%,#e4f4fa);cursor:pointer"></button>
+<button type="button" aria-label="Neon alley" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#150a2a,#5b2fd0 55%,#f04fa0);cursor:pointer"></button>
+<button type="button" aria-label="Olive grove" style="aspect-ratio:1/1;padding:0;border-radius:20px;border:0;background:linear-gradient(160deg,#2a3314,#7f9a3c 60%,#e0e8a8);cursor:pointer"></button>
+</div>
+
+<div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);white-space:nowrap;display:flex;align-items:center;gap:6px;padding:8px 10px 8px 18px;border-radius:30px;background:rgba(40,34,70,.55);backdrop-filter:blur(30px) saturate(1.6);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 20px 60px rgba(0,0,0,.5)">
+<span style="font-size:14px;font-weight:500;margin-right:8px">1 selected</span>
+<button type="button" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:rgba(255,255,255,.1);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Favorite</button>
+<button type="button" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:rgba(255,255,255,.1);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Add to collection</button>
+<button type="button" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:rgba(255,255,255,.1);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Download</button>
+<button type="button" style="height:40px;padding:0 14px;border-radius:20px;border:0;background:rgba(240,128,128,.18);color:#ffb3b3;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Delete</button>
+</div>
+</main>
+
+<!-- RIGHT: inspector -->
+<aside aria-label="Selected item" style="position:absolute;left:1076px;top:76px;width:340px;height:808px;box-sizing:border-box;padding:18px;border-radius:28px;background:rgba(255,255,255,.055);backdrop-filter:blur(30px) saturate(1.5);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 30px 90px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:14px">
+<div style="width:100%;height:230px;border-radius:22px;overflow:hidden;flex:none">
+<svg viewBox="0 0 800 600" width="304" height="230" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Sandstone arch in a desert at golden hour" style="display:block">
+<defs>
+<linearGradient id="skyLb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f8196"/><stop offset=".55" stop-color="#d9a98a"/><stop offset="1" stop-color="#f1c79a"/></linearGradient>
+<linearGradient id="archLb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ebbd93"/><stop offset="1" stop-color="#a8694f"/></linearGradient>
+</defs>
+<rect width="800" height="600" fill="url(#skyLb)"/>
+<circle cx="580" cy="170" r="58" fill="#f6d9a6"/>
+<path d="M0 420 C140 360 260 380 380 410 C520 445 650 400 800 380 V600 H0Z" fill="#c07f5d"/>
+<path d="M0 480 C160 430 300 470 440 490 C580 510 700 470 800 450 V600 H0Z" fill="#a5694f"/>
+<path d="M200 480 V290 C200 190 260 130 330 130 C400 130 460 190 460 290 V480 H390 V300 C390 250 365 215 330 215 C295 215 270 250 270 300 V480 Z" fill="url(#archLb)"/>
+<path d="M0 545 C200 515 420 565 800 525 V600 H0Z" fill="#8c5540"/>
+</svg>
+</div>
+<div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0;flex:1;font-size:18px;font-weight:600">Sandstone arch</h2><button type="button" aria-label="Rename" style="width:36px;height:36px;border-radius:18px;border:0;background:rgba(255,255,255,.07);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
+<p style="margin:0;font-size:13px;line-height:1.5;color:rgba(245,245,247,.78)">A quiet architectural study of a sandstone arch in a wide desert, warm evening light and long shadows</p>
+<dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px"><dt style="color:rgba(245,245,247,.62)">Created</dt><dd style="margin:0">Today, 4:12 PM</dd><dt style="color:rgba(245,245,247,.62)">Shape</dt><dd style="margin:0">4:3 · Text to image</dd><dt style="color:rgba(245,245,247,.62)">Seed</dt><dd style="margin:0">1889046298</dd><dt style="color:rgba(245,245,247,.62)">Collection</dt><dd style="margin:0">Desert studies</dd></dl>
+<div style="flex:1"></div>
+<button type="button" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:52px;border-radius:18px;border:0;background:linear-gradient(135deg,#7c6cf2,#b05cf0);color:#fff;font:600 15px/1 'Inter',sans-serif;box-shadow:0 12px 34px rgba(124,108,242,.42),inset 0 1px 0 rgba(255,255,255,.28);cursor:pointer">Open in Create</button>
+<div style="display:flex;gap:8px"><button type="button" style="flex:1;height:44px;border-radius:16px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Reuse settings</button><button type="button" style="flex:1;height:44px;border-radius:16px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Edit image</button></div>
+<div style="display:flex;gap:8px"><button type="button" aria-label="Favorite" style="flex:1;height:44px;border-radius:16px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button><button type="button" aria-label="Download" style="flex:1;height:44px;border-radius:16px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></button><button type="button" aria-label="Delete" style="flex:1;height:44px;border-radius:16px;border:0;background:rgba(240,128,128,.14);color:#ffb3b3;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button></div>
+</aside>
+
+</div>
+</x-dc>
+
+</body>
+</html>
