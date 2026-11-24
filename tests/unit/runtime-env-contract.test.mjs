@@ -286,3 +286,34 @@ test("N4 Deployment Readiness watches typed config, inventory and proxy on PR an
   for (const name of ["src/lib/config/runtime-env.ts","docs/operations/PRODUCTION_ENV_REQUIRED_NAMES.json","proxy.ts"])
     assert.equal(yaml.split('- "' + name + '"').length - 1, 2);
 });
+
+test("F7 every schema-classified test-only name is refused at runtime in Production", () => {
+  const entries = Object.entries(runtimeEnvSchema).filter(([, spec]) => spec.category === "test-only");
+  assert(entries.length >= 15);
+  const names = ["VERCEL_ENV", ...entries.map(([name]) => name)];
+  const saved = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  const original = console.error;
+  const warnings = [];
+  try {
+    console.error = (...args) => warnings.push(args.join(" "));
+    process.env.VERCEL_ENV = "preview";
+    for (const [name, spec] of entries) {
+      const value = spec.kind === "boolean" ? (spec.encoding === "1" ? "1" : "true") : "fixture-sensitive-value";
+      process.env[name] = value;
+      assert.equal(envString(name), value, name);
+      if (spec.kind === "boolean") assert.equal(envFlag(name), true, name);
+    }
+    process.env.VERCEL_ENV = "production";
+    for (const [name, spec] of entries) {
+      assert.equal(envString(name), undefined, name);
+      if (spec.kind === "boolean") assert.equal(envFlag(name), false, name);
+    }
+    assert(!warnings.join(" ").includes("fixture-sensitive-value"));
+  } finally {
+    console.error = original;
+    for (const name of names) {
+      if (saved[name] === undefined) delete process.env[name];
+      else process.env[name] = saved[name];
+    }
+  }
+});

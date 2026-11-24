@@ -86,3 +86,32 @@ test("FIBO gateway fails closed without complete credentials or a Modal HTTPS or
     }
   }
 });
+
+test("F7 Production runtime rejects every non-pinned Modal origin before attaching credentials", () => {
+  const names = ["VERCEL_ENV", "RENDERLAB_GENERATION_GATEWAY_URL", "RENDERLAB_FIBO_GATEWAY_URL", "RENDERLAB_FIBO_MODAL_KEY", "RENDERLAB_FIBO_MODAL_SECRET"];
+  const saved = Object.fromEntries(names.map(name => [name, process.env[name]]));
+  const pinned = "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run";
+  try {
+    process.env.VERCEL_ENV = "production";
+    process.env.RENDERLAB_FIBO_MODAL_KEY = "fixture-key";
+    process.env.RENDERLAB_FIBO_MODAL_SECRET = "fixture-secret";
+    delete process.env.RENDERLAB_GENERATION_GATEWAY_URL;
+    process.env.RENDERLAB_FIBO_GATEWAY_URL = pinned + "/";
+    const worker = findWorker("fibo");
+    assert.equal(worker?.gatewayUrl, pinned);
+    assert.equal(workerGatewayOptions(worker).headers["Modal-Key"], "fixture-key");
+    for (const origin of ["https://other.modal.run", pinned.replace("-main--", "-preview--"), pinned.replace(".us-east.", ".eu-west."), pinned + ":443", pinned + "/jobs", pinned + "?x=1", pinned + "#fragment"]) {
+      process.env.RENDERLAB_GENERATION_GATEWAY_URL = origin;
+      assert.equal(findWorker("fibo"), null, origin);
+      assert.throws(() => workerGatewayOptions({...worker, gatewayUrl: origin}), /approved Modal origin/);
+      delete process.env.RENDERLAB_GENERATION_GATEWAY_URL;
+      process.env.RENDERLAB_FIBO_GATEWAY_URL = origin;
+      assert.equal(findWorker("fibo"), null, "legacy alias: " + origin);
+    }
+  } finally {
+    for (const name of names) {
+      if (saved[name] === undefined) delete process.env[name];
+      else process.env[name] = saved[name];
+    }
+  }
+});

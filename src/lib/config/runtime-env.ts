@@ -303,7 +303,7 @@ export const productionRequiredNames: readonly RuntimeEnvName[] = Object.entries
   .sort();
 const approvedSupabaseUrl = "https://rashyleshocuvpgcooxy.supabase.co";
 // Pin workspace, production environment, gateway app/function and deployed region.
-const modalOrigin = /^https:\/\/faresmohamed260-main--renderlab-generation-gateway-web\.us-east\.modal\.run$/;
+export const modalGatewayOriginPattern = /^https:\/\/faresmohamed260-main--renderlab-generation-gateway-web\.us-east\.modal\.run$/;
 
 function envSource(name: RuntimeEnvName): string | undefined {
   // Next.js compiles only literal NEXT_PUBLIC_ keys into browser bundles.
@@ -313,15 +313,10 @@ function envSource(name: RuntimeEnvName): string | undefined {
   return process.env[name];
 }
 const reportedMissingProductionEnv = new Set<string>();
-const refusedProductionTestOverrides = new Set<RuntimeEnvName>([
-  "RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE",
-  "RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL",
-  "RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE",
-]);
 const reportedRefusedProductionTestOverrides = new Set<RuntimeEnvName>();
 function runtimeValue(name: RuntimeEnvName): string | undefined {
   const value = envSource(name);
-  if (envSource("VERCEL_ENV") === "production" && refusedProductionTestOverrides.has(name)) {
+  if (envSource("VERCEL_ENV") === "production" && runtimeEnvSchema[name].category === "test-only") {
     if (value?.trim() && !reportedRefusedProductionTestOverrides.has(name)) {
       reportedRefusedProductionTestOverrides.add(name);
       console.error(`Configuration error: ${name}: test-only override refused in Production.`);
@@ -437,7 +432,7 @@ export function validateRuntimeEnvironment(
     if (!source.RENDERLAB_FIBO_MODAL_SECRET?.trim()) issue("RENDERLAB_FIBO_MODAL_SECRET", "required when FIBO enabled");
   }
   if (gateway) {
-    if (!modalOrigin.test(gateway)) issue("RENDERLAB_GENERATION_GATEWAY_URL", "must be an HTTPS Modal origin");
+    if (!modalGatewayOriginPattern.test(gateway)) issue("RENDERLAB_GENERATION_GATEWAY_URL", "must be an HTTPS Modal origin");
     if (!source.RENDERLAB_FIBO_MODAL_KEY?.trim()) issue("RENDERLAB_FIBO_MODAL_KEY", "required for configured gateway");
     if (!source.RENDERLAB_FIBO_MODAL_SECRET?.trim()) issue("RENDERLAB_FIBO_MODAL_SECRET", "required for configured gateway");
   }
