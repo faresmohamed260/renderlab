@@ -1,0 +1,7 @@
+# Offline worker test environment; no GPU/ComfyUI/provider credentials.
+# Match the existing gateway regression and production gateway direct pins.
+modal==1.6.4
+fastapi==0.137.2
+httpx==0.28.1
+Pillow==12.2.0
+psycopg[binary]==3.2.13

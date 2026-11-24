@@ -7,6 +7,7 @@ on:
       - "workers/fibo-studio/modal_native_production.py"
       - "workers/fibo-studio/modal_native_candidate.py"
       - "workers/fibo-studio/test_native_gateway.py"
+      - "workers/fibo-studio/requirements-ci.txt"
       - ".github/workflows/fibo-gateway-regression.yml"
 
 permissions:
@@ -28,7 +29,7 @@ jobs:
       - name: Install offline gateway test dependencies
         run: |
           python3 -m venv /tmp/renderlab-fibo-gateway
-          /tmp/renderlab-fibo-gateway/bin/python -m pip install --disable-pip-version-check "modal==1.6.4" "fastapi==0.137.2" "httpx==0.28.1" "Pillow==12.2.0"
+          /tmp/renderlab-fibo-gateway/bin/python -m pip install --disable-pip-version-check -r workers/fibo-studio/requirements-ci.txt
       - name: Test native gateway against real Modal exceptions
         working-directory: workers/fibo-studio
         run: /tmp/renderlab-fibo-gateway/bin/python -m unittest test_native_gateway test_native_graph -v
