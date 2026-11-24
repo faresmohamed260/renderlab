@@ -1,6 +1,6 @@
 {
   "source": "Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate",
   "source_documentation": "https://supabase.com/docs/guides/platform/ssl-enforcement",
-  "sha256": null,
-  "downloaded_at": null
+  "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
+  "downloaded_at": "2026-11-24"
 }
