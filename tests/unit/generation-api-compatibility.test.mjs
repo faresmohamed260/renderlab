@@ -66,3 +66,12 @@ test("source fingerprint snapshot fails when a route or validator changes withou
     assert.equal(actual, expected, "changed runtime API source needs deliberate regeneration: " + path);
   }
 });
+
+test("F4: generated OpenAPI explicitly rejects an Idempotency-Key on non-FIBO requests", () => {
+  const contract = buildGenerationOpenApi(source);
+  const post = contract.paths["/api/generation/jobs"].post;
+  assert.match(post.parameters[0].description, /non-FIBO.*400/i);
+  assert.match(post.description, /non-FIBO.*400/i);
+  assert.match(contract["x-renderlab-idempotency"].request, /non-FIBO.*400/i);
+  assert.deepEqual(post.responses["400"].content["application/json"].schema.properties.error.properties.code.enum, ["invalid_request"]);
+});
