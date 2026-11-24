@@ -16,6 +16,26 @@ from urllib.request import Request, urlopen
 from uuid import UUID, uuid4
 
 
+# Only operational process settings cross into the untrusted ComfyUI subprocess.
+# A denylist would leak newly introduced Modal/Supabase/provider secrets.
+_COMFY_PROCESS_ENV = frozenset({
+    "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "LC_ALL", "TZ",
+    "TMPDIR", "TMP", "TEMP", "PYTHONPATH", "PYTHONHOME", "PYTHONUNBUFFERED",
+    "PYTHONIOENCODING", "LD_LIBRARY_PATH", "LD_PRELOAD", "SSL_CERT_FILE",
+    "SSL_CERT_DIR", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
+    "CUDA_VISIBLE_DEVICES", "CUDA_DEVICE_ORDER", "CUDA_HOME", "CUDA_PATH",
+    "NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES", "NVIDIA_REQUIRE_CUDA",
+    "PYTORCH_CUDA_ALLOC_CONF", "PYTORCH_ALLOC_CONF", "TORCH_HOME",
+    "OMP_NUM_THREADS", "MKL_NUM_THREADS", "HF_HOME", "HF_HUB_CACHE",
+    "HUGGINGFACE_HUB_CACHE", "HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE",
+    "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
+})
+
+
+def _comfy_process_environment():
+    return {key: value for key, value in os.environ.items() if key in _COMFY_PROCESS_ENV}
+
+
 @dataclass(frozen=True)
 class JobFiles:
     key: str
@@ -116,6 +136,7 @@ class ComfySession:
              "--disable-all-custom-nodes", "--disable-api-nodes", "--disable-auto-launch",
              "--lowvram", "--reserve-vram", "1"],
             cwd=self.comfy, stdout=DEVNULL, stderr=DEVNULL,
+            env=_comfy_process_environment(),
         )
         deadline = monotonic() + 90
         while monotonic() < deadline:

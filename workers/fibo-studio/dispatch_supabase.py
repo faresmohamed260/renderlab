@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import os
+from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -21,13 +22,33 @@ class SupabaseDispatchStore:
         import psycopg
         from psycopg.rows import dict_row
 
-        return psycopg.connect(
-            self.database_url,
-            connect_timeout=15,
-            sslmode="require",
-            application_name="renderlab-modal-dispatch",
-            row_factory=dict_row,
-        )
+        # libpq's sslmode=require encrypts but does not verify hostname or CA.
+        # Prefer the OS/custom CA bundle where present; keep require only on
+        # stripped images with no readable CA store (documented exception).
+        explicit_ca = os.environ.get("PGSSLROOTCERT")
+        ca_bundle = explicit_ca or "/etc/ssl/certs/ca-certificates.crt"
+        if explicit_ca and not Path(explicit_ca).is_file():
+            raise RuntimeError("Dispatcher PostgreSQL TLS trust root is unavailable; check PGSSLROOTCERT points to a readable CA bundle (verification was not downgraded)")
+        tls = ({"sslmode": "verify-full", "sslrootcert": ca_bundle}
+               if Path(ca_bundle).is_file() else {"sslmode": "require"})
+        try:
+            return psycopg.connect(
+                self.database_url,
+                connect_timeout=15,
+                **tls,
+                application_name="renderlab-modal-dispatch",
+                row_factory=dict_row,
+            )
+        except psycopg.OperationalError:
+            # This exception reaches the scheduled dispatch invocation logs.
+            # Suppress libpq's raw error: it can echo database URLs and secrets.
+            # Never retry with weaker TLS after verify-full rejects the peer.
+            raise RuntimeError(
+                "Dispatcher PostgreSQL connection failed under sslmode="
+                + tls["sslmode"] + "; check DB reachability, pooler hostname, "
+                "server certificate and CA bundle; dispatch halted without "
+                "lowering TLS verification"
+            ) from None
 
     def _query(self, statement, parameters):
         with self._connect() as connection:

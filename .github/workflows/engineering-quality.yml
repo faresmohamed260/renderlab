@@ -77,6 +77,7 @@ jobs:
           python3 workers/fibo-studio/test_workload_environment.py
           python3 workers/fibo-studio/test_modal_app_isolation.py
           python3 workers/fibo-studio/test_production_gateway_packaging.py
+          python3 workers/fibo-studio/test_native_comfy_session.py
           python3 workers/fibo-studio/test_dispatch_core.py
           python3 workers/fibo-studio/test_modal_dispatch_backend.py
           python3 workers/fibo-studio/test_dispatch_supabase.py

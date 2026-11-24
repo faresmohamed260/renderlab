@@ -302,7 +302,7 @@ export const productionRequiredNames: readonly RuntimeEnvName[] = Object.entries
   .map(([name]) => name as RuntimeEnvName)
   .sort();
 const approvedSupabaseUrl = "https://rashyleshocuvpgcooxy.supabase.co";
-const modalOrigin = /^https:\/\/(?:[a-z0-9-]+\.)+modal\.run$/;
+const modalOrigin = /^https:\/\/faresmohamed260--renderlab-generation-gateway-web\.modal\.run$/;
 
 function envSource(name: RuntimeEnvName): string | undefined {
   // Next.js compiles only literal NEXT_PUBLIC_ keys into browser bundles.

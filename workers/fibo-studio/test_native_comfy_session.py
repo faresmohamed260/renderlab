@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import Mock, patch
 from uuid import uuid4
@@ -52,6 +53,23 @@ class ComfySessionTest(unittest.TestCase):
         self.assertEqual(record["status"]["status_str"], "success")
         (files.output / "result.png").write_bytes(b"test-image")
         return files.key
+
+    def test_comfy_subprocess_inherits_runtime_only_and_never_secrets(self):
+        values = {
+            "PATH": "/usr/bin", "HOME": "/tmp", "CUDA_VISIBLE_DEVICES": "0",
+            "HF_HUB_OFFLINE": "1", "RENDERLAB_DISPATCH_DATABASE_URL": "do-not-expose",
+            "RENDERLAB_FIBO_CALL_SIGNING_KEY": "do-not-expose",
+            "SUPABASE_SERVICE_ROLE_KEY": "do-not-expose",
+            "R2_SECRET_ACCESS_KEY": "do-not-expose",
+            "SOME_FUTURE_TOKEN": "do-not-expose",
+        }
+        with patch.dict(os.environ, values, clear=True):
+            self.session.run(self.stage, self.collect, "sanitized")
+        child_env = self.start.call_args.kwargs["env"]
+        self.assertEqual(child_env, {name: values[name] for name in (
+            "PATH", "HOME", "CUDA_VISIBLE_DEVICES", "HF_HUB_OFFLINE"
+        )})
+        self.assertNotIn("do-not-expose", child_env.values())
 
     def test_success_reuses_process_and_removes_each_job_and_history(self):
         first = self.session.run(self.stage, self.collect, "first")
