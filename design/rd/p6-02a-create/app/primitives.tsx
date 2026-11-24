@@ -133,3 +133,8 @@ export function Empty({ children }: { children: ReactNode }) {
 export function Spinner() {
   return <span className="p602a-spinner" aria-hidden="true">◌</span>;
 }
+
+/** Dedicated prototype-only range gap adapter; native range retains browser semantics. */
+export function Range(props: ComponentProps<"input">) {
+  return <input {...props} type="range" className="p602a-control p602a-range" data-contrast="" />;
+}

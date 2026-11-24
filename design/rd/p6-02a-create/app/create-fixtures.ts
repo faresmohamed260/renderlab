@@ -10,7 +10,7 @@ export const references: readonly Reference[] = [
   { key: "sample-c", title: "Warm evening sky", artwork: "sky" },
   { key: "sample-d", title: "Dune composition", artwork: "dunes" },
 ];
-export type Recipe = Readonly<{ mode: Mode; prompt: string; ratio: Ratio; references: readonly Reference[]; advanced: boolean; steps: number; vgl: string }>;
+export type Recipe = Readonly<{ mode: Mode; prompt: string; ratio: Ratio; references: readonly Reference[]; advanced: boolean; steps: number; vgl: string; mask: boolean }>;
 type Base = { recipe: Recipe; announcement: string };
 export type CreateFixture =
   | (Base & { phase: "draft" })
@@ -26,6 +26,7 @@ export type FixtureEvent =
   | { type: "advanced"; value: boolean }
   | { type: "steps"; value: number }
   | { type: "vgl"; value: string }
+  | { type: "mask"; value: boolean }
   | { type: "attach"; key: Reference["key"] }
   | { type: "replace"; key: Reference["key"]; replacement: Reference["key"] }
   | { type: "remove"; key: Reference["key"] }
@@ -36,7 +37,7 @@ export type FixtureEvent =
   | { type: "fail" }
   | { type: "reuse" };
 const prompt = "A quiet architectural study of a sandstone arch in a wide desert landscape, warm evening light and delicate shadows.";
-const recipe = (): Recipe => ({ mode: "generate", prompt: "", ratio: "1:1", references: [], advanced: false, steps: 4, vgl: "" });
+const recipe = (): Recipe => ({ mode: "generate", prompt: "", ratio: "1:1", references: [], advanced: false, steps: 4, vgl: "", mask: false });
 export function fixture(composition: Composition): CreateFixture {
   const base = { recipe: recipe(), announcement: "" };
   switch (composition) {
@@ -53,10 +54,13 @@ export function fixture(composition: Composition): CreateFixture {
 export function blocker(value: Recipe): string | undefined {
   if (!value.prompt.trim() && !value.vgl.trim()) return "Enter a prompt or manual VGL JSON.";
   if (value.mode === "edit" && !value.references.length) return "Attach a source image first.";
+  if (value.steps !== 4) return "The hosted fixture supports 4 steps.";
+  if (value.mask && value.references.length !== 1) return "Use a single source for a masked edit.";
+  if (!value.vgl.trim() && [...value.prompt.matchAll(/@image(\d+)\b/g)].some((match) => Number(match[1]) > value.references.length || Number(match[1]) < 1)) return "Restore the missing image or remove its prompt tag.";
   if (value.vgl.trim()) {
     try {
       const parsed: unknown = JSON.parse(value.vgl);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "Enter a JSON object.";
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || Object.keys(parsed).length === 0) return "Enter a JSON object.";
     } catch { return "Enter valid JSON."; }
   }
 }
@@ -79,29 +83,30 @@ export function transition(state: CreateFixture, event: FixtureEvent): CreateFix
   const list = state.recipe.references;
   switch (event.type) {
     case "prompt": return draft({ prompt: event.value });
-    case "mode": return draft({ mode: event.value, references: event.value === "generate" ? [] : list });
+    case "mode": return draft({ mode: event.value, references: event.value === "generate" ? [] : list, mask: false });
     case "ratio": return draft({ ratio: event.value });
     case "advanced": return { ...state, recipe: { ...state.recipe, advanced: event.value } };
     case "steps": return Number.isInteger(event.value) && event.value >= 1 && event.value <= 8 ? draft({ steps: event.value }) : state;
     case "vgl": return draft({ vgl: event.value });
+    case "mask": return state.recipe.mode === "edit" && list.length === 1 ? draft({ mask: event.value }) : state;
     case "attach": {
       const item = references.find((ref) => ref.key === event.key);
       return state.recipe.mode === "edit" && item && !list.some((ref) => ref.key === item.key) && list.length < 4
-        ? draft({ references: [...list, item], vgl: "" }, item.title + " attached.") : state;
+        ? draft({ references: [...list, item], vgl: "", mask: false }, item.title + " attached.") : state;
     }
     case "replace": {
       const item = references.find((ref) => ref.key === event.replacement);
       return item && list.some((ref) => ref.key === event.key) && !list.some((ref) => ref.key === item.key)
-        ? draft({ references: list.map((ref) => ref.key === event.key ? item : ref), vgl: "" }, item.title + " replaced source.") : state;
+        ? draft({ references: list.map((ref) => ref.key === event.key ? item : ref), vgl: "", mask: false }, item.title + " replaced source.") : state;
     }
-    case "remove": return list.some((ref) => ref.key === event.key) ? draft({ references: list.filter((ref) => ref.key !== event.key), vgl: "" }, "Reference removed.") : state;
+    case "remove": return list.some((ref) => ref.key === event.key) ? draft({ references: list.filter((ref) => ref.key !== event.key), vgl: "", mask: false }, "Reference removed.") : state;
     case "move": {
       const from = list.findIndex((ref) => ref.key === event.key);
       const to = from + event.direction;
       if (from < 0 || to < 0 || to >= list.length) return state;
       const next = [...list];
       [next[from], next[to]] = [next[to], next[from]];
-      return draft({ references: next, vgl: "" }, next[to].title + " moved to position " + (to + 1) + ".");
+      return draft({ references: next, vgl: "", mask: false }, next[to].title + " moved to position " + (to + 1) + ".");
     }
     case "submit": {
       const reason = blocker(state.recipe);
