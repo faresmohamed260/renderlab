@@ -2,6 +2,8 @@ import { test as base, expect } from "@playwright/test";
 import { emptyHistory, fixtureAssetId, fixtureImage } from "../component-app/fixtures";
 
 const origin = "http://127.0.0.1:4173";
+// Mirrors the GenerationCapabilities response: optional flags are emitted only when true.
+const hostedCapabilities = { available: true, fiboAvailable: true, fiboMaskAvailable: true } satisfies { available: boolean; fiboAvailable?: true; fiboMaskAvailable?: true; fiboAutoVglAvailable?: true };
 
 export const test = base.extend<{ io: string[] }>({
   io: async ({ context }, use) => {
@@ -13,6 +15,11 @@ export const test = base.extend<{ io: string[] }>({
       if (url.origin !== origin) {
         unexpected.push(request.method() + " " + url.origin);
         await route.abort();
+        return;
+      }
+      if (request.method() === "GET" && url.pathname === "/api/generation/jobs" && !url.search) {
+        calls.push("GET capabilities");
+        await route.fulfill({ json: hostedCapabilities });
         return;
       }
       if (url.pathname === "/api/media/assets" && request.method() === "GET"

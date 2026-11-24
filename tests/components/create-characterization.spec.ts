@@ -30,7 +30,8 @@ test("production composer keeps separate workflow drafts and blocks empty genera
   await generateMode.click();
   await expect(prompt).toHaveValue("Local fixture prompt");
   await expect.poll(() => io.includes("GET history")).toBe(true);
-  expect(io.every((call) => call === "GET history")).toBe(true);
+  await expect.poll(() => io.includes("GET capabilities")).toBe(true);
+  expect(io.every((call) => call === "GET history" || call === "GET capabilities")).toBe(true);
 });
 
 test("desktop recent-prompt disclosure opens by keyboard and Escape returns focus", async ({ page, io }) => {
@@ -43,7 +44,8 @@ test("desktop recent-prompt disclosure opens by keyboard and Escape returns focu
   await expect(page.getByText("No recent prompts in this session.")).toBeHidden();
   await expect(recent).toBeFocused();
   await expect.poll(() => io.includes("GET history")).toBe(true);
-  expect(io.every((call) => call === "GET history")).toBe(true);
+  await expect.poll(() => io.includes("GET capabilities")).toBe(true);
+  expect(io.every((call) => call === "GET history" || call === "GET capabilities")).toBe(true);
 });
 
 test.fixme("P5-01 worker 3: Queue Escape dismisses and returns focus", async ({ page, io }) => {
@@ -56,7 +58,8 @@ test.fixme("P5-01 worker 3: Queue Escape dismisses and returns focus", async ({ 
   await expect(page.getByText("No active render in this workspace.")).toBeHidden();
   await expect(queue).toBeFocused();
   await expect.poll(() => io.includes("GET history")).toBe(true);
-  expect(io.every((call) => call === "GET history")).toBe(true);
+  await expect.poll(() => io.includes("GET capabilities")).toBe(true);
+  expect(io.every((call) => call === "GET history" || call === "GET capabilities")).toBe(true);
 });
 
 test.fixme("P5-01 worker 3: switching narrow disclosures closes the previous one", async ({ page, io }) => {
@@ -72,5 +75,6 @@ test.fixme("P5-01 worker 3: switching narrow disclosures closes the previous one
   await shortcuts.press("Escape");
   await expect(shortcuts).toBeFocused();
   await expect.poll(() => io.includes("GET history")).toBe(true);
-  expect(io.every((call) => call === "GET history")).toBe(true);
+  await expect.poll(() => io.includes("GET capabilities")).toBe(true);
+  expect(io.every((call) => call === "GET history" || call === "GET capabilities")).toBe(true);
 });
