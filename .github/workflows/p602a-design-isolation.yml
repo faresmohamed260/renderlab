@@ -45,6 +45,7 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Install locked dependencies
+        id: install
         run: npm ci --no-audit --no-fund
       - name: Verify foundation and source boundary
         run: |
@@ -55,12 +56,15 @@ jobs:
       - name: Verify isolated browser launch, compositions and capture
         run: node scripts/run-p602a-design-prototype.mjs --capture
       - name: Typecheck repository
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run typecheck
       - name: Build offline and verify production exclusion
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: |
           npm run build
           node scripts/verify-p602a-isolation.mjs --build
       - name: Retain private capture evidence
+        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: p602a-create-evidence

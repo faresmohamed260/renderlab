@@ -10,7 +10,9 @@ const viewportCases = [{ width: 1440, height: 900 }, { width: 390, height: 844 }
 const target = "[data-create-composition]";
 const prompt = "#p602a-prompt";
 
-function invariant(condition, message) { if (!condition) throw new Error("Create evidence: " + message); }
+function invariant(condition, message, expected = "assertion true", actual = Boolean(condition)) {
+  if (!condition) throw Object.assign(new Error("Create evidence: " + message), { expected, actual, assertion: message });
+}
 const digest = async (filename) => createHash("sha256").update(await readFile(filename)).digest("hex");
 const button = (page, name) => page.getByRole("button", { name, exact: true });
 const phase = (page, value) => page.waitForFunction((value) => document.querySelector("[data-create-composition]")?.getAttribute("data-create-phase") === value, value);
@@ -73,12 +75,16 @@ async function geometry(page, name) {
     return { viewport: window.innerWidth, usable: root.clientWidth, gutter, documentOverflow: root.scrollWidth - root.clientWidth, controls: controls.length, invalidControls, overflow, steps };
   });
   console.log("P6-02a Create geometry:", JSON.stringify({ state: name, ...result }));
-  invariant(result.gutter > 0, name + ": scrollbar gutter is zero");
-  invariant(result.documentOverflow <= 0 && !result.overflow.length && !result.invalidControls.length, name + ": horizontal overflow or small/clipped control");
+  const violations = [];
+  if (!(result.gutter > 0)) violations.push({ assertion: "scrollbar gutter", expected: "> 0", actual: result.gutter });
+  if (!(result.documentOverflow <= 0 && !result.overflow.length && !result.invalidControls.length)) violations.push({ assertion: "horizontal overflow or small/clipped control", expected: "document overflow <= 0; no overflowing ancestors or invalid controls", actual: { documentOverflow: result.documentOverflow, overflow: result.overflow, invalidControls: result.invalidControls } });
   if (result.steps) {
-    invariant(result.steps.scroll <= result.steps.client, name + ": range itself overflows");
-    invariant(result.steps.ancestors.every((a) => a.overflow <= 0 && a.left >= -0.5 && a.right >= -0.5), name + ": steps baseline overflow or affected ancestor");
+    if (!(result.steps.scroll <= result.steps.client)) violations.push({ assertion: "range itself overflows", expected: "scroll <= client", actual: result.steps });
+    const bad = result.steps.ancestors.filter((a) => !(a.overflow <= 0 && a.left >= -0.5 && a.right >= -0.5));
+    if (bad.length) violations.push({ assertion: "steps baseline overflow or affected ancestor", expected: "overflow <= 0; left and right >= -0.5", actual: bad });
   }
+  if (name === "advanced" && !result.steps) violations.push({ assertion: "steps input present", expected: "visible steps input", actual: null });
+  if (violations.length) throw Object.assign(new Error("Create evidence: " + name + " geometry violations"), { assertion: "geometry", expected: "all geometry assertions pass", actual: violations, geometry: result });
   return result;
 }
 
@@ -122,7 +128,7 @@ async function contrast(page, label) {
     return [role, { count: items.length, minimum: Math.min(...items.map((row) => row.ratio)) }];
   }));
   console.log("P6-02a Create contrast:", JSON.stringify({ label, summary, failures: failed }));
-  invariant(!failed.length, "rendered contrast below threshold " + JSON.stringify(failed));
+  if (failed.length) throw Object.assign(new Error("Create evidence: rendered contrast below threshold"), { assertion: "rendered contrast", expected: "each measured ratio >= its unchanged threshold", actual: failed, measurements: rows });
   return rows;
 }
 
@@ -164,19 +170,29 @@ async function exercise(page, name, reducedMotion, rows, mark) {
       invariant((await order()).join(",") === "sample-b,sample-a,sample-c", "keyboard reorder");
       invariant((await page.locator(prompt).inputValue()).includes("arch from @image2"), "alias not remapped");
       const grip = button(page, "Drag Desert architecture");
-      const other = page.locator('[data-reference="sample-b"] .p602a-art');
-      await grip.evaluate((el) => {
-        const card = el.closest("[data-reference]");
-        const prior = card?.previousElementSibling;
-        if (prior) prior.scrollIntoView({ block: "center" });
-      });
-      const start = await grip.boundingBox(), end = await other.boundingBox();
-      invariant(start && end, "missing drag geometry");
-      const y = end.y + Math.min(end.height / 2, 32), x = end.x + end.width / 2;
-      const sx = start.x + start.width / 2, sy = start.y + start.height / 2;
-      invariant(sy >= 0 && sy < page.viewportSize().height && y >= 0 && y < page.viewportSize().height, "drag endpoints outside viewport");
+      const other = page.locator('[data-reference="sample-b"]');
+      // The previous test centered the entire previous card, which pushed the
+      // next card's grip outside the narrow viewport. Use the nearest interior
+      // point of the adjacent card and center the *two endpoints*, not a card.
+      await grip.scrollIntoViewIfNeeded();
+      const endpoints = async () => {
+        const start = await grip.boundingBox(), end = await other.boundingBox();
+        invariant(start && end, "missing drag geometry", "two rendered boxes", { start, end });
+        const sx = start.x + start.width / 2, sy = start.y + start.height / 2;
+        const x = Math.max(end.x + 12, Math.min(sx, end.x + end.width - 12));
+        const y = Math.max(end.y + 12, Math.min(sy, end.y + end.height - 12));
+        return { sx, sy, x, y };
+      };
+      const initial = await endpoints();
+      await page.evaluate(({ sy, y }) => window.scrollBy(0, (sy + y) / 2 - window.innerHeight / 2), initial);
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const { sx, sy, x, y } = await endpoints();
+      const { width, height } = page.viewportSize();
+      invariant(sy >= 0 && sy < height && y >= 0 && y < height && sx >= 0 && sx < width && x >= 0 && x < width, "drag endpoints outside viewport", "both endpoints inside viewport", { sx, sy, x, y, width, height });
+      invariant(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("[data-reference]")?.getAttribute("data-reference") === "sample-b", { x, y }), "drag target not hit-testable", "sample-b at endpoint", { x, y });
       await page.mouse.move(sx, sy); await page.mouse.down(); await page.mouse.move(x, y, { steps: 10 }); await page.mouse.up();
-      invariant((await order()).join(",") === "sample-a,sample-b,sample-c", "direct drag reorder");
+      const reordered = (await order()).join(",");
+      invariant(reordered === "sample-a,sample-b,sample-c", "direct drag reorder", "sample-a,sample-b,sample-c", reordered);
       await settle(page);
       const remove = button(page, "Remove Warm evening sky");
       await remove.click();
@@ -256,21 +272,45 @@ async function exercise(page, name, reducedMotion, rows, mark) {
 
 export async function captureCreate({ browser, root, origin, host, port }) {
   const output = await mkdtemp(path.join(root, "artifacts", "p602a-create-evidence-"));
-  const frames = [], sessions = [], geometryRows = [], contrastRows = [];
+  const frames = [], sessions = [], geometryRows = [], contrastRows = [], results = [], failures = [];
   const sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+  const save = async () => {
+    const evidence = { sourceSha: sha, browser: browser.version(), deviceScaleFactor: 1, viewports: viewportCases, motionPreferences: prefs, frames, sessions, geometry: geometryRows, contrast: contrastRows, results, failures };
+    await writeFile(path.join(output, "capture-manifest.json"), JSON.stringify(evidence, null, 2) + "\n");
+    await writeFile(path.join(output, "summary.json"), JSON.stringify({ sourceSha: sha, expectedSamples: 64, results, failures, frames: frames.length, videos: sessions.length }, null, 2) + "\n");
+  };
+  await save();
   for (const viewport of viewportCases) {
     for (const reducedMotion of prefs) {
       const recorded = viewport.width >= 390;
       const mode = reducedMotion === "reduce" ? "reduced" : "normal";
       const key = viewport.width + "x" + viewport.height + "-" + mode;
-      const unexpected = [], errors = [];
+      const unexpected = [], errors = [], consoleErrors = [];
       const raw = path.join(output, "raw-" + key);
-      if (recorded) await mkdir(raw, { recursive: true });
-      const context = await browser.newContext({ viewport, reducedMotion, deviceScaleFactor: 1, serviceWorkers: "block", ...(recorded ? { recordVideo: { dir: raw, size: viewport } } : {}) });
       const milestones = [], start = performance.now();
       const mark = (event) => milestones.push({ event, elapsedMs: Math.round(performance.now() - start) });
-      let video;
+      let context, page, video, traceStarted = false;
+      let currentName = "context setup";
+      const recordFailure = async (name, step, error, { screenshot = true } = {}) => {
+        const detail = { key, composition: name, step, assertion: error.assertion || error.message?.split("\n")[0] || String(error),
+          expected: error.expected ?? "step/locator completes and assertion passes", actual: error.actual ?? error.message ?? String(error),
+          locatorOrCallLog: error.message ?? String(error), stack: error.stack, consoleErrors: [...consoleErrors], pageErrors: [...errors], unexpectedRequests: [...unexpected] };
+        if (error.geometry) geometryRows.push({ key, state: name, ...error.geometry });
+        if (error.measurements) contrastRows.push(...error.measurements.map((row) => ({ key, ...row })));
+        if (screenshot && page && !page.isClosed()) {
+          const filename = key + "-" + name.replaceAll(" ", "-") + "-failure-" + (failures.length + 1) + ".png";
+          try { await page.screenshot({ path: path.join(output, filename), fullPage: true, timeout: 5000 }); detail.screenshot = filename; }
+          catch (captureError) { detail.screenshotError = String(captureError); }
+        }
+        failures.push(detail);
+        console.log("P6-02a Create failure:", JSON.stringify(detail));
+        return detail;
+      };
       try {
+        if (recorded) await mkdir(raw, { recursive: true });
+        context = await browser.newContext({ viewport, reducedMotion, deviceScaleFactor: 1, serviceWorkers: "block", ...(recorded ? { recordVideo: { dir: raw, size: viewport } } : {}) });
+        await context.tracing.start({ screenshots: true, snapshots: true, sources: false });
+        traceStarted = true;
         await context.route("**/*", async (route) => {
           const url = new URL(route.request().url());
           if (url.origin === origin && (["/", "/compose", "/favicon.ico", "/p602a-artwork.svg", "/p602a-source.svg"].includes(url.pathname) || url.pathname.startsWith("/_next/"))) await route.continue();
@@ -281,59 +321,141 @@ export async function captureCreate({ browser, root, origin, host, port }) {
           if (url.origin === "ws://" + host + ":" + port && url.pathname.startsWith("/_next/")) socket.connectToServer();
           else { unexpected.push(url.origin + url.pathname); socket.close(); }
         });
-        const page = await context.newPage();
+        page = await context.newPage();
+        page.setDefaultTimeout(10000);
+        page.setDefaultNavigationTimeout(15000);
         video = page.video();
         page.on("pageerror", (error) => errors.push(error.message));
-        page.on("console", (message) => { if (message.type() === "error" && /hydrat|server.rendered HTML/i.test(message.text())) errors.push(message.text()); });
+        page.on("console", (message) => {
+          if (message.type() !== "error") return;
+          consoleErrors.push(message.text());
+          if (/hydrat|server.rendered HTML/i.test(message.text())) errors.push(message.text());
+        });
         page.on("response", (response) => { if (response.status() >= 400 && /\/p602a-(?:artwork|source)\.svg$/.test(response.url())) errors.push("Artwork response " + response.status()); });
-        await page.goto(origin + "/compose", { waitUntil: "load" });
-        await page.locator(target).waitFor();
-        invariant(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches) === (reducedMotion === "reduce"), key + ": motion preference not applied");
+
         for (const name of compositions) {
-          await reset(page, name);
-          mark(name + " settled frame");
-          geometryRows.push({ key, state: name, ...(await geometry(page, name)) });
-          const samples = await contrast(page, name);
-          if (recorded) {
-            const filename = key + "-" + name + ".png";
-            await page.locator(target).screenshot({ path: path.join(output, filename), animations: "allow" });
-            frames.push({ key, state: name, file: filename, sha256: await digest(path.join(output, filename)) });
-            await exercise(page, name, reducedMotion, samples, mark);
-          } else if (name === "advanced") {
-            await button(page, "Queue").click();
-            await page.getByRole("dialog", { name: "queue" }).waitFor();
-            await settle(page); geometryRows.push({ key, state: "advanced popover", ...(await geometry(page, "advanced popover")) });
-            samples.push(...await contrast(page, "advanced popover"));
-            await page.keyboard.press("Escape");
-          } else if (name === "references") {
-            await button(page, "Attach sample image").click();
-            await button(page, "Attach sample image").click();
-            await settle(page); geometryRows.push({ key, state: "four references", ...(await geometry(page, "four references")) });
-          } else if (name === "result") {
-            await button(page, "History · 1").click();
-            await settle(page); geometryRows.push({ key, state: "populated history", ...(await geometry(page, "populated history")) });
+          currentName = name;
+          const sampleStart = failures.length;
+          const beforeRequests = unexpected.length, beforeErrors = errors.length;
+          consoleErrors.length = 0;
+          const samples = [];
+          let chunk = false;
+          const attempt = async (step, fn) => {
+            try { await fn(); return true; }
+            catch (error) { await recordFailure(name, step, error); return false; }
+          };
+          try {
+            await context.tracing.startChunk({ title: key + " " + name });
+            chunk = true;
+            // A fresh navigation restores every fixture and preference even
+            // after a failed interaction or a partially completed gesture.
+            const ready = await attempt("reset and settle", async () => {
+              await page.mouse.up();
+              await page.emulateMedia({ reducedMotion });
+              await page.goto(origin + "/compose", { waitUntil: "load" });
+              await page.locator(target).waitFor();
+              invariant(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches) === (reducedMotion === "reduce"), key + ": motion preference not applied", reducedMotion, await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduce" : "no-preference"));
+              await reset(page, name);
+              mark(name + " settled frame");
+            });
+            if (ready) {
+              // Independent checks continue even when geometry or contrast fails.
+              await attempt("settled geometry", async () => geometryRows.push({ key, state: name, ...(await geometry(page, name)) }));
+              await attempt("settled contrast", async () => samples.push(...await contrast(page, name)));
+              if (recorded) {
+                await attempt("settled frame capture", async () => {
+                  const filename = key + "-" + name + ".png";
+                  await page.locator(target).screenshot({ path: path.join(output, filename), animations: "allow" });
+                  frames.push({ key, state: name, file: filename, sha256: await digest(path.join(output, filename)) });
+                });
+                await attempt("interaction choreography", async () => exercise(page, name, reducedMotion, samples, mark));
+              } else if (name === "advanced") {
+                await attempt("advanced popover geometry and contrast", async () => {
+                  await button(page, "Queue").click();
+                  await page.getByRole("dialog", { name: "queue" }).waitFor();
+                  await settle(page);
+                  geometryRows.push({ key, state: "advanced popover", ...(await geometry(page, "advanced popover")) });
+                  samples.push(...await contrast(page, "advanced popover"));
+                  await page.keyboard.press("Escape");
+                });
+              } else if (name === "references") {
+                await attempt("four references geometry", async () => {
+                  await button(page, "Attach sample image").click();
+                  await button(page, "Attach sample image").click();
+                  await settle(page);
+                  geometryRows.push({ key, state: "four references", ...(await geometry(page, "four references")) });
+                });
+              } else if (name === "result") {
+                await attempt("populated history geometry", async () => {
+                  await button(page, "History · 1").click();
+                  await settle(page);
+                  geometryRows.push({ key, state: "populated history", ...(await geometry(page, "populated history")) });
+                });
+              }
+            }
+            await attempt("network and browser errors", async () => {
+              const actual = { unexpected: unexpected.slice(beforeRequests), errors: errors.slice(beforeErrors) };
+              invariant(!actual.unexpected.length && !actual.errors.length, "unexpected browser activity", "zero unexpected requests and page/hydration/asset errors", actual);
+            });
+          } catch (error) {
+            await recordFailure(name, "sample infrastructure", error);
+          } finally {
+            contrastRows.push(...samples.map((row) => ({ key, ...row })));
+            if (chunk) {
+              try {
+                const trace = key + "-" + name + "-trace.zip";
+                if (failures.length > sampleStart) {
+                  await context.tracing.stopChunk({ path: path.join(output, trace) });
+                  for (const detail of failures.slice(sampleStart)) detail.trace = trace;
+                } else await context.tracing.stopChunk();
+              } catch (error) { await recordFailure(name, "trace capture", error); }
+            }
+            results.push({ key, composition: name, status: failures.length === sampleStart ? "PASS" : "FAIL", failureCount: failures.length - sampleStart });
+            await save();
           }
-          contrastRows.push(...samples.map((row) => ({ key, ...row })));
-          invariant(!unexpected.length && !errors.length, key + ": unexpected browser activity " + [...unexpected, ...errors].join("; "));
+        }
+      } catch (error) {
+        await recordFailure(currentName, "context infrastructure", error);
+        // Explicitly account for samples not reached if context setup fails.
+        for (const name of compositions.filter((name) => !results.some((r) => r.key === key && r.composition === name))) {
+          results.push({ key, composition: name, status: "FAIL", failureCount: 1, reason: "context infrastructure prevented execution" });
         }
       } finally {
-        await context.close();
+        if (context) {
+          const beforeRequests = unexpected.length, beforeErrors = errors.length;
+          if (traceStarted) {
+            try { await context.tracing.stop(); } catch (error) { await recordFailure("context", "trace shutdown", error); }
+          }
+          try { await context.close(); } catch (error) { await recordFailure("context", "context close", error, { screenshot: false }); }
+          if (unexpected.length !== beforeRequests || errors.length !== beforeErrors) {
+            await recordFailure("context", "shutdown isolation", Object.assign(new Error("Unexpected browser activity during shutdown"), { expected: "zero additional errors", actual: { unexpected: unexpected.slice(beforeRequests), errors: errors.slice(beforeErrors) } }), { screenshot: false });
+          }
+        }
       }
-      invariant(!unexpected.length && !errors.length, key + ": unexpected browser activity during shutdown");
       if (recorded) {
-        invariant(video, key + ": missing recording");
-        const filename = key + ".webm";
-        await video.saveAs(path.join(output, filename));
-        await video.delete();
-        const size = (await stat(path.join(output, filename))).size;
-        invariant(size > 0, key + ": empty video");
-        sessions.push({ key, file: filename, sha256: await digest(path.join(output, filename)), bytes: size, milestones });
+        try {
+          invariant(video, key + ": missing recording");
+          const filename = key + ".webm";
+          await video.saveAs(path.join(output, filename));
+          const size = (await stat(path.join(output, filename))).size;
+          invariant(size > 0, key + ": empty video", "nonempty recording", size);
+          sessions.push({ key, file: filename, sha256: await digest(path.join(output, filename)), bytes: size, milestones });
+          await video.delete();
+        } catch (error) { await recordFailure("context", "video retention", error, { screenshot: false }); }
       }
-      console.log("P6-02a Create context passed:", key);
+      await save();
+      console.log("P6-02a Create context complete:", key, JSON.stringify(results.filter((r) => r.key === key)));
     }
   }
-  invariant(frames.length === 32 && sessions.length === 4 && geometryRows.length >= 64 && contrastRows.length > 0, "incomplete capture matrix");
-  const evidence = { sourceSha: sha, browser: browser.version(), deviceScaleFactor: 1, viewports: viewportCases, motionPreferences: prefs, frames, sessions, geometry: geometryRows, contrast: contrastRows };
-  await writeFile(path.join(output, "capture-manifest.json"), JSON.stringify(evidence, null, 2) + "\n");
-  console.log("P6-02a Create capture complete:", JSON.stringify({ sourceSha: sha, frames: frames.length, videos: sessions.length, geometry: geometryRows.length, contrast: contrastRows.length, minRatio: Math.min(...contrastRows.map((r) => r.ratio)), output: path.basename(output) }));
+  const complete = frames.length === 32 && sessions.length === 4 && geometryRows.length >= 64 && contrastRows.length > 0 && results.length === 64;
+  if (!complete) failures.push({ key: "all", composition: "matrix", step: "capture completeness", assertion: "incomplete capture matrix", expected: { frames: 32, videos: 4, geometry: ">=64", contrast: ">0", samples: 64 }, actual: { frames: frames.length, videos: sessions.length, geometry: geometryRows.length, contrast: contrastRows.length, samples: results.length } });
+  await save();
+  console.log("P6-02a Create sample summary:");
+  console.table(viewportCases.flatMap((viewport) => prefs.map((pref) => {
+    const key = viewport.width + "x" + viewport.height + "-" + (pref === "reduce" ? "reduced" : "normal");
+    const cases = results.filter((r) => r.key === key);
+    return { context: key, ...Object.fromEntries(compositions.map((name) => [name, cases.find((r) => r.composition === name)?.status ?? "FAIL"])), failures: failures.filter((f) => f.key === key).length };
+  })));
+  console.log("P6-02a Create final summary:", JSON.stringify({ sourceSha: sha, samples: results.length, passed: results.filter((r) => r.status === "PASS").length, failed: results.filter((r) => r.status !== "PASS").length, failureDetails: failures.map(({ key, composition, step, assertion, expected, actual, screenshot, trace }) => ({ key, composition, step, assertion, expected, actual, screenshot, trace })), frames: frames.length, videos: sessions.length, geometry: geometryRows.length, contrast: contrastRows.length, output: path.basename(output) }));
+  invariant(complete && !failures.length && results.every((r) => r.status === "PASS"), "collected failures; see summary.json and traces", "64 passing samples and complete evidence", { failureCount: failures.length, passed: results.filter((r) => r.status === "PASS").length });
 }
