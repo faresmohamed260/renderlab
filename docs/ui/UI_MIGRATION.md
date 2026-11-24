@@ -31,7 +31,7 @@ The earlier whole-product redesign/migration program is historical closure evide
 
 Current product family:
 - Landing uses the approved Lab Matrix / Lab Grid identity and composition.
-- UI-074 remains the accepted application shell geometry outside scoped Create; current production-mode root uses PreviewNavigationShell, including Landing, while app layout bypasses AppShell. P5-06 owns the unresolved source/authority drift.
+- P5-06 source-authority disposition accepted: `PreviewNavigationShell` is the current production implementation, including Landing; `AppShell` remains reachable in ordinary non-production, non-preview application routes. UI-074 remains approved geometry outside scoped Create; UI-052 separate Landing chrome intent and current wrapper fidelity are unresolved, not retrospectively approved by UI-085. Retain both shells and their historical evidence until the separately reviewed Phase 6 Shell step ([V2 roadmap](DESIGN_LANGUAGE_V2.md)); no deletion or runtime change in P5-06. See [P5-06 shell authority disposition](../audits/P5_06_SHELL_AUTHORITY_PROPOSAL_2026-11-24.md).
 - Create uses the production-mode FIBO-only CreatePreviewWorkspace under UI-084; Clear Composer is a retained alternate non-production branch and historical evidence. Current Create appearance is unfinished; full FIBO parity and responsive/interaction acceptance remain open.
 - Library uses the approved Gallery Rail family and current server/URL-owned discovery/organization behavior.
 - Media Viewer uses the approved Media Register + Source Fold family.
