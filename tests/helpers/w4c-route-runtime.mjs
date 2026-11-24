@@ -28,6 +28,10 @@ registerHooks({resolve(spec,context,next){
    'export async function getCurrentRenderLabAccount(){S().calls.push(["account"]);return S().account;}'+
    'export async function getFreshCurrentRenderLabAuthentication(){S().calls.push(["fresh-auth"]);return S().auth;}');
  if(spec==="@/lib/auth/mfa-assurance")return stub('export function isRenderLabMfaChallengeRequired(a){return Boolean(a?.challengeRequired);}');
+ if(spec==="@/server/account/account-preferences")return stub(stateCode+
+   'export async function getRenderLabAccountPreferences(owner){S().calls.push(["preferences-get",owner]);return {source:"saved"};}'+
+   'export async function updateRenderLabAccountPreferences(owner,body){S().calls.push(["preferences-put",owner,body]);return {source:"saved"};}'+
+   'export async function resetRenderLabAccountPreferences(owner){S().calls.push(["preferences-delete",owner]);return {source:"product-defaults"};}');
  if(spec==="@/server/account/account-access")return stub(stateCode+
    'export async function getRenderLabAccountAccess(id){S().calls.push(["access",id]);if(S().access instanceof Error)throw S().access;return S().access;}');
  if(spec==="@/server/media/media-assets")return stub(stateCode+
