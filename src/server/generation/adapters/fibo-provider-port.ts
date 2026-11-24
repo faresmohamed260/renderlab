@@ -55,6 +55,43 @@ export async function readFiboProviderStatus(
   return { response, options };
 }
 
+/** Final deadline observation uses separate bounded header/body phases on the
+ * same signed GET. Drain the body before fetching generated VGL so the image
+ * transport cannot expire while an unrelated sidecar request is in flight. */
+export async function readFiboProviderFinalStatus(
+  worker: GenerationWorker, callId: string, outputKind: "image" | "video", timeoutMs = 4_000,
+) {
+  assertFiboWorker(worker);
+  const { url, options: baseOptions } = workerJobRequest(worker, callId, "", 0);
+  const controller = new AbortController();
+  const options = { ...baseOptions, signal: controller.signal };
+  const headers = new Headers(options.headers);
+  headers.set("accept", outputKind === "video" ? "video/*, application/json" : "image/*, application/json");
+  const timeout = () => setTimeout(() => controller.abort(new DOMException("FIBO observation timed out.", "TimeoutError")), timeoutMs);
+  let timer = timeout();
+  try {
+    const response = await fetch(url, { ...options, method: "GET", headers, cache: "no-store" });
+    controller.signal.throwIfAborted();
+    clearTimeout(timer);
+    timer = timeout();
+    if (response.status === 202) {
+      await response.body?.cancel();
+      controller.signal.throwIfAborted();
+      return { response, options, bytes: undefined };
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    controller.signal.throwIfAborted();
+    // Keep the existing failure interpreter's Response contract. Successful
+    // output is already buffered and is not read a second time.
+    const observed = response.ok ? response : new Response(response.body === null ? null : bytes, {
+      status: response.status, statusText: response.statusText, headers: response.headers,
+    });
+    return { response: observed, options, bytes: response.ok ? bytes : undefined };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function interpretFiboProviderFailure(status: number, body: Record<string, unknown>) {
   const failure = classifyWorkerFailure(status, body);
   const processExited = status === 409 && body.detail === "FIBO_PROCESS_EXITED";
@@ -101,6 +138,7 @@ export const fiboProvider = {
   id: "fibo",
   prepareDurableSubmission: prepareFiboProviderSubmission,
   status: readFiboProviderStatus,
+  finalStatus: readFiboProviderFinalStatus,
   interpretFailure: interpretFiboProviderFailure,
   cancel: cancelFiboProviderCall,
 } as const;
