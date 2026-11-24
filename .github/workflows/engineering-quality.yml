@@ -53,6 +53,10 @@ jobs:
         if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run lint
 
+      - name: Verify UI purity
+        if: steps.ci-scope.outputs.docs_only != 'true'
+        run: npm run verify:ui-purity
+
       - name: Typecheck
         if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run typecheck
