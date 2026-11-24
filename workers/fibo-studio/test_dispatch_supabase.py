@@ -91,7 +91,13 @@ class SupabaseDispatchStoreTest(unittest.TestCase):
         self.assertEqual("Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate", provenance["source"])
         self.assertNotIn(b"PRIVATE KEY", raw)
         self.assertIn(b"-----BEGIN CERTIFICATE-----", raw)
-        self.assertGreater(ssl.create_default_context(cafile=str(pem)).cert_store_stats()["x509_ca"], 0)
+        context = ssl.create_default_context(cafile=str(pem))
+        self.assertGreater(context.cert_store_stats()["x509_ca"], 0)
+        names = {value for cert in context.get_ca_certs()
+                 for rdn in cert["subject"] for key, value in rdn if key == "commonName"}
+        self.assertEqual("Supabase Root 2021 CA", provenance["subject_common_name"])
+        self.assertIn(provenance["subject_common_name"], names)
+        print("PASS Supabase dashboard CA SHA-256 and subject verified")
         self.assertEqual(str(pem), verified_ca_path(directory))
 
     def test_provenance_digest_mismatch_fails_closed(self):

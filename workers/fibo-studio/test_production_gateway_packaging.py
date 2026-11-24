@@ -137,12 +137,33 @@ class GatewayPackagingTest(unittest.TestCase):
                     store.record_heartbeat.assert_called_once_with(environment="qualification", trigger="wake", summary=expected)
 
     def test_all_database_client_images_package_the_same_reviewed_ca(self):
+        from hashlib import sha256
+        import json
+        expected_dir = DIRECTORY / "certs"
+        manifest = json.loads((expected_dir / "supabase-root-ca.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["sha256"], sha256((expected_dir / "supabase-root-ca.pem").read_bytes()).hexdigest())
+        deployment_env = {
+            "RENDERLAB_MODAL_ENVIRONMENT": "qualification",
+            "RENDERLAB_MODAL_GATEWAY_SECRET": "qa-gateway",
+            "RENDERLAB_MODAL_DISPATCHER_SECRET": "qa-dispatcher",
+            "RENDERLAB_MODAL_MONITOR_SECRET": "qa-monitor",
+            "RENDERLAB_MODAL_WORKER_SECRET": "qa-worker",
+            "RENDERLAB_MODAL_MODEL_VOLUME": "qa-models",
+        }
         for module in ("modal_native_production", "modal_native_candidate", RENDERER):
             with self.subTest(module=module):
-                source = (DIRECTORY / (module + ".py")).read_text(encoding="utf-8")
+                sdk = MagicMock()
+                with patch.dict(sys.modules, {"modal": sdk}), patch.dict(os.environ, deployment_env, clear=True):
+                    program = runpy.run_path(str(DIRECTORY / (module + ".py")), run_name=module)
+                mappings = [(Path(call.args[0]).resolve(), call.args[1])
+                            for call in sdk.mock_calls
+                            if call[0].endswith("add_local_file") and len(call.args) == 2]
                 for name in ("supabase-root-ca.pem", "supabase-root-ca.json"):
-                    self.assertIn('"/opt/renderlab/certs/' + name + '"', source)
-                    self.assertIn(' / "certs" / "' + name + '"', source)
+                    self.assertIn(((expected_dir / name).resolve(), "/opt/renderlab/certs/" + name), mappings)
+                image = program["image" if module == RENDERER else "gateway_image"]
+                for declaration in sdk.App.return_value.function.call_args_list:
+                    self.assertIs(declaration.kwargs["image"], image)
+        print("PASS gateway, candidate and renderer CA file mappings and attached images")
 
     def test_gateway_and_worker_images_pin_the_postgres_driver(self):
         for module in ("modal_native_production", "modal_native_candidate", RENDERER):

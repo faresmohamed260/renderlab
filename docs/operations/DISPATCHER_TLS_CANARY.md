@@ -2,9 +2,15 @@
 
 **Hold:** the live canary at 7335a83b exited 1 with `FAIL dispatcher_tls_tls_certificate_or_connection_rejected`. The combined reason does not distinguish an unknown CA, hostname mismatch, authentication, or reachability failure. Do not release the original #603/#625 TLS change. Supabase explicitly recommends verify-full for its pooler with the dashboard root CA: https://supabase.com/docs/guides/platform/ssl-enforcement and https://supabase.com/docs/guides/database/psql.
 
-## Required public certificate handoff (worker 1)
+## Reviewed public certificate provenance
 
-In the **approved RenderLab Supabase project**, open **Database Settings > SSL Configuration > Download Certificate** (the server root CA, commonly downloaded as `prod-ca-2021.crt` or `prod-supabase.cer`; not a connection string, client certificate, private key, or password). Save the exact PEM bytes as `workers/fibo-studio/certs/supabase-root-ca.pem`. If the dashboard file is DER, convert with `openssl x509 -inform DER -in downloaded.cer -out workers/fibo-studio/certs/supabase-root-ca.pem` and record the conversion in provenance. Do not substitute an OS CA, unverified peer leaf or arbitrary certificate. Inspect with `openssl x509 -in workers/fibo-studio/certs/supabase-root-ca.pem -noout -subject -issuer -dates -fingerprint -sha256`. Confirm CA:TRUE and current validity. Record the **file SHA-256** (not the DER fingerprint) using `sha256sum workers/fibo-studio/certs/supabase-root-ca.pem` (PowerShell: `(Get-FileHash workers/fibo-studio/certs/supabase-root-ca.pem -Algorithm SHA256).Hash.ToLowerInvariant()`). Put that lowercase hex in `workers/fibo-studio/certs/supabase-root-ca.json` under `sha256`, retaining the dashboard source path and recording download date. Commit both files on this TLS PR and notify worker 4 for exact-head qualification. The public root CA is not a secret; never include a DB URL, password, secret contents, or private key. Missing PEM or matching provenance intentionally fails the CI gate.
+Worker 1 supplied the dashboard public root CA (Supabase Root 2021 CA) on 2026-11-24, recorded at handoff commit `e43d7a406ce8abec5e4404d2ccdbec5c52830765`. Source: approved RenderLab Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate. The certificate file is `workers/fibo-studio/certs/supabase-root-ca.pem`, with provenance in `supabase-root-ca.json` alongside it. SHA-256 of the PEM file bytes (not the DER fingerprint):
+
+```text
+700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7
+```
+
+Canonical LF checkout is required; CI verifies the file digest, parses the CA, and checks the reported subject. Verify offline with `sha256sum workers/fibo-studio/certs/supabase-root-ca.pem` and `openssl x509 -in workers/fibo-studio/certs/supabase-root-ca.pem -noout -subject -issuer -dates -fingerprint -sha256`. Future rotation requires a fresh dashboard download, a reviewed digest and provenance update, exact-head CI and a new authorized canary; never substitute a peer leaf, private key, OS CA or connection string.
 
 ## TLS policy and packaging
 
@@ -14,7 +20,7 @@ Use verify-full by default: Supabase documents hostname verification for the ses
 
 ## Worker 1 one-shot run
 
-After certificate/provenance commit, green exact-head CI and release authorization, from repository root with the approved Modal profile and the existing resource-name variables `RENDERLAB_MODAL_ENVIRONMENT`, `RENDERLAB_MODAL_DISPATCHER_SECRET`, `RENDERLAB_MODAL_GATEWAY_SECRET`, `RENDERLAB_MODAL_MONITOR_SECRET` exported, run:
+After green exact-head CI and release authorization, from repository root with the approved Modal profile and the existing resource-name variables `RENDERLAB_MODAL_ENVIRONMENT`, `RENDERLAB_MODAL_DISPATCHER_SECRET`, `RENDERLAB_MODAL_GATEWAY_SECRET`, `RENDERLAB_MODAL_MONITOR_SECRET` exported, run:
 
 ```bash
 python3 scripts/run-dispatcher-tls-canary.py

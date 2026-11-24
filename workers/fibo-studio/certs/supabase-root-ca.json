@@ -2,5 +2,8 @@
   "source": "Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate",
   "source_documentation": "https://supabase.com/docs/guides/platform/ssl-enforcement",
   "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
-  "downloaded_at": "2026-11-24"
+  "downloaded_at": "2026-11-24",
+  "subject_common_name": "Supabase Root 2021 CA",
+  "certificate_handoff_commit": "e43d7a406ce8abec5e4404d2ccdbec5c52830765",
+  "encoding": "PEM; canonical LF"
 }
