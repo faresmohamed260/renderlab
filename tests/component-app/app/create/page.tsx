@@ -1,3 +1,4 @@
+import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
 import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
 import { resolveCreateContinuation, type CreateSearchParams } from "@/features/create/create-continuation";
 import type { InitialGenerationRecipe } from "@/lib/api/generation-recipe-contract";
@@ -13,11 +14,13 @@ const recipe = {
   references: [reference],
 } satisfies InitialGenerationRecipe;
 
-export default async function FixtureContinuation({ searchParams }: { searchParams: Promise<CreateSearchParams> }) {
+export default async function FixtureContinuation({ searchParams }: { searchParams: Promise<CreateSearchParams & { shell?: string }> }) {
   const owner = "synthetic-component-fixture";
-  const continuation = await resolveCreateContinuation(await searchParams, owner, true, {
+  const params = await searchParams;
+  const continuation = await resolveCreateContinuation(params, owner, true, {
     loadAsset: async (actingOwner, id) => actingOwner === owner && id === fixtureAssetId ? fixtureAsset : null,
     loadRecipe: async (actingOwner, id) => actingOwner === owner && id === fixtureJobId ? recipe : null,
   });
-  return <CreatePreviewWorkspace {...createProps} initialContinuation={continuation.plan} initialContinuationError={continuation.error} />;
+  const workspace = <CreatePreviewWorkspace {...createProps} initialContinuation={continuation.plan} initialContinuationError={continuation.error} />;
+  return params.shell === "1" ? <PreviewNavigationShell accountId={owner} hostedProfile={false}><main>{workspace}</main></PreviewNavigationShell> : workspace;
 }

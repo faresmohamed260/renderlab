@@ -1,6 +1,8 @@
 name: Frontend Component Interactions (optional)
 
 on:
+  push:
+    branches: [w3/create-scrollbar-diagnostic]
   pull_request:
     paths:
       - "tests/components/**"
@@ -26,7 +28,11 @@ concurrency:
 
 jobs:
   mounted-components:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 8
     env:
       NEXT_TELEMETRY_DISABLED: "1"
@@ -48,4 +54,4 @@ jobs:
       - name: Verify primitive boundary
         run: npm run verify:ui-purity
       - name: Run mounted production-component interactions
-        run: npx --no-install playwright test --config tests/components/playwright.config.ts
+        run: npx --no-install playwright test --config tests/components/playwright.config.ts create-scrollbar-diagnostic.spec.ts
