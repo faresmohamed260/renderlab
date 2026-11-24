@@ -223,7 +223,8 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/ui/COMPONENT_CATALOG.md` — current approved shared-component registry and human external-source guidance.
 - `docs/ui/component-sources.json` — machine-readable external component-source tier/adoption/dependency/license-review registry.
 - `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent authority. Keep durable decision/status/reason/consequence/supersession content current here; move detailed run/artifact/merge/deployment chronology to historical evidence and retain only concise evidence links when useful.
-- `docs/ui/UI_SYSTEM.md` — normative UI-system rules.
+- `docs/ui/UI_SYSTEM.md` — normative UI-system rules; existing runtime baseline until reviewed V2 implementation.
+- [Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — Phase 6 design-only specification, P6-01 contract and high-level roadmap; no runtime authorization.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
 - `docs/ui/VISUAL_NORTH_STAR.md` — normative visual direction for authorized redesign work.
 - `docs/ui/BRAND_SYSTEM.md` and `docs/ui/CREATIVE_DEVELOPMENT.md` — accepted brand/creative-development guidance within their stated scopes.
@@ -258,4 +259,5 @@ ChatGPT Project context and the current chat remain supplementary/temporary cont
 - [Phase 4 P1 closeout](audits/PHASE4_BACKEND_P1_CLOSEOUT_2026-11-24.md): exit ledger, owner dispositions, release evidence and residual limitations. Backend-first gate signed off by the owner on 2026-11-24; frontend resumes in Integration Mode.
 - [Phase 4 execution contract](architecture/BACKEND_P1_PHASE4_CONTRACT.md) and [Phase 3 closeout](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md): historical planning and evidence baseline, not active work authority.
 - [P1-07 evidence pack](audits/P1_07_INDEPENDENT_REVIEW_EVIDENCE_PACK_2026-11-24.md) and [claims sheet](audits/P1_07_TRUTHFULNESS_CLAIMS_SHEET_2026-11-24.md): dated reviewer preparation, not current production status or human independent review certification. Third verification review pending.
-- [Phase 5 frontend polish contract](architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) — draft for head-engineer review; PRs #665–#668 merged, partial QA still has evidence gaps. No implementation before contract acceptance, and no redesign or new capability.
+- [Phase 5 frontend polish contract](architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) — merged #677; correctness work remains Integration Mode. P5-03 deferred to later Admin Observe; QA gaps remain.
+- [Phase 6 Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — owner authorized site-wide visual/motion design; P6-01 documentation only. Audit [#686](https://github.com/faresmohamed260/renderlab/pull/686). No implementation until design review and separate contract.

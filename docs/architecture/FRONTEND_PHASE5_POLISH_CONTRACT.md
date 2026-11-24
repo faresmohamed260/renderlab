@@ -2,6 +2,8 @@
 
 **Status: DRAFT for head-engineer review, not authorization to implement or deploy.** 2026-11-24. This is the immediate next phase under [progressive phase planning](../../AGENTS.md#progressive-phase-planning). It becomes execution authority only after reviewed merge; each work package still needs a scoped assignment, and releases remain separately ordered.
 
+**Owner scope update (2026-11-24): P5-03 is deferred to the separately planned later Admin Observe stage.** Preserve the existing `generationObservability` aggregate requirement and permission gates; no Admin dashboard implementation in Phase 5 or P6-01. The remaining Phase 5 packages retain their Integration Mode scope. See [Design Language V2](../ui/DESIGN_LANGUAGE_V2.md).
+
 ## Goal and user value
 
 Make the existing invite-only FIBO image beta reliable and truthful at its visible boundaries. A member can resume creative work from an existing result, understand available controls, complete the same essential actions with keyboard/touch, and trust status and errors. Operators can see the server's existing aggregate health evidence. Preserve approved designs, remove demonstrably dead code, and add inexpensive repeatable interaction evidence before changing unrelated surfaces.
@@ -56,7 +58,7 @@ Worker 1 is sole merge captain and releaser. Workers post ready-to-merge only af
 
 1. P5-01 verified: Viewer continuation carries source and recipe, capability UI truthful and popovers operable at both sizes; release and post-cutover evidence attached where applicable.
 2. P5-02 equivalent keyboard mask path, focus/IME behavior and open QA dispositions with measured/rendered evidence; unresolved issues explicitly accepted, not silently passed.
-3. P5-03 Admin Health consumes existing aggregates with truthful unavailable/empty handling and unchanged privileges.
+3. P5-03 disposition: owner-deferred to later Admin Observe; retain existing aggregate/permission requirements, do not claim implemented or require it to close Phase 5.
 4. P5-04 reachability and source/token cleanup reviewed, approved visuals maintained, historical compatibility retained; governance registry and docs synchronized.
 5. P5-05 mounted P0 tests run in credential-free CI or qualified local harness; browser/axe disposition and actual coverage limitations documented; no cost/safety regression.
 6. P5-06 FE-05 decision-backed code or docs resolution; no new design authority.
