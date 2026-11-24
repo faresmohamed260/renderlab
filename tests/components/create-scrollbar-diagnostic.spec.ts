@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, chromium, type Page } from "@playwright/test";
 import { fixtureAsset, fixtureImage, emptyHistory } from "../component-app/fixtures";
 
 const origin = "http://127.0.0.1:4173";
@@ -30,9 +30,12 @@ async function measure(page: Page, label: string) {
 
 for (const visible of [false, true]) {
   test.describe(visible ? "visible scrollbar" : "default headless", () => {
-    test.use({ launchOptions: visible ? { ignoreDefaultArgs: ["--hide-scrollbars"] } : {} });
-    test("production shell, capability and history matrix", async ({ page, context }) => {
+    test("production shell, capability and history matrix", async () => {
       test.setTimeout(60_000);
+      const browser = await chromium.launch(visible ? { ignoreDefaultArgs: ["--hide-scrollbars"] } : {});
+      try {
+      const context = await browser.newContext({ viewport: { width: 195, height: 421 }, reducedMotion: "reduce", serviceWorkers: "block" });
+      const page = await context.newPage();
       let populated = false;
       let autoVgl = false;
       const unexpected: string[] = [];
@@ -55,7 +58,7 @@ for (const visible of [false, true]) {
       for (const state of ["empty", "populated", "populated-auto-vgl"]) {
         populated = state !== "empty"; autoVgl = state === "populated-auto-vgl";
         await page.setViewportSize({ width: 195, height: 421 });
-        await page.goto("/create?shell=1");
+        await page.goto(origin + "/create?shell=1");
         await page.evaluate(() => document.body.classList.add("renderlab-gradient"));
         const create = page.getByRole("region", { name: "Create with FIBO" });
         await expect(create).toBeVisible();
@@ -73,6 +76,7 @@ for (const visible of [false, true]) {
         await measure(page, state + "/advanced");
       }
       expect(unexpected).toEqual([]);
+      } finally { await browser.close(); }
     });
   });
 }
