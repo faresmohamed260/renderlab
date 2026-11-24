@@ -220,7 +220,14 @@ export async function submitGeneration(
   // durable outbox + binding + identity). Never reserve or release separately.
   // Old clients without a key retain the exact legacy flow.
   if (idempotencyKey && isFibo) {
-    const accepted = await submitNativeGeneration(ownerId, request, idempotencyKey);
+    let accepted = await submitNativeGeneration(ownerId, request, idempotencyKey);
+    // The named active-limit denial proves the accept transaction rolled back.
+    // Settle existing owner work, then retry the same intent once; never retry
+    // an ambiguous acceptance or separately reserve/release a slot.
+    if (!accepted.ok && accepted.error.code === "generation_active_limit_reached"
+      && await settleOwnerGenerationWithinResponse(ownerId, "submit")) {
+      accepted = await submitNativeGeneration(ownerId, request, idempotencyKey);
+    }
     if (!accepted.ok) return reject(accepted);
     if ("newAcceptance" in accepted && accepted.newAcceptance) {
       scheduleFiboDispatcherWake(accepted.job.id);
