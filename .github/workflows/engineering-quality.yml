@@ -83,6 +83,13 @@ jobs:
           python3 workers/fibo-studio/test_dispatch_supabase.py
           python3 workers/fibo-studio/test_dispatcher_tls_canary.py
 
+      - name: Resolve TLS canary entrypoint with Modal CLI 1.6.4 offline
+        if: steps.ci-scope.outputs.docs_only != 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tls-canary-sdk"
+          "$RUNNER_TEMP/tls-canary-sdk/bin/python" -m pip install --disable-pip-version-check modal==1.6.4
+          "$RUNNER_TEMP/tls-canary-sdk/bin/python" scripts/verify-dispatcher-tls-canary-cli.py
+
       - name: Verify production Modal deploy guards offline
         if: steps.ci-scope.outputs.docs_only != 'true'
         run: python3 scripts/tests/test_fibo_deploy_guards.py
