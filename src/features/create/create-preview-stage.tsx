@@ -396,10 +396,10 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, de
   function tools() {
     if (maskAction && !result && !busy && !inputPending) return (
       <div className="create-preview-stage-tools" role="group" aria-label="Mask actions" {...toolEvents}>
-        <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="M" disabled={maskAction.blocked}
+        <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="M" data-create-mask-trigger disabled={maskAction.blocked}
           aria-label={maskAction.mask ? "Edit mask" : "Paint mask"}
           title={maskAction.blocked ? "Remove references to use a mask" : "Paint a mask on the source image"}
-          onClick={() => { if (viewerOpen) dialog.current?.close(); maskAction.open(); }}>{maskAction.mask ? "Edit mask" : "Mask"}</Button>
+          onClick={() => { if (viewerOpen) { restoring.current = true; dialog.current?.close(); } maskAction.open(); }}>{maskAction.mask ? "Edit mask" : "Mask"}</Button>
         {maskAction.blocked && <span className="create-preview-stage-mask-status">Remove references to use a mask</span>}
         {maskAction.mask && <>
           <span className="create-preview-stage-mask-status">Mask applied</span>

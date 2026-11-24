@@ -175,6 +175,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   });
   const [selection, setSelection] = useState<{ source: File; mask: File }>();
   const [maskEditor, setMaskEditor] = useState<"inline" | "dialog">();
+  const workspaceRoot = useRef<HTMLElement>(null);
+  const maskWasOpen = useRef(false);
+  const restoreMaskFocus = useRef(false);
+  const [maskAnnouncement, setMaskAnnouncement] = useState("");
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const mask = mode === "edit" && selection?.source === files[0] ? selection?.mask : undefined;
   const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
@@ -1023,18 +1027,47 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "");
   const canSubmit = stageReady && !continuationPending && !enqueueing && (!busy || !hostedModel && desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
+  const maskOpen = !!(maskEditor && mode === "edit" && files[0] && previews[0]);
+  function closeMaskEditor(announcement = "Mask changes cancelled.") {
+    setMaskAnnouncement(announcement);
+    restoreMaskFocus.current = true;
+    setMaskEditor(undefined);
+  }
+  useEffect(() => {
+    if (maskOpen) { maskWasOpen.current = true; return; }
+    if (!maskWasOpen.current) return;
+    maskWasOpen.current = false;
+    const explicit = restoreMaskFocus.current;
+    restoreMaskFocus.current = false;
+    const frame = requestAnimationFrame(() => {
+      const root = workspaceRoot.current;
+      if (!root || (!explicit && document.activeElement !== document.body && document.activeElement?.isConnected)) return;
+      // The inline trigger remounts after the editor; a viewer trigger may have disappeared.
+      const candidates = [
+        ...root.querySelectorAll<HTMLElement>("[data-create-mask-trigger]"),
+        root.querySelector<HTMLElement>("#create-preview-prompt"),
+        root.querySelector<HTMLElement>('[aria-label="Image Editing"]'),
+        root.querySelector<HTMLElement>('[aria-label="Text to Image"]'),
+      ];
+      const target = candidates.find((node) => node?.isConnected && node.getClientRects().length
+        && getComputedStyle(node).visibility === "visible"
+        && !node.matches(":disabled,[aria-disabled=true]") && !node.closest("dialog:not([open]),[inert]"));
+      (target ?? root).focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [maskOpen]);
   const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
-    <CreatePreviewMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
+    <CreatePreviewMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={closeMaskEditor}
       onSave={(region) => {
         setSelection(region ? { source: files[0]!, mask: region } : undefined);
-        if (region) requestAnimationFrame(() => document.getElementById("create-preview-prompt")?.focus({ preventScroll: true }));
         updateDraft("edit", { vgl: "", generatedVgl: false });
-        setMaskEditor(undefined);
+        closeMaskEditor(region ? "Mask saved." : "Mask cleared.");
       }} />
   );
 
   return (
-    <section className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
+    <section ref={workspaceRoot} tabIndex={-1} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
+      <p className="sr-only" role="status" aria-live="polite">{maskAnnouncement}</p>
       <div className="create-preview-toolbar">
         <div className="create-preview-tools">
           <Popover open={toolbarPopover === "queue"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "queue", open))}>
@@ -1282,7 +1315,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               browseDisabled={!admitted}
               browseUnavailableReason={mode === "generate" && !inspirationEnabled ? inspirationNotice : undefined}
               maskAction={admitted && mode === "edit" && files[0] && !result && !busy ? {
-                mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(matchMedia("(min-width: 1025px)").matches ? "inline" : "dialog"),
+                mask, blocked: files.slice(1).some(Boolean), open: () => { setMaskAnnouncement(""); setMaskEditor(matchMedia("(min-width: 1025px)").matches ? "inline" : "dialog"); },
                 clear: () => { setSelection(undefined); updateDraft("edit", { vgl: "", generatedVgl: false }); },
               } : undefined}
               result={busy ? inspected : result}

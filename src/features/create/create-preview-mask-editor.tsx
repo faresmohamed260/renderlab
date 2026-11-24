@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { initialMaskPoint, keyboardMaskCommand, type MaskPoint } from "./create-mask-keyboard";
 
 type View = { zoom: number; x: number; y: number };
 const initialView: View = { zoom: 1, x: 0, y: 0 };
@@ -46,15 +47,21 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
   const [square, setSquare] = useState(false);
   const [review, setReview] = useState(false);
   const [counts, setCounts] = useState([0, 0]);
+  const instructionsId = useId();
+  const keyboardPoint = useRef<MaskPoint>({ x: 0, y: 0 });
+  const [feedback, setFeedback] = useState("Loading mask.");
+  const mounted = useRef(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     const viewer = root.current;
-    if (!(viewer instanceof HTMLDialogElement)) {
-      viewport.current?.focus({ preventScroll: true });
-      return;
-    }
-    viewer?.showModal();
-    return () => { if (viewer?.open) viewer.close(); };
+    mounted.current = true;
+    if (viewer instanceof HTMLDialogElement) viewer.showModal();
+    viewport.current?.focus({ preventScroll: true });
+    return () => {
+      mounted.current = false;
+      if (viewer instanceof HTMLDialogElement && viewer.open) viewer.close();
+    };
   }, []);
 
   useEffect(() => {
@@ -89,6 +96,8 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
         }
         ctx.putImageData(data, 0, 0);
       }
+      keyboardPoint.current = initialMaskPoint(c.width, c.height);
+      setFeedback("Mask ready. " + positionText(keyboardPoint.current, c));
       setReady(true);
     }
     void load().catch(() => { if (!cancelled) setError("Could not open the source or mask."); });
@@ -147,13 +156,15 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
   }
   function moveHistory(reversing: boolean) {
     const ctx = context();
+    if (!ctx || !ready || savingRef.current || pointer.current || panDrag.current) return;
     const from = reversing ? undo.current : redo.current;
     const to = reversing ? redo.current : undo.current;
     const previous = from.pop();
-    if (!ctx || !previous) return;
+    if (!previous) return;
     to.push(snapshot(ctx));
     ctx.putImageData(previous, 0, 0);
     setCounts([undo.current.length, redo.current.length]);
+    setFeedback(reversing ? "Mask change undone." : "Mask change redone.");
   }
 
   function point(event: PointerEvent<HTMLCanvasElement>) {
@@ -211,9 +222,40 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
     ctx.putImageData(result, 0, 0);
   }
 
+  function positionText(at: MaskPoint, c: HTMLCanvasElement) {
+    return "Column " + (at.x + 1) + " of " + c.width + ", row " + (at.y + 1) + " of " + c.height + ".";
+  }
+
+  function canvasKeys(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget || event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
+    const ctx = context();
+    if (!ctx) return;
+    const command = keyboardMaskCommand(event.key, event.shiftKey, keyboardPoint.current, ctx.canvas.width, ctx.canvas.height);
+    if (!command) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (!ready || savingRef.current || pointer.current || panDrag.current) return;
+    if (command.kind === "move") {
+      keyboardPoint.current = command.point;
+      setFeedback(positionText(command.point, ctx.canvas));
+      showKeyboardOutline(command.point);
+      return;
+    }
+    if (event.repeat) return;
+    if (review || hand) {
+      setFeedback("Choose a painting tool and show the overlay before applying a mask.");
+      return;
+    }
+    record(ctx);
+    if (tool === "fill" || tool === "color") selectColor(ctx, command.point, tool === "fill");
+    else paint(ctx, command.point, command.point);
+    setFeedback((tool === "eraser" ? "Erased. " : "Selected. ") + positionText(command.point, ctx.canvas));
+    showKeyboardOutline(command.point);
+  }
+
   function finish() {
     const ctx = context();
-    if (!ctx || saving) return;
+    if (!ctx || !ready || pointer.current || panDrag.current || savingRef.current) return;
     const pixels = snapshot(ctx);
     let any = false;
     for (let i = 0; i < pixels.data.length; i += 4) {
@@ -226,22 +268,26 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
     output.width = pixels.width;
     output.height = pixels.height;
     output.getContext("2d")!.putImageData(pixels, 0, 0);
+    savingRef.current = true;
     setSaving(true);
+    setFeedback("Saving mask.");
     output.toBlob((blob) => {
+      if (!mounted.current) return;
       if (blob) onSave(new File([blob], "image-mask.png", { type: "image/png" }));
-      else { setSaving(false); setError("Could not save the mask."); }
+      else { savingRef.current = false; setSaving(false); setError("Could not save the mask."); setFeedback("Mask was not saved."); }
     }, "image/png");
   }
   function modify(invert: boolean) {
     const ctx = context();
-    if (!ctx) return;
+    if (!ctx || !ready || savingRef.current || pointer.current || panDrag.current) return;
     record(ctx);
-    if (!invert) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); return; }
+    if (!invert) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); setFeedback("Mask cleared. Undo or Cancel to restore it before saving."); return; }
     const pixels = snapshot(ctx);
     for (let i = 0; i < pixels.data.length; i += 4) {
       pixels.data.set([165, 180, 252, pixels.data[i + 3] > 8 ? 0 : 255], i);
     }
     ctx.putImageData(pixels, 0, 0);
+    setFeedback("Mask inverted.");
   }
 
   function updateOutline(event: PointerEvent<HTMLCanvasElement>) {
@@ -262,6 +308,24 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
     marker.style.height = size * box.height / event.currentTarget.height + "px";
   }
 
+  function showKeyboardOutline(at: MaskPoint) {
+    const marker = outline.current;
+    const c = canvas.current;
+    const region = viewport.current;
+    if (!marker || !c || !region) return;
+    const box = c.getBoundingClientRect();
+    const bounds = region.getBoundingClientRect();
+    const x = box.left + (at.x + .5) / c.width * box.width;
+    const y = box.top + (at.y + .5) / c.height * box.height;
+    marker.hidden = !ready || saving || hand || review || (tool !== "brush" && tool !== "eraser")
+      || x < bounds.left || x >= bounds.right || y < bounds.top || y >= bounds.bottom;
+    if (marker.hidden) return;
+    marker.style.left = x - bounds.left + "px";
+    marker.style.top = y - bounds.top + "px";
+    marker.style.width = size * box.width / c.width + "px";
+    marker.style.height = size * box.height / c.height + "px";
+  }
+
   function hideOutline() {
     if (outline.current) outline.current.hidden = true;
   }
@@ -272,18 +336,24 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
   return (
     <Root ref={(node: HTMLElement | null) => { root.current = node; }} className={inline ? "create-preview-mask-inline" : "create-preview-mask-dialog"}
       role={inline ? "group" : undefined} aria-label="Edit source mask"
-      onCancel={(event) => { event.preventDefault(); if (!saving) onClose(); }}
+      onCancel={(event) => { event.preventDefault(); if (!savingRef.current) onClose(); }}
       onKeyUp={(event) => { if (event.code === "Space") setSpace(false); }}
       onKeyDown={(event) => {
+        if (event.nativeEvent.isComposing) return;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!savingRef.current) onClose();
+          return;
+        }
         if (event.target instanceof HTMLInputElement || drawing || saving || !ready) return;
         viewKeys(event);
         const key = event.key.toLowerCase();
-        if (inline && key === "escape") { event.stopPropagation(); onClose(); return; }
         if ((event.ctrlKey || event.metaKey) && (key === "z" || key === "y")) {
           event.preventDefault();
           moveHistory(key === "z" && !event.shiftKey);
         } else if (!event.altKey && !event.ctrlKey && !event.metaKey) {
-          if (["b", "e", "f", "i"].includes(key)) setHand(false);
+          if (["b", "e", "f", "i"].includes(key)) { setHand(false); setReview(false); }
           if (key === "b") setTool("brush");
           if (key === "e") setTool("eraser");
           if (key === "f") setTool("fill");
@@ -299,7 +369,7 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
           {(tool === "fill" || tool === "color") && (
             <label>Tolerance <Input type="range" min={0} max={100} value={tolerance} onChange={(event) => setTolerance(event.target.valueAsNumber)} /><output>{tolerance}</output></label>
           )}
-          <label>Size <Input type="range" min={4} max={250} value={size} onChange={(event) => setSize(event.target.valueAsNumber)} /><output>{size}</output></label>
+          <label>Size <Input type="range" min={4} max={250} aria-label="Brush size" value={size} onChange={(event) => setSize(event.target.valueAsNumber)} /><output>{size}</output></label>
           <Button type="button" size="sm" variant="ghost" onClick={() => setSquare(!square)}>{square ? "Square" : "Round"}</Button>
           <label>Overlay <Input type="range" min={10} max={90} value={overlay} onChange={(event) => setOverlay(event.target.valueAsNumber)} /><output>{overlay}%</output></label>
           <Button type="button" size="sm" variant="ghost" disabled={!counts[0] || drawing || saving} onClick={() => moveHistory(true)}>Undo</Button>
@@ -315,7 +385,9 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
           <Button type="button" size="sm" variant="ghost" aria-pressed={hand} onClick={() => setHand(!hand)}>Hand</Button>
         </div>
       </div>
-      <div ref={viewport} className="create-preview-mask-viewport" tabIndex={0} aria-label="Mask canvas">
+      <div ref={viewport} className="create-preview-mask-viewport" tabIndex={0} role="application" aria-label="Mask canvas" aria-describedby={instructionsId}
+        aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Enter Space" onKeyDown={canvasKeys}
+        onFocus={() => { if (ready && canvas.current) { setFeedback(positionText(keyboardPoint.current, canvas.current)); showKeyboardOutline(keyboardPoint.current); } }} onBlur={hideOutline}>
       <div className="create-preview-mask-plane" style={{ transform: `translate(${view.x * 100}%, ${view.y * 100}%) scale(${view.zoom})` }}>
         <img src={source} alt="Source image" draggable={false} />
         <canvas ref={canvas} aria-label="Paint the selected region" style={{ opacity: review ? 0 : overlay / 100, cursor: panning ? "grabbing" : hand || space ? "grab" : "crosshair" }}
@@ -372,11 +444,14 @@ export function CreatePreviewMaskEditor({ source, mask, enabled, inline = false,
       </div>
         {inline && <div ref={outline} className="create-preview-mask-outline" data-square={square} aria-hidden="true" hidden />}
       </div>
-      {!enabled && <p>Mask editing is available here. Rendering a masked edit requires the private worker update.</p>}
-      {error && <p role="alert">{error}</p>}
+      <p><span id={instructionsId}>On Mask canvas, use arrows to move, Shift + arrows to move 10 pixels, Enter or Space to apply the selected tool. Tab to Size, Clear, Cancel or Done masking. Escape cancels.</span>{" "}
+        <span role="status" aria-live="polite" aria-atomic="true">{feedback}</span>
+        {!enabled && <> Mask editing is available here. Rendering a masked edit requires the private worker update.</>}
+        {error && <span role="alert"> {error}</span>}
+      </p>
       <div className="create-preview-mask-toolbar">
         <Button type="button" size="sm" variant="ghost" disabled={saving} onClick={onClose}>Cancel</Button>
-        <Button type="button" size="sm" disabled={!ready || drawing || saving} onClick={finish}>Done masking</Button>
+        <Button type="button" size="sm" disabled={!ready || drawing || panning || saving} onClick={finish}>Done masking</Button>
       </div>
     </Root>
   );
