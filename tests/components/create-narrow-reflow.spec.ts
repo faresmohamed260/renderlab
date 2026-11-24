@@ -61,3 +61,41 @@ for (const width of [195, 320]) {
     expect(io.every(call => ["GET history", "GET capabilities", "GET continuation source"].includes(call))).toBe(true);
   });
 }
+
+test("narrow native prompt preserves typing, clipboard replacement and Chromium IME composition", async ({ page, context, io }) => {
+  await page.setViewportSize({ width: 195, height: 422 });
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "http://127.0.0.1:4173" });
+  await page.goto("/");
+  const create = page.getByRole("region", { name: "Create with FIBO" });
+  await create.getByRole("button", { name: "Text to Image", exact: true }).click();
+  const prompt = create.getByRole("textbox", { name: "Prompt", exact: true });
+  await expect(prompt).toHaveJSProperty("tagName", "TEXTAREA");
+  await expect(prompt).toHaveAttribute("maxlength", "4000");
+  await prompt.pressSequentially("alpha beta");
+  await expect(prompt).toHaveValue("alpha beta");
+  await prompt.press("End");
+  await prompt.press("Shift+Home");
+  await page.evaluate(() => navigator.clipboard.writeText("paste\nsecond line"));
+  await prompt.press("Control+v");
+  await expect(prompt).toHaveValue("paste\nsecond line");
+  await prompt.press("Control+End");
+  await prompt.press("Enter");
+
+  // Chromium's IME protocol drives native composition, not a synthetic
+  // change event or a direct assignment to the textarea value.
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Input.imeSetComposition", { text: "ni", selectionStart: 2, selectionEnd: 2 });
+  await cdp.send("Input.imeSetComposition", { text: "你", selectionStart: 1, selectionEnd: 1 });
+  await cdp.send("Input.insertText", { text: "你" });
+  await expect(prompt).toHaveValue("paste\nsecond line\n你");
+  await expect(prompt).toBeFocused();
+  await prompt.pressSequentially("!");
+  await expect(prompt).toHaveValue("paste\nsecond line\n你!");
+  await assertReflow(page, "typed, pasted and composed prompt");
+  await create.getByRole("button", { name: "Image Editing", exact: true }).click();
+  await create.getByRole("button", { name: "Text to Image", exact: true }).click();
+  await expect(prompt).toHaveValue("paste\nsecond line\n你!");
+  await expect(create.getByRole("button", { name: "Generate", exact: true })).toBeEnabled();
+  await expect.poll(() => io.includes("GET capabilities")).toBe(true);
+  expect(io.every(call => ["GET history", "GET capabilities"].includes(call))).toBe(true);
+});
