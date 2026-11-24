@@ -46,7 +46,7 @@
 | `RENDERLAB_FIBO_PREVIEW` | optional | false | boolean, exact 1. Local/development preview only; disabled unless explicitly enabled with its declared strict boolean encoding. |
 | `RENDERLAB_GENERATION_BACKEND_TOKEN` | feature-required | unset (undefined) | string. Legacy external backend setting; not part of current FIBO production. Absent keeps old external path unavailable. |
 | `RENDERLAB_GENERATION_BACKEND_URL` | feature-required | unset (undefined) | string. Legacy external backend setting; not part of current FIBO production. Absent keeps old external path unavailable. |
-| `RENDERLAB_GENERATION_GATEWAY_URL` | feature-required (Production required) | unset (undefined) | string. Canonical FIBO gateway; required for enabled FIBO (legacy FIBO_GATEWAY_URL alias accepted). HTTPS *.modal.run only. |
+| `RENDERLAB_GENERATION_GATEWAY_URL` | feature-required (Production required) | unset (undefined) | string. Canonical FIBO gateway; required for enabled FIBO (legacy FIBO_GATEWAY_URL alias accepted). HTTPS in the exact `faresmohamed260--renderlab-generation-gateway-web.modal.run` workspace/app host only. |
 | `RENDERLAB_GENERATION_RECONCILER_SECRET` | production-required | unset (undefined) | string. Required in build, minimum 32 characters; dedicated reconciliation bearer secret. |
 | `RENDERLAB_HOSTED_CREATE` | optional | false | boolean, exact 1. Local/development preview only; disabled unless explicitly enabled with its declared strict boolean encoding. |
 | `RENDERLAB_MAINTENANCE_BATCH_LIMIT` | optional | 8 | number. Finite number; default 8. At runtime, invalid input returns the same safe default as prior code. |
@@ -83,3 +83,7 @@
 **Change discipline:** No database migrations, Modal worker rollout or generation in P0-02. This document does not approve a frontend/model phase.
 
 **Retired upscale-worker configuration:** `RENDERLAB_UPSCALE_WORKER_GATEWAY_URL` and its two `RENDERLAB_TEST_UPSCALE_WORKER_*` overrides are no longer runtime settings. The standalone unauthenticated upscale Modal app was removed from the repository, and the exported worker resolver now always returns `null`, irrespective of inherited variables. Historical Phase 18 verifier scripts and audit records remain provenance only: no current workflow calls them or the removed worker, and the upscale API remains a same-origin-checked HTTP 410 stub.
+
+### ComfyUI child-process environment hardening
+
+ComfyUI receives an explicitly allowlisted runtime/locale/CUDA/PyTorch/cache/CA environment. Arbitrary parent variables, including dispatcher database URLs, gateway signing material and future tokens, are not inherited. Python regression coverage injects sentinel secrets and checks the `Popen(env=...)` boundary. This change does not modify PostgreSQL TLS configuration or authorize a provider rollout.
