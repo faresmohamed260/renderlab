@@ -1,24 +1,24 @@
 {
   "schemaVersion": 2,
-  "applicationSha": "aeb43cb508297e22c52d87de4df747cbd7c8516a",
-  "deploymentId": "dpl_7Q8CbxmgWJW5qmizzHtBXcoNP8HY",
-  "deploymentUrl": "https://renderlab-34wskn7jz-faresmohamedsalah10-1681.vercel.app",
+  "applicationSha": "80194dfe654bd7c34660c4679a8c97542db94387",
+  "deploymentId": "dpl_32ns93K9T2tRVQ2azrcBxJBy5238",
+  "deploymentUrl": "https://renderlab-igi59d5u6-faresmohamedsalah10-1681.vercel.app",
   "domain": "renderlab.faresuniform.uk",
-  "rollbackDeploymentId": "dpl_52LrtHNSYLVtfXhQ3eaRQUcnpQG1",
-  "rollbackApplicationSha": "6f3b1ee7b4b5109816a082ca8cccb4f92263a8bf",
+  "rollbackDeploymentId": "dpl_7Q8CbxmgWJW5qmizzHtBXcoNP8HY",
+  "rollbackApplicationSha": "aeb43cb508297e22c52d87de4df747cbd7c8516a",
   "releaseQualification": {
     "type": "protected-main-checks",
     "requiredCheckRunIds": {
-      "quality": 138247489140,
-      "governance": 138247488114,
-      "unit-coverage": 138247488518,
-      "javascript-typescript": 138247488189,
-      "clean-room (ubuntu-latest)": 138247488374,
-      "clean-room (windows-latest)": 138247488166
+      "quality": 138328819253,
+      "governance": 138328820761,
+      "unit-coverage": 138328818867,
+      "javascript-typescript": 138328860614,
+      "clean-room (ubuntu-latest)": 138328819647,
+      "clean-room (windows-latest)": 138328820347
     },
-    "deploymentReadinessRunId": 45336488371,
-    "qualifiedAt": "2026-11-24T05:54:30.000Z"
+    "deploymentReadinessRunId": 45362418421,
+    "qualifiedAt": "2026-11-24T09:09:32.000Z"
   },
-  "cutoverAt": "2026-11-24T05:56:36.063Z",
-  "accountMigrationNote": "Batch D: additive migration 0036 ledger 20261124054825; renderer v12 and gateway/dispatcher v13, rollback v11/v12; reviewed Supabase CA and verify-full enabled."
+  "cutoverAt": "2026-11-24T09:16:04.401Z",
+  "accountMigrationNote": "Batch E: additive migration 0037 ledger 20261124090831; renderer v13 and gateway/dispatcher v14, rollback v12/v13; worker tree 4633471969d96f3b3a861a15edadd835253d85b4; captured pre-0037 rollback SQL. Verification generation pending at record closure."
 }
