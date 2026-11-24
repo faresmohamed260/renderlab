@@ -30,10 +30,12 @@ Batch G: app-only release of #693 (mask-editor keyboard interaction, focus and a
 
 
 ## Application Shell
-**UI maturity:** `UNAUDITED`. **Deployment:** `PRODUCTION-LIVE` per manifest. UI-074 was historically approved; current wrapper fidelity remains unresolved.
-**Current implementation:** `src/app/layout.tsx:33–41` uses `src/components/shell/preview-navigation-shell.tsx` for production children, including Landing; `src/app/(app)/layout.tsx:7–8` returns plain main. `src/components/shell/app-shell.tsx` is retained for alternate non-production path. P5-06 resolves UI-074/UI-084 scope; the source state does not supersede approved behavior.
+**UI maturity:** `UNAUDITED`. **Deployment:** `PRODUCTION-LIVE` per manifest. Current production implementation authority does not imply rendered design approval. UI-074 remains the approved shell geometry outside scoped UI-084 Create.
+**Current production implementation:** `PreviewNavigationShell` (`src/components/shell/preview-navigation-shell.tsx`) is selected by `src/app/layout.tsx:33–41` for production children, including Landing; `src/app/(app)/layout.tsx:7–8` returns plain main. The authorized loopback preview uses the same wrapper. `AppShell` (`src/components/shell/app-shell.tsx`) is reachable only in the ordinary non-production, non-preview application layout. The production shell has an expandable section selector and account disclosure, not the historical fixed direct-link composition.
 
-Approved behavior:
+**P5-06 disposition:** [P5-06 shell authority disposition](../audits/P5_06_SHELL_AUTHORITY_PROPOSAL_2026-11-24.md) records the accepted separation of production implementation from visual authority. Retain both shells until the Phase 6 Shell review (UI-085); no deletion, restoration, redesign or retroactive design approval in Phase 5. UI-052 Landing separation and UI-074 application chrome fidelity remain unresolved for that review.
+
+Approved behavior (UI-074; not a claim that the current production wrapper matches):
 - compact fixed horizontal application header across desktop and narrow layouts;
 - RenderLab/Create identity at the left with Library plus Activity/Settings-account access at the right;
 - no persistent desktop left rail and no fixed mobile bottom dock under UI-074;
@@ -71,7 +73,7 @@ Approved behavior:
 **Implementation:** `src/app/page.tsx`, `src/features/landing/landing-experience.tsx`, `src/features/landing/landing-experience.module.css`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`
 **Current design authority:** `docs/ui/LANDING_BRAND_RD.md`, `docs/ui/LANDING_MEDIA_SOURCES.md`. Historical implementation evidence: `docs/history/contracts/ui/LANDING_IMPLEMENTATION_CONTRACT.md`
 
-**Purpose:** Public product home for verified RenderLab capability and truthful invitation-only Closed Beta access without public self-admission. UI-052 historical intent is no application-shell chrome; current production root wrapper differs and is a P5-06 fidelity question.
+**Purpose:** Public product home for verified RenderLab capability and truthful invitation-only Closed Beta access without public self-admission. UI-052 approved separate marketing and application chrome. Production now wraps Landing in PreviewNavigationShell; `renderlab-background.css:77–87` hides Landing's own header and adjusts hero/footer layout. Landing content approval is distinct from wrapper approval; the accepted P5-06 disposition retains current composition pending Phase 6 Shell review.
 
 **Approved composition:** one continuous four-section sequence — **Hero / Lab Matrix → One creative thread → Living Library → Resolve to Create**. The page uses the locked Lab Grid identity as the visual grammar, keeps media dominant, supports bounded pointer/scroll choreography on capable desktop input, deliberately adapts the composition for 390px/touch, and provides a complete static `prefers-reduced-motion` equivalent.
 
