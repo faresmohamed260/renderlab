@@ -12,6 +12,7 @@ const accepted={id:job,owner_id:owner,status:"queued",operation:"create-image",
   output_kind:"image",created_at:created,updated_at:created,output_asset_ids:[]};
 const key="test-r8-0123456789abcdef";
 const symbol=Symbol.for("renderlab.r8.app.test");
+const settleSymbol=Symbol.for("renderlab.r8.settle.test");
 
 function stub(text){return {url:"data:text/javascript,"+encodeURIComponent(text),shortCircuit:true};}
 registerHooks({
@@ -22,6 +23,8 @@ registerHooks({
       +"return globalThis[Symbol.for('renderlab.r8.app.test')].push(callback);}");
     if(specifier==="@/lib/supabase/server")return stub(
       "export async function getCurrentRenderLabAccount(){return {id:"+JSON.stringify(owner)+"};}");
+    if(specifier==="@/server/generation/owner-generation-settlement")return stub(
+      "export async function settleOwnerGenerationWithinResponse(owner,source){return globalThis[Symbol.for('renderlab.r8.settle.test')](owner,source);}");
     if(specifier.startsWith("@/"))return nextResolve(
       new URL("../../src/"+specifier.slice(2)+".ts",import.meta.url).href,context);
     return nextResolve(specifier,context);
@@ -44,10 +47,12 @@ function submit(idempotencyKey=key, body=request){
     method:"POST",headers,body:JSON.stringify(body)
   }));
 }
-function fixture(t,{mode="accepted",lookup="accepted",read=true}={}){
-  const calls=[],tasks=[];
+function fixture(t,{mode="accepted",lookup="accepted",read=true,settles=false}={}){
+  const calls=[],tasks=[],settlements=[];
+  let accepts=0;
+  globalThis[settleSymbol]=(ownerId,source)=>{settlements.push({ownerId,source});return settles;};
   globalThis[symbol]=tasks;
-  t.after(()=>{delete globalThis[symbol];});
+  t.after(()=>{delete globalThis[symbol];delete globalThis[settleSymbol];});
   t.mock.method(console,"warn",()=>{});
   t.mock.method(console,"info",()=>{});
   t.mock.method(globalThis,"fetch",async(input,init)=>{
@@ -57,7 +62,8 @@ function fixture(t,{mode="accepted",lookup="accepted",read=true}={}){
     if(path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent")){
       if(mode==="missing")return Response.json({code:"PGRST202",message:"RPC missing"}, {status:404});
       if(mode==="ambiguous")return Response.json({code:"57014",message:"SECRET_SQL_URL"}, {status:503});
-      if(mode==="denied")return Response.json({code:"P0001",message:"renderlab_generation_active_limit_reached"}, {status:400});
+      accepts++;
+      if(mode==="denied" || (mode==="denied-once" && accepts===1))return Response.json({code:"P0001",message:"renderlab_generation_active_limit_reached"}, {status:400});
       return Response.json([{
         outcome:mode==="conflict"?"conflict":mode==="replayed"?"replayed":"accepted",
         job_id:mode==="conflict"?null:job,attempt_id:mode==="conflict"?null:attempt,
@@ -78,7 +84,7 @@ function fixture(t,{mode="accepted",lookup="accepted",read=true}={}){
     if(path.endsWith("/dispatch/wake"))return new Response(null,{status:202});
     assert.fail("Unexpected SQL or provider request "+url.href);
   });
-  return {calls,tasks};
+  return {calls,tasks,settlements};
 }
 test("R8 first keyed acceptance creates a single SQL transaction, owner-scoped read and one wake",async t=>{
   const f=fixture(t);
@@ -152,6 +158,34 @@ test("R8 invalid parsed request remains 400 without creating a row",async t=>{
   const f=fixture(t);
   assert.equal((await submit(key,{prompt:"",output:{kind:"image",aspectRatio:"1:1"},inputs:[]})).status,400);
   assert.deepEqual(f.calls,[]);
+});
+
+test("N5 keyed active limit settles owner once and retries the same intent key once",async t=>{
+  const f=fixture(t,{mode:"denied-once",settles:true});
+  const response=await submit();
+  assert.equal(response.status,202);
+  assert.deepEqual(f.settlements,[{ownerId:owner,source:"submit"}]);
+  const accepts=f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent"));
+  assert.equal(accepts.length,2);
+  assert.equal(accepts[0].body.p_request_key,key);
+  assert.equal(accepts[1].body.p_request_key,key);
+  assert.equal(accepts[0].body.p_request_digest,accepts[1].body.p_request_digest);
+  assert.equal(f.tasks.length,1);
+  assert.ok(!f.calls.some(c=>c.path.includes("release_generation_admission")||c.path.includes("reserve_generation_admission")));
+});
+test("N5 keyed active limit with no settled job stays 429 and never retries",async t=>{
+  const f=fixture(t,{mode:"denied",settles:false});
+  assert.equal((await submit()).status,429);
+  assert.deepEqual(f.settlements,[{ownerId:owner,source:"submit"}]);
+  assert.equal(f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent")).length,1);
+  assert.equal(f.tasks.length,0);
+});
+test("N5 repeated denial stops after exactly one owner settlement and one retry",async t=>{
+  const f=fixture(t,{mode:"denied",settles:true});
+  assert.equal((await submit()).status,429);
+  assert.equal(f.settlements.length,1);
+  assert.equal(f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent")).length,2);
+  assert.equal(f.tasks.length,0);
 });
 
 test("F4: keyed non-FIBO service submission rejects before admission or provider work", async t => {
