@@ -1,6 +1,8 @@
 # Phase 4 — Backend P1 execution contract
 
-**Execution: PLANNED; Contract: ACCEPTED FOR MERGE; Deployment: NOT DEPLOYED.** Accepted 2026-11-23 under the project owner's delegated engineering authority. This is the immediate backend P1 phase contract; it becomes normative on exact-head validation and merge to protected `main`. Contract acceptance **does not** authorize runtime implementation, secrets, provider mutations, release or GPU spend. Each unit still needs a scoped task and its applicable gates.
+**Historical execution contract — closed with owner-accepted limitations on 2026-11-24.** See the [Phase 4 closeout](../audits/PHASE4_BACKEND_P1_CLOSEOUT_2026-11-24.md) and current [charter](../PRODUCT_CHARTER.md) for the superseding owner decisions. The original plan below is retained as evidence, not active execution authority.
+
+**Original status at acceptance: Execution PLANNED; Contract ACCEPTED FOR MERGE; Deployment NOT DEPLOYED.** Accepted 2026-11-23 under the project owner's delegated engineering authority. This is the immediate backend P1 phase contract; it becomes normative on exact-head validation and merge to protected `main`. Contract acceptance **does not** authorize runtime implementation, secrets, provider mutations, release or GPU spend. Each unit still needs a scoped task and its applicable gates.
 
 **Previous phase:** [Phase 3 P0 closeout](../audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md), [43/60 same-rubric final assessment](../audits/PHASE3_BACKEND_P0_FINAL_SCORECARD_2026-11-23.md), and the [charter backend-first exit gate](../PRODUCT_CHARTER.md#backend-first-policy-and-exit-gate). Respect [AGENTS.md progressive planning](../../AGENTS.md#progressive-phase-planning); expand only this immediate P1 phase and do **not** prematurely detail or authorize a later frontend/new-model phase.
 
