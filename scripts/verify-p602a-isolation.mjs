@@ -14,6 +14,14 @@ export function productionLeak(file, content) {
   return leak.test(slash(file)) || leak.test(content);
 }
 
+// Only this exact declarative packaging exclusion is allowed in production config.
+export function productionSourceLeak(file, content) {
+  if (slash(file) === "next.config.ts") {
+    content = content.replace("  outputFileTracingExcludes: { \"/**\": [\"./design/rd/p6-02a-create/**/*\", \"./design/system/v2/**/*\"] },\n", "");
+  }
+  return productionLeak(file, content);
+}
+
 export function prototypeProblems(file, content) {
   const problems = [];
   if (/(?:^|\/)(?:api|proxy|middleware)(?:\/|\.|$)|\/route\.[jt]sx?$/.test(file)) problems.push("backend route or middleware");
@@ -41,7 +49,7 @@ async function assertSourceBoundary() {
   const problems = [];
   for (const file of production) {
     if (productionLeak(file, "")) problems.push(file + ": prototype path in production");
-    else if (textual.test(file) && productionLeak(file, await readFile(path.join(root, file), "utf8"))) problems.push(file + ": prototype reference in production");
+    else if (textual.test(file) && productionSourceLeak(file, await readFile(path.join(root, file), "utf8"))) problems.push(file + ": prototype reference in production");
   }
   for (const file of prototype) {
     if (!(await lstat(path.join(root, file))).isFile()) problems.push(file + ": non-regular source");
@@ -65,7 +73,14 @@ async function assertBuildBoundary() {
       if (entry.isDirectory()) await walk(full);
       else if (entry.isFile() && textual.test(rel)) {
         scanned++;
-        if (productionLeak(rel, await readFile(full, "utf8"))) problems.push(rel);
+        const body = await readFile(full, "utf8");
+        if (productionLeak(rel, body)) {
+          if (rel.endsWith(".nft.json")) {
+            const trace = JSON.parse(body);
+            const entries = Array.isArray(trace.files) ? trace.files.filter((entry) => typeof entry === "string" && productionLeak(entry, "")) : [];
+            problems.push(rel + ": " + (entries.length ? entries.join(", ") : "marker outside file entries"));
+          } else problems.push(rel);
+        }
       }
     }
   }

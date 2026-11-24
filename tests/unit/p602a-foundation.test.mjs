@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { springs } from "../../design/system/v2/springs.ts";
-import { productionLeak, prototypeProblems } from "../../scripts/verify-p602a-isolation.mjs";
+import { productionLeak, productionSourceLeak, prototypeProblems } from "../../scripts/verify-p602a-isolation.mjs";
 
 const spec = await readFile(new URL("../../docs/ui/DESIGN_LANGUAGE_V2.md", import.meta.url), "utf8");
 const css = await readFile(new URL("../../design/system/v2/tokens.css", import.meta.url), "utf8");
@@ -112,4 +112,12 @@ test("prototype source guard rejects backend, network, environment and duplicate
   assert.ok(prototypeProblems("design/rd/p6-02a-create/app/api/test/route.ts", "").length);
   assert.deepEqual(prototypeProblems(file, 'import "../../../system/v2/springs";'), []);
   assert.deepEqual(prototypeProblems(file, 'import type { ReactNode } from "react";'), []);
+});
+
+test("only the precise production tracing exclusion is permitted; trace manifests still fail closed", () => {
+  const config = "  outputFileTracingExcludes: { \"/**\": [\"./design/rd/p6-02a-create/**/*\", \"./design/system/v2/**/*\"] },\n";
+  assert.equal(productionSourceLeak("next.config.ts", config), false);
+  assert.equal(productionSourceLeak("next.config.ts", config + 'import "./design/system/v2/springs";'), true);
+  assert.equal(productionSourceLeak("src/app/page.tsx", config), true);
+  assert.equal(productionLeak("server/app/create-preview/[...path]/route.js.nft.json", '{"files":["../../../../../design/system/v2/tokens.css"]}'), true);
 });
