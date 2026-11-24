@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { fiboProvider } from "@/server/generation/adapters/fibo-provider-port";
 import type { GenerationJob, GenerationJobStatus } from "@/lib/capabilities/generation";
 import type { CancelGenerationResponse } from "@/lib/api/generation-cancel-contract";
 import { supabaseRest } from "@/server/data/supabase-rest";
@@ -120,6 +121,11 @@ async function cancelProviderCall(row: CancellationRow, timeoutMs = providerCanc
   }
 
   const worker = findWorker(row.worker_id);
+  // The adapter handles one signed provider DELETE only; claims, durable-output
+  // checks and atomic terminalization remain application-owned.
+  if (worker?.ecosystem === "fibo2-edit-turbo" && worker.policy?.transport === "modal-proxy") {
+    return fiboProvider.cancel(worker, row.provider_job_id, timeoutMs);
+  }
   const { url, options } = worker
     ? workerJobRequest(worker, row.provider_job_id, "", timeoutMs)
     : {

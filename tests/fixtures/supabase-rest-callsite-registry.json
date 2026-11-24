@@ -445,7 +445,7 @@
       "ownerEvidence": "actor-derived-RPC-p_owner_id"
     },
     {
-      "id": "src/server/generation/cancel-generation.ts:63:22",
+      "id": "src/server/generation/cancel-generation.ts:64:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -454,7 +454,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/cancel-generation.ts:71:22",
+      "id": "src/server/generation/cancel-generation.ts:72:22",
       "tableOrRpc": "media_assets",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -463,7 +463,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/cancel-generation.ts:151:22",
+      "id": "src/server/generation/cancel-generation.ts:157:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -472,7 +472,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/cancel-generation.ts:186:22",
+      "id": "src/server/generation/cancel-generation.ts:192:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -481,7 +481,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/cancel-generation.ts:209:22",
+      "id": "src/server/generation/cancel-generation.ts:215:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",
       "family": "jobs",
@@ -490,7 +490,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/cancel-generation.ts:315:29",
+      "id": "src/server/generation/cancel-generation.ts:321:29",
       "tableOrRpc": "rpc/renderlab_cancel_queued_generation_dispatch",
       "classification": "internal",
       "family": "jobs",
@@ -607,7 +607,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation-lifecycle.ts:60:22",
+      "id": "src/server/generation/native-generation-lifecycle.ts:53:22",
       "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
       "classification": "internal",
       "family": "jobs",
