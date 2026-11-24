@@ -254,4 +254,5 @@ ChatGPT Project context and the current chat remain supplementary/temporary cont
 
 ## Phase 4 backend P1 (accepted contract; implementation gated)
 
+- [P1-07 sanitized independent-review evidence pack](audits/P1_07_INDEPENDENT_REVIEW_EVIDENCE_PACK_2026-11-24.md) and [truthfulness claims sheet](audits/P1_07_TRUTHFULNESS_CLAIMS_SHEET_2026-11-24.md): dated source/deployment evidence, diagrams, migration/privilege limits, test/CI/restore links and review challenges. Reviewer preparation only; **no independent review sign-off is claimed**.
 - [Backend P1 Phase 4 execution contract](architecture/BACKEND_P1_PHASE4_CONTRACT.md): accepted immediate-phase plan, normative on protected-main merge; **P1-00 R1–R13 remediation comes first**. Contract merge is not implementation or release authorization. [Phase 3 P0 closeout](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md) is the evidence baseline; the 2026-11-23 three-reviewer pass was interim and the final independent external engineering review remains an exit gate.
