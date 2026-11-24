@@ -47,9 +47,10 @@ function submit(idempotencyKey=key, body=request){
     method:"POST",headers,body:JSON.stringify(body)
   }));
 }
-function fixture(t,{mode="accepted",lookup="accepted",read=true,settles=false}={}){
+function fixture(t,{mode="accepted",lookup="accepted",read=true,settles=false,prelookup="not_found"}={}){
   const calls=[],tasks=[],settlements=[];
   let accepts=0;
+  let acceptAttempted=false;
   globalThis[settleSymbol]=(ownerId,source)=>{settlements.push({ownerId,source});return settles;};
   globalThis[symbol]=tasks;
   t.after(()=>{delete globalThis[symbol];delete globalThis[settleSymbol];});
@@ -59,7 +60,11 @@ function fixture(t,{mode="accepted",lookup="accepted",read=true,settles=false}={
     const url=new URL(input), path=url.pathname;
     calls.push({path,method:init.method,body:init.body?JSON.parse(init.body):null});
     if(path.endsWith("/generation_admission_reservations"))return Response.json([]);
+    if(path.endsWith("/generation_sources"))return Response.json([]);
     if(path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent")){
+      acceptAttempted=true;
+      if(mode==="invalid-request")return Response.json({code:"P0001",message:"renderlab_idempotency_invalid_request",details:"SECRET_SQL_URL"},{status:400});
+      if(mode==="invalid-param")return Response.json({code:"22023",message:"SECRET_SQL_URL"},{status:400});
       if(mode==="missing")return Response.json({code:"PGRST202",message:"RPC missing"}, {status:404});
       if(mode==="ambiguous")return Response.json({code:"57014",message:"SECRET_SQL_URL"}, {status:503});
       accepts++;
@@ -72,10 +77,12 @@ function fixture(t,{mode="accepted",lookup="accepted",read=true,settles=false}={
       }]);
     }
     if(path.endsWith("/rpc/renderlab_lookup_generation_request_acceptance")){
-      return Response.json([{outcome:lookup,job_id:lookup==="accepted"?job:null,
-        attempt_id:lookup==="accepted"?attempt:null,
-        reservation_id:lookup==="accepted"?reservation:null,
-        admission_deadline:lookup==="accepted"?created:null}]);
+      const outcome=acceptAttempted?lookup:prelookup;
+      if(outcome==="missing")return Response.json({code:"PGRST202",message:"fixture missing"},{status:404});
+      if(outcome==="unavailable")return Response.json({code:"57014",message:"SECRET_SQL_URL"},{status:503});
+      return Response.json([{outcome,job_id:outcome==="accepted"?job:null,
+        attempt_id:outcome==="accepted"?attempt:null,reservation_id:outcome==="accepted"?reservation:null,
+        admission_deadline:outcome==="accepted"?created:null}]);
     }
     if(path.endsWith("/generation_jobs")){
       return Response.json(read?[accepted]:[]);
@@ -271,3 +278,34 @@ test("N6 headerless unconfirmed acceptance does not promise a client replay key"
   assert.ok(!f.calls.some(c=>c.path.includes("release_generation_admission")));
   assert.equal(f.tasks.length,0);
 });
+
+const missingSourceRequest={...request,inputs:[{alias:"image1",role:"primary-image",
+  source:{type:"temporary-source",id:"50000000-0000-4000-8000-000000000000"}}]};
+for(const [outcome,status] of [["accepted",202],["conflict",409],["in_flight",503],["unavailable",503],["missing",503]]){
+  test("N7 replay/lookup "+outcome+" precedes missing source resolution",async t=>{
+    const f=fixture(t,{prelookup:outcome});
+    const response=await submit(key,missingSourceRequest);
+    const result=await response.json();
+    assert.equal(response.status,status);
+    assert.equal(f.calls[0].path,"/rest/v1/rpc/renderlab_lookup_generation_request_acceptance");
+    assert.ok(!f.calls.some(c=>c.path.includes("generation_sources")||c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent")));
+    assert.equal(f.tasks.length,0);
+    assert.equal(result.ok,status===202);
+    if(status===202)assert.equal(result.job.id,job);
+    else {assert.ok(!JSON.stringify(result).includes(job));assert.ok(!JSON.stringify(result).includes("SECRET_SQL_URL"));}
+  });
+}
+for(const mode of ["invalid-request","invalid-param"]){
+  test("N7 deterministic input RPC error "+mode+" is sanitized HTTP 400 without retry",async t=>{
+    const f=fixture(t,{mode});
+    const response=await submit();
+    const body=await response.json();
+    assert.equal(response.status,400);
+    assert.equal(body.error.code,"invalid_request");
+    assert.ok(!JSON.stringify(body).includes("SECRET_SQL_URL"));
+    assert.ok(!JSON.stringify(body).includes(key));
+    assert.equal(response.headers.get("retry-after"),null);
+    assert.equal(f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_lookup_generation_request_acceptance")).length,1,"only preflight lookup");
+    assert.equal(f.tasks.length,0);
+  });
+}
