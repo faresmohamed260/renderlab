@@ -1,4 +1,5 @@
 import { envString } from "../../lib/config/runtime-env.ts";
+import { fiboProvider } from "@/server/generation/adapters/fibo-provider-port";
 import { persistFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
 import type {
   GenerationJob,
@@ -37,14 +38,6 @@ type JobRow = NativeGenerationJobRow;
 const maxPollReassignmentAttempts = 3;
 const invalidWorkerGraceMs = 15 * 60 * 1000;
 const retryableProviderStaleMs = 2 * 60 * 60 * 1000;
-const fiboPollDetailCategories = new Map([
-  ["Unknown FIBO job", "unknown-job"],
-  ["FIBO result expired", "result-expired"],
-  ["FIBO rejected the render inputs", "inputs-rejected"],
-  ["FIBO_PROCESS_EXITED", "process-exited"],
-  ["FIBO_RENDER_TIMED_OUT", "render-timed-out"],
-]);
-
 export function isNativeGenerationConfigured() {
   return isSupabaseConfigured() && isR2Configured();
 }
@@ -289,13 +282,24 @@ export async function pollNativeGeneration(
     return toGenerationJob(failed);
   }
 
-  const { url, options } = workerJobRequest(worker, row.provider_job_id, "", providerTimeoutMs);
-  const headers = new Headers(options.headers);
-  headers.set("accept", row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json");
-  const response = await fetch(url, {
-    ...options, method: "GET", headers,
-    cache: "no-store",
-  });
+  // Only the already-accepted FIBO job's signed provider observation routes
+  // through the port. Historical worker reads preserve their original path.
+  let response: Response;
+  let options: RequestInit;
+  if (row.worker_id === FIBO_DISPATCH_BACKEND) {
+    const observed = await fiboProvider.status(worker, row.provider_job_id, row.output_kind, providerTimeoutMs);
+    response = observed.response;
+    options = observed.options;
+  } else {
+    const request = workerJobRequest(worker, row.provider_job_id, "", providerTimeoutMs);
+    options = request.options;
+    const headers = new Headers(options.headers);
+    headers.set("accept", row.output_kind === "video" ? "video/*, application/json" : "image/*, application/json");
+    response = await fetch(request.url, {
+      ...options, method: "GET", headers,
+      cache: "no-store",
+    });
+  }
 
   if (
     envString("VERCEL_ENV") === "production"
@@ -329,11 +333,12 @@ export async function pollNativeGeneration(
   if (!response.ok) {
     const body = await errorBody(response) ?? {};
     if (providerTimeoutMs) options.signal?.throwIfAborted();
-    const failure = classifyWorkerFailure(response.status, body);
-    const fiboProcessExited = row.worker_id === FIBO_DISPATCH_BACKEND
-      && response.status === 409 && body.detail === "FIBO_PROCESS_EXITED";
-    const fiboRenderTimedOut = row.worker_id === FIBO_DISPATCH_BACKEND
-      && response.status === 409 && body.detail === "FIBO_RENDER_TIMED_OUT";
+    const fiboSignals = row.worker_id === FIBO_DISPATCH_BACKEND
+      ? fiboProvider.interpretFailure(response.status, body)
+      : null;
+    const failure = fiboSignals?.failure ?? classifyWorkerFailure(response.status, body);
+    const fiboProcessExited = fiboSignals?.processExited ?? false;
+    const fiboRenderTimedOut = fiboSignals?.renderTimedOut ?? false;
     const providerMessage = String(body.error || body.detail || `Worker status unavailable (${response.status}).`);
     const diagnostic = providerFailureDiagnostic(row, response.status, failure, providerMessage);
     if (fiboProcessExited || fiboRenderTimedOut) {
@@ -347,11 +352,9 @@ export async function pollNativeGeneration(
       return toGenerationJob(failed);
     }
 
-    const terminalFiboResponse = (response.status === 410 && body.detail === "FIBO result expired")
-      || (response.status === 422 && body.detail === "FIBO rejected the render inputs");
+
     // A proxy or routing rejection gives no confirmed outcome for the accepted Modal call.
-    const unconfirmedFiboResponse = row.worker_id === FIBO_DISPATCH_BACKEND
-      && !failure.retryable && !terminalFiboResponse;
+    const unconfirmedFiboResponse = fiboSignals?.unconfirmed ?? false;
 
     // FIBO has no safe reassignment path: provider errors may conceal an accepted result.
     if (failure.safeToReassign && row.worker_id !== FIBO_DISPATCH_BACKEND) {
@@ -391,9 +394,7 @@ export async function pollNativeGeneration(
         return toGenerationJob(failed);
       }
       if (unconfirmedFiboResponse) {
-        const detailCategory = typeof body.detail === "string"
-          ? fiboPollDetailCategories.get(body.detail) ?? "unknown"
-          : "unknown";
+        const detailCategory = fiboSignals?.detailCategory ?? "unknown";
         console.warn(`[renderlab] ${JSON.stringify({
           event: "generation.reconciliation",
           phase: "provider-outcome",
