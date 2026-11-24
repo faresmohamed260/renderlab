@@ -99,7 +99,8 @@ export async function supabaseRest<T>(path: string, init: RequestInit = {}): Pro
     const classified = classifyUpstreamError(body);
     // Only a literal PostgREST schema-cache "function not found" classification
     // can declare 0034 unavailable. Generic 404s are not safe fallback evidence.
-    const missingRpc = path === "rpc/renderlab_accept_generation_dispatch_idempotent"
+    const missingRpc = (path === "rpc/renderlab_accept_generation_dispatch_idempotent"
+      || path === "rpc/renderlab_lookup_generation_request_acceptance")
       && response.status === 404 && body && typeof body === "object"
       && !Array.isArray(body) && (body as Record<string, unknown>).code === "PGRST202";
     throw new SupabaseRestError(response.status, {
