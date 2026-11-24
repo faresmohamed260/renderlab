@@ -1,5 +1,5 @@
 import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { isRenderLabMfaChallengeRequired } from "@/lib/auth/mfa-assurance";
 import { getFreshCurrentRenderLabAuthentication } from "@/lib/supabase/server";
 import { getRenderLabAccountAccess } from "@/server/account/account-access";
