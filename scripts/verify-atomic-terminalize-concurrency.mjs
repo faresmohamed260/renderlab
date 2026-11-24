@@ -103,17 +103,21 @@ async function race({name,from,first,second}) {
     const [aOut,bOut]=await Promise.all([a.done,b.done]);
     const resultA=/RACE_OUTCOME:(\w+)/.exec(aOut)?.[1];
     const resultB=/RACE_OUTCOME:(\w+)/.exec(bOut)?.[1];
-    assert.equal(resultA,"applied",name+": first connection holds lock before contender");
-    assert.equal(resultB,first===second?"already_terminal":"conflict",
-      name+": second must observe serially committed terminal");
+    // 0036: an indexed output makes a failed edge illegal even if that
+    // contender gets the job lock first. Success still wins the serial race.
+    const guardedFailure=from==="persisting"&&first==="failed"&&second==="succeeded";
+    const winner=guardedFailure?second:first;
+    assert.equal(resultA,guardedFailure?"conflict":"applied",name+": first connection holds lock before contender");
+    assert.equal(resultB,guardedFailure?"applied":first===second?"already_terminal":"conflict",
+      name+": second must observe serially committed terminal or recover protected output");
     const state=sql("SELECT status||'|'||cardinality(output_asset_ids) "+
       "FROM public.generation_jobs WHERE id='"+job+"'");
-    assert.equal(state,first+"|"+(first==="succeeded"?1:0),name+": terminal row");
+    assert.equal(state,winner+"|"+(winner==="succeeded"?1:0),name+": terminal row");
     assert.equal(Number(sql("SELECT count(*) FROM public.generation_admission_reservations "+
       "WHERE job_id='"+job+"' AND released_at IS NOT NULL")),1,name+": released slot");
     assert.equal(Number(sql("SELECT count(*) FROM conformance.atomic_release_audit WHERE job_id='"+job+"'")),1,
       name+": release happens exactly once even with two writers");
-    const replay=sql(invoke(owner,job,from,first,asset));
+    const replay=sql(invoke(owner,job,from,winner,asset));
     assert.ok(replay.includes("RACE_OUTCOME:already_terminal"),name+": replay after lost response");
     assert.equal(Number(sql("SELECT count(*) FROM conformance.atomic_release_audit WHERE job_id='"+job+"'")),1,
       name+": replay must not release twice");
