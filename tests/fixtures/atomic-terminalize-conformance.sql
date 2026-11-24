@@ -213,4 +213,82 @@ BEGIN
   RAISE NOTICE 'P0-07 injected fault rolled back both the job status and reservation release';
 END
 $rollback$;
+
+ROLLBACK;
+
+BEGIN;
+-- N3/0036: run against the real final migration state, not a mock.
+DO $n3$
+DECLARE
+  v_owner uuid := pg_catalog.gen_random_uuid();
+  v_job uuid;
+  v_attempt uuid;
+  v_asset uuid;
+  v_result record;
+  v_state text;
+BEGIN
+  INSERT INTO auth.users(id,email) VALUES (v_owner, 'n3.'||v_owner::text||'@example.invalid');
+  INSERT INTO public.renderlab_account_access(user_id) VALUES (v_owner);
+  FOREACH v_state IN ARRAY ARRAY['pending','claimed','retry_wait','unresolved','dispatched']
+  LOOP
+    v_job:=pg_catalog.gen_random_uuid();
+    v_attempt:=pg_catalog.gen_random_uuid();
+    INSERT INTO public.generation_jobs(id,owner_id,status,operation,output_kind,prompt,workflow_id,model,ecosystem,worker_id)
+      VALUES(v_job,v_owner,'queued','create-image','image','fixture','fixture','fibo2-edit-turbo','fibo','fibo');
+    INSERT INTO public.generation_admission_reservations(owner_id,job_id,expires_at)
+      VALUES(v_owner,v_job,now()+interval '1 hour');
+    INSERT INTO public.generation_dispatch_outbox(attempt_id,job_id,owner_id,backend_key,model_key,model_version,
+      operation,payload,status,admission_deadline,dedup_retain_until,claim_token,claim_until,next_attempt_at)
+      VALUES(v_attempt,v_job,v_owner,'fibo','fibo-2.0-turbo','bria-fibo-2.0-turbo','create-image','{}',v_state,
+        now()+interval '1 minute',now()+interval '7 days',
+        CASE WHEN v_state='claimed' THEN pg_catalog.gen_random_uuid() ELSE NULL END,
+        CASE WHEN v_state='claimed' THEN now()-interval '1 minute' ELSE NULL END, now()-interval '21 minutes');
+    SELECT * INTO v_result FROM public.renderlab_terminalize_generation_and_release(
+      v_owner,v_job,'queued','failed',NULL,'generation_deadline_exceeded','fixture deadline');
+    ASSERT v_result.outcome='applied' AND v_result.reservation_released, 'N3 atomic deadline';
+    ASSERT (SELECT status='failed' AND claim_token IS NULL AND claim_until IS NULL
+      FROM public.generation_dispatch_outbox WHERE attempt_id=v_attempt), 'N3 unstarted outbox was not closed';
+    SELECT * INTO v_result FROM public.renderlab_terminalize_generation_and_release(
+      v_owner,v_job,'queued','failed',NULL,'generation_deadline_exceeded','fixture deadline');
+    ASSERT v_result.outcome='already_terminal' AND NOT v_result.reservation_released, 'N3 replay';
+  END LOOP;
+  ASSERT (public.renderlab_generation_dispatch_health()->>'oldestDueSeconds')::integer=0, 'N3 stale due rows';
+  ASSERT (public.renderlab_generation_dispatch_health()->>'expiredClaims')::integer=0, 'N3 stale claims';
+  ASSERT (public.renderlab_generation_dispatch_health()->>'unresolved')::integer=0, 'N3 stale unresolved rows';
+
+  v_job:=pg_catalog.gen_random_uuid();
+  v_attempt:=pg_catalog.gen_random_uuid();
+  INSERT INTO public.generation_jobs(id,owner_id,status,operation,output_kind,prompt,workflow_id,model,ecosystem,worker_id)
+    VALUES(v_job,v_owner,'running','create-image','image','fixture','fixture','fibo2-edit-turbo','fibo','fibo');
+  INSERT INTO public.generation_admission_reservations(owner_id,job_id,expires_at)
+    VALUES(v_owner,v_job,now()+interval '1 hour');
+  INSERT INTO public.generation_dispatch_outbox(attempt_id,job_id,owner_id,backend_key,model_key,model_version,
+    operation,payload,status,admission_deadline,dedup_retain_until,execution_started_at)
+    VALUES(v_attempt,v_job,v_owner,'fibo','fibo-2.0-turbo','bria-fibo-2.0-turbo','create-image','{}','dispatched',
+      now()+interval '1 minute',now()+interval '7 days',now());
+  SELECT * INTO v_result FROM public.renderlab_terminalize_generation_and_release(
+    v_owner,v_job,'running','failed',NULL,'generation_failed','fixture');
+  ASSERT v_result.outcome='applied', 'N3 started job terminal';
+  ASSERT (SELECT status='dispatched' AND execution_started_at IS NOT NULL
+    FROM public.generation_dispatch_outbox WHERE attempt_id=v_attempt), 'N3 must retain executed attempt';
+
+  v_job:=pg_catalog.gen_random_uuid();
+  v_asset:=pg_catalog.gen_random_uuid();
+  INSERT INTO public.generation_jobs(id,owner_id,status,operation,output_kind,prompt,workflow_id,model,ecosystem)
+    VALUES(v_job,v_owner,'persisting','create-image','image','fixture','fixture','fibo2-edit-turbo','fibo');
+  INSERT INTO public.generation_admission_reservations(owner_id,job_id,expires_at)
+    VALUES(v_owner,v_job,now()+interval '1 hour');
+  INSERT INTO public.media_assets(id,owner_id,generation_job_id,generation_output_index,kind,mime_type,storage_key)
+    VALUES(v_asset,v_owner,v_job,0,'image','image/png','fixture/n3/'||v_job::text);
+  SELECT * INTO v_result FROM public.renderlab_terminalize_generation_and_release(
+    v_owner,v_job,'persisting','failed',NULL,'generation_deadline_exceeded','fixture');
+  ASSERT v_result.outcome='conflict' AND NOT v_result.reservation_released, 'N3 asset-exists guard';
+  ASSERT (SELECT status='persisting' FROM public.generation_jobs WHERE id=v_job), 'N3 failed edge changed durable result';
+  SELECT * INTO v_result FROM public.renderlab_terminalize_generation_and_release(
+    v_owner,v_job,'persisting','succeeded',v_asset);
+  ASSERT v_result.outcome='applied' AND v_result.reservation_released, 'N3 durable success recovery';
+  RAISE NOTICE 'N3 PASS: outbox close, health clear, started attempt preserved, asset guard and recovery';
+END;
+$n3$;
+
 ROLLBACK;
