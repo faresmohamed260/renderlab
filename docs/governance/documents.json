@@ -138,6 +138,17 @@
       "supersededBy": []
     },
     {
+      "path": "docs/architecture/FRONTEND_TEST_STRATEGY.md",
+      "kind": "reference-guide",
+      "authority": "reference",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-24",
+      "reviewIntervalDays": 60,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
       "path": "docs/PRODUCT_CHARTER.md",
       "kind": "normative-policy",
       "authority": "normative",
