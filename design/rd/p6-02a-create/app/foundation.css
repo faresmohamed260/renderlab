@@ -233,7 +233,7 @@ body {
 }
 
 /* Create fixture geometry: no second token owner. Scrollbars remain visible. */
-html { scrollbar-gutter: stable; }
+html { scrollbar-gutter: stable; overflow-y: scroll; }
 .p602a-create-page {
   max-inline-size: 92rem;
   margin-inline: auto;

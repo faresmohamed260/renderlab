@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const project = "design/rd/p6-02a-create/";
 const system = "design/system/v2/";
-const leak = /(?:design[\\/]system[\\/]v2|p6-02a-create|--rlv2-|data-p602a-isolated|P6-02a isolated foundation)/i;
+const leak = /(?:design[\\/]system[\\/]v2|p6-02a-create|--rlv2-|data-p602a-isolated|data-create-composition|p602a-(?:artwork|source)\.svg|P6-02a isolated foundation)/i;
 const textual = /\.(?:[cm]?[jt]sx?|css|json|html|map|rsc|txt|svg|xml|webmanifest)$/i;
 const slash = (value) => value.replaceAll("\\", "/");
 
