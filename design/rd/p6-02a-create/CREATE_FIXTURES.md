@@ -1,0 +1,7 @@
+# Create composition branch — work in progress
+
+Based on #703's qualified head 8fb571c1, pending its merge. This branch is not a PR or reviewed design.
+
+Source read-back: `src/features/create/create-hosted-capabilities.ts` projects hosted-only capability gates; `create-preview-workspace.tsx` retains one output, manual VGL, source/reference input, conditional mask support, queue/cancel and retained prompt. `create-preview-stage.tsx` conditionally exposes comparison only for matching source/result and current context, plus reuse settings and download. `src/lib/capabilities/generation.ts` defines the five preset ratios. Synthetic fixtures deliberately exclude inspiration, multi-output, negative conditioning, automatic VGL, video, provider percentages and real identifiers. Variable steps are represented in an authorized-capability fixture only; revisit source gating before qualification. Do not treat this as a live capability proof.
+
+Eight deterministic reset states, typed immutable recipes and explicit lifecycle events are the starting point. Remaining work: layout and local artwork, genuine React Spring choreography, fixture selector outside capture crop, reference reorder/replace/remove incl. direct gesture, conditional mask and result actions, advanced/menu semantics, full browser capture and measured contrast/geometry, real reduced-motion equivalence, capture metadata and video. No new dependencies or production source.
