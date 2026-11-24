@@ -573,3 +573,9 @@ test("H1 expired ready FIBO persistence interruption remains recoverable, not de
   assert.equal(runtime.atomicCommits,1);
   assert.equal(runtime.releases,1);
 });
+
+test("N4 unkeyed FIBO dispatch leaves 420 seconds plus 30 seconds before job cutoff",async t=>{
+  fixture(t);await accepted();
+  const accept=runtime.traces.find(c=>c.table==="rpc/renderlab_accept_generation_dispatch");
+  assert.equal(Date.parse(accept.body.p_admission_deadline)-FIXED_TIME,750000);
+});

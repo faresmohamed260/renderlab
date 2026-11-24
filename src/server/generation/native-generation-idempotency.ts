@@ -1,4 +1,5 @@
 import "server-only";
+import { fiboAdmissionDeadlineMs } from "@/server/generation/fibo-admission-deadline";
 
 import { createHash, randomUUID } from "node:crypto";
 import type { GenerationRequest } from "@/lib/capabilities/generation";
@@ -128,7 +129,7 @@ export async function acceptIdempotentFiboGeneration(input: {
     p_model_key: "fibo-2.0-turbo",
     p_model_version: "bria-fibo-2.0-turbo",
     p_payload: payload,
-    p_admission_deadline: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+    p_admission_deadline: new Date(Date.now() + fiboAdmissionDeadlineMs).toISOString(),
   };
   let primary: IdentityRow | null;
   try {
