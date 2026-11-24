@@ -2,6 +2,7 @@ import { envFlag, envString } from "../../../lib/config/runtime-env.ts";
 import { createHash } from "node:crypto";
 import { Suspense } from "react";
 import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
+import { resolveCreateContinuation, type CreateSearchParams } from "@/features/create/create-continuation";
 import {
   getCreatePreviewOwner,
   getHostedCreateMedia,
@@ -76,8 +77,7 @@ export default async function CreatePage({
 }) {
   if (envString("NODE_ENV") === "production") {
     const params = await searchParams;
-    const useImageDefault = !params.recipe && !params.source && !params.action;
-    return <ProductionCreatePage useImageDefault={useImageDefault} />;
+    return <ProductionCreatePage params={params} />;
   }
   if (await isCreatePreview()) return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}><CreatePreviewCreate /></Suspense>;
 
@@ -174,21 +174,31 @@ async function CreatePreviewCreate() {
 
 const model = { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" };
 
-function ProductionCreatePage({ useImageDefault }: { useImageDefault: boolean }) {
+function ProductionCreatePage({ params }: { params: CreateSearchParams }) {
   return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}>
-    <Create useImageDefault={useImageDefault} />
+    <Create params={params} />
   </Suspense>;
 }
 
-async function Create({ useImageDefault }: { useImageDefault: boolean }) {
+async function Create({ params }: { params: CreateSearchParams }) {
   const account = await getCurrentRenderLabAccount();
   if (account && isSupabaseConfigured()) scheduleOwnerGenerationSettlement(account.id);
   const accountKey = account ? createHash("sha256").update("create-stage:" + account.id).digest("hex") : undefined;
   const ready = !!account && isFiboGenerationAvailable() && isMediaUploadConfigured();
+  const useImageDefault = params.recipe === undefined && params.source === undefined && params.action === undefined;
+  const continuation = await resolveCreateContinuation(params, account?.id, ready, {
+    loadAsset: async (ownerId, assetId) => {
+      const asset = await getMediaAsset(ownerId, assetId);
+      return asset ? publicMediaAsset(asset) : null;
+    },
+    loadRecipe: loadInitialGenerationRecipe,
+  });
+  const continuationKey = useImageDefault ? "" : createHash("sha256").update(JSON.stringify([params.recipe, params.source, params.action])).digest("hex");
   const preferences = ready && useImageDefault
     ? await getRenderLabAccountPreferences(account.id).catch(() => null)
     : null;
-  return <CreatePreviewWorkspace key={accountKey ?? "guest"} admitted={!!account} hostedOnly
+  return <CreatePreviewWorkspace key={(accountKey ?? "guest") + ":" + continuationKey} admitted={!!account} hostedOnly
+    initialContinuation={continuation.plan} initialContinuationError={continuation.error}
     hostedModel={ready ? model : undefined} hostedAccountKey={accountKey}
     initialAspectRatio={fiboPreferenceAspectRatio(preferences?.create.imageAspectRatio ?? "1:1")}
     masksEnabled={ready && isFiboMaskGenerationAvailable()}
