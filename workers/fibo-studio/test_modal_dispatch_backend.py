@@ -64,6 +64,9 @@ class FakeStore:
         self.send_reservations += 1
         return True
 
+    def mark_retry(self, item, *, next_attempt_at, error):
+        self.events.append(("retry", item.attempt_id, next_attempt_at, error))
+
     def mark_failed(self, item, *, error):
         self.events.append(("failed", item.attempt_id, error))
 
@@ -128,6 +131,24 @@ class PoisonPayloadTest(unittest.TestCase):
                     "images": [PNG],
                 }, operation="edit-image", fault=fault)
 
+
+class ReserveRecoveryTest(unittest.TestCase):
+    def test_reserve_error_before_send_retries_only_on_durable_absence(self):
+        for state in (LookupState.ABSENT, LookupState.UNRESOLVED, LookupState.ACCEPTED):
+            with self.subTest(state=state):
+                store = FakeStore({"prompt": "test", "seed": 1, "width": 512, "height": 512})
+                render = Mock()
+                backend = ModalImageBackend(store, render, lambda handle: "signed:" + handle)
+                handle = "fc-" + "a" * 26 if state is LookupState.ACCEPTED else None
+                with (patch.object(store, "reserve_send", side_effect=RuntimeError("database failure SECRET")),
+                      patch.object(store, "lookup", side_effect=[Lookup(LookupState.ABSENT), Lookup(state, handle)])):
+                    summary = Dispatcher(store, {"fibo": backend}).tick(NOW)
+                render.spawn.assert_not_called()
+                expected = {LookupState.ABSENT: "retry", LookupState.UNRESOLVED: "unresolved",
+                            LookupState.ACCEPTED: "dispatched"}[state]
+                self.assertEqual(expected, store.events[0][0])
+                self.assertEqual(1, summary.retried + summary.unresolved + summary.dispatched)
+                self.assertNotIn("SECRET", repr(store.events))
 
 if __name__ == "__main__":
     unittest.main()
