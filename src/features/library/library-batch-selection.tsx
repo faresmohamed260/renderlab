@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { CheckSquare2, FolderOpen, Minus, Plus, Star, Trash2, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -121,6 +121,8 @@ export function LibraryBatchSelection({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [hiddenDeletedIds, setHiddenDeletedIds] = useState<Set<string>>(() => new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
+  const selectTrigger = useRef<HTMLButtonElement>(null);
+  const returnToSelect = useRef(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [organizeOpen, setOrganizeOpen] = useState(false);
@@ -269,6 +271,7 @@ export function LibraryBatchSelection({
 
       const failedIds = new Set(payload.results.filter((result) => !result.ok).map((result) => result.assetId));
       const deletedIds = payload.results.filter((result) => result.ok).map((result) => result.assetId);
+      returnToSelect.current = payload.summary.failed === 0;
       setHiddenDeletedIds((current) => new Set([...current, ...deletedIds]));
       setSelectedIds(failedIds);
       setDialogOpen(false);
@@ -338,7 +341,7 @@ export function LibraryBatchSelection({
           <div className={styles.searchCell}>{searchControls}</div>
           <div className={styles.actionCell}>
             {uploadAction}
-            <Button type="button" variant="ghost" size="sm" onClick={enterSelectionMode}>
+            <Button ref={selectTrigger} type="button" variant="ghost" size="sm" onClick={enterSelectionMode}>
               <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
               Select
             </Button>
@@ -383,6 +386,7 @@ export function LibraryBatchSelection({
                 onOpenChange={(open) => {
                   if (busy) return;
                   setDeleteError(null);
+                  if (open) returnToSelect.current = false;
                   setDialogOpen(open);
                 }}
               >
@@ -392,7 +396,13 @@ export function LibraryBatchSelection({
                     Delete {selectedCount || ""}
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent onCloseAutoFocus={(event) => {
+                  if (!returnToSelect.current) return;
+                  // Full success leaves selection mode, hiding the original trigger.
+                  event.preventDefault();
+                  returnToSelect.current = false;
+                  selectTrigger.current?.focus({ preventScroll: true });
+                }}>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
                       Delete {selectedCount} selected {selectedCount === 1 ? "item" : "items"}?
