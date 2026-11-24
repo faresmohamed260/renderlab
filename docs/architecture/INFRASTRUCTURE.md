@@ -773,6 +773,10 @@ This follow-up currently authorizes documentation/research only. It changes no R
 ## CI / Integration Validation
 Ordinary UI CI runs without production secrets and validates truthful unavailable states. Configured workflows use GitHub Secrets and self-clean shared production fixtures.
 
+### Secret-bearing workflow ref boundary (second review N3)
+
+Configured Account Ownership, Maintenance, Persistent Media Upload, Reference Upload, Upload Admission, ENT-007 backup/drill, QA-004, QA-005, and Production Documentation Sync jobs require `github.ref == 'refs/heads/main'` before obtaining hosted credentials. Existing main push, schedule, manual and reusable-call triggers and cancellation semantics are retained; callers of Production Documentation Sync must be on main. This is **defense in depth only**: a branch author can change the workflow YAML on that branch. The real isolation boundary is an owner-managed GitHub Environment restricted to main, with hosted secrets migrated into that Environment and all secret-bearing workflows bound to it. That owner-side change is **pending**; neither this PR nor a job-level ref condition proves repository secrets are inaccessible to branch-authored workflow code.
+
 Actions budget discipline:
 - the repository is public, so normal GitHub-hosted public-repository runner usage is the approved mid-development validation path;
 - final exact-head validation remains mandatory; budget pressure or runner-start failure is not permission to waive a required gate;
