@@ -104,9 +104,14 @@ execFileSync(process.execPath, [join(root,"scripts","verify-0031-ent007-isolated
 execFileSync(process.execPath, [join(root, "scripts", "verify-atomic-terminalize-concurrency.mjs")], {
   cwd: root, env, stdio: "inherit", timeout: 60_000,
 });
+psql(["-f", join(root, "tests", "fixtures", "generation-request-idempotency.sql")]);
+execFileSync(process.execPath, [join(root, "scripts", "verify-idempotent-acceptance-concurrency.mjs")], {
+  cwd: root, env, stdio: "inherit", timeout: 120_000,
+});
 console.log("PASS: " + names.length + " migrations from scratch; second pass skipped "
   + second.skipped + " with verified checksums.");
 console.log("PASS: real DB constraints, RPCs, privileges, RLS and all 64 model state pairs; new atomic RPC and two-connection races.");
+console.log("PASS: R8 additive acceptance keys, grant/ownership/digest/rollback matrix, live SQL lock and 20-process replay.");
 console.log("EXPECTED GAP: generic SQL UPDATE permits "
   + expectedGaps.filter(e => e.decision === "forbidden").length
   + " forbidden model edges; terminal/reservation release is not atomic (P0-07).");
