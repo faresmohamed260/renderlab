@@ -30,7 +30,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "engineering",
-      "lastReviewed": "2026-11-17",
+      "lastReviewed": "2026-11-24",
       "reviewIntervalDays": 30,
       "supersedes": [
         "docs/archive/PROJECT_PRE_CYCLE3_2026-09-03.md",
@@ -66,7 +66,7 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "engineering",
-      "lastReviewed": "2026-10-14",
+      "lastReviewed": "2026-11-24",
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
@@ -154,7 +154,7 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "product",
-      "lastReviewed": "2026-11-23",
+      "lastReviewed": "2026-11-24",
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
@@ -303,7 +303,7 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-10-09",
+      "lastReviewed": "2026-11-24",
       "reviewIntervalDays": 60,
       "supersedes": [],
       "supersededBy": []
@@ -463,6 +463,17 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "engineering",
+      "lastReviewed": "2026-11-24",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/DESIGN_LANGUAGE_V2.md",
+      "kind": "normative-policy",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
       "lastReviewed": "2026-11-24",
       "reviewIntervalDays": 90,
       "supersedes": [],
