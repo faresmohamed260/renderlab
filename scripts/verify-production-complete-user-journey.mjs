@@ -1,6 +1,7 @@
 import { HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import { assertCutoverFixtureSettled } from "./lib/cutover-smoke-gate.mjs";
+import { join } from "node:path";
+import { assertCutoverFixtureSettled, claimCutoverPost } from "./lib/cutover-smoke-gate.mjs";
 import sharp from "sharp";
 import { chromium } from "@playwright/test";
 import {
@@ -19,6 +20,8 @@ const recordWalkthrough = !smoke && process.env.RENDERLAB_RECORD_WALKTHROUGH ===
 const cleanupOnly = process.argv.includes("--cleanup-only");
 const cutoverSmoke = smoke && Boolean(process.env.RENDERLAB_CUTOVER_DEPLOYMENT_ID);
 let possibleSubmission = process.env.RENDERLAB_CUTOVER_POSSIBLE_SUBMISSION === "true";
+let forwardedPosts = 0;
+let unexpectedCutoverPost = false;
 const namespace = smoke ? "production-fibo-smoke" : "production-complete-user-journey";
 const desktop = { width: 1440, height: 1024 };
 const mobile = { width: 390, height: 844 };
@@ -481,6 +484,21 @@ async function cleanupFixture() {
     }
   }
   await collectTrackedStorageKeys(ownerIdentity.id);
+  if (cutoverSmoke) {
+    // Retain exact storage keys across the separate cleanup process without publishing them.
+    // A lost runner still requires independent operator reconciliation.
+    assert(process.env.RUNNER_TEMP && /^[1-9][0-9]*$/.test(runId) && runAttempt === "1", "Cutover cleanup requires original runner identity.");
+    const keysPath = join(process.env.RUNNER_TEMP, "renderlab-cutover-" + runId + "-" + runAttempt + "-keys.json");
+    try {
+      const saved = JSON.parse(await readFile(keysPath, "utf8"));
+      assert(saved.ownerId === ownerIdentity.id && Array.isArray(saved.keys) &&
+        saved.keys.every(key => typeof key === "string" && key.startsWith("renderlab/")), "Invalid exact cleanup key witness.");
+      for (const key of saved.keys) trackedStorageKeys.add(key);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    await writeFile(keysPath, JSON.stringify({ ownerId: ownerIdentity.id, keys: [...trackedStorageKeys] }), { mode: 0o600 });
+  }
   await deleteConfiguredTestAccount(ownerIdentity);
   return assertIndependentCleanup(ownerIdentity.id);
 }
@@ -510,6 +528,18 @@ try {
   const context = await browser.newContext({ viewport: desktop, colorScheme: "dark", reducedMotion: "no-preference", ...(recordWalkthrough ? { recordVideo: { dir: artifactDir + "/video", size: desktop } } : {}) });
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
+  if (cutoverSmoke) {
+    await page.route("**/api/generation/jobs", async route => {
+      const request = route.request();
+      if (request.method() !== "POST" || new URL(request.url()).origin !== new URL(baseUrl).origin) return route.fallback();
+      let key;
+      try { key = claimCutoverPost({ possibleSubmission, forwardedPosts, runId, runAttempt }); }
+      catch { unexpectedCutoverPost = true; return route.abort(); }
+      forwardedPosts++;
+      // Retain the existing authenticated route beneath this one; do not forward a second POST.
+      return route.fallback({ headers: { ...request.headers(), "idempotency-key": key } });
+    });
+  }
 
 
   if (recordWalkthrough) {
@@ -646,6 +676,7 @@ try {
     libraryDeletion = await verifyLibraryDeletion(page, account.id, image);
   }
 
+  if (cutoverSmoke) assert(forwardedPosts === 1 && !unexpectedCutoverPost, "Cutover smoke must forward exactly one submission.");
   console.log("Complete production user journey passed owner=" + account.id + " generations=" + generations.length + ".");
 } catch (error) {
   primaryError = error;

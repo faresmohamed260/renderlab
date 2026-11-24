@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { PROTECTED_CHECK_CONTEXTS_V2 } from "./production-documentation-sync.mjs";
 import { RENDERLAB_GITHUB_REPOSITORY, RENDERLAB_VERCEL_PROJECT_ID, RENDERLAB_VERCEL_TEAM_ID,
   cutoverReadJson, validateCutoverDeployment, verifyModalCutoverSmokeRelease } from "./production-live-state.mjs";
@@ -126,4 +127,47 @@ export function assertCutoverFixtureSettled({ jobs, reservations, outbox, possib
   if (possibleSubmission && !settledPreviously) {
     assert(jobs.length === 1 && reservations.length === 1 && outbox.length === 1, "Possible submission is ambiguous; operator reconciliation required.");
   }
+}
+
+export async function downloadStageReceiptBytes({ artifactId, digest, size, githubToken, fetchImpl = fetch }) {
+  assert(isRun(artifactId) && /^sha256:[0-9a-f]{64}$/.test(digest ?? "") &&
+    Number.isSafeInteger(size) && size > 0 && size <= 65536 && githubToken, "Invalid receipt archive metadata.");
+  const response = await fetchImpl("https://api.github.com/repos/" + repo + "/actions/artifacts/" + artifactId + "/zip",
+    { redirect: "manual", signal: AbortSignal.timeout(15000),
+      headers: { Authorization: "Bearer " + githubToken, "User-Agent": "renderlab-cutover-verifier" } });
+  assert(response.status === 302, "Stage receipt download did not redirect.");
+  const location = response.headers.get("location");
+  assert(location, "Missing receipt storage redirect.");
+  const url = new URL(location);
+  assert(url.protocol === "https:" && !url.username && !url.password && !url.port &&
+    /\.(blob\.core\.windows\.net|actions\.githubusercontent\.com|actions\.github\.com)$/.test(url.hostname), "Unexpected receipt storage host.");
+  // Deliberately construct fresh request options. Never forward Authorization.
+  const download = await fetchImpl(url, { redirect: "error", signal: AbortSignal.timeout(15000) });
+  assert(download.ok && download.body, "Invalid receipt archive response.");
+  const reader = download.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      assert(total <= 65536, "Receipt archive too large.");
+      chunks.push(value);
+    }
+  } finally { await reader.cancel().catch(() => {}); }
+  const bytes = Buffer.concat(chunks);
+  assert("sha256:" + createHash("sha256").update(bytes).digest("hex") === digest, "Receipt artifact digest mismatch.");
+  return bytes;
+}
+
+export function assertNoPriorCutoverDispatch(runs, currentRunId) {
+  assert(Array.isArray(runs?.workflow_runs) && runs.total_count === runs.workflow_runs.length &&
+    runs.workflow_runs.every(run => String(run.id) === currentRunId), "A prior or competing smoke dispatch exists; reconcile and use record-first fallback.");
+}
+
+export function claimCutoverPost({ possibleSubmission, forwardedPosts, runId, runAttempt }) {
+  assert(possibleSubmission === true && forwardedPosts === 0 && /^[1-9][0-9]*$/.test(runId) &&
+    runAttempt === "1", "Unexpected or repeated cutover submission.");
+  return "renderlab-cutover-" + runId + "-" + runAttempt;
 }

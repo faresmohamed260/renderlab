@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { RENDERLAB_VERCEL_PROJECT_ID as projectId, RENDERLAB_VERCEL_TEAM_ID as teamId,
   verifyModalCutoverSmokeRelease } from "../../scripts/lib/production-live-state.mjs";
 import { assertCutoverFixtureSettled, verifyCutoverDispatchInputs, verifyCutoverQualification,
-  captureStageReceipt, validateStageReceipt, verifyReceiptArtifact } from "../../scripts/lib/cutover-smoke-gate.mjs";
+  captureStageReceipt, validateStageReceipt, verifyReceiptArtifact, downloadStageReceiptBytes, assertNoPriorCutoverDispatch, claimCutoverPost, stageReceiptFromProviders } from "../../scripts/lib/cutover-smoke-gate.mjs";
 
 const sha = "a".repeat(40), secondSha = "b".repeat(40), oldSha = "c".repeat(40);
 const deploymentId = "dpl_test", previousId = "dpl_previous", domain = "renderlab.faresuniform.uk";
@@ -150,4 +151,62 @@ test("workflow retains routine gate, isolated credentials, cancellation cleanup 
   assert.match(yaml, /always\(\) && steps\.fixture\.outcome/);
   assert.match(yaml, /Recheck cutover after generation/);
   assert.doesNotMatch(yaml, /permissions:\s*\n(?:[^\n]*\n)*?\s+\w+: write/);
+});
+
+test("stage capture reads candidate plus still-live prior alias and rejects an intervening promotion", async () => {
+  let aliases = 0;
+  const fake = (change) => async (url, options) => {
+    const parsed = new URL(url);
+    assert.equal(options.method, "GET");
+    if (parsed.pathname.includes("/aliases/")) {
+      aliases++;
+      return Response.json({ alias: domain, projectId, deploymentId: change && aliases > 1 ? deploymentId : previousId,
+        updatedAt: Date.parse(previousAt) });
+    }
+    const id = parsed.pathname.split("/").at(-1);
+    assert.ok([deploymentId, previousId].includes(id));
+    return Response.json({ id, project: { id: projectId }, readyState: "READY", target: "production",
+      url: id === deploymentId ? "candidate.example.test" : "previous.example.test",
+      meta: { githubCommitSha: id === deploymentId ? sha : oldSha } });
+  };
+  const args = { sha, deploymentId, readinessRunId: 21, prior, authorizationRef: "approved", workerEvidenceRef: "worker-proof",
+    exclusiveWindow: true, vercelToken: "test-token", github: github(), now: () => stagedAt };
+  const receipt = await stageReceiptFromProviders({ ...args, fetchImpl: fake(false) });
+  assert.equal(receipt.candidate.sha, sha);
+  assert.equal(receipt.previous.deploymentId, previousId);
+  assert.equal(aliases, 2);
+  aliases = 0;
+  await assert.rejects(stageReceiptFromProviders({ ...args, fetchImpl: fake(true) }), /alias target/);
+});
+
+test("receipt download checks bytes and never forwards GitHub authorization to storage", async () => {
+  const bytes = Buffer.from("synthetic archive");
+  const digest = "sha256:" + createHash("sha256").update(bytes).digest("hex");
+  const args = { artifactId: 41, digest, size: bytes.length, githubToken: "synthetic-token" };
+  const mock = (location, body = bytes) => async (url, options) => {
+    if (new URL(url).origin === "https://api.github.com") {
+      assert.equal(options.headers.Authorization, "Bearer synthetic-token");
+      assert.equal(options.redirect, "manual");
+      return new Response(null, { status: 302, headers: { location } });
+    }
+    assert.equal(options.headers, undefined);
+    assert.equal(options.redirect, "error");
+    return new Response(body);
+  };
+  const allowed = "https://fixture.blob.core.windows.net/receipt?synthetic=1";
+  assert.deepEqual(await downloadStageReceiptBytes({ ...args, fetchImpl: mock(allowed) }), bytes);
+  await assert.rejects(downloadStageReceiptBytes({ ...args, fetchImpl: mock("https://other.example.test/receipt") }), /storage host/);
+  await assert.rejects(downloadStageReceiptBytes({ ...args, fetchImpl: mock(allowed, Buffer.from("tampered")) }), /digest mismatch/);
+});
+
+test("prior, competing or cancelled dispatches and repeated POSTs cannot reuse the allowance", () => {
+  assert.doesNotThrow(() => assertNoPriorCutoverDispatch({ total_count: 0, workflow_runs: [] }, undefined));
+  assert.doesNotThrow(() => assertNoPriorCutoverDispatch({ total_count: 1, workflow_runs: [{ id: 55 }] }, "55"));
+  assert.throws(() => assertNoPriorCutoverDispatch({ total_count: 2, workflow_runs: [{ id: 55 }, { id: 54, conclusion: "cancelled" }] }, "55"));
+  assert.throws(() => assertNoPriorCutoverDispatch({ total_count: 2, workflow_runs: [{ id: 55 }] }, "55"));
+  const input = { possibleSubmission: true, forwardedPosts: 0, runId: "55", runAttempt: "1" };
+  assert.equal(claimCutoverPost(input), "renderlab-cutover-55-1");
+  assert.throws(() => claimCutoverPost({ ...input, forwardedPosts: 1 }));
+  assert.throws(() => claimCutoverPost({ ...input, possibleSubmission: false }));
+  assert.throws(() => claimCutoverPost({ ...input, runAttempt: "2" }));
 });
