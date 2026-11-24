@@ -217,6 +217,25 @@ jobs:
           RENDERLAB_CUTOVER_POSSIBLE_SUBMISSION: ${{ steps.generation.outcome != 'skipped' && steps.generation.outcome != '' }}
         run: node scripts/verify-production-complete-user-journey.mjs --cleanup-only
 
+      - name: Finalize successful cutover evidence
+        if: ${{ inputs.cutover_deployment_id != '' }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const directory = "artifacts/production-fibo-smoke/";
+          const load = name => JSON.parse(readFileSync(directory + name, "utf8"));
+          const manifest = load("manifest.json");
+          const initial = load("cutover-initial.json");
+          const before = load("cutover-pre-generation.json");
+          const after = load("cutover-post-generation.json");
+          if (!manifest.journeyPassed || manifest.providerGenerationCount !== 1 || !manifest.cleanup?.verified ||
+            JSON.stringify(initial.live) !== JSON.stringify(before.live) || JSON.stringify(before.live) !== JSON.stringify(after.live) ||
+            initial.digest !== before.digest || before.digest !== after.digest) throw Error("Cutover evidence is incomplete or inconsistent.");
+          manifest.cutoverGateFinalized = true;
+          manifest.passed = true;
+          writeFileSync(directory + "manifest.json", JSON.stringify(manifest, null, 2) + "\n");
+          EOF
+
       - name: Upload FIBO smoke evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

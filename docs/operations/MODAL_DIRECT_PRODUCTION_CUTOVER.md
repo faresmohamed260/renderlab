@@ -1,5 +1,7 @@
 # Modal direct-production cutover
 
+> Historical cutover record: the permanent optional pre-record smoke procedure is now described in [Production release runbook](PRODUCTION_RELEASE_RUNBOOK.md). The historical SHA pair and original commands below are retained as evidence, not a current smoke allowlist or a reusable dispatch recipe.
+
 **Historical evidence.** The one-time November 20 cutover and its rollback drill are recorded below. Use the [Production release runbook](PRODUCTION_RELEASE_RUNBOOK.md) for current operations.
 
 ## 2026-11-20 ADR-005 production continuation
