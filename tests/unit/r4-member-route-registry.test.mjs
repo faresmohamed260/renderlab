@@ -53,18 +53,6 @@ const methods = new Set(["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIO
 function parseModule(source) {
   return parse(source, { sourceType: "module", plugins: ["typescript"] }).program.body;
 }
-function collectCalls(node, calls = new Set()) {
-  if (!node || typeof node !== "object") return calls;
-  // A nested callback or function declaration is not an executed handler body.
-  if (["FunctionDeclaration","FunctionExpression","ArrowFunctionExpression","ObjectMethod","ClassMethod"].includes(node.type)) return calls;
-  if (node.type === "CallExpression" && node.callee.type === "Identifier") calls.add(node.callee.name);
-  for (const [key, value] of Object.entries(node)) {
-    if (["loc","start","end","leadingComments","trailingComments"].includes(key)) continue;
-    if (Array.isArray(value)) for (const child of value) collectCalls(child, calls);
-    else if (value && typeof value === "object") collectCalls(value, calls);
-  }
-  return calls;
-}
 function gateRegistry(source) {
   const program = parseModule(source);
   const imports = new Map();
@@ -98,17 +86,81 @@ const canonicalImports = {
   authorizeRenderLabAdminApi: "@/app/api/admin/admin-api-authorization",
   isAuthorizedInternalBearer: "@/server/security/internal-bearer-secret",
 };
+// Deliberately recognize the repository's narrow guard idiom, not arbitrary dataflow.
+function unwrap(node) {
+  while (node?.type === "AwaitExpression" || node?.type === "TSAsExpression" || node?.type === "TSNonNullExpression") node = node.argument ?? node.expression;
+  return node;
+}
+function rootIdentifier(node) {
+  node = unwrap(node);
+  while (node?.type === "MemberExpression" || node?.type === "OptionalMemberExpression") node = node.object;
+  return node?.type === "Identifier" ? node.name : null;
+}
+function immediatelyReturns(node) {
+  if (node?.type === "ReturnStatement") return true;
+  if (node?.type !== "BlockStatement") return false;
+  // Permit the existing submission metrics assignment before denial, not
+  // arbitrary control flow or an assignment to the authorization binding.
+  const statements = node.body;
+  return statements.at(-1)?.type === "ReturnStatement" && statements.slice(0, -1).every(
+    statement => statement.type === "ExpressionStatement" &&
+      statement.expression.type === "AssignmentExpression" && statement.expression.operator === "=" &&
+      statement.expression.left.type === "Identifier" && statement.expression.left.name === "metricOutcome" &&
+      statement.expression.right.type === "StringLiteral"
+  );
+}
+function gateValue(registry, node, gate, delegated, seen) {
+  node = unwrap(node);
+  if (node?.type !== "CallExpression" || node.callee.type !== "Identifier") return false;
+  const call = node.callee.name;
+  const binding = registry.imports.get(call);
+  if (binding?.name === gate && binding.from === canonicalImports[gate]) return true;
+  if (delegated && gate === "getFreshCurrentRenderLabAuthentication" &&
+      binding?.name === "getRenderLabProfileRequestOwner" &&
+      binding.from === "@/server/account/account-profile-request") return true;
+  if (seen.has(call) || !registry.functions.has(call)) return false;
+  const body = registry.functions.get(call);
+  const next = new Set([...seen, call]);
+  // Boolean bearer wrappers must return the gate itself, not an unrelated value.
+  if (gate === "isAuthorizedInternalBearer") {
+    return body.body.length === 1 && body.body[0].type === "ReturnStatement" &&
+      gateValue(registry, body.body[0].argument, gate, delegated, next);
+  }
+  // Structured owner delegates must themselves enforce the guard.
+  return callsGate(registry, body, gate, delegated, next);
+}
 function callsGate(registry, body, gate, delegated = false, seen = new Set()) {
-  for (const call of collectCalls(body)) {
-    const binding = registry.imports.get(call);
-    if (binding?.name === gate && binding.from === canonicalImports[gate]) return true;
-    if (delegated && gate === "getFreshCurrentRenderLabAuthentication" &&
-        binding?.name === "getRenderLabProfileRequestOwner" &&
-        binding.from === "@/server/account/account-profile-request") return true;
-    if (!seen.has(call) && registry.functions.has(call)) {
-      seen.add(call);
-      if (callsGate(registry, registry.functions.get(call), gate, delegated, seen)) return true;
+  const statements = body?.body ?? [];
+  for (let i = 0; i < statements.length; i++) {
+    const statement = statements[i];
+    // Only a top-level, unconditional negative guard with an immediate denial return.
+    if (statement.type === "ReturnStatement") {
+      // Handler may return the entire response from a local, independently
+      // guarded delegate (e.g. favorite PUT/DELETE). An ignored call is not
+      // delegation; only a returned local call with a proven guard counts.
+      const returned = unwrap(statement.argument);
+      if (returned?.type === "CallExpression" && returned.callee.type === "Identifier" &&
+          registry.functions.has(returned.callee.name) &&
+          gateValue(registry, returned, gate, delegated, seen)) return true;
+      break;
     }
+    // The submission route wraps its entire body in a try/catch/rethrow/finally
+    // for duration metrics. Do not accept guards in catch/finally or conditional
+    // subtrees; only the unconditionally entered try block.
+    if (statement.type === "TryStatement" && statement.handler?.body.body.at(-1)?.type === "ThrowStatement" &&
+        callsGate(registry, statement.block, gate, delegated, seen)) return true;
+    if (statement.type !== "IfStatement" || !immediatelyReturns(statement.consequent) ||
+        statement.test.type !== "UnaryExpression" || statement.test.operator !== "!") continue;
+    const value = statement.test.argument;
+    if (gateValue(registry, value, gate, delegated, seen)) return true;
+    // Require adjacent const binding: no reassignment or intervening side effect can
+    // substitute an unrelated value between the gate and denial.
+    const previous = statements[i - 1];
+    if (previous?.type !== "VariableDeclaration" || previous.kind !== "const" ||
+        previous.declarations.length !== 1) continue;
+    const declaration = previous.declarations[0];
+    if (declaration.id.type === "Identifier" && rootIdentifier(value) === declaration.id.name &&
+        gateValue(registry, declaration.init, gate, delegated, seen)) return true;
   }
   return false;
 }
@@ -117,7 +169,7 @@ test("R4 registry rejects sibling-only, wrong-namespace, commented and uncalled 
   const source = `import { authorizeRenderLabAdminApi } from "@/app/api/admin/admin-api-authorization";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 async function unused() { await authorizeRenderLabAdminApi(); }
-export async function GET() { await authorizeRenderLabAdminApi(); }
+export async function GET() { const authorization = await authorizeRenderLabAdminApi(); if (!authorization.ok) return authorization.response; }
 export async function POST() { /* authorizeRenderLabAdminApi() */ await getCurrentRenderLabAccount(); }
 export async function DELETE() { return "unused"; }`;
   const registry = gateRegistry(source);
@@ -132,7 +184,7 @@ test("R4 registry exhaustively classifies every handler and enforces the namespa
   assert(files.length >= 40, "Unexpected API route inventory shrink; re-review exemptions.");
   const profile = gateRegistry(await readFile(path.join(root, profileHelperPath), "utf8"));
   assert(callsGate(profile, profile.functions.get("getRenderLabProfileRequestOwner"),
-    "getFreshCurrentRenderLabAuthentication"), "Profile delegate must call canonical fresh authentication");
+    "getFreshCurrentRenderLabAuthentication"), "Profile delegate must guard the result of canonical fresh authentication");
   for (const route of files) {
     const source = await readFile(path.join(root, route), "utf8");
     const registry = gateRegistry(source);
@@ -151,11 +203,57 @@ test("R4 registry exhaustively classifies every handler and enforces the namespa
     for (const [method, body] of registry.handlers) {
       if (publicHandlerAllowlist.get(route)?.has(method)) continue;
       assert(callsGate(registry, body, gate, profileDelegates.has(route)),
-        `${route} ${method} must call canonical ${gate} (directly or through an invoked helper)`);
+        `${route} ${method} must guard the result of canonical ${gate} (directly or through an invoked helper)`);
     }
     for (const method of publicHandlerAllowlist.get(route) ?? []) assert(registry.handlers.has(method), "Stale public method exception: " + route);
   }
   for (const allowlisted of [...publicRouteAllowlist, ...previewRelayAllowlist, ...publicHandlerAllowlist.keys()]) {
     assert(files.includes(allowlisted), "Stale public/preview exception: " + allowlisted);
+  }
+});
+
+test("F8 rejects ignored, overwritten, non-returning and nested-only gate results", () => {
+  const prefix = 'import { getCurrentRenderLabAccount } from "@/lib/supabase/server";';
+  for (const body of [
+    "await getCurrentRenderLabAccount(); return data;",
+    "const account = await getCurrentRenderLabAccount(); return data;",
+    "let account = await getCurrentRenderLabAccount(); account = {}; if (!account) return denied;",
+    "const account = await getCurrentRenderLabAccount(); if (!account) log(); return data;",
+    "if (false) { const account = await getCurrentRenderLabAccount(); if (!account) return denied; } return data;",
+    "const account = await getCurrentRenderLabAccount(); if (!other) return denied; return data;",
+    "const account = await getCurrentRenderLabAccount(); if (!account || true) return denied;",
+    "const account = await getCurrentRenderLabAccount(); if (account) return denied; return data;",
+    "const account = await getCurrentRenderLabAccount(); if (!account) { if (false) return denied; } return data;",
+    "try { await getCurrentRenderLabAccount(); } catch { throw error; } return data;",
+  ]) {
+    const registry = gateRegistry(prefix + "export async function GET() {" + body + "}");
+    assert.equal(callsGate(registry, registry.handlers.get("GET"), "getCurrentRenderLabAccount"), false, body);
+  }
+  const valid = gateRegistry(prefix + "export async function GET() { const account = await getCurrentRenderLabAccount(); if (!account) return denied; return data; }");
+  assert(callsGate(valid, valid.handlers.get("GET"), "getCurrentRenderLabAccount"));
+});
+
+test("F8 helper authorization must return its result and caller must guard it", () => {
+  const prefix = 'import { isAuthorizedInternalBearer as bearer } from "@/server/security/internal-bearer-secret";';
+  for (const [helper, body, expected] of [
+    ["return bearer(header, secret);", "if (!authorized()) return denied; return data;", true],
+    ["bearer(header, secret); return true;", "if (!authorized()) return denied; return data;", false],
+    ["return bearer(header, secret);", "authorized(); return data;", false],
+    ["return bearer(header, secret);", "const allowed = authorized(); if (!allowed) return denied; return data;", true],
+  ]) {
+    const registry = gateRegistry(prefix + "function authorized() {" + helper + "} export function GET() {" + body + "}");
+    assert.equal(callsGate(registry, registry.handlers.get("GET"), "isAuthorizedInternalBearer"), expected);
+  }
+});
+
+test("F8 returned response delegate must itself enforce the gate", () => {
+  const prefix = 'import { getCurrentRenderLabAccount } from "@/lib/supabase/server";';
+  for (const [helper, body, expected] of [
+    ["const account = await getCurrentRenderLabAccount(); if (!account) return denied; return data;", "return update();", true],
+    ["const account = await getCurrentRenderLabAccount(); if (!account) return denied; return data;", "await update(); return data;", false],
+    ["await getCurrentRenderLabAccount(); return data;", "return update();", false],
+  ]) {
+    const registry = gateRegistry(prefix + "async function update() {" + helper + "} export async function PUT() {" + body + "}");
+    assert.equal(callsGate(registry, registry.handlers.get("PUT"), "getCurrentRenderLabAccount"), expected);
   }
 });
