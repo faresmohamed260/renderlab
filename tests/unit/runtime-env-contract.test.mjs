@@ -210,3 +210,48 @@ test("maintenance numeric default is defined once and preserves finite-or-eight 
     assert(has(validateRuntimeEnvironment({...baseline(), [name]:"invalid"}, "production"),name));
   } finally { if (previous === undefined) delete process.env[name]; else process.env[name] = previous; }
 });
+
+test("F5 test-only routing and admin Health scoping are refused at runtime in Production", () => {
+  const flags = ["RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE", "RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE"];
+  const url = "RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL";
+  const keys = ["VERCEL_ENV", ...flags, url];
+  const saved = Object.fromEntries(keys.map(name => [name, process.env[name]]));
+  const oldError = console.error;
+  const warnings = [];
+  try {
+    console.error = (...args) => warnings.push(args.join(" "));
+    for (const key of flags) process.env[key] = "true";
+    process.env[url] = "https://secret-fixture.invalid";
+    process.env.VERCEL_ENV = "preview";
+    for (const key of flags) assert.equal(envFlag(key), true);
+    assert.equal(envString(url), "https://secret-fixture.invalid");
+    process.env.VERCEL_ENV = "production";
+    for (const key of flags) {
+      assert.equal(envFlag(key), false);
+      assert.equal(envString(key), undefined);
+    }
+    assert.equal(envString(url), undefined);
+    for (const key of [...flags, url]) assert(warnings.some(w => w.includes(key)));
+    assert(!warnings.join(" ").includes("secret-fixture.invalid"));
+  } finally {
+    console.error = oldError;
+    for (const key of keys) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  }
+});
+
+test("N5 CRON_SECRET preflight matches 32-character runtime minimum", () => {
+  for (const length of [16, 31, 32, 33]) {
+    const value = "s".repeat(length);
+    for (const context of ["production","fixture"])
+      assert.equal(has(validateRuntimeEnvironment({...baseline(), CRON_SECRET:value}, context), "CRON_SECRET"), length < 32);
+  }
+});
+
+test("N4 Deployment Readiness watches typed config, inventory and proxy on PR and push", async () => {
+  const yaml = await readFile(join(projectRoot,".github/workflows/deployment-readiness.yml"), "utf8");
+  for (const name of ["src/lib/config/runtime-env.ts","docs/operations/PRODUCTION_ENV_REQUIRED_NAMES.json","proxy.ts"])
+    assert.equal(yaml.split('- "' + name + '"').length - 1, 2);
+});
