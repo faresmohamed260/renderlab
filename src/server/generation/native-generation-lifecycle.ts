@@ -21,6 +21,7 @@ import {
   isGatewayAuthRejectionStatus,
 } from "@/server/observability/diagnostics";
 import { randomUUID } from "node:crypto";
+import { classifyGenerationProviderRejection, recordGenerationMetric } from "@/server/observability/generation-metrics";
 import { workflowFor, type WorkflowConfig } from "@/server/generation/native-generation-legacy-workflows";
 import { resolveInputs, resolveMaskBytes, requestFromJobRow } from "@/server/generation/native-generation-worker-inputs";
 import {
@@ -220,13 +221,29 @@ async function reassignPollJob(row: JobRow, failure: WorkerFailureClassification
 }
 
 async function failJob(row: JobRow, code: string, message: string, diagnostic?: Record<string, unknown>) {
-  return (await patchJobRow(row, {
+  const result = await patchJobRow(row, {
     status: "failed",
     error_code: code,
     error_message: message,
     completed_at: new Date().toISOString(),
     ...(diagnostic ? { failover_history: [...(row.failover_history || []), diagnostic] } : {}),
-  })).row;
+  });
+  // Count a provider rejection only after its unique terminal status CAS wins.
+  // Repeated 202/401/403 polling is an observation, not a unique rejection.
+  const httpStatus = diagnostic?.status;
+  if (result.applied && typeof httpStatus === "number"
+      && httpStatus >= 400 && httpStatus < 600) {
+    recordGenerationMetric({
+      name: "renderlab_generation_provider_rejections_total",
+      labels: {
+        operation: row.operation,
+        ...classifyGenerationProviderRejection(httpStatus),
+      },
+      value: 1,
+      linkCorrelation: correlationIdForGenerationJob(row.id),
+    });
+  }
+  return result.row;
 }
 
 function providerFailureDiagnostic(
@@ -443,6 +460,9 @@ export async function pollNativeGeneration(
       throw error;
     }
   }
+  // The gateway response is the first observed ready result, not the provider's
+  // actual GPU finish timestamp. This clock is never reconstructed on replay.
+  const observedReadyAtMs = Date.now();
   const persistTransition = await patchJobRow(row, {
     status: "persisting",
     worker_state: "finalizing",
@@ -452,6 +472,16 @@ export async function pollNativeGeneration(
   });
   if (!persistTransition.applied) return toGenerationJob(persistTransition.row);
   const persisting = persistTransition.row;
+  const finalizationStartedMs = Date.now();
+  const acceptedAtMs = row.started_at ? Date.parse(row.started_at) : NaN;
+  if (Number.isFinite(acceptedAtMs) && acceptedAtMs <= observedReadyAtMs) {
+    recordGenerationMetric({
+      name: "renderlab_generation_provider_duration_seconds",
+      labels: { outcome: "ready" },
+      value: (observedReadyAtMs - acceptedAtMs) / 1000,
+      linkCorrelation: correlationIdForGenerationJob(row.id),
+    });
+  }
   await emitDiagnosticEvent({
     event: "generation.reconciliation",
     correlationId: correlationIdForGenerationJob(row.id),
@@ -463,6 +493,23 @@ export async function pollNativeGeneration(
   const bytes = Buffer.from(await response.arrayBuffer());
   const poster = row.output_kind === "video" ? await fetchPoster(worker, row.provider_job_id, providerTimeoutMs) : null;
   const completed = await persistResult(persisting, bytes, contentType, poster);
+  if (completed.status === "succeeded") {
+    recordGenerationMetric({
+      name: "renderlab_generation_finalization_duration_seconds",
+      labels: { outcome: "succeeded" },
+      value: Math.max(0, Date.now() - finalizationStartedMs) / 1000,
+      linkCorrelation: correlationIdForGenerationJob(row.id),
+    });
+    const settledAtMs = completed.completed_at ? Date.parse(completed.completed_at) : NaN;
+    if (Number.isFinite(settledAtMs) && settledAtMs >= observedReadyAtMs) {
+      recordGenerationMetric({
+        name: "renderlab_generation_provider_to_settle_seconds",
+        labels: { operation: row.operation, result: "settled" },
+        value: (settledAtMs - observedReadyAtMs) / 1000,
+        linkCorrelation: correlationIdForGenerationJob(row.id),
+      });
+    }
+  }
   await emitDiagnosticEvent({
     event: "generation.reconciliation",
     correlationId: correlationIdForGenerationJob(row.id),

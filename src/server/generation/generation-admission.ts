@@ -1,5 +1,6 @@
 import type { SubmitGenerationError } from "@/lib/api/generation-contract";
 import { supabaseErrorClassification, supabaseRest } from "@/server/data/supabase-rest";
+import { recordGenerationMetric } from "@/server/observability/generation-metrics";
 
 type ReservationRow = {
   reservation_id: string;
@@ -106,8 +107,20 @@ export async function releaseBoundGenerationAdmission(ownerId: string, jobId: st
         body: JSON.stringify({ released_at: releasedAt }),
       },
     );
-    return Boolean(rows?.length);
+    const released = Boolean(rows?.length);
+    // Zero-row replays are not new releases and must not inflate the counter.
+    if (released) recordGenerationMetric({
+      name: "renderlab_generation_admission_release_total",
+      labels: { outcome: "released", path: "replay" },
+      value: 1,
+    });
+    return released;
   } catch {
+    recordGenerationMetric({
+      name: "renderlab_generation_admission_release_total",
+      labels: { outcome: "failed", path: "replay" },
+      value: 1,
+    });
     return false;
   }
 }

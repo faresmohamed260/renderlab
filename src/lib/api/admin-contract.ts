@@ -79,6 +79,26 @@ export type AdminHealthSnapshot = {
     warningSeconds: number;
     warning: boolean;
   };
+  /** Operator-only, observe-only aggregates; null when optional reads fail. */
+  generationObservability: {
+    available: boolean;
+    dispatchLatency: {
+      windowMinutes: number;
+      sampleSize: number;
+      truncated: boolean;
+      p50Seconds: number | null;
+      p95Seconds: number | null;
+      source: "outbox-confirmed-dispatched";
+    } | null;
+    terminalHeld: {
+      unexpiredByStatus: Record<"succeeded" | "failed" | "cancelled", number>;
+      expiredByStatus: Record<"succeeded" | "failed" | "cancelled", number>;
+      oldestUnexpiredHeldSeconds: number | null;
+      unknownCompletionTime: number;
+      truncated: boolean;
+      source: "unreleased-bound-reservation-join";
+    } | null;
+  };
   dispatchHealth: {
     oldestDueSeconds: number;
     expiredClaims: number;

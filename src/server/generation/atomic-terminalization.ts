@@ -1,5 +1,6 @@
 import "server-only";
 import { SupabaseRestError, supabaseRest } from "@/server/data/supabase-rest";
+import { recordGenerationMetric } from "@/server/observability/generation-metrics";
 
 /** The additive RPC is deployed separately; older hosted schemas lack it. */
 export type AtomicTerminalStatus = "succeeded" | "failed" | "cancelled";
@@ -66,6 +67,14 @@ export async function tryAtomicTerminalizeGeneration(
     || (value.job_status !== null && typeof value.job_status !== "string")
     || (value.output_asset_ids !== null && !Array.isArray(value.output_asset_ids))) {
     throw new Error("Atomic terminalization response has an invalid schema.");
+  }
+  // Count only committed terminal+release, not a replay, conflict or no-op.
+  if (value.outcome === "applied" && value.reservation_released) {
+    recordGenerationMetric({
+      name: "renderlab_generation_admission_release_total",
+      labels: { outcome: "released", path: input.terminalStatus === "cancelled" ? "cancellation" : "terminal" },
+      value: 1,
+    });
   }
   return value;
 }
