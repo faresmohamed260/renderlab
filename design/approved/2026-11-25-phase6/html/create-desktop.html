@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Create — Layout 1, three columns</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+.clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+input[type=range]{accent-color:#8575f5}
+</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;overflow:hidden;background:#07060b;color:#f5f5f7;font-family:'Inter',-apple-system,system-ui,sans-serif;letter-spacing:-0.01em">
+
+<div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(45% 45% at 78% 6%,rgba(117,94,210,.38),rgba(117,94,210,0) 70%),radial-gradient(40% 45% at 8% 96%,rgba(217,100,160,.20),rgba(217,100,160,0) 70%),radial-gradient(40% 30% at 50% 100%,rgba(70,90,220,.18),rgba(70,90,220,0) 70%)"></div>
+
+<div style="position:absolute;left:28px;top:20px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600"><div aria-hidden="true" style="width:26px;height:26px;border-radius:9px;background:linear-gradient(135deg,#a89bff,#6251c7)"></div>RenderLab</div>
+<nav aria-label="Main" style="position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:34px;font-size:15px">
+<a href="#" style="position:relative;color:#fff;font-weight:500;text-decoration:none;padding-bottom:8px">Create<span aria-hidden="true" style="position:absolute;left:50%;bottom:-2px;width:5px;height:5px;margin-left:-2px;border-radius:50%;background:#a89bff"></span></a>
+<a href="#" style="color:rgba(245,245,247,.68);text-decoration:none;padding-bottom:8px">Library</a>
+</nav>
+<div style="position:absolute;right:28px;top:14px;display:flex;align-items:center;gap:10px">
+<button type="button" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px 0 14px;border-radius:20px;border:0;background:rgba(255,255,255,.07);color:rgba(245,245,247,.78);font:500 14px/1 'Inter',sans-serif;cursor:pointer">Search actions<span style="padding:4px 7px;border-radius:7px;background:rgba(255,255,255,.1);font-size:11px;color:rgba(245,245,247,.8)">Ctrl K</span></button>
+<button type="button" style="height:40px;padding:0 16px;border-radius:20px;border:0;background:rgba(255,255,255,.07);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Queue</button>
+<button type="button" aria-label="Account" style="width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.07);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg></button>
+</div>
+
+<!-- LEFT: session + prompt history -->
+<aside aria-label="Session and prompt history" style="position:absolute;left:24px;top:76px;width:288px;height:808px;box-sizing:border-box;padding:18px 14px 14px;border-radius:28px;background:rgba(255,255,255,.055);backdrop-filter:blur(30px) saturate(1.5);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 30px 90px rgba(0,0,0,.45);display:flex;flex-direction:column">
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 6px 10px"><h2 style="margin:0;font-size:15px;font-weight:600">This session</h2><span style="font-size:13px;color:rgba(245,245,247,.62)">4 results</span></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<button type="button" aria-current="true" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px;border-radius:18px;border:0;background:rgba(255,255,255,.10);color:#f5f5f7;text-align:left;cursor:pointer"><span aria-hidden="true" style="flex:none;width:56px;height:56px;border-radius:14px;background:linear-gradient(160deg,#6f8196,#d9a98a 60%,#c07f5d)"></span><span style="min-width:0"><span style="display:block;font:500 14px/1.3 'Inter',sans-serif">Sandstone arch</span><span style="display:block;font:400 12px/1.3 'Inter',sans-serif;color:rgba(245,245,247,.62)">Just now</span></span></button>
+<button type="button" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px;border-radius:18px;border:0;background:transparent;color:#f5f5f7;text-align:left;cursor:pointer"><span aria-hidden="true" style="flex:none;width:56px;height:56px;border-radius:14px;background:linear-gradient(160deg,#2c3e63,#7a6cc2 60%,#d98fb0)"></span><span style="min-width:0"><span style="display:block;font:500 14px/1.3 'Inter',sans-serif">Twilight skyline</span><span style="display:block;font:400 12px/1.3 'Inter',sans-serif;color:rgba(245,245,247,.62)">12 min ago</span></span></button>
+<button type="button" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px;border-radius:18px;border:0;background:transparent;color:#f5f5f7;text-align:left;cursor:pointer"><span aria-hidden="true" style="flex:none;width:56px;height:56px;border-radius:14px;background:linear-gradient(160deg,#17332e,#3f8f7b 60%,#c4e2b4)"></span><span style="min-width:0"><span style="display:block;font:500 14px/1.3 'Inter',sans-serif">Misty pine forest</span><span style="display:block;font:400 12px/1.3 'Inter',sans-serif;color:rgba(245,245,247,.62)">31 min ago</span></span></button>
+<button type="button" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px;border-radius:18px;border:0;background:transparent;color:#f5f5f7;text-align:left;cursor:pointer"><span aria-hidden="true" style="flex:none;width:56px;height:56px;border-radius:14px;background:linear-gradient(160deg,#3b1f2b,#a8445a 60%,#f0a98a)"></span><span style="min-width:0"><span style="display:block;font:500 14px/1.3 'Inter',sans-serif">Studio portrait</span><span style="display:block;font:400 12px/1.3 'Inter',sans-serif;color:rgba(245,245,247,.62)">48 min ago · Edit</span></span></button>
+</div>
+
+<div aria-hidden="true" style="height:1px;margin:14px 6px 14px;background:rgba(255,255,255,.09)"></div>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 6px 10px"><h2 style="margin:0;font-size:15px;font-weight:600">Prompt history</h2><span style="font-size:12px;color:rgba(245,245,247,.62)">Click to reuse</span></div>
+<label for="phSearch" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search prompts</label>
+<div style="display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:21px;background:rgba(255,255,255,.06);margin-bottom:8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(245,245,247,.62)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+<input id="phSearch" placeholder="Search prompts" style="flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f5f5f7;font:400 14px/1 'Inter',sans-serif">
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;flex:1;overflow:hidden">
+<button type="button" style="width:100%;padding:10px 8px;border-radius:14px;border:0;background:transparent;color:rgba(245,245,247,.86);font:400 13px/1.4 'Inter',sans-serif;text-align:left;cursor:pointer"><span class="clamp2">A quiet architectural study of a sandstone arch in a wide desert, warm evening light</span></button>
+<button type="button" style="width:100%;padding:10px 8px;border-radius:14px;border:0;background:transparent;color:rgba(245,245,247,.86);font:400 13px/1.4 'Inter',sans-serif;text-align:left;cursor:pointer"><span class="clamp2">Twilight skyline over a calm harbor, soft violet haze and distant lights</span></button>
+<button type="button" style="width:100%;padding:10px 8px;border-radius:14px;border:0;background:transparent;color:rgba(245,245,247,.86);font:400 13px/1.4 'Inter',sans-serif;text-align:left;cursor:pointer"><span class="clamp2">Misty pine forest at dawn, shafts of light through the trees</span></button>
+<button type="button" style="width:100%;padding:10px 8px;border-radius:14px;border:0;background:transparent;color:rgba(245,245,247,.86);font:400 13px/1.4 'Inter',sans-serif;text-align:left;cursor:pointer"><span class="clamp2">Studio portrait with warm rim light, shallow depth of field</span></button>
+<button type="button" style="width:100%;padding:10px 8px;border-radius:14px;border:0;background:transparent;color:rgba(245,245,247,.86);font:400 13px/1.4 'Inter',sans-serif;text-align:left;cursor:pointer"><span class="clamp2">Minimal product shot on a pale stone pedestal, soft shadows</span></button>
+</div>
+<div style="display:flex;gap:6px;align-items:center;padding:10px 6px 0;font-size:12px;color:rgba(245,245,247,.62)"><span style="padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.1)">[</span><span style="padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.1)">]</span>step through results</div>
+</aside>
+
+<!-- CENTER: stage -->
+<main style="position:absolute;left:328px;top:76px;width:712px;height:808px">
+<div style="position:relative;width:712px;height:540px;border-radius:32px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 110px rgba(80,60,180,.35)">
+<svg viewBox="0 0 800 600" width="712" height="540" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Generated image: a sandstone arch in a desert at golden hour" style="display:block">
+<defs>
+<linearGradient id="skyL1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f8196"/><stop offset=".55" stop-color="#d9a98a"/><stop offset="1" stop-color="#f1c79a"/></linearGradient>
+<linearGradient id="archL1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ebbd93"/><stop offset="1" stop-color="#a8694f"/></linearGradient>
+</defs>
+<rect width="800" height="600" fill="url(#skyL1)"/>
+<circle cx="580" cy="170" r="58" fill="#f6d9a6"/>
+<path d="M0 420 C140 360 260 380 380 410 C520 445 650 400 800 380 V600 H0Z" fill="#c07f5d"/>
+<path d="M0 480 C160 430 300 470 440 490 C580 510 700 470 800 450 V600 H0Z" fill="#a5694f"/>
+<path d="M200 480 V290 C200 190 260 130 330 130 C400 130 460 190 460 290 V480 H390 V300 C390 250 365 215 330 215 C295 215 270 250 270 300 V480 Z" fill="url(#archL1)"/>
+<path d="M0 545 C200 515 420 565 800 525 V600 H0Z" fill="#8c5540"/>
+</svg>
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:14px">
+<button type="button" style="height:44px;padding:0 18px;border-radius:22px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Compare</button>
+<button type="button" style="height:44px;padding:0 18px;border-radius:22px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Reuse settings</button>
+<button type="button" style="height:44px;padding:0 18px;border-radius:22px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Edit this image</button>
+<button type="button" aria-label="Favorite" style="width:44px;height:44px;border-radius:22px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+<button type="button" aria-label="Download" style="width:44px;height:44px;border-radius:22px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></button>
+<div style="flex:1"></div>
+<span style="font-size:13px;color:rgba(245,245,247,.62)">1 of 4</span>
+</div>
+<section aria-label="Prompt used for this result" style="margin-top:14px;padding:18px 22px;border-radius:26px;background:rgba(255,255,255,.055);backdrop-filter:blur(30px) saturate(1.5);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)">
+<div style="font-size:12px;font-weight:500;color:rgba(245,245,247,.62);margin-bottom:6px">Prompt for this result</div>
+<p style="margin:0 0 12px;font-size:16px;line-height:1.45">A quiet architectural study of a sandstone arch in a wide desert, warm evening light and long shadows</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:rgba(245,245,247,.78)"><span style="padding:5px 10px;border-radius:12px;background:rgba(255,255,255,.08)">Text to image</span><span style="padding:5px 10px;border-radius:12px;background:rgba(255,255,255,.08)">4:3</span><span style="padding:5px 10px;border-radius:12px;background:rgba(255,255,255,.08)">4 steps</span><span style="padding:5px 10px;border-radius:12px;background:rgba(255,255,255,.08)">Seed 1889046298</span></div>
+</section>
+</main>
+
+<!-- RIGHT: controls -->
+<aside aria-label="Controls" style="position:absolute;left:1056px;top:76px;width:360px;height:808px;box-sizing:border-box;padding:20px;border-radius:28px;background:rgba(255,255,255,.055);backdrop-filter:blur(30px) saturate(1.5);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 30px 90px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:16px">
+
+<div role="radiogroup" aria-label="Mode" style="display:flex;padding:4px;border-radius:24px;background:rgba(0,0,0,.32)">
+<button type="button" role="radio" aria-checked="true" style="flex:1;height:40px;border-radius:20px;border:0;background:rgba(255,255,255,.14);color:#fff;font:500 14px/1 'Inter',sans-serif;cursor:pointer">Text to image</button>
+<button type="button" role="radio" aria-checked="false" style="flex:1;height:40px;border-radius:20px;border:0;background:transparent;color:rgba(245,245,247,.72);font:500 14px/1 'Inter',sans-serif;cursor:pointer">Edit image</button>
+</div>
+
+<div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><label for="pL1" style="font-size:13px;font-weight:500;color:rgba(245,245,247,.68)">Prompt</label><span style="padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.1);font-size:11px;color:rgba(245,245,247,.75)">/</span></div>
+<textarea id="pL1" rows="4" style="width:100%;box-sizing:border-box;height:112px;resize:none;border:0;outline:0;padding:14px 16px;border-radius:20px;background:rgba(255,255,255,.06);color:#f5f5f7;font:400 16px/1.4 'Inter',sans-serif">A quiet architectural study of a sandstone arch in a wide desert, warm evening light</textarea>
+</div>
+
+<div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:13px;font-weight:500;color:rgba(245,245,247,.68)">References · 2 of 4</span><button type="button" style="height:32px;padding:0 12px;border-radius:16px;border:0;background:rgba(255,255,255,.07);color:rgba(245,245,247,.88);font:500 12px/1 'Inter',sans-serif;cursor:pointer">Select region</button></div>
+<div style="display:flex;gap:10px">
+<button type="button" aria-label="Reference 1" style="width:64px;height:64px;padding:0;border-radius:18px;border:0;background:linear-gradient(160deg,#8aa0b4,#d9b894 60%,#b98a6a);cursor:pointer"></button>
+<button type="button" aria-label="Reference 2" style="width:64px;height:64px;padding:0;border-radius:18px;border:0;background:linear-gradient(160deg,#4b3d6b,#c4806a 65%,#f0c79a);cursor:pointer"></button>
+<button type="button" aria-label="Add a reference image" style="width:64px;height:64px;border-radius:18px;border:1.5px dashed rgba(255,255,255,.28);background:transparent;color:rgba(245,245,247,.8);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+</div>
+
+<div>
+<div id="shapeL1" style="font-size:13px;font-weight:500;color:rgba(245,245,247,.68);margin-bottom:8px">Shape</div>
+<div role="radiogroup" aria-labelledby="shapeL1" style="display:flex;gap:6px;flex-wrap:wrap">
+<button type="button" role="radio" aria-checked="false" style="height:36px;padding:0 14px;border-radius:18px;border:0;background:rgba(255,255,255,.07);color:rgba(245,245,247,.85);font:500 13px/1 'Inter',sans-serif;cursor:pointer">1:1</button>
+<button type="button" role="radio" aria-checked="true" style="height:36px;padding:0 14px;border-radius:18px;border:0;background:#fff;color:#14121c;font:600 13px/1 'Inter',sans-serif;cursor:pointer">4:3</button>
+<button type="button" role="radio" aria-checked="false" style="height:36px;padding:0 14px;border-radius:18px;border:0;background:rgba(255,255,255,.07);color:rgba(245,245,247,.85);font:500 13px/1 'Inter',sans-serif;cursor:pointer">16:9</button>
+<button type="button" role="radio" aria-checked="false" style="height:36px;padding:0 14px;border-radius:18px;border:0;background:rgba(255,255,255,.07);color:rgba(245,245,247,.85);font:500 13px/1 'Inter',sans-serif;cursor:pointer">3:4</button>
+<button type="button" role="radio" aria-checked="false" style="height:36px;padding:0 14px;border-radius:18px;border:0;background:rgba(255,255,255,.07);color:rgba(245,245,247,.85);font:500 13px/1 'Inter',sans-serif;cursor:pointer">9:16</button>
+</div>
+</div>
+
+<div style="border-radius:20px;background:rgba(255,255,255,.05);padding:6px 16px 14px">
+<button type="button" aria-expanded="true" style="display:flex;align-items:center;gap:10px;width:100%;height:46px;padding:0;border:0;background:transparent;color:#f5f5f7;font:500 14px/1 'Inter',sans-serif;cursor:pointer;text-align:left"><span style="flex:1">Advanced</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:10px"><label for="seedL1" style="flex:none;width:52px;font-size:13px;color:rgba(245,245,247,.68)">Seed</label><input id="seedL1" value="1889046298" style="flex:1;min-width:0;height:38px;box-sizing:border-box;border:0;outline:0;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.07);color:#f5f5f7;font:400 14px/1 'Inter',sans-serif"><button type="button" aria-label="Randomize seed" style="flex:none;width:38px;height:38px;border-radius:12px;border:0;background:rgba(255,255,255,.07);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2M20 4v5h-5M4 20v-5h5"/></svg></button></div>
+<div style="display:flex;align-items:center;gap:10px"><label for="stepsL1" style="flex:none;width:52px;font-size:13px;color:rgba(245,245,247,.68)">Steps</label><input id="stepsL1" type="range" min="1" max="8" value="4" style="flex:1;min-width:0"><span style="flex:none;width:18px;text-align:right;font-size:13px">4</span></div>
+<label style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(245,245,247,.85)"><input type="checkbox" style="width:18px;height:18px;accent-color:#8575f5">Use my own structured prompt</label>
+</div>
+</div>
+
+<div style="flex:1"></div>
+
+<button type="button" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:56px;border-radius:20px;border:0;background:linear-gradient(135deg,#7c6cf2,#b05cf0);color:#fff;font:600 16px/1 'Inter',sans-serif;box-shadow:0 14px 40px rgba(124,108,242,.45),inset 0 1px 0 rgba(255,255,255,.28);cursor:pointer">
+<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2 5.4L19.5 10 14 12l-2 5.4L10 12 4.5 10 10 8.4z"/></svg>
+Generate<span style="margin-left:6px;padding:4px 8px;border-radius:7px;background:rgba(255,255,255,.2);font-size:11px;font-weight:500">Ctrl ↵</span>
+</button>
+</aside>
+
+</div>
+</x-dc>
+
+</body>
+</html>
