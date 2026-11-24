@@ -1,6 +1,6 @@
 # Screen Registry
 
-> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+> **Current source boundary:** GitHub main is the development baseline. Production-mode /create uses the FIBO-only CreatePreviewWorkspace, and the root layout uses PreviewNavigationShell; prior Clear Composer/AppShell records below are historical acceptance or non-production branch evidence. Current deployment and qualification are separately governed by docs/production/current.json; no inference of complete FIBO parity.
 
 Tracks approved product surfaces and actual route/status/component composition.
 
@@ -30,8 +30,8 @@ Batch E: all eleven ordered PRs qualified and merged (#678/#679/#680/#676/#671/#
 
 
 ## Application Shell
-**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`.
-**Implementation:** `src/components/shell/app-shell.tsx`
+**UI maturity:** `UNAUDITED`. **Deployment:** `PRODUCTION-LIVE` per manifest. UI-074 was historically approved; current wrapper fidelity remains unresolved.
+**Current implementation:** `src/app/layout.tsx:33–41` uses `src/components/shell/preview-navigation-shell.tsx` for production children, including Landing; `src/app/(app)/layout.tsx:7–8` returns plain main. `src/components/shell/app-shell.tsx` is retained for alternate non-production path. P5-06 resolves UI-074/UI-084 scope; the source state does not supersede approved behavior.
 
 Approved behavior:
 - compact fixed horizontal application header across desktop and narrow layouts;
@@ -71,7 +71,7 @@ Approved behavior:
 **Implementation:** `src/app/page.tsx`, `src/features/landing/landing-experience.tsx`, `src/features/landing/landing-experience.module.css`, `src/components/brand/renderlab-brand.tsx`, `src/app/opengraph-image.tsx`
 **Current design authority:** `docs/ui/LANDING_BRAND_RD.md`, `docs/ui/LANDING_MEDIA_SOURCES.md`. Historical implementation evidence: `docs/history/contracts/ui/LANDING_IMPLEMENTATION_CONTRACT.md`
 
-**Purpose:** Public product home for verified RenderLab capability and truthful invitation-only Closed Beta access without application-shell chrome or public self-admission.
+**Purpose:** Public product home for verified RenderLab capability and truthful invitation-only Closed Beta access without public self-admission. UI-052 historical intent is no application-shell chrome; current production root wrapper differs and is a P5-06 fidelity question.
 
 **Approved composition:** one continuous four-section sequence — **Hero / Lab Matrix → One creative thread → Living Library → Resolve to Create**. The page uses the locked Lab Grid identity as the visual grammar, keeps media dominant, supports bounded pointer/scroll choreography on capable desktop input, deliberately adapts the composition for 390px/touch, and provides a complete static `prefers-reduced-motion` equivalent.
 
@@ -79,7 +79,7 @@ Approved behavior:
 
 **2026-09-30 widescreen correction:** the local candidate now expands to the full browser width at 2560×1440, uses large-desktop layout caps, shortens the Thread and Resolve scroll tracks, raises secondary-copy contrast, keeps Library context controls within the section, and limits Resolve convergence to the four canonical tiles. The same 1440px and 390px production verifier remains green.
 
-**Verified behavior:** The landing copy, illustrative media cards and share metadata describe image creation, reference editing and Library. `/` renders without `AppShell`; `/create` and application routes use the `(app)` shell; `Open Create` → `/create`; `Sign in` → `/settings`; legacy root continuation preserves the complete query into `/create`; Closed Beta / invitation-only / no-public-sign-up truth remains explicit; forbidden pricing/testimonial/fake-metric/provider/model/SLA/public-admission claims remain absent. The implementation uses the existing Motion for React runtime, maintained `Button` primitives and locked `RenderLabBrand`; no GSAP, Lenis, Three.js/WebGL or new animation runtime was added.
+**Historical verification (prior root composition):** The landing copy, illustrative media cards and share metadata describe image creation, reference editing and Library. `/` renders without `AppShell`; `/create` and application routes use the `(app)` shell; `Open Create` → `/create`; `Sign in` → `/settings`; legacy root continuation preserves the complete query into `/create`; Closed Beta / invitation-only / no-public-sign-up truth remains explicit; forbidden pricing/testimonial/fake-metric/provider/model/SLA/public-admission claims remain absent. The implementation uses the existing Motion for React runtime, maintained `Button` primitives and locked `RenderLabBrand`; no GSAP, Lenis, Three.js/WebGL or new animation runtime was added.
 
 **Locked geometry:** the Hero and Resolve lower-right Lab Grid media module is the canonical **quarter-circle / large outer arc**, not a rounded rectangle. Its repository-owned source path is `M75 91H89A33 33 0 0 1 122 124V132H75Q71 132 71 128V95Q71 91 75 91Z`, shared through the Landing mask and test-enforced by Brand / Launch Visual. The locked RenderLab logo/wordmark must not be reinterpreted.
 
@@ -89,17 +89,17 @@ Approved behavior:
 
 ### Create
 **Route:** `/create`
-**UI maturity:** `APPROVED`. **Deployment:** `PRODUCTION-LIVE`.
-**Implementation:** `src/features/create/create-workspace.tsx`  
-**Supporting:** `src/features/create/create-advanced-panel.tsx`  
-**Design artifacts:** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
-**Phase 23 design authority:** `design/rd/create-usability-first-v05.md`, `docs/history/contracts/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell is the repository-authoritative Create surface. At Phase 23 closure, production still used the prior deployed source; the current-production block above supersedes that historical deployment boundary.
+**UI maturity:** `MIGRATING` under UI-084; current appearance unfinished and full parity not established. **Deployment:** `PRODUCTION-LIVE` per manifest.
+**Current implementation:** `src/app/(app)/create/page.tsx:78–82,177–205`, `src/features/create/create-preview-workspace.tsx`, `src/features/create/create-preview-stage.tsx`, `src/features/create/create-preview-mask-editor.tsx`. Production selects hosted-only FIBO; alternate `create-workspace.tsx` and `create-advanced-panel.tsx` remain non-production branch components. Current source resolves owner-scoped continuation and saved supported geometry (FE-01 fix on main; deployment is independently recorded).
+**Current authority:** UI-084 and [FIBO rollout](../architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md), [Phase 5](../architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md). Existing supported Image/Edit only, no retired Video/Animate/FLUX/Qwen/new Upscale. Current capability gating and documented open parity items are binding; old tests do not qualify current hosted behavior. No new claims about batch/inspiration/negative conditioning, generated VGL or full responsive acceptance.  
+**Historical design artifacts (superseded Create family):** `design/penpot/create-v0.2-desktop.svg`, `design/penpot/create-v0.2-mobile.svg`, `design/penpot/create-v0.2-runtime-states.svg`, `design/penpot/create-v0.3-advanced.svg`
+**Historical Phase 23 design authority (Create superseded by UI-084):** `design/rd/create-usability-first-v05.md`, `docs/history/contracts/ui/CREATE_CLEAR_COMPOSER_IMPLEMENTATION_CONTRACT.md`; fidelity correction PR #188 is merged to `main` as `3f0d21ed55554b3c48791d35dd17cb6005212076` and the corrected Clear Composer/UI-074 shell was the repository-authoritative Create surface at closure. At Phase 23 closure, production still used the prior deployed source; the current-production block above supersedes that historical deployment boundary.
 
 **Purpose:** Start and continue creative operations from one task-oriented workspace.
 
 **Current production operations:** FIBO Create Image and Edit Image. The implementation below includes historical verification of retired operations.
 
-**Verified behavior:**
+**Historical verification of prior Create implementation (not proof of current hosted parity):**
 - image prompt and supported image aspect ratios;
 - PNG/JPEG/WebP user reference input up to 25 MB;
 - UI-069 adds optional desktop file drag/drop onto the Create composer for one reference image through the exact same durable upload/validation transaction as the maintained file picker; the picker remains the keyboard/touch/mobile baseline and no second upload path exists;
@@ -119,7 +119,7 @@ Approved behavior:
 - signed-in generation jobs, reference/media inputs and persisted outputs remain within the verified account owner boundary;
 - UI-051 Phase 10C applies the shared transactional generation-admission boundary after request/input preflight and before backend/provider dispatch; Create preserves the draft and shows sanitized product-level disabled/limit feedback without exposing infrastructure detail.
 
-**Phase 7 Create v2 extension:** the durable Create-upload foundation is implemented/verified through PR #46; source-aware `Original` geometry and curated fixed ratios through PR #47 (`de50efe6ba462ec604ea2cace741e11904a62425`); composer hierarchy/de-crowding through PR #49 (`d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`); stable `@imageN` addressing through PR #51 (`7afe257b069e74d322d8f83c1a0868a30acd3686`); and bounded two-image reference exposure/reorder/count/role enforcement through UI-046 / PR #53 (`0286b18802fc3d766d9d09e2ba8ed9a494eabd08`). Phase 7C live audit `33266905978` is complete and UI-047 deliberately defers Director productization because the deployed worker has no structured Director fields. Phase 7D Video Resolution is implemented/verified under UI-048 at exact code/test head `594ad7eb39a9d5eec1d2f0283ac6e327f86129b3`: exact 480p/720p/1080p/2K choices with 480p default, canonical persisted resolution, Video Steps/Guidance removal/rejection, responsive/reduced-motion menu review and the four-case live Video matrix all passed; Video Generation `33270777081` produced `854×480`, `1920×1080`, `720×1280` and `2304×1152` outputs for the accepted cases. The deliberate premium interaction/motion pass under UI-043 is verified at exact head `51c293dad114c98754933ab192b13427a90d9570`: UI Shell `33273370797`, configured Create Lifecycle `33273370720` and the complete 19-workflow affected suite passed; reference reorder motion and static reduced-motion behavior were exercised and responsive artifacts reviewed clean. Phase 7 Create v2 exit criteria are complete, while existing approved Create/reference/Resolution behavior remains authoritative.
+**Phase 7 Create v2 extension:** the durable Create-upload foundation is implemented/verified through PR #46; source-aware `Original` geometry and curated fixed ratios through PR #47 (`de50efe6ba462ec604ea2cace741e11904a62425`); composer hierarchy/de-crowding through PR #49 (`d324d7c8a520052d3c4bdc81f5f6c11edbdf50ee`); stable `@imageN` addressing through PR #51 (`7afe257b069e74d322d8f83c1a0868a30acd3686`); and bounded two-image reference exposure/reorder/count/role enforcement through UI-046 / PR #53 (`0286b18802fc3d766d9d09e2ba8ed9a494eabd08`). Phase 7C live audit `33266905978` is complete and UI-047 deliberately defers Director productization because the deployed worker has no structured Director fields. Phase 7D Video Resolution is implemented/verified under UI-048 at exact code/test head `594ad7eb39a9d5eec1d2f0283ac6e327f86129b3`: exact 480p/720p/1080p/2K choices with 480p default, canonical persisted resolution, Video Steps/Guidance removal/rejection, responsive/reduced-motion menu review and the four-case live Video matrix all passed; Video Generation `33270777081` produced `854×480`, `1920×1080`, `720×1280` and `2304×1152` outputs for the accepted cases. The deliberate premium interaction/motion pass under UI-043 is verified at exact head `51c293dad114c98754933ab192b13427a90d9570`: UI Shell `33273370797`, configured Create Lifecycle `33273370720` and the complete 19-workflow affected suite passed; reference reorder motion and static reduced-motion behavior were exercised and responsive artifacts reviewed clean. Phase 7 Create v2 exit criteria were complete at closure; historical Video/Resolution/FLUX contracts do not authorize new current FIBO controls.
 
 **Post-Cycle 3 UI-061 correction:** Advanced discovery is mode-consistent: the dedicated compact ellipsis control opens the existing `CreateAdvancedPanel` in both Image and Video, while Video's contextual dropdown owns only Resolution / Duration / Audio. Narrow Create chrome is compacted without changing generation capability. Final exact head `4334d76cfaf112c11ba87e961de565673551d500` passed all 11 attached workflows; Create Lifecycle `34073557139` / artifact `10001298383` verified and human review confirmed the 390px Image/Video primary controls stay on one row without horizontal overflow. PR #118 merged as `ea88425554a39ab904c56bbeed51ac396e0bfb38`.
 
@@ -442,11 +442,11 @@ Activity keeps the UI-077 Job Matrix + History Register, newest-first chronology
 
 Verification: exact source `f6245c3953d7517d0b40011893135d4a2ac0028f` passed all 18 attached workflows. Activity Visual `35531996901` / artifact `10611591672` (`sha256:4f1fd684ee6518315a93dda67622dc978a8232d6d3eb090469b23cfe8ac05b61`) and Library History Visual `35531996914` / artifact `10611526669` (`sha256:91e24628af5bd7af4d322d7d0a965ca8c5b16f7972367a9b79d4b31cbc12914c`) were human-reviewed at desktop and 390px with reduced-motion/selection states. The deliberately long Activity request remains bounded; media remains Library's primary object; no horizontal overflow or control/action reachability regression was observed. PR #308 squash-merged as `058b8d10b0dcbfc93e47657a2c6ed0cea4c2c7e1`; merged-main Engineering Quality `35543303501`, UI Shell Validation `35543303489`, Activity Cancel Visual `35543303603`, Creative Iteration `35543303491`, and Image Upscale Integration `35543303495` all passed.
 
-### Create — UI-082 checkpoint 4A legibility
-**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
+### Create — historical UI-082 checkpoint 4A legibility (superseded visual composition)
+**Historical execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
 **Design checkpoint:** `design/rd/create-account-admin-legibility-v01.md`
 
-Create retains the approved Clear Composer order, lifecycle/result placement, model/settings behavior, continuation actions, touch targets and reduced-motion path. UI-082 changes only two essential registration labels that were below the technical-text floor: active-generation registration and persisted-result registration now render at 10px with slightly stronger muted contrast.
+At that historical checkpoint Create retained the approved Clear Composer order, lifecycle/result placement, model/settings behavior, continuation actions, touch targets and reduced-motion path. UI-082 changes only two essential registration labels that were below the technical-text floor: active-generation registration and persisted-result registration now render at 10px with slightly stronger muted contrast.
 
 Verification: exact implementation head `b174eba5be1ec37c548f6f349e71d1cc0ea279c6` passed all nine attached workflows. Create Clear Composer Visual `35543744625` / artifact `10615174763` (`sha256:9611a0cd6eedacf08a0f2ab9e7b4199f947f460ba8686e6aeb7b1b7957d40670`) and Create Lifecycle Visual `35543744613` / artifact `10616030332` (`sha256:0b64377356df061af957aeeda89dc3087870fbd8474c76069dae95d8091f3260`) were human-reviewed across desktop, 390px, reduced-motion, active-generation and persisted-result states; media still leads the persistent composer and no overflow or action regression was observed.
 

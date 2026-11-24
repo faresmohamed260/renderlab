@@ -27,25 +27,23 @@ Batch E: all eleven ordered PRs qualified and merged (#678/#679/#680/#676/#671/#
 
 ## Current UI foundation
 
-The whole-product redesign/migration program is closed and production-live. `docs/ui/SCREEN_REGISTRY.md` owns exact route/screen maturity, and `docs/ui/UI_DECISIONS.md` owns accepted UI precedents/supersession.
+The earlier whole-product redesign/migration program is historical closure evidence; current source has since changed under UI-084 and the merged Phase 5 frontend polish contract. Do not infer full current acceptance from historical verification. `docs/ui/SCREEN_REGISTRY.md` owns exact route/screen maturity, and `docs/ui/UI_DECISIONS.md` owns accepted UI precedents/supersession.
 
 Current product family:
 - Landing uses the approved Lab Matrix / Lab Grid identity and composition.
-- Application routes use the approved compact horizontal shell geometry.
-- Create uses the approved Clear Composer family and media-first result hierarchy.
+- UI-074 remains the accepted application shell geometry outside scoped Create; current production-mode root uses PreviewNavigationShell, including Landing, while app layout bypasses AppShell. P5-06 owns the unresolved source/authority drift.
+- Create uses the production-mode FIBO-only CreatePreviewWorkspace under UI-084; Clear Composer is a retained alternate non-production branch and historical evidence. Current Create appearance is unfinished; full FIBO parity and responsive/interaction acceptance remain open.
 - Library uses the approved Gallery Rail family and current server/URL-owned discovery/organization behavior.
 - Media Viewer uses the approved Media Register + Source Fold family.
 - Activity uses the approved Job Matrix + History Register family.
 - Settings uses the approved Trust Register family with the current profile/credential/preferences additions integrated into that system rather than as a competing redesign.
 - Admin uses the approved Admin System Continuity family inside the existing access/generation/health hierarchy.
 
-UI-074 through UI-080 remain the accepted redesign family, with later accepted corrections such as UI-081 and UI-082 carrying forward their bounded changes. Historical per-phase `NOT DEPLOYED` labels record closure-time state only; the current-production block above governs present deployment truth.
+UI-074 through UI-080 remain the historical redesign family where not superseded by UI-084, with later accepted corrections such as UI-081 and UI-082 carrying forward their bounded changes. Historical per-phase `NOT DEPLOYED` labels record closure-time state only; the current-production block above governs present deployment truth.
 
 ## Current migration/work state
 
-**Execution:** `COMPLETE`. **Repository:** `MERGED`. **Verification:** `PRODUCTION-VERIFIED`. **Deployment:** `PRODUCTION-LIVE`.
-
-There is no open UI migration checklist in this tracker. Future UI work must begin from current repository reality rather than resume a historical Phase 0–29 or corrective-maintenance checklist.
+The earlier migration checklist is closed; current Phase 5 frontend polish is governed by [its merged contract](../architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) and FIBO rollout remains separately bounded by [UI-084 rollout contract](../architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md). Production-live is not full verification or execution completion. Current and future work begins from repository reality, not historical Phase 0–29 checklists.
 
 - Ordinary feature/UI additions use Integration Mode and preserve the accepted family unless a product reason requires an approved bounded change.
 - Explicit redesign requests use Authorized Redesign Mode from `AGENTS.md` and `docs/ui/DESIGN_WORKFLOW.md`.

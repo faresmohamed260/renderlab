@@ -1,6 +1,6 @@
 # Component Catalog
 
-> **Create release candidate (2026-11-19):** GitHub main is the development baseline. This candidate makes the Create workspace the production /create UI using existing same-origin account, media, and generation APIs; the private worker remains development-only. This is source state only. The production manifest remains authoritative for the live deployment.
+> **Current source boundary:** GitHub main is the development baseline. Production-mode /create uses the FIBO-only CreatePreviewWorkspace, and the root layout uses PreviewNavigationShell; prior Clear Composer/AppShell records below are historical acceptance or non-production branch evidence. Current deployment and qualification are separately governed by docs/production/current.json; no inference of complete FIBO parity.
 
 Authoritative index of reusable RenderLab UI components and approved external component sources. Populate actual RenderLab components from repository reality, not assumptions.
 
@@ -16,12 +16,13 @@ Search these before implementing reusable interaction mechanics from scratch.
 **Role:** Foundational accessible application primitives.  
 **Uses:** buttons, inputs, selects, dialogs, sheets, menus, popovers, tabs, tooltips, forms, toggles, navigation/disclosure primitives.  
 **Policy:** First external stop for conventional UI; normalize styling to RenderLab tokens.
+**Current use:** shadcn-derived owned wrappers in `src/components/ui` (configured `components.json`); exact upstream copied revisions, license text and notices unverified in this review. `radix-ui@1.6.7` is declared and locked, active via `src/components/ui/button.tsx` (Slot) and other maintained wrappers; lockfile SPDX `MIT`. This is package metadata verification, not a blanket copied-source or transitive-license review.
 
 ### Motion for React
 **Role:** Core motion/gesture engine.  
 **Uses:** layout transitions, springs, gestures, drag, shared-layout transitions and motion orchestration.  
 **Policy:** Prefer established patterns; respect reduced motion and avoid decorative motion without product value.
-**Adopted:** RenderLab pins `motion@13.1.1`. Phase 7A uses `motion/react` only inside Create-owned interaction composition for spatial continuity and reduced-motion-safe presence/layout transitions; no global animation store or generic wrapper layer is introduced.
+**Current use:** `motion@13.1.1` declared and locked; `motion/react` is actively imported by `src/features/landing/landing-experience.tsx`, with retained alternate Create and AppShell composition also using Motion. Lockfile SPDX `MIT`. UI-083 directs new/reworked application springs toward React Spring; existing Motion remains until separately reviewed migration.
 
 ### Motion Primitives
 **Role:** Reusable motion-first application components.  
@@ -42,13 +43,16 @@ Search these before implementing reusable interaction mechanics from scratch.
 ### Lucide React
 **Role:** Initial application icon source.  
 **Policy:** Use a consistent Lucide line-icon family unless an approved product-specific asset exists.
+**Current use:** `lucide-react@1.34.0` declared and locked; active imports in `src/components/shell/preview-navigation-shell.tsx` and `src/features/landing/landing-experience.tsx`. Lockfile SPDX `ISC`; exact package license text/third-party icon notices not independently reviewed here.
 
 ### Additional shadcn registries
 **Role:** Discovery layer for maintained shadcn-compatible implementations.  
 **Policy:** Registry presence does not automatically approve a component; review quality, accessibility, licensing, maintenance and dependency cost first.
 
 ### React Spring
-**Role:** MIT-licensed @react-spring/web 10.1.2. Drives the WANDA section and profile disclosures with one reduced-motion-aware spring preset (UI-083).
+**Role:** `@react-spring/web@10.1.2` declared and locked; active in `src/components/shell/preview-navigation-shell.tsx` and `src/features/create/create-preview-workspace.tsx`. Lockfile SPDX `MIT`. UI-083 governs new/reworked application springs; observed local presets are not proof of a unified spring owner.
+
+**License and provenance boundary:** Source snapshot [634ae28](https://github.com/faresmohamed260/renderlab/tree/634ae28afaad52a60ec590688c1784c0f87dba2f); `package.json` direct pins and `package-lock.json` matching `packages["node_modules/<name>"].version` and `.license` are the verified evidence for the four active package-backed sources above. `lockfile-verified` means only this metadata match; no actual installed node_modules inspection, upstream full-text/notice review, transitive audit or new adoption approval. The other approved/discovery registries have no verified active package or copied adoption in this check; their specific license/provenance remains unverified, review per adoption. Sileo is a **geometry reference only** in `src/components/shell/preview-navigation-shell.tsx:19` (comment cites b70fd826 and packages/sileo/src/{sileo.tsx,constants.ts}); no direct or locked Sileo package found, no verified upstream revision/license/notice or extent of copying. Do not treat the comment as adoption approval or as proof of infringement. Retain for review; verify exact source and license/attribution before reusing geometry. The source policy order below is unchanged.
 
 ## External Source Search Order
 1. Existing `APPROVED`/`LOCKED` RenderLab component
@@ -84,7 +88,7 @@ Before copying/installing an external component:
 **Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/selection/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download/Delete actions.
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
-**Notes:** UI-026. `npm run verify:ui-purity` is the CI enforcement gate. The refactor preserved the approved surface design while centralizing control mechanics. During verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 originally added the maintained Radix Dropdown Menu for Library ordering; user-directed UI-066 later replaces that interaction with a direct maintained Button/Link toggle while URL/server ordering stays authoritative.
+**Notes:** UI-026. `npm run verify:ui-purity` is the enforcement gate. The historical primitive refactor preserved then-approved surface design while centralizing control mechanics. During historical verification, `EmptyTitle` was deliberately kept as a semantic heading, shared Button icon/text spacing was normalized once, Create Image/Video single-choice intent adopted Radix radiogroup/radio semantics, and UI-027 originally added the maintained Radix Dropdown Menu for Library ordering; user-directed UI-066 later replaces that interaction with a direct maintained Button/Link toggle while URL/server ordering stays authoritative.
 
 ### AlertDialog
 **Status:** APPROVED
@@ -122,9 +126,9 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/components/shell/app-shell.tsx`  
 **Origin:** RenderLab composition using approved `Button`, Next.js navigation + Lucide React  
-**Purpose:** Persistent responsive application chrome: one compact horizontal header across desktop and narrow layouts with Brand/Create identity, Library, Activity and Settings/account access.
-**Used by:** `src/app/(app)/layout.tsx` for `/create`, Library/Viewer, Activity, Settings and Admin application routes
-**Reuse rules:** Extend this authoritative shell rather than creating page-specific shells.  
+**Historical approved purpose (UI-074):** Persistent responsive application chrome: one compact horizontal header across desktop and narrow layouts with Brand/Create identity, Library, Activity and Settings/account access.
+**Current reachability:** `src/app/(app)/layout.tsx` selects AppShell only outside production and preview mode; production and preview branches return plain main. `src/app/layout.tsx` instead wraps production children in `PreviewNavigationShell`. UI-074 remains approved shell behavior outside scoped Create; actual composition drift remains P5-06, not a new approval. Historical AppShell verification below applies to the earlier implementation only.
+**Reuse rules:** Preserve UI-074 authority while P5-06 resolves the current wrapper drift; do not create page-specific shells.  
 **Do not:** Put Create composer, Library cards, workflows or feature-owned layout into persistent chrome.  
 **Notes:** Production build + Playwright desktop/mobile rendering approved; not locked. UI-052 / PR #73 moved shell ownership from the global root layout to `src/app/(app)/layout.tsx`; merge `46c5daa2866c6758907ee9be219bcb3cb274ca83` preserves the established application composition while public `/` renders without `AppShell`. Final PR head `773251734dbd5c5f32770699a57b1ade653604b5` passed 19/19 affected workflows and merged-main UI Shell `33323421285` passed.
 
@@ -153,11 +157,16 @@ Before copying/installing an external component:
 **Reuse rules:** Reuse for ordinary disclosure; keep feature state/copy outside the primitive.  
 **Notes:** Adopted through PR #6 and normalized into the maintained primitive foundation through PR #13.
 
+### PreviewNavigationShell and CreatePreviewWorkspace (current source composition)
+**Status:** EXPERIMENTAL — current production-mode path, not complete rendered acceptance.
+**Source:** `src/components/shell/preview-navigation-shell.tsx`, `src/features/create/create-preview-workspace.tsx`, `src/features/create/create-preview-stage.tsx`, `src/features/create/create-preview-mask-editor.tsx`.
+**Reachability:** `src/app/layout.tsx:33–41` wraps production children (including Landing) in PreviewNavigationShell. `src/app/(app)/create/page.tsx:78–82,177–205` selects hosted-only FIBO workspace with owner-scoped continuation resolution and supported account defaults. `src/app/(app)/layout.tsx:7–8` bypasses AppShell in production. Shared primitive mechanics, React Spring and Lucide are active; rich prompt, mask and stage are feature-owned. UI-084/FIBO rollout contract and current capabilities govern behavior; no claim of full parity or visual approval. P5-06 owns wrapper decision and Phase 5 contract owns correctness/QA.
+
 ### CreateWorkspace
-**Status:** APPROVED
+**Status:** DEPRECATED for production Create; retained alternate non-production branch, historical approval only
 **Source:** `src/features/create/create-workspace.tsx`  
-**Purpose:** Authoritative task-oriented Create experience: prompt, Image/Video intent, references, typed generation, truthful runtime state, durable results, continuation and Advanced disclosure.  
-**Variants:** Create Image, Edit Image, Create Video, Animate Image; responsive desktop/mobile.  
+**Historical purpose:** Task-oriented Clear Composer: prompt, Image/Video intent, references, typed generation, truthful runtime state, durable results, continuation and Advanced disclosure.  
+**Historical variants:** Create Image, Edit Image, Create Video, Animate Image; responsive desktop/mobile. Production-mode branch does not render this component. No deletion authorization; non-production path remains reachable. UI-084 supersedes retired output modes.  
 **Dependencies:** RenderLab generation/media contracts, shared persistent browser media-upload client, capabilities, React client state, Motion for React, Lucide, maintained Button/Textarea/ToggleGroup/DropdownMenu/Alert/Spinner/Collapsible primitives.
 **Reuse rules:** Extend or deliberately extract reusable subcomponents rather than creating competing Create surfaces.  
 **Do not:** Expose worker/storage IDs, fabricate progress or push technical worker controls into default UI.  
@@ -165,7 +174,7 @@ Before copying/installing an external component:
 
 **Post-Cycle 3 UI-061 correction:** `CreateWorkspace` keeps the same maintained Collapsible/Button/DropdownMenu mechanics but exposes Advanced through one dedicated compact trigger in both Image and Video. The Video settings menu now owns Resolution / Duration / Audio only. The narrow primary-control row uses compact approved control sizes plus short visible `FLUX` / `Qwen` model labels while preserving full accessible names/menu labels; Generate remains the separate narrow primary action. No new generic primitive is introduced.
 
-**Phase 23 / UI-073 Clear Composer candidate:** `CreateWorkspace` remains the single authoritative Create surface; no parallel workspace or generic composer primitive was introduced. The production candidate promotes the maintained Image/Video ToggleGroup, labelled durable reference/Start-image action, explicit media roles, dominant prompt, conventional essential settings/Advanced/Generate, truthful generation stage and media-first durable result. It keeps existing state/functions for upload, polling, persistence, aliases and continuation, and continues to use Motion for React only for bounded Create-owned layout/media transitions with reduced-motion equivalence. Result-stage styling is scoped to Create in `globals.css`; ordinary controls do not parallax. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, corrected Account/Admin Operations `34639132466` and Release Candidate Matrix `34639132431` with all 23 exact-SHA children successful. No new reusable primitive, architecture boundary or animation runtime was introduced. PR #185 squash-merged to `main` as `d360f60afeca0b6c417ff1c12dec3c7e922c20f7` from final exact head `428cbd025d9f314f5b8d1582fd6911f1abd5094b`, and merged-main Release Candidate Matrix `34645636285` passed all 23 exact-SHA children; production deployment remains separately explicit.
+**Historical Phase 23 / UI-073 Clear Composer candidate (superseded by UI-084):** `CreateWorkspace` was the single authoritative Create surface; no parallel workspace or generic composer primitive was introduced. The production candidate promotes the maintained Image/Video ToggleGroup, labelled durable reference/Start-image action, explicit media roles, dominant prompt, conventional essential settings/Advanced/Generate, truthful generation stage and media-first durable result. It keeps existing state/functions for upload, polling, persistence, aliases and continuation, and continues to use Motion for React only for bounded Create-owned layout/media transitions with reduced-motion equivalence. Result-stage styling is scoped to Create in `globals.css`; ordinary controls do not parallax. Final implementation-verification head `e46d9383dc74878713d0ec4f47aaf6383b266c21` passed Engineering Quality `34639132519`, Clear Composer Visual `34639132478`, configured Create Lifecycle `34639132510`, corrected Account/Admin Operations `34639132466` and Release Candidate Matrix `34639132431` with all 23 exact-SHA children successful. No new reusable primitive, architecture boundary or animation runtime was introduced. PR #185 squash-merged to `main` as `d360f60afeca0b6c417ff1c12dec3c7e922c20f7` from final exact head `428cbd025d9f314f5b8d1582fd6911f1abd5094b`, and merged-main Release Candidate Matrix `34645636285` passed all 23 exact-SHA children; production deployment remains separately explicit.
 
 **Phase 23 fidelity correction reopening — historical:** Direct user fidelity review reopened the merged UI-073 pixels without reopening Create product semantics. PR #188 kept `CreateWorkspace` as the single authoritative feature owner and restored the approved v0.5 composition through Create-owned markup/CSS plus the scoped `src/app/create-clear-composer.css`; no generic component, architecture boundary, product capability or animation runtime was added. The correction is now merged as `3f0d21ed55554b3c48791d35dd17cb6005212076`.
 
@@ -175,10 +184,10 @@ Before copying/installing an external component:
 
 **Post-production UI-071 note:** The drag-only reference affordance keeps one centered overlay, but its icon aligns to the first copy line and the title/detail form one left-aligned two-line block instead of independently centered text around the icon.
 
-**Phase 23 / UI-074 fidelity correction — merged:** `CreateWorkspace` remains the single authoritative Create surface with the approved v0.5 900px authoring / 1120px result geometry, mode switch above the composer, reference-before-Prompt grammar, flat labelled settings footer, high-contrast Generate, composer-attached Advanced, truthful registration-framed generating state and asymmetric media-first result rail. Continuation remains capability-derived and existing upload/polling/persistence/alias/native-video/security contracts are unchanged. Accepted browser evidence is artifact `10293387664` (`sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`) plus lifecycle artifact `10293653778` (`sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`). Documentation-final head `b6a2590875432ba75c28db9e0f4b465133e1873c` passed all 16 attached workflows; PR #188 merged as `3f0d21ed55554b3c48791d35dd17cb6005212076` and all five merged-main workflows passed after one unchanged Creative Iteration retry for a transient Supabase 504. Production remains unchanged.
+**Historical Phase 23 / UI-074 fidelity correction — merged (Create composition superseded by UI-084):** `CreateWorkspace` was the single authoritative Create surface with the approved v0.5 900px authoring / 1120px result geometry, mode switch above the composer, reference-before-Prompt grammar, flat labelled settings footer, high-contrast Generate, composer-attached Advanced, truthful registration-framed generating state and asymmetric media-first result rail. Continuation remains capability-derived and existing upload/polling/persistence/alias/native-video/security contracts are unchanged. Accepted browser evidence is artifact `10293387664` (`sha256:e4937a16a2fed2bc160634c73c60322b0748ff3eb5d166b44cbc33f894a92915`) plus lifecycle artifact `10293653778` (`sha256:ba13fc48dcf4d823575b041455d902e48040d2cd554892c0b5b508ee80e88624`). Documentation-final head `b6a2590875432ba75c28db9e0f4b465133e1873c` passed all 16 attached workflows; PR #188 merged as `3f0d21ed55554b3c48791d35dd17cb6005212076` and all five merged-main workflows passed after one unchanged Creative Iteration retry for a transient Supabase 504. Production remains unchanged.
 
 ### CreateReferenceMentionMenu
-**Status:** APPROVED
+**Status:** DEPRECATED for production Create; historical approval in alternate CreateWorkspace
 **Source:** `src/features/create/create-reference-mention-menu.tsx`
 **Origin:** RenderLab Create composition using maintained Button + Radix DropdownMenu mechanics
 **Purpose:** Thumbnail-backed prompt-reference picker for attached stable `@imageN` aliases without exposing storage/provider identity.
@@ -189,10 +198,10 @@ Before copying/installing an external component:
 
 
 ### CreateAdvancedPanel
-**Status:** APPROVED
+**Status:** DEPRECATED for production Create; historical approval in alternate CreateWorkspace
 **Source:** `src/features/create/create-advanced-panel.tsx`  
 **Purpose:** Advanced generation controls without turning the default composer into a technical form.  
-**Current fields:** Image — negative prompt, seed with Randomize, Steps, Guidance. Video — negative prompt, seed with Randomize, Frame rate. Video Steps/Guidance are deliberately absent and server-rejected under UI-048.
+**Historical fields:** Image — negative prompt, seed with Randomize, Steps, Guidance. Video — negative prompt, seed with Randomize, Frame rate. Video Steps/Guidance are deliberately absent and server-rejected under UI-048.
 **Dependencies:** capability definitions, Motion for React, maintained Field/Input/Textarea/NativeSelect/Button primitives, Lucide, Collapsible.
 **Do not:** Add provider/worker identifiers or unverified workflow parameters.
 **Notes:** Phase 7A uses a reduced-motion-aware presence transition only when Image/Video changes which verified Advanced fields are rendered; field values and product contracts remain feature state, not animation state.
@@ -331,12 +340,12 @@ Before copying/installing an external component:
 **Notes:** Base generated-media Viewer/continuation passed `33034606396`; Download PR #11; Rename PR #12; Favorites PR #23. UI-032 final head `fa0a6088a2e3fa0c14488b64d7dd6828e7bd6578` passed Collections `33210501106` and the complete affected matrix; PR #24 merged as `143f7bfb0be8b4857e5dd45959466e71ae22a42d` and desktop/mobile Viewer artifacts preserve Continue hierarchy and existing Rename/Download composition. UI-056 exact implementation head `4d1a495a8145238e1e78756c7b09cdbaee8d8115` passed Creative Iteration `33964679539` plus all 26 affected workflows; final comparison artifact `9969057974` was hash-checked and human-reviewed clean with no corrective code change. UI-058 Viewer Upscale implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423` passed focused run `34033506667` and preserved that existing comparison/result hierarchy; artifact `9989427506` (`sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`) was reviewed clean on desktop/narrow states.
 
 ### MediaViewerUpscaleAction
-**Status:** APPROVED historical component. Production Viewer eligibility is disabled under the FIBO-only capability boundary.
+**Status:** DEPRECATED for current Viewer; historical UI-058 approval only historical component. Production Viewer eligibility is disabled under the FIBO-only capability boundary.
 **Source:** `src/features/library/media-viewer-upscale-action.tsx`
 **Origin:** RenderLab Viewer feature-local composition using maintained Button, Alert and Spinner plus ordinary Next.js Link navigation under UI-058.
 **Purpose:** Own the browser-local mutation state for fixed 2× Upscale from one server-eligible durable image without moving job lifecycle ownership into the Viewer.
-**Used by:** `MediaViewer` only.
-**Dependencies:** owner/server-derived eligibility boolean, `POST /api/media/assets/[assetId]/upscale`, maintained Button/Alert/Spinner and `/activity` navigation.
+**Current reachability:** `MediaViewer` conditionally renders this component, but the Viewer route passes `upscaleEligible={false}` unconditionally; new upscale is retired. Retained import is not evidence of an active affordance.
+**Historical dependencies:** owner/server-derived eligibility boolean, `POST /api/media/assets/[assetId]/upscale`, maintained Button/Alert/Spinner and `/activity` navigation.
 **Reuse rules:** Keep only duplicate-submit lock plus starting/accepted/error presentation client-side. The route asset identity is the only browser submission identity; scale, source validation, admission, worker/model/storage/provider identity and asynchronous lifecycle remain server-owned.
 **Do not:** Turn this into a generic post-processing manager, factor/model picker, client job poller/global store, source mutation flow or implicit completion surface.
 **Notes:** UI-058 implementation head `ac4aed60e64061ee6a911c858cdc032b6f9a7423`; Upscale Viewer Visual `34033506667`; artifact `9989427506` (`sha256:49e40583899891a1f1863ff8fd49a714febf11bfdb999bb781849f45c3e01121`) hash-checked and human-reviewed clean across desktop + 390px states with no corrective implementation change.
@@ -414,7 +423,7 @@ Do not treat examples, registry listings, Saga components, or desired concepts a
 
 ## Cycle 4 Phase 19 component update — AppShell
 **Status:** APPROVED / KINETIC FOUNDATION VERIFIED
-`AppShell` remains the authoritative application chrome and now owns the UI-062 Kinetic Precision shell layer: floating translucent desktop rail/topbar, luminous edge separation, shared-layout spring active navigation, tactile hover/press response, floating mobile dock and reduced-motion-aware fast route continuity. It still owns no feature data or product state. Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b`; rendered evidence UI Shell `34094816643` / artifact `10008197585`.
+Historical UI-062 record (subsequently superseded by UI-074 geometry; actual production wrapper differs): `AppShell` owned the Kinetic Precision shell layer: floating translucent desktop rail/topbar, luminous edge separation, shared-layout spring active navigation, tactile hover/press response, floating mobile dock and reduced-motion-aware fast route continuity. It still owns no feature data or product state. Exact implementation head `ea21d56e4ac643ec32d586759fc48c2ef165e44b`; rendered evidence UI Shell `34094816643` / artifact `10008197585`.
 
 ## Account data privacy feature surface
 
