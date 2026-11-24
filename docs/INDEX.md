@@ -225,6 +225,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent authority. Keep durable decision/status/reason/consequence/supersession content current here; move detailed run/artifact/merge/deployment chronology to historical evidence and retain only concise evidence links when useful.
 - `docs/ui/UI_SYSTEM.md` — normative UI-system rules; existing runtime baseline until reviewed V2 implementation.
 - [Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — Phase 6 design-only specification, P6-01 contract and high-level roadmap; no runtime authorization.
+- [P6-02a shared-primitives and Create prototype contract](ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) — isolated design checkpoint; owner review and contract merge before prototype code, no production implementation.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
 - `docs/ui/VISUAL_NORTH_STAR.md` — normative visual direction for authorized redesign work.
 - `docs/ui/BRAND_SYSTEM.md` and `docs/ui/CREATIVE_DEVELOPMENT.md` — accepted brand/creative-development guidance within their stated scopes.
