@@ -1,0 +1,97 @@
+/* Design-only implementation of docs/ui/DESIGN_LANGUAGE_V2.md §§2–3.
+ * No production consumer until a separately approved implementation contract. */
+:root {
+  --rlv2-canvas: #0b0c10;
+  --rlv2-surface-base: #14161c;
+  --rlv2-surface-raised: #1c2029;
+  --rlv2-surface-high: #272c37;
+  --rlv2-surface-panel: var(--rlv2-surface-base);
+  --rlv2-surface-panel-layered: rgb(20 22 28 / 88%);
+  --rlv2-surface-control: var(--rlv2-surface-raised);
+  --rlv2-surface-hover: var(--rlv2-surface-high);
+  --rlv2-surface-field-focus: #30364a;
+  --rlv2-surface-selected: #353052;
+  --rlv2-surface-overlay: #20232e;
+  --rlv2-surface-overlay-layered: rgb(32 35 46 / 96%);
+  --rlv2-text-primary: #f5f6fa;
+  --rlv2-text-secondary: #c9cdd8;
+  --rlv2-text-quiet: #a4aab9;
+  --rlv2-text-placeholder: var(--rlv2-text-quiet);
+  --rlv2-text-disabled: #a0a6b5;
+  --rlv2-text-selected: #e2ddff;
+  --rlv2-accent-primary: #6c5bcc;
+  --rlv2-accent-hover: #7160d0;
+  --rlv2-on-accent: #ffffff;
+  --rlv2-focus: #c6cbff;
+  --rlv2-focus-width: 2px;
+  --rlv2-focus-offset: 3px;
+  --rlv2-border-subtle: #343947;
+  --rlv2-border-boundary: #929bad;
+  --rlv2-border-action-selection: #d6dbff;
+  --rlv2-success: #59c79c;
+  --rlv2-warning: #e6b85c;
+  --rlv2-danger: #f08080;
+  --rlv2-atmosphere-creative: rgb(103 89 196 / 10%);
+  --rlv2-material-none: none;
+  --rlv2-material-panel: blur(16px) saturate(110%);
+  --rlv2-material-overlay: blur(16px);
+  --rlv2-material-shell: var(--rlv2-material-panel);
+  --rlv2-elevation-flat: none;
+  --rlv2-elevation-panel: 0 4px 16px rgb(0 0 0 / 18%);
+  --rlv2-elevation-overlay: 0 8px 24px rgb(0 0 0 / 32%);
+  --rlv2-elevation-primary: none;
+  --rlv2-elevation-focus: none;
+  --rlv2-radius-micro: 4px;
+  --rlv2-radius-control: 8px;
+  --rlv2-radius-field: 12px;
+  --rlv2-radius-panel: 20px;
+  --rlv2-radius-pill: 999px;
+  --rlv2-space-4: 4px;
+  --rlv2-space-8: 8px;
+  --rlv2-space-12: 12px;
+  --rlv2-space-16: 16px;
+  --rlv2-space-24: 24px;
+  --rlv2-space-32: 32px;
+  --rlv2-space-48: 48px;
+  --rlv2-space-64: 64px;
+  --rlv2-type-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --rlv2-type-mono: ui-monospace, monospace;
+  --rlv2-type-body: 1rem;
+  --rlv2-type-label: 0.875rem;
+  --rlv2-type-caption: 0.75rem;
+  --rlv2-type-section: 1.25rem;
+  --rlv2-type-page: 1.75rem;
+  --rlv2-type-display: 2.25rem;
+  --rlv2-leading-body: 1.5;
+  --rlv2-leading-label: 1.4;
+  --rlv2-leading-caption: 1.4;
+  --rlv2-weight-body: 400;
+  --rlv2-weight-label: 500;
+  --rlv2-weight-caption: 400;
+  --rlv2-weight-heading: 600;
+  --rlv2-control-compact: 32px;
+  --rlv2-control-regular: 40px;
+  --rlv2-control-large: 44px;
+  --rlv2-hit-preferred: 44px;
+  --rlv2-hit-minimum: 24px;
+  --rlv2-duration-micro: 120ms;
+  --rlv2-duration-normal: 160ms;
+  --rlv2-duration-contextual: 240ms;
+  --rlv2-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root {
+    --rlv2-surface-panel-layered: var(--rlv2-surface-panel);
+    --rlv2-surface-overlay-layered: var(--rlv2-surface-overlay);
+    --rlv2-material-panel: none;
+    --rlv2-material-overlay: none;
+    --rlv2-material-shell: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rlv2-duration-micro: 0ms;
+    --rlv2-duration-normal: 0ms;
+    --rlv2-duration-contextual: 0ms;
+  }
+}
