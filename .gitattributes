@@ -12,3 +12,5 @@
 *.woff2 binary
 *.pdf binary
 *.zip binary
+# Preserve the reviewed certificate file digest across checkout platforms.
+workers/fibo-studio/certs/supabase-root-ca.pem -text

@@ -84,6 +84,7 @@ jobs:
           for directory in "${test_dirs[@]}"; do
             "$python" -m unittest discover -s "$directory" -p "test_*.py" -v
           done
+          "$python" scripts/verify-dispatcher-tls-canary-cli.py
 
       - name: Verify production Modal deploy guards offline
         if: steps.ci-scope.outputs.docs_only != 'true'

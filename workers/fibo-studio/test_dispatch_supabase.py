@@ -87,6 +87,7 @@ class SupabaseDispatchStoreTest(unittest.TestCase):
         self.assertTrue(pem.is_file(), "Worker 1 must supply the dashboard CA before qualification")
         raw = pem.read_bytes()
         self.assertEqual(sha256(raw).hexdigest(), provenance["sha256"])
+        self.assertRegex(provenance["downloaded_at"], r"^\d{4}-\d{2}-\d{2}$")
         self.assertEqual("Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate", provenance["source"])
         self.assertNotIn(b"PRIVATE KEY", raw)
         self.assertIn(b"-----BEGIN CERTIFICATE-----", raw)
@@ -100,7 +101,7 @@ class SupabaseDispatchStoreTest(unittest.TestCase):
         with TemporaryDirectory() as temp:
             directory = Path(temp)
             (directory / "supabase-root-ca.pem").write_bytes(b"not the reviewed certificate")
-            (directory / "supabase-root-ca.json").write_text(json.dumps({"sha256": "0" * 64}), encoding="utf-8")
+            (directory / "supabase-root-ca.json").write_text(json.dumps({"source": "Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate", "sha256": "0" * 64}), encoding="utf-8")
             with self.assertRaisesRegex(RuntimeError, "trust root is unavailable"):
                 verified_ca_path(directory)
 

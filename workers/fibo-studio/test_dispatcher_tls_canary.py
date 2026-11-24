@@ -1,6 +1,5 @@
 """Offline, secret-free proof of Modal TLS canary wiring and failure hygiene."""
 import ast
-import os
 from pathlib import Path
 import runpy
 import sys
@@ -25,7 +24,7 @@ class _App:
 
 
 class DispatcherTlsCanaryTest(unittest.TestCase):
-    def _load(self, *, rows=None, error=None):
+    def _load(self, *, rows=None, error=None, tls_mode="verify-full"):
         app = _App()
         modal = types.ModuleType("modal")
         modal.App = lambda name: app
@@ -46,7 +45,7 @@ class DispatcherTlsCanaryTest(unittest.TestCase):
                 return [{"probe_ok": 1}] if rows is None else rows
 
         db.SupabaseDispatchStore = Store
-        db.TLS_MODE = "verify-full"
+        db.TLS_MODE = tls_mode
         with patch.dict(sys.modules, {
             "modal": modal, "modal_native_production": prod, "dispatch_supabase": db,
         }):
@@ -71,19 +70,17 @@ class DispatcherTlsCanaryTest(unittest.TestCase):
 
     def test_probe_readonly_verified_path(self):
         program, calls = self._load()
-        with patch.dict(os.environ, {"PGSSLROOTCERT": "/test/ca.pem"}, clear=True), \
-             patch("pathlib.Path.is_file", return_value=True):
-            self.assertEqual({"ok": True, "reason": "verify_full_select_1"}, program["probe"]())
+        self.assertEqual({"ok": True, "reason": "verify_full_select_1"}, program["probe"]())
         self.assertEqual([("select 1 as probe_ok", ())], calls)
 
-    def test_no_ca_fails_before_connection_and_does_not_accept_require(self):
-        program, calls = self._load()
-        with patch.dict(os.environ, {"PGSSLROOTCERT": ""}, clear=True), \
-             patch("pathlib.Path.is_file", return_value=False):
-            self.assertEqual(
-                {"ok": False, "reason": "ca_bundle_unavailable_no_verify_full"},
-                program["probe"](),
-            )
+    def test_missing_packaged_ca_cannot_report_success(self):
+        program, calls = self._load(error=RuntimeError("Dispatcher PostgreSQL TLS trust root is unavailable"))
+        self.assertEqual({"ok": False, "reason": "tls_trust_root_unavailable"}, program["probe"]())
+        self.assertEqual([("select 1 as probe_ok", ())], calls)
+
+    def test_weaker_policy_never_reports_verify_full(self):
+        program, calls = self._load(tls_mode="verify-ca")
+        self.assertEqual({"ok": False, "reason": "unexpected_tls_policy"}, program["probe"]())
         self.assertEqual([], calls)
 
     def test_libpq_error_and_credentials_are_never_reported(self):
@@ -98,9 +95,7 @@ class DispatcherTlsCanaryTest(unittest.TestCase):
         for error, expected in cases:
             with self.subTest(expected=expected):
                 program, calls = self._load(error=error)
-                with patch.dict(os.environ, {"PGSSLROOTCERT": "/test/ca.pem"}, clear=True), \
-                     patch("pathlib.Path.is_file", return_value=True):
-                    result = program["probe"]()
+                result = program["probe"]()
                 self.assertEqual({"ok": False, "reason": expected}, result)
                 self.assertNotIn("secret", str(result))
                 self.assertNotIn("private-db", str(result))
