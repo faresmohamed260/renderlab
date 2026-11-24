@@ -11,7 +11,7 @@ Object.assign(fixture, {
   CRON_SECRET: "offline-fixture-cron-minimum-length",
   RENDERLAB_GENERATION_RECONCILER_SECRET: "offline-fixture-reconciliation-minimum-length",
   RENDERLAB_FIBO_GENERATION: "1",
-  RENDERLAB_GENERATION_GATEWAY_URL: "https://faresmohamed260--renderlab-generation-gateway-web.modal.run",
+  RENDERLAB_GENERATION_GATEWAY_URL: "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run",
   RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true",
   RENDERLAB_FIBO_MASK_ENABLED: "true",
 });
