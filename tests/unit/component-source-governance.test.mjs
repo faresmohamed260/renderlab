@@ -21,9 +21,32 @@ function clone(value) {
 }
 
 test("checked-in component source registry matches catalog, package manifest, and lockfile", async () => {
-  const result = await verifyComponentSourceRegistry({ rootDir });
-  assert.equal(result.sources, 10);
-  assert.equal(result.activeSources, 0);
+  await verifyComponentSourceRegistry({ rootDir });
+  const registry = await json(COMPONENT_SOURCE_REGISTRY_PATH);
+  const packageJson = await json("package.json");
+  const dependencies = { ...packageJson.devDependencies, ...packageJson.dependencies };
+  // Check known package aliases even if an inactive entry has lost its mapping.
+  const packageAliases = { "react-spring": ["@react-spring/web"] };
+
+  for (const source of registry.sources) {
+    const packageNames = [source.id, source.packageName, ...(packageAliases[source.id] ?? [])].filter(Boolean);
+    if (!source.activeUse) {
+      for (const name of packageNames) {
+        assert.equal(Object.hasOwn(dependencies, name), false, `${source.id}: inactive source has installed dependency ${name}`);
+      }
+    } else if (source.adoptionMode === "package-dependency") {
+      assert.ok(Object.hasOwn(dependencies, source.packageName), `${source.id}: active package missing from package.json`);
+      assert.equal(dependencies[source.packageName], source.expectedVersion, `${source.id}: active package version drift`);
+    } else {
+      // Copied source (e.g. shadcn/ui) is active without an npm dependency.
+      assert.equal(source.adoptionMode, "copy-owned", `${source.id}: active source must be package-backed or copy-owned`);
+      assert.equal(source.packageName, null);
+      assert.equal(source.expectedVersion, null);
+      for (const name of packageNames) {
+        assert.equal(Object.hasOwn(dependencies, name), false, `${source.id}: copied source has unrecorded dependency ${name}`);
+      }
+    }
+  }
 });
 
 test("component source registry rejects missing catalog coverage and unknown catalog headings", async () => {
