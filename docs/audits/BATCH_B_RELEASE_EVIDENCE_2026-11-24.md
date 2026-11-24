@@ -1,6 +1,6 @@
 # Batch B production release evidence — 24 November 2026
 
-Cutover verified; repository synchronization and one authorized hosted fixture remain pending.
+Cutover, repository synchronization and one authorized hosted fixture verified.
 
 ## Scope and qualification
 
@@ -26,4 +26,10 @@ Cutover verified; repository synchronization and one authorized hosted fixture r
 
 ## Closure gates
 
-Production Documentation Sync and exactly one authorized hosted text-to-image fixture remain pending. Do not claim batch closure until sync, smoke, single atomic-call delta, stable Library reload and independent zero-residue verification pass.
+- [Production record PR #636](https://github.com/faresmohamed260/renderlab/pull/636) squash-merged as `fa6524f1e6bf65727112cccabefbcbc2833eb422` after all six required checks and CodeQL passed on exact head `ae3ffb5c331803b29bb877ee03ea307930bbc548`. Non-required Vercel PR integration reported account blocked; actual dashboard production release and read-back succeeded.
+- [Production Documentation Sync #45304819290](https://github.com/faresmohamed260/renderlab/actions/runs/45304819290): SUCCESS, canonical manifest and five mirrors checked against live Vercel/GitHub.
+- [Production FIBO Smoke #45304901061](https://github.com/faresmohamed260/renderlab/actions/runs/45304901061): SUCCESS, protected-main harness `fa6524f1`, exact expected production SHA, no cutover override. All steps including final fixture cleanup passed. Standing one-generation allowance consumed; no further dispatch or retry.
+- Artifact `production-fibo-smoke-45304901061-1/manifest.json`: passed=true, providerGenerationCount=1, text-to-image, succeeded, exactly one output asset and one Library asset, completedAt and reservationReleasedAt both 2026-11-24T03:27:16.945283+02:00, stableAfterSecondLibraryLoad=true. The unchanged harness asserts HTTP 202 on acceptance.
+- Independent production SQL: atomic RPC normalized query ID -2583045759348788091 calls 2 before, 3 after. All active jobs, unreleased reservations, outbox rows and idempotency key rows zero before/after. Artifact cleanup.verified=true, contractedDbAuthResidue=0, trackedR2ObjectsChecked=3; separate cleanup-only workflow step passed.
+- Same-key replay not executed (unkeyed smoke harness); disposable Postgres evidence retained. No additional provider generation, migration, Modal deploy or secret change.
+- Disposition: live hosted acceptance PASS. App remains `564d0ed0ac677fce301aa94d64f9358e3f9d31ca`; migration 0034 remains installed; renderer v10 and gateway v11 unchanged. No rollback required. TLS PRs #603/#625 remain excluded and held.
