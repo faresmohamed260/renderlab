@@ -153,3 +153,27 @@ test("R8 invalid parsed request remains 400 without creating a row",async t=>{
   assert.equal((await submit(key,{prompt:"",output:{kind:"image",aspectRatio:"1:1"},inputs:[]})).status,400);
   assert.deepEqual(f.calls,[]);
 });
+
+test("F4: keyed non-FIBO service submission rejects before admission or provider work", async t => {
+  const f = fixture(t);
+  const { submitGeneration } = await import("../../src/server/generation/submit-generation.ts");
+  const nonFibo = { ...request, model: "qwen-image-edit-2511" };
+  const result = await submitGeneration(owner, nonFibo, key);
+  assert.deepEqual(result, {
+    ok: false, error: { code: "invalid_request", message: "Idempotency-Key is supported only for FIBO image generation." }
+  });
+  assert.deepEqual(f.calls, []);
+  assert.deepEqual(f.tasks, []);
+  assert.ok(!JSON.stringify(result).includes(key));
+});
+
+test("F4: non-FIBO public request with an intent key is a sanitized 400", async t => {
+  const f = fixture(t);
+  const response = await submit(key, { ...request, model: "qwen-image-edit-2511" });
+  assert.equal(response.status, 400);
+  const result = await response.json();
+  assert.equal(result.error.code, "invalid_request");
+  assert.ok(!JSON.stringify(result).includes(key));
+  assert.deepEqual(f.calls, []);
+  assert.deepEqual(f.tasks, []);
+});
