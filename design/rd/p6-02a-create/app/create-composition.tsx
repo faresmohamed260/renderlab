@@ -22,11 +22,16 @@ function ReferenceCard({ item, index, length, available, send, disabled }: { ite
     const from = start.current;
     if (!from || e.pointerId !== from.id) return;
     start.current = null;
-    const delta = Math.abs(e.clientX - from.x) >= Math.abs(e.clientY - from.y) ? e.clientX - from.x : e.clientY - from.y;
-    if (valid && Math.abs(delta) > 40) send({ type: "move", key: item.key, direction: delta < 0 ? -1 : 1 });
+    const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-reference]");
+    const siblings = Array.from(e.currentTarget.closest(".p602a-references")?.querySelectorAll("[data-reference]") ?? []);
+    const target = hit ? siblings.indexOf(hit) : -1;
+    if (valid && target >= 0 && Math.abs(target - index) === 1 && Math.hypot(e.clientX - from.x, e.clientY - from.y) > 12) {
+      send({ type: "move", key: item.key, direction: target < index ? -1 : 1 });
+    }
     void api.start({ offset: 0, immediate: reduced, config: { ...springs["drag-release"], clamp: true } });
   }
-  return <animated.article className="p602a-reference" data-reference={item.key} style={{ "--p602a-drag-offset": offset }}>
+  const dragStyle = { "--p602a-drag-offset": offset, opacity: 1 };
+  return <animated.article className="p602a-reference" data-reference={item.key} style={dragStyle}>
     <Art item={item} />
     <div className="p602a-reference-text"><strong data-contrast="">{index === 0 ? "Source" : "Reference " + index}</strong><span data-contrast="">@image{index + 1} · {item.title}</span></div>
     <div className="p602a-row">
@@ -64,10 +69,11 @@ function Stage({ state, send }: { state: CreateFixture; send: Send }) {
   const result = state.phase === "result";
   const source = state.recipe.references[0];
   const style = useSpring({ reveal: result ? 1 : 0, config: springs.gentle, immediate: reduced });
+  const revealStyle = { "--p602a-reveal": style.reveal, opacity: 1 };
   return <section className="p602a-stage" aria-label="Media stage">
     <div className="p602a-stage-head"><div><p className="p602a-kicker" data-contrast="">Workspace</p><h2 data-contrast="">Image canvas</h2></div><span className="p602a-description" data-contrast="">{state.recipe.ratio}</span></div>
     <div className="p602a-media" data-media-state={state.phase}>
-      {result ? <animated.div className="p602a-result-reveal" style={{ "--p602a-reveal": style.reveal }}><Art item={compare ? source : undefined} result={!compare} /></animated.div>
+      {result ? <animated.div className="p602a-result-reveal" style={revealStyle}><Art item={compare ? source : undefined} result={!compare} /></animated.div>
         : state.phase === "active" ? <div className="p602a-stage-message" role="status"><strong data-contrast="">{state.status === "cancelling" ? "Cancelling" : state.status === "running" ? "Rendering image" : state.status === "queued" ? "Queued" : "Accepted"}</strong><p data-contrast="">Waiting for the next local fixture event.</p></div>
         : state.phase === "failed" ? <div className="p602a-stage-message"><Alert tone="error">{state.message}</Alert></div>
         : source ? <div className="p602a-source-preview"><Art item={source} />{state.recipe.mask && <div className="p602a-mask-outline" aria-label="Synthetic selected region" role="img" />}</div>
@@ -92,6 +98,7 @@ function Composer({ state, send }: { state: CreateFixture; send: Send }) {
   const available = references.filter((item) => !recipe.references.some((ref) => ref.key === item.key));
   const reduced = useReducedMotion();
   const advanced = useSpring({ y: recipe.advanced ? 0 : -1, config: springs.smooth, immediate: reduced });
+  const advancedStyle = { "--p602a-disclosure-offset": advanced.y, opacity: 1 };
   return <section className="p602a-composer" aria-label="Image composer" onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !reason && !active) { e.preventDefault(); send({ type: "submit" }); } }}>
     <div className="p602a-stage-head"><div><p className="p602a-kicker" data-contrast="">FIBO · Image</p><h2 data-contrast="">Compose</h2></div></div>
     <ToggleGroup.Root type="single" value={recipe.mode} onValueChange={(value) => { if (value === "generate" || value === "edit") send({ type: "mode", value }); }} disabled={active} aria-label="Workflow" className="p602a-row">
@@ -104,12 +111,12 @@ function Composer({ state, send }: { state: CreateFixture; send: Send }) {
       <div className="p602a-references">{recipe.references.map((item, index) => <ReferenceCard key={item.key} item={item} index={index} length={recipe.references.length} available={available} send={send} disabled={active} />)}</div>
       <Button disabled={active || !available.length} onClick={() => available[0] && send({ type: "attach", key: available[0].key })}>Attach sample image</Button>
       {recipe.references.length === 1 && <Toggle disabled={active} pressed={recipe.mask} onPressedChange={(value) => send({ type: "mask", value })}>Selected region {recipe.mask ? "on" : "off"}</Toggle>}
-      <p className="p602a-description" data-contrast="">Drag or use arrow buttons to reorder. Mask preview uses a fixed synthetic region, not a mask editor.</p>
+      <p className="p602a-description" data-contrast="">Drag onto an adjacent card or use arrows to reorder. Mask preview is a fixed synthetic region, not a mask editor.</p>
     </div>}
     <Field><Label htmlFor="p602a-ratio">Aspect ratio</Label><NativeSelect id="p602a-ratio" value={recipe.ratio} disabled={active} onChange={(e) => { const ratio = ratios.find((value) => value === e.target.value); if (ratio) send({ type: "ratio", value: ratio }); }}>{ratios.map((value) => <option key={value}>{value}</option>)}</NativeSelect></Field>
     <Collapsible.Root open={recipe.advanced} onOpenChange={(value) => send({ type: "advanced", value })} disabled={active} className="p602a-stack">
       <Collapsible.Trigger asChild><Button disabled={active}>Advanced {recipe.advanced ? "−" : "+"}</Button></Collapsible.Trigger>
-      <Collapsible.Content forceMount hidden={!recipe.advanced}><animated.div className="p602a-advanced p602a-disclosure-inset" style={{ "--p602a-disclosure-offset": advanced.y }}>
+      <Collapsible.Content forceMount hidden={!recipe.advanced}><animated.div className="p602a-advanced p602a-disclosure-inset" style={advancedStyle}>
         <Field><Label htmlFor="create-preview-steps">Steps · {recipe.steps}</Label><Range id="create-preview-steps" min={1} max={8} value={recipe.steps} disabled={active} onChange={(e) => send({ type: "steps", value: e.target.valueAsNumber })} /><FieldDescription>Hosted fixture supports 4 steps.</FieldDescription></Field>
         <Field><Label htmlFor="p602a-vgl">Manual VGL JSON</Label><Textarea id="p602a-vgl" rows={3} value={recipe.vgl} disabled={active} placeholder="Enter JSON instruction (optional)" onChange={(e) => send({ type: "vgl", value: e.target.value })} /><FieldDescription>Generated VGL is unavailable in this workspace.</FieldDescription></Field>
       </animated.div></Collapsible.Content>

@@ -56,6 +56,7 @@ export function blocker(value: Recipe): string | undefined {
   if (value.mode === "edit" && !value.references.length) return "Attach a source image first.";
   if (value.steps !== 4) return "The hosted fixture supports 4 steps.";
   if (value.mask && value.references.length !== 1) return "Use a single source for a masked edit.";
+  if (!value.vgl.trim() && value.prompt.includes("@missing-image")) return "Restore the missing image or remove its prompt tag.";
   if (!value.vgl.trim() && [...value.prompt.matchAll(/@image(\d+)\b/g)].some((match) => Number(match[1]) > value.references.length || Number(match[1]) < 1)) return "Restore the missing image or remove its prompt tag.";
   if (value.vgl.trim()) {
     try {
@@ -63,6 +64,14 @@ export function blocker(value: Recipe): string | undefined {
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || Object.keys(parsed).length === 0) return "Enter a JSON object.";
     } catch { return "Enter valid JSON."; }
   }
+}
+function remapAliases(prompt: string, previous: readonly Reference[], next: readonly Reference[]): string {
+  return prompt.replace(/@image(\d+)\b/g, (tag, index: string) => {
+    const ref = previous[Number(index) - 1];
+    if (!ref) return tag;
+    const position = next.findIndex((item) => item.key === ref.key);
+    return position < 0 ? "@missing-image" : "@image" + (position + 1);
+  });
 }
 export function transition(state: CreateFixture, event: FixtureEvent): CreateFixture {
   if (event.type === "reset") return fixture(event.composition);
@@ -99,14 +108,18 @@ export function transition(state: CreateFixture, event: FixtureEvent): CreateFix
       return item && list.some((ref) => ref.key === event.key) && !list.some((ref) => ref.key === item.key)
         ? draft({ references: list.map((ref) => ref.key === event.key ? item : ref), vgl: "", mask: false }, item.title + " replaced source.") : state;
     }
-    case "remove": return list.some((ref) => ref.key === event.key) ? draft({ references: list.filter((ref) => ref.key !== event.key), vgl: "", mask: false }, "Reference removed.") : state;
+    case "remove": {
+      if (!list.some((ref) => ref.key === event.key)) return state;
+      const next = list.filter((ref) => ref.key !== event.key);
+      return draft({ references: next, prompt: remapAliases(state.recipe.prompt, list, next), vgl: "", mask: false }, "Reference removed.");
+    }
     case "move": {
       const from = list.findIndex((ref) => ref.key === event.key);
       const to = from + event.direction;
       if (from < 0 || to < 0 || to >= list.length) return state;
       const next = [...list];
       [next[from], next[to]] = [next[to], next[from]];
-      return draft({ references: next, vgl: "", mask: false }, next[to].title + " moved to position " + (to + 1) + ".");
+      return draft({ references: next, prompt: remapAliases(state.recipe.prompt, list, next), vgl: "", mask: false }, next[to].title + " moved to position " + (to + 1) + ".");
     }
     case "submit": {
       const reason = blocker(state.recipe);
