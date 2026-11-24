@@ -259,14 +259,17 @@ test("R3 pending FIBO 202 becomes atomic failed at exactly the 420s plus margin 
   assert.equal(runtime.releases,1);
 });
 
-test("R3 persisting FIBO with no durable output and pending provider terminalizes at the deadline",async(t)=>{
+test("F3 persisting work with pending provider gets a bounded recovery interval",async(t)=>{
   fixture(t,{providerOutcome:"pending"});await dispatched();
   currentJob().status="persisting";
-  currentJob().created_at=new Date(FIXED_TIME-20*60*1000).toISOString();
+  currentJob().created_at=new Date(FIXED_TIME-25*60*1000+1).toISOString();
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"persisting");
+  assert.equal(heldReservation(),true);
+  runtime.nowMs++;
   const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
   assert.equal(result?.status,"failed");
   assert.equal(result?.error?.code,"generation_deadline_exceeded");
-  assert.equal(runtime.providerPolls,1);
+  assert.equal(runtime.providerPolls,2);
   assert.equal(runtime.r2Writes,0);
   assert.equal(runtime.releases,1);
 });
@@ -578,4 +581,39 @@ test("N4 unkeyed FIBO dispatch leaves 420 seconds plus 30 seconds before job cut
   fixture(t);await accepted();
   const accept=runtime.traces.find(c=>c.table==="rpc/renderlab_accept_generation_dispatch_idempotent");
   assert.equal(Date.parse(accept.body.p_admission_deadline)-FIXED_TIME,750000);
+});
+
+for(const fault of ["r2WriteFailure","mediaInsertFailure"]){
+  test("F3 persistent "+fault+" releases only at the immutable hard ceiling",async(t)=>{
+    fixture(t,{[fault]:true});await dispatched();
+    runtime.nowMs+=24*60*1000;
+    await assert.rejects(()=>reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID));
+    assert.equal(currentJob().status,"persisting");
+    assert.equal(runtime.media.size,0);
+    assert.equal(heldReservation(),true);
+    assert.equal(runtime.atomicCommits,0);
+    runtime.nowMs+=60*1000;
+    const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
+    assert.equal(result?.status,"failed");
+    assert.equal(result?.error?.code,"generation_deadline_exceeded");
+    assert.equal(runtime.media.size,0);
+    assert.equal(runtime.atomicCommits,1);
+    assert.equal(runtime.releases,1);
+    assert.equal(heldReservation(),false);
+    assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"failed");
+    assert.equal(runtime.atomicCommits,1);
+    assert.equal(runtime.releases,1);
+  });
+}
+test("F3 hard-ceiling canonical asset conflict leaves the job recoverable",async(t)=>{
+  fixture(t,{finalizationFault:"after-media-insert"});await dispatched();
+  runtime.nowMs+=25*60*1000;
+  await assert.rejects(()=>reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID),/OFFLINE_FINALIZATION_FAULT/);
+  assert.equal(currentJob().status,"persisting");
+  assert.equal(runtime.media.size,1);
+  assert.equal(heldReservation(),true);
+  assert.equal(runtime.atomicCommits,0);
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"succeeded");
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
 });

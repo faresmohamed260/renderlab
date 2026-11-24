@@ -17,7 +17,7 @@ const initial = () => ({
   traces: [], diagnostics: [], afterTasks: [], r2Writes: 0, mediaWrites: 0,
   releases: 0, dispatchCalls: 0, wakeCalls: 0, providerPolls: 0, providerCancels: 0,
   admissionFailure: null, providerOutcome: "ready", cancelOutcome: "confirmed", wakeFailure: false, wakeResponseLost: false,
-  skipDispatch: false, finalizationFault: null, faultUsed: false,
+  skipDispatch: false, finalizationFault: null, faultUsed: false, r2WriteFailure: false, mediaInsertFailure: false,
   beforeJobPatch: null, jobPatchMutations: 0, jobPatchAttempts: 0,
   atomicRpcAvailable: true, atomicRpcFailure: false, atomicCommits: 0, atomicAttempts: 0,
   realCrypto, nextUuid() {
@@ -86,7 +86,7 @@ registerHooks({
     if (spec === "@/server/storage/r2") {
       return stub(state
         + "export function isR2Configured(){return true;}"
-        + "export async function writeR2Object({key,contentType,body}){s.r2.set(key,{bytes:Buffer.from(body),contentType});s.r2Writes++;return {key};}"
+        + "export async function writeR2Object({key,contentType,body}){if(s.r2WriteFailure)throw Error('OFFLINE_R2_WRITE_FAILED');s.r2.set(key,{bytes:Buffer.from(body),contentType});s.r2Writes++;return {key};}"
         + "export async function headR2Object(key){let x=s.r2.get(key);if(!x)throw Error('OFFLINE_NOT_FOUND');return {sizeBytes:x.bytes.length,contentType:x.contentType,etag:'fixed-etag'};}"
         + "export async function readR2Object(key){let x=s.r2.get(key);if(!x)throw Error('OFFLINE_NOT_FOUND');return {bytes:Buffer.from(x.bytes),contentType:x.contentType};}"
         + "export async function deleteR2Object(key){s.r2.delete(key);}"
@@ -278,7 +278,8 @@ function rpcResponse(rpc, body) {
           && x.generation_output_index===0);
         if (!output) return answer("conflict");
       } else if (target==="failed") {
-        if (!body.p_error_code||!body.p_error_message) return answer("conflict");
+        if (!body.p_error_code||!body.p_error_message||job.output_asset_ids.length
+          ||[...runtime.media.values()].some(x=>x.generation_job_id===job.id&&x.generation_output_index===0)) return answer("conflict");
       } else if (job.output_asset_ids.length) return answer("conflict");
       const now=new Date().toISOString();
       Object.assign(job,{
@@ -354,6 +355,7 @@ function handleDatabase(url, init) {
   }  if (tail === "media_assets") {
     if (method === "GET") return Response.json(mediaRows(url));
     if (method === "POST") {
+      if(runtime.mediaInsertFailure) return Response.json({code:"23514",message:"fixture media insert rejected"},{status:400});
       const duplicate=[...runtime.media.values()].find((x)=>
         x.generation_job_id === content.generation_job_id
         && x.generation_output_index === content.generation_output_index);
