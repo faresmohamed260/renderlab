@@ -138,7 +138,7 @@ for (const [method, invoke, service] of [
   ["PUT", () => preferences.PUT(req({create:{imageAspectRatio:"1:1"}})), "preferences-put"],
   ["DELETE", () => preferences.DELETE(req(null)), "preferences-delete"],
 ]) {
-  test("F2 preferences " + method + " MFA challenge denies before account or preference I/O", async () => {
+  test("C F2 preferences " + method + " MFA challenge denies before account or preference I/O", async () => {
     reset({auth:{identity:{id:A},assurance:{challengeRequired:true}}});
     const response = await invoke();
     assert.equal(response.status,403);
