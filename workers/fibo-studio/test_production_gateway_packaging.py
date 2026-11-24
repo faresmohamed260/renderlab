@@ -90,7 +90,7 @@ class GatewayPackagingTest(unittest.TestCase):
                             with self.assertRaisesRegex(RuntimeError, "does not match"):
                                 runpy.run_path(path, run_name=module)
 
-    def test_dispatch_heartbeat_attempted_on_tick_and_setup_failure(self):
+    def test_only_completed_dispatch_ticks_refresh_heartbeat(self):
         import types
         from unittest.mock import Mock
         env = {
@@ -100,7 +100,7 @@ class GatewayPackagingTest(unittest.TestCase):
             "RENDERLAB_MODAL_MONITOR_SECRET": "fixture-monitor",
         }
         for module in ("modal_native_production", "modal_native_candidate"):
-            for fail_at in ("tick", "setup", "heartbeat", "none"):
+            for fail_at in ("tick", "setup", "heartbeat", "none", "empty"):
                 with self.subTest(module=module, fail_at=fail_at):
                     sdk = MagicMock()
                     sdk.App.return_value.function.side_effect = lambda **_: lambda fn: fn
@@ -108,7 +108,7 @@ class GatewayPackagingTest(unittest.TestCase):
                     store = Mock()
                     tick = Mock()
                     from dispatch_core import DispatchSummary
-                    summary = DispatchSummary(claimed=2, dispatched=1, unresolved=1)
+                    summary = DispatchSummary() if fail_at == "empty" else DispatchSummary(claimed=2, dispatched=1, unresolved=1)
                     tick.tick.return_value = summary
                     if fail_at == "tick":
                         tick.tick.side_effect = RuntimeError("tick fixture")
@@ -128,13 +128,16 @@ class GatewayPackagingTest(unittest.TestCase):
                     with patch.dict(sys.modules, {"dispatch_supabase": db, "modal_dispatch_backend": adapter,
                                                   "native_gateway": gateway}), \
                          patch("dispatch_core.Dispatcher", return_value=tick):
-                        if fail_at == "none":
-                            self.assertEqual(summary.__dict__, program["dispatch_tick"]("wake"))
+                        if fail_at in ("none", "empty"):
+                            self.assertEqual(summary.__dict__, program["dispatch_tick"]("scheduled"))
                         else:
                             with self.assertRaisesRegex(RuntimeError, fail_at + " fixture"):
-                                program["dispatch_tick"]("wake")
-                    expected = summary.__dict__ if fail_at in ("none", "heartbeat") else DispatchSummary().__dict__
-                    store.record_heartbeat.assert_called_once_with(environment="qualification", trigger="wake", summary=expected)
+                                program["dispatch_tick"]("scheduled")
+                    if fail_at in ("tick", "setup"):
+                        store.record_heartbeat.assert_not_called()
+                    else:
+                        store.record_heartbeat.assert_called_once_with(
+                            environment="qualification", trigger="scheduled", summary=summary.__dict__)
 
     def test_all_database_client_images_package_the_same_reviewed_ca(self):
         from hashlib import sha256

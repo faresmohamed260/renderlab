@@ -67,16 +67,15 @@ def dispatch_tick(trigger="manual"):
         tick_failed = False
         return summary
     finally:
-        # A constructed store can attempt heartbeat even after setup/claim
-        # failure. Do not mask a primary failure if heartbeat also fails.
+        # A heartbeat certifies a completed tick (including an empty tick).
+        # Setup/claim failures must not renew the scheduled liveness clock.
+        # Keep the existing three-missed-interval health/alert contract.
         try:
-            store.record_heartbeat(environment=environment, trigger=trigger, summary=summary)
-        except Exception:
             if not tick_failed:
-                raise
-            print(json.dumps({"event": "renderlab.dispatch-heartbeat-failed"}), flush=True)
-        print(json.dumps({"event": "renderlab.dispatch-tick", "trigger": trigger,
-                          **summary, "tickFailed": tick_failed}), flush=True)
+                store.record_heartbeat(environment=environment, trigger=trigger, summary=summary)
+        finally:
+            print(json.dumps({"event": "renderlab.dispatch-tick", "trigger": trigger,
+                              **summary, "tickFailed": tick_failed}), flush=True)
 
 
 @app.function(image=gateway_image, env=runtime_env, secrets=[monitor_secret])
