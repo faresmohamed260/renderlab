@@ -1,24 +1,24 @@
 {
   "schemaVersion": 2,
-  "applicationSha": "6f3b1ee7b4b5109816a082ca8cccb4f92263a8bf",
-  "deploymentId": "dpl_52LrtHNSYLVtfXhQ3eaRQUcnpQG1",
-  "deploymentUrl": "https://renderlab-t9lp62erl-faresmohamedsalah10-1681.vercel.app",
+  "applicationSha": "aeb43cb508297e22c52d87de4df747cbd7c8516a",
+  "deploymentId": "dpl_7Q8CbxmgWJW5qmizzHtBXcoNP8HY",
+  "deploymentUrl": "https://renderlab-34wskn7jz-faresmohamedsalah10-1681.vercel.app",
   "domain": "renderlab.faresuniform.uk",
-  "rollbackDeploymentId": "dpl_5DugposwdpcoLui6XWdx3RnyScNr",
-  "rollbackApplicationSha": "593095eeabd09791e16e67d3ba9d105a92244949",
+  "rollbackDeploymentId": "dpl_52LrtHNSYLVtfXhQ3eaRQUcnpQG1",
+  "rollbackApplicationSha": "6f3b1ee7b4b5109816a082ca8cccb4f92263a8bf",
   "releaseQualification": {
     "type": "protected-main-checks",
     "requiredCheckRunIds": {
-      "quality": 138219148837,
-      "governance": 138219148753,
-      "unit-coverage": 138219149532,
-      "javascript-typescript": 138219148452,
-      "clean-room (ubuntu-latest)": 138219149518,
-      "clean-room (windows-latest)": 138219149032
+      "quality": 138247489140,
+      "governance": 138247488114,
+      "unit-coverage": 138247488518,
+      "javascript-typescript": 138247488189,
+      "clean-room (ubuntu-latest)": 138247488374,
+      "clean-room (windows-latest)": 138247488166
     },
-    "deploymentReadinessRunId": 45327110055,
-    "qualifiedAt": "2026-11-24T04:34:37.000Z"
+    "deploymentReadinessRunId": 45336488371,
+    "qualifiedAt": "2026-11-24T05:54:30.000Z"
   },
-  "cutoverAt": "2026-11-24T04:37:41.196Z",
-  "accountMigrationNote": "Batch C: additive migration 0035 ledger 20261124041650; renderer v11 and gateway/dispatcher v12, rollback v10/v11; TLS excluded."
+  "cutoverAt": "2026-11-24T05:56:36.063Z",
+  "accountMigrationNote": "Batch D: additive migration 0036 ledger 20261124054825; renderer v12 and gateway/dispatcher v13, rollback v11/v12; reviewed Supabase CA and verify-full enabled."
 }
