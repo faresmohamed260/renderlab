@@ -386,6 +386,9 @@ function handleProvider(url, init) {
       case "retryable": return Response.json({detail:"temporary upstream issue"},{status:503});
       case "terminal": return Response.json({detail:"FIBO rejected the render inputs"},{status:422});
       case "process-exited": return Response.json({detail:"FIBO_PROCESS_EXITED"},{status:409});
+      case "render-timeout": return Response.json({detail:"FIBO_RENDER_TIMED_OUT"},{status:409});
+      case "expired-result": return Response.json({detail:"FIBO result expired"},{status:410});
+      case "transport-timeout": throw new DOMException("Offline provider timeout","TimeoutError");
       case "ambiguous": return Response.json({detail:"Unknown FIBO job"},{status:404});
       case "ready": return new Response(Buffer.from([137,80,78,71,13,10,26,10]),
         {status:200,headers:{"content-type":"image/png"}});

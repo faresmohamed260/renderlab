@@ -254,19 +254,19 @@ test("R3 pending FIBO 202 becomes atomic failed at exactly the 420s plus margin 
   currentJob().created_at=new Date(FIXED_TIME-limit).toISOString();
   assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"failed");
   assert.equal(currentJob().error_code,"generation_deadline_exceeded");
-  assert.equal(runtime.providerPolls,1,"expired work must not make another upstream call");
+  assert.equal(runtime.providerPolls,2,"expired work must make one final provider observation");
   assert.equal(runtime.atomicCommits,1);
   assert.equal(runtime.releases,1);
 });
 
-test("R3 persisting FIBO poison state terminalizes before retrying provider or storage",async(t)=>{
-  fixture(t);await dispatched();
+test("R3 persisting FIBO with no durable output and pending provider terminalizes at the deadline",async(t)=>{
+  fixture(t,{providerOutcome:"pending"});await dispatched();
   currentJob().status="persisting";
   currentJob().created_at=new Date(FIXED_TIME-20*60*1000).toISOString();
   const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
   assert.equal(result?.status,"failed");
   assert.equal(result?.error?.code,"generation_deadline_exceeded");
-  assert.equal(runtime.providerPolls,0);
+  assert.equal(runtime.providerPolls,1);
   assert.equal(runtime.r2Writes,0);
   assert.equal(runtime.releases,1);
 });
@@ -477,4 +477,99 @@ test("P0-07 database failure is not misclassified as a missing-RPC fallback",asy
   assert.equal(heldReservation(),true);
   assert.equal(runtime.traces.some(x=>x.table==="generation_jobs"&&x.method==="PATCH"
     &&x.body?.status==="failed"),false,"must not silently fall back on a failed installed RPC");
+});
+
+test("H1 Library return at 25 minutes saves a ready FIBO result and atomically releases once",async(t)=>{
+  fixture(t);await dispatched();
+  runtime.nowMs+=25*60*1000;
+  assert.equal(await ownerReturn.settleOwnerGenerationWithinResponse(OWNER_A,"library"),true);
+  assert.equal(currentJob().status,"succeeded");
+  assert.equal(runtime.providerPolls,1);
+  assert.equal(runtime.mediaWrites,1);
+  assert.equal(runtime.media.size,1);
+  assert.equal(currentJob().output_asset_ids.length,1);
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+  assert.equal(heldReservation(),false);
+  assert.equal(runtime.dispatchCalls,1);
+  assert.equal(await ownerReturn.settleOwnerGenerationWithinResponse(OWNER_A,"library"),false);
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"succeeded");
+  assert.equal(runtime.providerPolls,1);
+  assert.equal(runtime.mediaWrites,1);
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+});
+
+for(const [outcome,message] of [
+  ["render-timeout","The render timed out before generation completed."],
+  ["process-exited","The render process exited before generation completed."],
+  ["expired-result","Generation failed while processing on the assigned worker."],
+  ["terminal","Generation failed while processing on the assigned worker."],
+]){
+  test("H1 expired FIBO preserves confirmed terminal mapping: "+outcome,async(t)=>{
+    fixture(t,{providerOutcome:outcome});await dispatched();
+    runtime.nowMs+=25*60*1000;
+    const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID,{lookupMs:1500,providerMs:4000});
+    assert.equal(result?.status,"failed");
+    assert.equal(result.error?.code,"generation_failed");
+    assert.equal(result.error?.message,message);
+    assert.equal(runtime.providerPolls,1);
+    assert.equal(runtime.atomicCommits,1);
+    assert.equal(runtime.mediaWrites,0);
+    assert.equal(runtime.releases,1);
+    assert.equal(heldReservation(),false);
+  });
+}
+for(const outcome of ["pending","ambiguous","retryable","transport-timeout"]){
+  test("H1 expired FIBO fails only after one unconfirmed observation: "+outcome,async(t)=>{
+    fixture(t,{providerOutcome:outcome});await dispatched();
+    runtime.nowMs+=25*60*1000;
+    const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID,{lookupMs:1500,providerMs:4000});
+    assert.equal(result?.status,"failed");
+    assert.equal(result.error?.code,"generation_deadline_exceeded");
+    assert.equal(runtime.providerPolls,1);
+    assert.equal(runtime.atomicCommits,1);
+    assert.equal(runtime.releases,1);
+    assert.equal(runtime.mediaWrites,0);
+    assert.equal(heldReservation(),false);
+    assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"failed");
+    assert.equal(runtime.providerPolls,1);
+    assert.equal(runtime.atomicCommits,1);
+    assert.equal(runtime.releases,1);
+  });
+}
+
+test("H1 expired persisting FIBO recovers indexed media even without a provider handle",async(t)=>{
+  fixture(t,{finalizationFault:"after-media-insert"});await dispatched();
+  await assert.rejects(()=>reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID),/OFFLINE_FINALIZATION_FAULT/);
+  assert.equal(currentJob().status,"persisting");
+  assert.equal(runtime.media.size,1);
+  assert.equal(runtime.atomicCommits,0);
+  assert.equal(heldReservation(),true);
+  currentJob().provider_job_id=null;
+  runtime.nowMs+=25*60*1000;
+  const writes=runtime.r2Writes;
+  const result=await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID);
+  assert.equal(result?.status,"succeeded");
+  assert.equal(result.outputAssetIds.length,1);
+  assert.equal(runtime.providerPolls,1,"recover before trying any provider observation");
+  assert.equal(runtime.r2Writes,writes);
+  assert.equal(runtime.mediaWrites,1);
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
+  assert.equal(heldReservation(),false);
+});
+
+test("H1 expired ready FIBO persistence interruption remains recoverable, not deadline-failed",async(t)=>{
+  fixture(t,{finalizationFault:"after-media-insert"});await dispatched();
+  runtime.nowMs+=25*60*1000;
+  await assert.rejects(()=>reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID),/OFFLINE_FINALIZATION_FAULT/);
+  assert.equal(currentJob().status,"persisting");
+  assert.equal(runtime.media.size,1);
+  assert.equal(heldReservation(),true);
+  assert.equal((await reconciliation.reconcileNativeGeneration(OWNER_A,JOB_ID))?.status,"succeeded");
+  assert.equal(runtime.providerPolls,1);
+  assert.equal(runtime.mediaWrites,1);
+  assert.equal(runtime.atomicCommits,1);
+  assert.equal(runtime.releases,1);
 });
