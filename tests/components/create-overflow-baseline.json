@@ -1,0 +1,271 @@
+{
+  "195": {
+    "empty/edit": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "empty/generate": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "empty/recents": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "empty/advanced": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated/edit": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated/generate": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated/recents": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated/advanced": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated-auto-vgl/edit": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated-auto-vgl/generate": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated-auto-vgl/recents": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ],
+    "populated-auto-vgl/advanced": [
+      {
+        "selector": ".create-preview-dock",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-settings",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": ".create-preview-steps",
+        "kind": "scroll",
+        "pixels": 5
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 5
+      }
+    ]
+  },
+  "320": {},
+  "390": {},
+  "1440": {}
+}
