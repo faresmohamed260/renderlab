@@ -456,6 +456,17 @@
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
+    },
+    {
+      "path": "docs/architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "engineering",
+      "lastReviewed": "2026-11-24",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
     }
   ]
 }
