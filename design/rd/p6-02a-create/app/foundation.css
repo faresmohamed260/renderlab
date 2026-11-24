@@ -16,7 +16,7 @@ body {
   outline-offset: var(--rlv2-focus-offset);
 }
 .rlv2-foundation {
-  max-inline-size: 48rem;
+  max-inline-size: 72rem;
   margin-inline: auto;
   padding: var(--rlv2-space-32);
   overflow-wrap: anywhere;
@@ -216,7 +216,7 @@ body {
   z-index: 2;
 }
 .p602a-menu-item { justify-content: flex-start; text-align: start; }
-.p602a-overlay { position: fixed; inset: 0; background: var(--rlv2-canvas); opacity: 0.8; z-index: 3; }
+.p602a-overlay { position: fixed; inset: 0; background: var(--rlv2-surface-panel-layered); z-index: 3; }
 .p602a-dialog {
   position: fixed;
   inset: 50% auto auto 50%;

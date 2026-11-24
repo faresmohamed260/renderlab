@@ -83,6 +83,143 @@ async function waitForApp() {
   throw new Error("Isolated foundation did not become ready.");
 }
 
+async function verifyShowcase(page, reducedMotion, viewport) {
+  const board = page.locator("[data-p602a-board]");
+  await board.waitFor();
+  // Wait for hydration, not only the SSR document.
+  await page.waitForFunction((reduced) => document.querySelector("[data-motion-mode]")?.textContent === (reduced ? "Reduced" : "Normal"), reducedMotion === "reduce");
+  const states = await board.locator("[data-state]").evaluateAll((nodes) => [...new Set(nodes.map((node) => node.getAttribute("data-state")))].sort());
+  for (const state of ["idle", "hover", "focus", "pressed", "selected", "disabled", "pending", "error", "empty", "success"]) {
+    if (!states.includes(state)) throw new Error("Missing showcase state: " + state);
+  }
+  const checkGeometry = async () => {
+    const geometry = await page.evaluate(() => {
+      const visible = (el) => el.getClientRects().length > 0;
+      const bad = [...document.querySelectorAll(".p602a-control, .p602a-menu-item")].filter(visible).flatMap((el) => {
+        const box = el.getBoundingClientRect();
+        return box.width < 24 || box.height < 24 ? [el.textContent + " " + box.width + "x" + box.height] : [];
+      });
+      const overflow = [...document.querySelectorAll(".p602a-example, .p602a-grid, .p602a-section, .p602a-field, .p602a-popover, .p602a-dialog")]
+        .filter(visible).filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.className);
+      return { bad, overflow, documentOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+    });
+    if (geometry.bad.length || geometry.overflow.length || geometry.documentOverflow) throw new Error("Showcase geometry: " + JSON.stringify(geometry));
+  };
+  const measure = async (label, selector = "[data-contrast]") => {
+    const result = await page.evaluate(({ selector, label }) => {
+      // Computed rendered CSS, including inherited colors and alpha compositing
+      // against ancestor backgrounds. This is not screenshot pixel sampling.
+      const parse = (value) => {
+        const match = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?\s*\)$/.exec(value);
+        if (!match) throw new Error("Unsupported computed color: " + value);
+        return [Number(match[1]), Number(match[2]), Number(match[3]), match[4] === undefined ? 1 : Number(match[4])];
+      };
+      const composite = (fg, bg) => [0, 1, 2].map((i) => fg[i] * fg[3] + bg[i] * (1 - fg[3])).concat(1);
+      const background = (el) => {
+        const layers = [];
+        for (let node = el; node; node = node.parentElement) layers.unshift(parse(getComputedStyle(node).backgroundColor));
+        return layers.reduce((bg, fg) => composite(fg, bg), [0, 0, 0, 1]);
+      };
+      const lum = (rgb) => rgb.slice(0, 3).map((c) => c / 255).map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+        .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0);
+      const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+      const rows = [];
+      const add = (el, role, foreground, bg, threshold) => {
+        const fg = composite(foreground, bg);
+        rows.push({ phase: label, specimen: el.getAttribute("data-testid") || el.getAttribute("aria-label") || el.textContent?.trim().slice(0, 70) || el.id || el.tagName,
+          state: el.closest("[data-state]")?.getAttribute("data-state") || label, role, foreground: fg.slice(0, 3), background: bg.slice(0, 3), ratio: ratio(fg, bg), threshold });
+      };
+      for (const el of document.querySelectorAll(selector)) {
+        if (!el.getClientRects().length || getComputedStyle(el).visibility !== "visible") continue;
+        const style = getComputedStyle(el);
+        const bg = background(el);
+        const outside = background(el.parentElement);
+        add(el, "text", parse(style.color), bg, 4.5);
+        if ((el.tagName === "INPUT" || el.tagName === "TEXTAREA") && el.placeholder && !el.value) {
+          add(el, "placeholder", parse(getComputedStyle(el, "::placeholder").color), bg, 4.5);
+        }
+        if (el.matches(".p602a-control, .p602a-menu-item")) {
+          add(el, "control boundary", parse(style.borderTopColor), outside, 3);
+        }
+        if (el.matches(":focus-visible") && style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0) {
+          add(el, "focus outline", parse(style.outlineColor), outside, 3);
+        }
+      }
+      return rows;
+    }, { selector, label });
+    if (!result.length) throw new Error("No rendered contrast samples for " + label);
+    const failed = result.filter((row) => row.ratio < row.threshold);
+    if (failed.length) throw new Error("Rendered contrast below threshold: " + JSON.stringify(failed));
+    return result;
+  };
+  await checkGeometry();
+  const measurements = await measure("initial");
+  const hover = page.getByTestId("hover");
+  await hover.hover();
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="hover"]')).backgroundColor === "rgb(113, 96, 208)");
+  measurements.push(...await measure("hover", '[data-testid="hover"]'));
+  await hover.focus();
+  await page.keyboard.press("Tab");
+  await page.waitForFunction(() => document.querySelector('[data-testid="focus"]')?.matches(":focus-visible"));
+  measurements.push(...await measure("focus", '[data-testid="focus"]'));
+  if (!measurements.some((row) => row.phase === "focus" && row.role === "focus outline")) throw new Error("Missing actual focus outline measurement");
+  const press = page.getByTestId("press");
+  await press.scrollIntoViewIfNeeded();
+  const box = await press.boundingBox();
+  if (!box) throw new Error("Press specimen hidden");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await press.locator("xpath=self::*[@data-pressed='true']").waitFor();
+  measurements.push(...await measure("pressed", '[data-testid="press"]'));
+  await page.mouse.up();
+  await page.waitForFunction(() => document.querySelector('[data-testid="press"]')?.textContent === "Activated");
+  const checkbox = page.locator("#check-idle");
+  await checkbox.focus();
+  await page.keyboard.press("Space");
+  await page.waitForFunction(() => document.querySelector("#check-idle")?.getAttribute("aria-checked") === "true");
+  const toggle = page.getByRole("button", { name: "Grid view" });
+  await toggle.click();
+  if (await toggle.getAttribute("aria-pressed") !== "true") throw new Error("Toggle state failed");
+  await page.locator("#select-idle").selectOption("b");
+  const disclosure = page.getByRole("button", { name: /Advanced settings/ });
+  await disclosure.click();
+  if (await disclosure.getAttribute("aria-expanded") !== "true") throw new Error("Disclosure did not open");
+  await disclosure.click();
+  if (await disclosure.getAttribute("aria-expanded") !== "false") throw new Error("Disclosure did not close");
+  const menuTrigger = page.getByRole("button", { name: "More actions" });
+  await menuTrigger.focus();
+  await page.keyboard.press("Enter");
+  const menu = page.getByRole("menu");
+  await menu.waitFor();
+  await checkGeometry();
+  measurements.push(...await measure("open menu", ".p602a-popover [data-contrast]"));
+  await page.keyboard.press("Escape");
+  await menu.waitFor({ state: "hidden" });
+  await page.waitForFunction(() => document.activeElement?.textContent === "More actions");
+  const dialogTrigger = page.getByRole("button", { name: "Remove sample", exact: true }).first();
+  await dialogTrigger.click();
+  const dialog = page.getByRole("alertdialog");
+  await dialog.waitFor();
+  await page.waitForFunction(() => document.activeElement?.textContent === "Cancel");
+  await checkGeometry();
+  measurements.push(...await measure("open confirmation", ".p602a-dialog [data-contrast]"));
+  await page.keyboard.press("Escape");
+  await dialog.waitFor({ state: "hidden" });
+  await page.waitForFunction(() => document.activeElement?.textContent === "Remove sample");
+  await dialogTrigger.click();
+  await dialog.getByRole("button", { name: "Remove", exact: true }).click();
+  await page.getByText("Sample removed locally.").waitFor();
+  await page.emulateMedia({ reducedMotion: reducedMotion === "reduce" ? "no-preference" : "reduce" });
+  await page.waitForFunction((reduced) => document.querySelector("[data-motion-mode]")?.textContent === (reduced ? "Normal" : "Reduced"), reducedMotion === "reduce");
+  await page.emulateMedia({ reducedMotion });
+  const summary = Object.fromEntries([...new Set(measurements.map((row) => row.role))].map((role) => {
+    const samples = measurements.filter((row) => row.role === role);
+    return [role, { count: samples.length, minimum: Math.min(...samples.map((row) => row.ratio)) }];
+  }));
+  console.log("P6-02a rendered contrast summary:", JSON.stringify({ viewport, reducedMotion, summary }));
+  console.log("P6-02a rendered contrast samples:", JSON.stringify({ viewport, reducedMotion, measurements }));
+}
+
 async function browserSmoke() {
   const { chromium } = await import("@playwright/test");
   browser = await chromium.launch({ env });
@@ -126,6 +263,7 @@ async function browserSmoke() {
             || roles.length !== 4 || !roles.includes("drag-release: 324 / 30 / 1")) {
           throw new Error("Foundation browser state mismatch.");
         }
+        await verifyShowcase(page, reducedMotion, viewport);
         if (unexpected.length || errors.length) throw new Error("Unexpected browser activity: " + [...unexpected, ...errors].join("; "));
         console.log("Foundation browser smoke passed:", viewport.width, viewport.height, reducedMotion);
       } finally {

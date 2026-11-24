@@ -139,3 +139,22 @@ test("serialized Next exclusion is configuration only; all packaged paths and un
   assert.equal(productionBuildLeak("server/app/create-preview/[...path]/route.js.nft.json", '{"files":["../../../../../design/system/v2/tokens.css"]}'), true);
   assert.equal(productionBuildLeak("static/chunks/leak.css", "--rlv2-canvas:#0b0c10"), true);
 });
+
+test("showcase uses adapters and canonical CSS/spring owners, not raw feature controls", async () => {
+  const app = new URL("../../design/rd/p6-02a-create/app/", import.meta.url);
+  const showcase = await readFile(new URL("showcase.tsx", app), "utf8");
+  const primitives = await readFile(new URL("primitives.tsx", app), "utf8");
+  const page = await readFile(new URL("page.tsx", app), "utf8");
+  const layout = await readFile(new URL("layout.tsx", app), "utf8");
+  const styles = await readFile(new URL("foundation.css", app), "utf8");
+  for (const body of [page, showcase]) assert.doesNotMatch(body, /<(?:button|input|select|textarea)\b/);
+  assert.match(layout, /import "\.\.\/\.\.\/\.\.\/system\/v2\/tokens\.css"/);
+  assert.match(primitives, /import \{ springs \} from "\.\.\/\.\.\/\.\.\/system\/v2\/springs"/);
+  assert.match(primitives, /config: springs\.snappy/);
+  assert.match(primitives, /config: springs\.smooth/);
+  assert.doesNotMatch(styles, /#[0-9a-f]{3,8}\b|rgba?\(/i);
+  assert.doesNotMatch(styles, /--rlv2-[\w-]+\s*:/);
+  for (const state of ["idle", "hover", "focus", "pressed", "selected", "disabled", "pending", "error", "empty", "success"]) {
+    assert.ok(showcase.includes('state="' + state + '"'), state);
+  }
+});
