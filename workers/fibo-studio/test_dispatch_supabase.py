@@ -1,9 +1,11 @@
 import os
+from datetime import datetime, timezone
 import sys
 import types
 import unittest
 from unittest.mock import MagicMock, patch
 
+from dispatch_core import Dispatcher
 from dispatch_supabase import SupabaseDispatchStore, begin_generation_attempt
 
 
@@ -43,12 +45,78 @@ class SupabaseDispatchStoreTest(unittest.TestCase):
         store = SupabaseDispatchStore(
             database_url="postgresql://renderlab_modal_dispatcher:secret@pooler.example:5432/postgres?sslmode=disable",
         )
-        with patch.dict(sys.modules, {"psycopg": psycopg, "psycopg.rows": rows}):
+        with patch.dict(sys.modules, {"psycopg": psycopg, "psycopg.rows": rows}), \
+             patch("dispatch_supabase.Path.is_file", return_value=True), \
+             patch.dict(os.environ, {"PGSSLROOTCERT": "/test/ca.pem"}):
             store._connect()
 
-        self.assertEqual(connect.call_args.kwargs["sslmode"], "require")
+        self.assertEqual(connect.call_args.kwargs["sslmode"], "verify-full")
+        self.assertEqual(connect.call_args.kwargs["sslrootcert"], "/test/ca.pem")
         self.assertEqual(connect.call_args.kwargs["connect_timeout"], 15)
         self.assertIs(connect.call_args.kwargs["row_factory"], rows.dict_row)
+
+    def test_missing_ca_retains_encrypted_tls_without_pretending_to_verify_hostname(self):
+        connect = MagicMock(return_value=object())
+        psycopg = types.ModuleType("psycopg")
+        psycopg.connect = connect
+        rows = types.ModuleType("psycopg.rows")
+        rows.dict_row = object()
+        store = SupabaseDispatchStore(
+            database_url="postgresql://renderlab_modal_dispatcher:secret@pooler.example:5432/postgres",
+        )
+        with patch.dict(sys.modules, {"psycopg": psycopg, "psycopg.rows": rows}), \
+             patch("dispatch_supabase.Path.is_file", return_value=False), \
+             patch.dict(os.environ, {"PGSSLROOTCERT": ""}):
+            store._connect()
+        self.assertEqual(connect.call_args.kwargs["sslmode"], "require")
+        self.assertNotIn("sslrootcert", connect.call_args.kwargs)
+
+    def test_explicit_ca_must_not_silently_downgrade_hostname_verification(self):
+        store = SupabaseDispatchStore(
+            database_url="postgresql://renderlab_modal_dispatcher:secret@pooler.example:5432/postgres",
+        )
+        psycopg = types.ModuleType("psycopg")
+        psycopg.connect = MagicMock()
+        rows = types.ModuleType("psycopg.rows")
+        rows.dict_row = object()
+        with patch.dict(sys.modules, {"psycopg": psycopg, "psycopg.rows": rows}), \
+             patch.dict(os.environ, {"PGSSLROOTCERT": "/missing/ca.pem"}), \
+             patch("dispatch_supabase.Path.is_file", return_value=False):
+            with self.assertRaisesRegex(RuntimeError, "trust root is unavailable"):
+                store._connect()
+        psycopg.connect.assert_not_called()
+
+    def test_verify_full_certificate_failure_is_actionable_and_never_retried_weakly(self):
+        operational_error = type("OperationalError", (Exception,), {})
+        connect = MagicMock(side_effect=operational_error(
+            "certificate verify failed for db-user:secret@private-pooler.example"
+        ))
+        psycopg = types.ModuleType("psycopg")
+        psycopg.connect = connect
+        psycopg.OperationalError = operational_error
+        rows = types.ModuleType("psycopg.rows")
+        rows.dict_row = object()
+        store = SupabaseDispatchStore(
+            database_url="postgresql://db-user:secret@private-pooler.example:5432/postgres",
+        )
+        with patch.dict(sys.modules, {"psycopg": psycopg, "psycopg.rows": rows}), \
+             patch("dispatch_supabase.Path.is_file", return_value=True), \
+             patch.dict(os.environ, {"PGSSLROOTCERT": "/trust/ca.pem"}):
+            with self.assertRaises(RuntimeError) as observed:
+                Dispatcher(store, {}).tick(datetime(2026, 11, 23, tzinfo=timezone.utc))
+        error = observed.exception
+        self.assertIn("sslmode=verify-full", str(error))
+        self.assertIn("check DB reachability, pooler hostname", str(error))
+        self.assertIn("CA bundle", str(error))
+        self.assertIn("dispatch halted without lowering TLS verification", str(error))
+        self.assertTrue(error.__suppress_context__)
+        for sensitive in ("secret", "db-user", "private-pooler.example"):
+            self.assertNotIn(sensitive, str(error))
+        connect.assert_called_once()
+        self.assertEqual(connect.call_args.kwargs["connect_timeout"], 15)
+        self.assertEqual(connect.call_args.kwargs["sslmode"], "verify-full")
+        self.assertEqual(connect.call_args.kwargs["sslrootcert"], "/trust/ca.pem")
+        # A failed connection must never be retried in encrypted-only require mode.
 
     def test_lookup_uses_parameterized_rpc_over_the_database_connection(self):
         connection = Connection([{
