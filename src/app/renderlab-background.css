@@ -1485,6 +1485,13 @@
   }
   .create-preview-size { grid-template-columns: minmax(0, 1fr); }
   .create-preview-aspect { grid-column: 1 / -1; }
+  /* Native textarea intrinsic sizing must not widen the narrow fields track. */
+  .create-preview-fields textarea {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+  }
   .create-preview-prompt-heading { position: relative; }
   .create-preview-recents { position: static; }
   .create-preview-recents > div {
