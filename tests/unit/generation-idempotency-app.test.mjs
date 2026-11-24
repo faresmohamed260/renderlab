@@ -99,23 +99,25 @@ test("R8 first keyed acceptance creates a single SQL transaction, owner-scoped r
   assert.equal(response.status,202);
   assert.equal((await response.json()).job.id,job);
   assert.deepEqual(f.calls.map(c=>c.path),[
+    "/rest/v1/rpc/renderlab_lookup_generation_request_acceptance",
     "/rest/v1/rpc/renderlab_accept_generation_dispatch_idempotent",
     "/rest/v1/generation_jobs"]);
   assert.equal(f.tasks.length,1);
-  const body=f.calls[0].body;
+  const body=f.calls[1].body;
+  assert.equal(f.calls[0].body.p_request_digest,body.p_request_digest);
   assert.equal(body.p_request_key,key);
   assert.equal(body.p_owner_id,owner);
   assert.match(body.p_request_digest,/^[0-9a-f]{64}$/);
   assert.equal(body.p_attempt_id.length,36);
 });
 test("R8 replay gives same job, no wake, no new admission",async t=>{
-  const f=fixture(t,{mode:"replayed"});
+  const f=fixture(t,{prelookup:"accepted"});
   const response=await submit();
   assert.equal(response.status,202);
   assert.equal((await response.json()).job.id,job);
   assert.equal(f.tasks.length,0);
   assert.deepEqual(f.calls.map(c=>c.path),[
-    "/rest/v1/rpc/renderlab_accept_generation_dispatch_idempotent",
+    "/rest/v1/rpc/renderlab_lookup_generation_request_acceptance",
     "/rest/v1/generation_jobs"]);
 });
 test("R8 changed key digest yields sanitized 409 and no existing job identity",async t=>{
@@ -143,10 +145,12 @@ for(const lookup of ["accepted","in_flight","not_found","conflict"]){
     assert.equal(response.status,lookup==="accepted"?202:lookup==="conflict"?409:503);
     assert.equal(result.ok,lookup==="accepted");
     assert.deepEqual(f.calls.map(c=>c.path),lookup==="accepted"?[
+      "/rest/v1/rpc/renderlab_lookup_generation_request_acceptance",
       "/rest/v1/rpc/renderlab_accept_generation_dispatch_idempotent",
       "/rest/v1/rpc/renderlab_lookup_generation_request_acceptance",
       "/rest/v1/generation_jobs"
     ]:[
+      "/rest/v1/rpc/renderlab_lookup_generation_request_acceptance",
       "/rest/v1/rpc/renderlab_accept_generation_dispatch_idempotent",
       "/rest/v1/rpc/renderlab_lookup_generation_request_acceptance"
     ]);
@@ -309,3 +313,10 @@ for(const mode of ["invalid-request","invalid-param"]){
     assert.equal(f.tasks.length,0);
   });
 }
+
+test("N7 concurrent first accept can still replay through atomic RPC after authoritative not_found",async t=>{
+  const f=fixture(t,{mode:"replayed"});
+  assert.equal((await submit()).status,202);
+  assert.equal(f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent")).length,1);
+  assert.equal(f.tasks.length,0);
+});

@@ -3,6 +3,7 @@ import "server-only";
 
 import { after } from "next/server";
 import { randomUUID } from "node:crypto";
+import { lookupExistingFiboAcceptance } from "@/server/generation/native-generation-idempotency";
 
 import { fiboGenerationModel, resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
@@ -184,9 +185,29 @@ export async function submitGeneration(
     return response;
   };
 
+  const reportAccepted = async (job: GenerationJob): Promise<SubmitGenerationResponse> => {
+    await emitDiagnosticEvent({
+      event: "generation.submission",
+      correlationId: correlationIdForGenerationJob(job.id),
+      jobId: job.id,
+      operation: job.operation,
+      phase: "accepted",
+      status: job.status,
+      durationMs: Date.now() - startedAt,
+    });
+    return { ok: true, job };
+  };
+
   const isFibo = request.model === fiboGenerationModel;
   if (idempotencyKey !== undefined && !isFibo) {
     return reject({ ok: false, error: { code: "invalid_request", message: "Idempotency-Key is supported only for FIBO image generation." } });
+  }
+  // A client replay is a read of a prior acceptance, not a new generation.
+  // Do this before mutable input availability or payload preparation. Fresh
+  // server-generated keys cannot be replays and need no preliminary lookup.
+  if (isFibo && idempotencyKey !== undefined) {
+    const existing = await lookupExistingFiboAcceptance(ownerId, idempotencyKey, request);
+    if (existing) return existing.ok ? reportAccepted(existing.job) : reject(existing);
   }
   if (request.autoVgl && !isFiboAutoVglAvailable()) {
     return reject({ ok: false, error: { code: "generation_disabled", message: "Generated FIBO VGL has not been qualified for this environment." } });
@@ -238,16 +259,7 @@ export async function submitGeneration(
     if ("newAcceptance" in accepted && accepted.newAcceptance) {
       scheduleFiboDispatcherWake(accepted.job.id);
     }
-    await emitDiagnosticEvent({
-      event: "generation.submission",
-      correlationId: correlationIdForGenerationJob(accepted.job.id),
-      jobId: accepted.job.id,
-      operation: accepted.job.operation,
-      phase: "accepted",
-      status: accepted.job.status,
-      durationMs: Date.now() - startedAt,
-    });
-    return { ok: true, job: accepted.job };
+    return reportAccepted(accepted.job);
   }
 
     let admission = await reserveGenerationAdmission(ownerId);
