@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -46,6 +46,8 @@ export function LibraryCollectionManager({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PublicMediaCollection | null>(null);
+  const deleteTrigger = useRef<HTMLButtonElement>(null);
+  const closeManager = useRef<HTMLButtonElement>(null);
 
   function beginRename(collection: PublicMediaCollection) {
     if (saving) return;
@@ -129,6 +131,8 @@ export function LibraryCollectionManager({
       if (!response.ok || !payload?.ok) {
         throw new Error(payload && !payload.ok ? payload.error.message : "Collection could not be deleted.");
       }
+      // The deleted collection’s action may vanish after refresh.
+      deleteTrigger.current = null;
       setDeleteTarget(null);
       setStatus(`Deleted ${target.name}. Your media remains in Library.`);
       if (target.id === selectedCollectionId) {
@@ -152,7 +156,7 @@ export function LibraryCollectionManager({
           <h3 className="text-sm font-semibold text-text">Manage collections</h3>
           <p className="mt-1 text-xs leading-5 text-text-muted">Create, rename, or remove collections. Media stays in Library.</p>
         </div>
-        <Button type="button" variant="ghost" size="icon-lg" onClick={onClose} aria-label="Close collection manager">
+        <Button ref={closeManager} type="button" variant="ghost" size="icon-lg" onClick={onClose} aria-label="Close collection manager">
           <X aria-hidden="true" />
         </Button>
       </div>
@@ -228,7 +232,8 @@ export function LibraryCollectionManager({
                   type="button"
                   variant="ghost"
                   size="icon-lg"
-                  onClick={() => {
+                  onClick={(event) => {
+                    deleteTrigger.current = event.currentTarget;
                     setError(null);
                     setStatus(null);
                     setDeleteTarget(collection);
@@ -255,7 +260,14 @@ export function LibraryCollectionManager({
           if (!open) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={(event) => {
+          // The shared dialog is controlled by several collection-row buttons.
+          event.preventDefault();
+          const trigger = deleteTrigger.current;
+          deleteTrigger.current = null;
+          if (trigger?.isConnected && !trigger.disabled) trigger.focus({ preventScroll: true });
+          else closeManager.current?.focus({ preventScroll: true });
+        }}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleteTarget ? `“${deleteTarget.name}”` : "collection"}?</AlertDialogTitle>
             <AlertDialogDescription>
