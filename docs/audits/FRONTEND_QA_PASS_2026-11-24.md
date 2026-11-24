@@ -1,6 +1,6 @@
 # Frontend production QA pass — 2026-11-24
 
-**Status: INCOMPLETE — interrupted twice by WANDA `CONTROL_PREEMPTED`; FE-01 subsequently reproduced live. Evidence only; not a frontend acceptance, accessibility conformance claim, or Phase 5 entry-gate completion.** The remaining checks below must be completed against the same live SHA (or explicitly requalified against its successor). No UI redesign or runtime fix is authorized by this report.
+**Status: baseline touch-target geometry and actual 200% browser-zoom route sampling completed on the third sitting; earlier interruptions and confirmed defects retained below.** FE-01 was reproduced live. This is evidence, not blanket frontend acceptance or accessibility conformance. The owner approved the integration-first Phase 5 contract (PR #677); remaining coverage limitations and post-release acceptance remain explicitly open. No UI redesign or runtime fix is authorized by this audit.
 
 ## Scope and verified starting point
 
@@ -87,4 +87,71 @@ These observations corroborate [FE-01 in the frontend code audit](FRONTEND_CODE_
 
 ![FE-01b — empty prompt after Reuse settings](frontend-qa-2026-11-24/fe01-reuse.jpg)
 
-**Resumption coverage ledger:** FE-01 source/prompt handoff is now confirmed broken at 1440. Touch target measurement was attempted after the FE-01 observations, but the tool returned `CONTROL_PREEMPTED: ready` before any result could be read; no retry was made. All previously unverified 200% zoom, touch geometry/spacing, contrast measurements, remaining keyboard and state coverage (including 390 FE-01 parity), and independent original-recipe/dimension comparison remain outstanding. No additional accessibility or frontend acceptance claim is made. Desktop interaction was stopped; only previously saved evidence was transferred for documentation. No Batch E release was ordered or performed.
+**Resumption coverage ledger:** FE-01 source/prompt handoff is now confirmed broken at 1440. Touch target measurement was attempted after the FE-01 observations, but the tool returned `CONTROL_PREEMPTED: ready` before any result could be read; no retry was made. At the end of that sitting, 200% zoom, touch geometry/spacing, contrast measurements, remaining keyboard and state coverage (including 390 FE-01 parity), and independent original-recipe/dimension comparison remained outstanding. The third-sitting addendum below supersedes the zoom and baseline geometry limitations. No additional accessibility or frontend acceptance claim is made. Desktop interaction was stopped; only previously saved evidence was transferred for documentation. No Batch E release was ordered or performed.
+
+## Third sitting — baseline touch geometry and true 200% zoom (2026-11-24)
+
+The head engineer authorized the pending touch-target and zoom work while Batch E awaits a separate release order. WANDA reported ready at entry and remained under AI control during this pass; no `CONTROL_PREEMPTED` occurred. Signed-in production browser, same recorded application SHA `aeb43cb508297e22c52d87de4df747cbd7c8516a`; Phase 5 contract #677 merged as `f7ab3110942880e6e4be7ebf65b6fcbd8c9ac465` before QA. New QA tab closed, site zoom reset to 100%, window restored and desktop control explicitly released. No production generation, upload, credential submission, download, favorite, invitation or settings change was initiated.
+
+### Baseline rendered target geometry
+
+The Create scan used Chromium responsive emulation at 390 × 844 and 1440 × 900 CSS px, checking rendered nonzero `offsetWidth/offsetHeight` of buttons, links, inputs, selects, summaries and role buttons. The other routes used real browser windows at 100% and the same exact baseline inner widths/heights, additionally including role radio/tab and excluding disabled/aria-disabled controls. A 15 px native vertical scrollbar accounts for the difference between innerWidth and documentElement.clientWidth on scrollable pages; equality of clientWidth and scrollWidth is the root-overflow assertion. A small element box is only a candidate: inline-link exceptions, hidden controls, actual pointer hit area and spacing need interpretation. Closed popover/dialog descendants and every bespoke hit target were not exhaustively measured.
+
+| Surface | 390 px result | 1440 px result | Interpretation |
+| --- | --- | --- | --- |
+| Landing | client/scroll 375/375; Open Create 65 × 14, Sign in 38 × 14 | 1425/1425; same two small boxes | Footer text links match deployed source; CSS has an 18 px flex gap. Candidate for larger hit area; not a proven 24 px spacing violation. Hero primary CTA is distinct. |
+| Create | root inner/scroll 390/390; Negative prompt, VGL JSON 334 × 19 each; y=585 and 616 | 1440/1440; same two disclosures 316 × 19 | 31 px vertical separation at 390; Queue and Shortcuts summaries 32 px high. Small-height geometry observed; no automatic WCAG failure. Generate was visibly reachable after scrolling in real 390 baseline window. |
+| Library | 375/375; none under 24 | 1425/1425; none under 24 | Baseline toolbar may internally scroll as noted earlier; zero root overflow. |
+| Media Viewer | 375/375; none under 24 | 1425/1425; none under 24 | Existing completed image only; no mutation. |
+| Activity | 375/375; none under 24 | 1425/1425; none under 24 | Populated history. |
+| Settings overview | 375/375; none under 24 | 1425/1425; none under 24 | Rendered controls only. |
+| Settings profile | 375/375; one unlabeled 1 × 1 box | 1440/1440; same | Deployed source confirms the sr-only file input with tabIndex=-1; not a visible touch target. |
+| Settings preferences | 375/375; none under 24 | 1440/1440; none under 24 | No save. |
+| Settings MFA | 375/375; none under 24 | 1440/1440; none under 24 | No removal or enrollment. |
+| Email/password step-up | 390/390 for each; none under 24 | 1440/1440 for each; none under 24 | Protected forms after challenge not accessed. |
+| Admin | 375/375; none under 24 | 1425/1425; none under 24 | No invitations or configuration changes. |
+
+Source checks at the deployed SHA: [Landing footer links](https://github.com/faresmohamed260/renderlab/blob/aeb43cb508297e22c52d87de4df747cbd7c8516a/src/features/landing/landing-experience.tsx#L412-L416), [footer gap](https://github.com/faresmohamed260/renderlab/blob/aeb43cb508297e22c52d87de4df747cbd7c8516a/src/features/landing/landing-experience.module.css#L792), [hidden profile file input](https://github.com/faresmohamed260/renderlab/blob/aeb43cb508297e22c52d87de4df747cbd7c8516a/src/features/account/account-profile-form.tsx#L244-L252). [Create target measurement screenshot](frontend-qa-2026-11-24/qa-target-measurements.jpg).
+
+### True browser zoom — not DevTools fit-to-window
+
+Device emulation was disabled. A real docked-console browser viewport was sized to 1440 × 900, then 390 × 844 at native DPR 1; browser zoom changed to 200%, and console verified the effective CSS width, height and DPR 2. Exact Create readbacks for `[innerWidth,innerHeight,devicePixelRatio,document.documentElement.scrollWidth]`:
+
+- Desktop baseline: `[1440,900,1,1440]`; 200%: `[720,450,2,720]`.
+- Mobile-width baseline: `[390,844,1,390]`; 200%: `[195,422,2,195]`.
+- The previously failed emulation-only zoom attempt is superseded by these actual reflow measurements. The 195 CSS px case is deliberately narrower than the ordinary 320 CSS px WCAG reflow reference; findings at this width are product robustness findings, not by themselves proof of WCAG nonconformance.
+
+| Surface | 200% of 1440 baseline (720 effective) | 200% of 390 baseline (195 effective) |
+| --- | --- | --- |
+| Landing | Hero, CTA and copy fit in sampled region | Oversized headline and body copy clip at right edge; narrow-width typography needs attention. |
+| Create | Responsive composer, preview; vertical scroll reached disabled Generate; root width matched | Reference labels overlap and composer has internal horizontal scrollbar despite equal root widths. |
+| Library | Toolbar fit, labels and search separate | Creatives/Uploads/Select controls overlap; search placeholder clips. |
+| Media Viewer | Existing image and header actions fit; lower actions not exhaustively tested | Title truncates heavily; Favorite/Download stack. Existing image visible after load. |
+| Activity | Stacked history card and heading visible | Completed status detail clipped; title wraps; review card overflow. |
+| Settings overview | Account section visible | Profile name wraps mid-word; shared header controls crowded. |
+| Profile/preferences | Headings and first form sections visible | Headings wrap; lower forms not exhaustively scrolled. |
+| MFA management | Heading and first section fit | Horizontal scrollbar visible; long authentication heading crowds edge. |
+| Email/password | Challenge heading and focused code input visible | Autofocus scrolls challenge content under sticky header, overlapping label; code field and disabled Verify still visible. No code entered. |
+| Admin | Invitation area visible, no mutation | Horizontal scrollbar visible; readback `[195,422,2,191]` (inner/height/DPR/root scroll; client width not captured at this point). Do not infer root overflow solely from inner width. |
+
+These are initial-view plus selected-scroll visual observations, not exhaustive all-state functional zoom acceptance. Console retained no error/warning during sampled navigation; DevTools Issues badge not analyzed.
+
+### Additional findings and evidence
+
+| ID | Surface | Viewport | Severity | Description | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| FQA-12 | Create | 195 effective (390 at 200%) | Medium — confirmed | Four reference/source labels overlap; internal horizontal scrolling in composer. Preserve approved composition at ordinary widths, improve extreme narrow layout without redesign. | [Create narrow zoom](frontend-qa-2026-11-24/qa-zoom-create-narrow.jpg) |
+| FQA-13 | Library | 195 effective | Medium — confirmed | Creatives/Uploads/Select toolbar overlaps; search placeholder clipped. | [Library narrow zoom](frontend-qa-2026-11-24/qa-zoom-library-narrow.jpg) |
+| FQA-14 | Landing, Activity, Settings, Admin, Viewer | 195 effective | Low — observed | Landing clipping, Activity status clipping, narrow account/header/step-up crowding, MFA/Admin horizontal scroll and Viewer title truncation. Scope a separate narrow reflow review; not a demonstrated failure at 320 CSS px. | Third-sitting live route walkthrough |
+| FQA-15 | Landing and Create | 390/1440 baseline | Low — candidate | Text links 14 px high and disclosure summaries 19 px high; spacing/hit area may satisfy exceptions, so no conformance failure asserted. Hidden profile file input excluded as plumbing. | Target table and [measurement capture](frontend-qa-2026-11-24/qa-target-measurements.jpg) |
+| FQA-16 | Create | 720 effective | Info | Generate reachable via scrolling, disabled with empty prompt; no job submitted. Actual browser zoom verified. | [Generate reached](frontend-qa-2026-11-24/qa-zoom-create-generate.jpg), [zoom readback](frontend-qa-2026-11-24/qa-zoom-measurements.jpg) |
+
+![True browser zoom and viewport measurements](frontend-qa-2026-11-24/qa-zoom-measurements.jpg)
+
+![Create at effective 195 px](frontend-qa-2026-11-24/qa-zoom-create-narrow.jpg)
+
+![Library at effective 195 px](frontend-qa-2026-11-24/qa-zoom-library-narrow.jpg)
+
+### Updated outstanding coverage
+
+Baseline target geometry and actual 200% zoom initial-view route sampling are no longer blocked. Remaining limitations: complete keyboard focus order/return and Escape across all menus/dialogs, reduced-motion temporal evidence per route, measured contrast, full hit-area/spacing validation including open states, lower sections at zoom, empty/error-state coverage, post-step-up protected forms (separate authorization), and independent FE-01 recipe/dimension comparison. The post-Batch-E acceptance must repeat Edit/Use in Create and Reuse settings against the newly deployed exact SHA, comparing the actual source and recipe fields with sanitized screenshots; do not submit a job. No Batch E release was authorized or performed. No blanket frontend or WCAG sign-off is claimed.
