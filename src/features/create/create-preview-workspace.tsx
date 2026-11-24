@@ -14,8 +14,9 @@ import { clearSavedEdits, readSavedEdits, saveEdits } from "./create-preview-sav
 import { CreatePreviewStage, type StageTurn } from "./create-preview-stage";
 import { previewImageSizes } from "./create-preview-sizes";
 import { loadCreateResultSource } from "./create-result-source";
+import { loadContinuationFiles, type CreateContinuationPlan } from "./create-continuation";
 
-import { fiboImageAspectRatios, type PresetAspectRatio, type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
+import { fiboImageAspectRatios, type AspectRatio, type PresetAspectRatio, type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
 import { isMediaUploadMimeType } from "@/lib/api/media-upload-contract";
 import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import { uploadFiboMaskFile } from "@/lib/browser/fibo-mask-upload-client";
@@ -102,6 +103,7 @@ type RunSettings = {
   steps: number;
   imageCount: string;
   sizeIndex: number;
+  editAspectRatio?: AspectRatio;
   inputs: (File | undefined)[];
   mask?: File;
 };
@@ -127,11 +129,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1" }: { admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null }: { initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const bookmarkKey = hostedModel && hostedAccountKey ? "renderlab:hosted-fibo-stage:" + hostedAccountKey
     : admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
   const [mode, setMode] = useState<Workflow>("edit");
+  const [editAspectRatio, setEditAspectRatio] = useState<AspectRatio>("original");
+  const [continuationPending, setContinuationPending] = useState(!!initialContinuation);
+  const [continuationError, setContinuationError] = useState(initialContinuationError);
   const [reducedMotion, setReducedMotion] = useState(true);
   useEffect(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)");
@@ -320,7 +325,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [status, setStatus] = useState("");
   const active = useRef<AbortController | null>(null);
   const sourceLoad = useRef<AbortController | null>(null);
-  const sourceAssets = useRef(new WeakMap<File, string>());
+  const sourceAssets = useRef(new WeakMap<File, GenerationInput["source"]>());
 
   const [resuming, setResuming] = useState<StageBookmark>();
   useEffect(() => () => {
@@ -334,6 +339,45 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     setPreviews(urls);
     return () => urls.forEach((url) => { if (url) URL.revokeObjectURL(url); });
   }, [files]);
+
+  // Explicit navigation waits for any bookmarked in-flight render to settle.
+  // Do not let a restored result overwrite the requested draft or re-upload owned files.
+  useEffect(() => {
+    if (!initialContinuation || !continuationPending || !stageReady || busy) return;
+    const controller = new AbortController();
+    void loadContinuationFiles(initialContinuation, controller.signal, async (reference, signal) => {
+      if (reference.source.type === "media-asset") {
+        return loadCreateResultSource({ assetId: reference.source.id, image_data: "", filename: reference.label }, signal, isMediaUploadMimeType);
+      }
+      const response = await fetch("/api/assets/reference/" + encodeURIComponent(reference.source.id) + "/content?source=1", { signal, cache: "no-store" });
+      if (!response.ok) throw new Error("Reference is unavailable.");
+      const blob = await response.blob();
+      if (!blob.size || !isMediaUploadMimeType(blob.type)) throw new Error("Invalid reference image.");
+      return new File([blob], reference.label, { type: blob.type });
+    }).then((loaded) => {
+      if (controller.signal.aborted) return;
+      for (const { source, file } of loaded) sourceAssets.current.set(file, source);
+      setFiles(loaded.map(({ file }) => file));
+      setResult(undefined);
+      setSelection(undefined);
+      setMode(initialContinuation.mode);
+      setEditAspectRatio(initialContinuation.mode === "edit" ? initialContinuation.aspectRatio : "original");
+      if (initialContinuation.aspectRatio !== "original") setSizeIndex(Math.max(0, hostedRatios.indexOf(initialContinuation.aspectRatio)));
+      setSteps(initialContinuation.steps);
+      updateDraft(initialContinuation.mode, {
+        prompt: initialContinuation.prompt, seed: initialContinuation.seed, randomize: initialContinuation.randomize,
+        negativePrompt: initialContinuation.negativePrompt, negativeOpen: !!initialContinuation.negativePrompt,
+        vgl: initialContinuation.vgl, vglOpen: !!initialContinuation.vgl, generatedVgl: false, imageCount: "1",
+      });
+      setStatus(initialContinuation.references.length ? "Source image attached." : "Saved settings loaded.");
+      setContinuationPending(false);
+    }).catch(() => {
+      if (controller.signal.aborted) return;
+      setContinuationError("Saved source images could not be opened. Return to Library or start a new creation.");
+      setContinuationPending(false);
+    });
+    return () => controller.abort();
+  }, [initialContinuation, continuationPending, stageReady, busy]);
 
   function resultFile(image: { image_data: string; filename?: string }) {
     const bytes = Uint8Array.from(atob(image.image_data.split(",")[1]), (ch) => ch.charCodeAt(0));
@@ -397,17 +441,17 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
         const aliases = new Map<number, string>();
         if (mode === "edit") {
           for (const [index, file] of editInputs.entries()) {
-            const existing = file ? sourceAssets.current.get(file) : index === 0 ? stageSource?.assetId : undefined;
+            const existing = file ? sourceAssets.current.get(file) : index === 0 && stageSource?.assetId ? { type: "media-asset" as const, id: stageSource.assetId } : undefined;
             if (!existing && !file) continue;
-            let id = existing;
-            if (!id && file) {
+            let source = existing;
+            if (!source && file) {
               if (!isMediaUploadMimeType(file.type)) throw new Error("Use a PNG, JPEG or WebP image.");
-              id = (await uploadPersistentImageFile(file, file.type, signal)).id;
+              source = { type: "media-asset", id: (await uploadPersistentImageFile(file, file.type, signal)).id };
             }
-            if (!id) throw new Error("Source image could not be attached.");
+            if (!source) throw new Error("Source image could not be attached.");
             const alias = ("image" + (inputs.length + 1)) as GenerationInput["alias"];
             aliases.set(index + 1, alias);
-            inputs.push({ alias, role: inputs.length === 0 ? "primary-image" : "reference", source: { type: "media-asset", id } });
+            inputs.push({ alias, role: inputs.length === 0 ? "primary-image" : "reference", source });
           }
         }
         const hostedPrompt = prompt.trim().replace(/@image(\d+)/g, (original, index: string) => {
@@ -429,7 +473,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           body: JSON.stringify({ model: hostedModel.id, prompt: hostedPrompt, inputs,
             ...(hostedVgl ? { vgl: hostedVgl } : {}),
             ...(hostedMask ? { mask: hostedMask } : {}),
-            output: { kind: "image", aspectRatio: mode === "edit" ? "original" : hostedRatios[sizeIndex] },
+            output: { kind: "image", aspectRatio: mode === "edit" ? editAspectRatio : hostedRatios[sizeIndex] },
             advanced: { steps, negativePrompt: negativePrompt.trim(),
               seed: randomize ? (crypto.getRandomValues(new Uint32Array(1))[0]! & 0x7fffffff) : Number(seed) } }),
         });
@@ -465,14 +509,14 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       }
       const run: RunSettings = {
         mask,
-        mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex,
+        mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex, editAspectRatio,
         inputs: mode === "edit" ? editInputs : [],
       };
       if (!hostedModel) await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...uploads, job_id: job, instruction: prompt.trim(), negative_prompt: negativePrompt.trim(), json_instruction: manualVgl,
           seed: Number(seed), randomize, steps, image_count: Number(imageCount), width: size.width, height: size.height }) });
       if (!background) setStatus("Rendering on Modal...");
-      const aspect = mode === "generate" ? size.width / size.height
+      const aspect = mode === "generate" || editAspectRatio !== "original" ? size.width / size.height
         : previews[0] ? await decodeAspect(previews[0]).catch(() => undefined) : stageSource?.aspect;
       const bookmark: StageBookmark = { id: acceptedId, mode, count: Number(imageCount), aspect, expires: Date.now() + 55 * 60_000 };
       if (signal.aborted) return;
@@ -724,7 +768,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       setFiles([...run.inputs]);
       setSelection(run.mask && run.inputs[0] ? { source: run.inputs[0], mask: run.mask } : undefined);
     }
-    if (run.mode === "generate") setSizeIndex(run.sizeIndex);
+    setSizeIndex(run.sizeIndex);
+    setEditAspectRatio(run.editAspectRatio ?? "original");
     setSteps(run.steps);
     updateDraft(run.mode, {
       prompt: run.prompt, negativePrompt: run.negativePrompt, vgl: run.vgl,
@@ -748,6 +793,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     }
     setMaskEditor(undefined);
     if (index === 0) {
+      setEditAspectRatio("original");
       if (desktop && !busy) writeStageBookmark(bookmarkKey);
       setSelection(undefined);
       setMode("edit");
@@ -890,6 +936,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           const index = Number(from);
           if (index === target || !files[index] || !files[target]) return;
           if (index === 0 || target === 0) {
+            setEditAspectRatio("original");
             setSelection(undefined);
             setResult(undefined);
             writeStageBookmark(bookmarkKey);
@@ -943,7 +990,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
     : !seedValid ? "Enter a seed from 0 to 2147483647."
     : "");
-  const canSubmit = stageReady && !enqueueing && (!busy || !hostedModel && desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
+  const canSubmit = stageReady && !continuationPending && !enqueueing && (!busy || !hostedModel && desktop && accepted && queueCount < 3) && !maskEditor && !blocker;
   const maskEditorNode = maskEditor && mode === "edit" && files[0] && previews[0] && (
     <CreatePreviewMaskEditor source={previews[0]} mask={mask} enabled={masksEnabled} inline={maskEditor === "inline"} onClose={() => setMaskEditor(undefined)}
       onSave={(region) => {
@@ -982,8 +1029,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           </details>
         </div>
       </div>
+      {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
+      {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
       <div className="create-preview-grid">
-        <form className="create-preview-controls" noValidate onSubmit={submit}
+        <form inert={continuationPending} className="create-preview-controls" noValidate onSubmit={submit}
           onKeyDown={(event) => {
             if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
               event.preventDefault();
@@ -1033,7 +1082,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                               generatedVgl: false,
                             },
                           }));
-                          if (index === 0) { setSelection(undefined); if (desktop) { setResult(undefined); writeStageBookmark(bookmarkKey); } }
+                          if (index === 0) { setEditAspectRatio("original"); setSelection(undefined); if (desktop) { setResult(undefined); writeStageBookmark(bookmarkKey); } }
                           setMaskEditor(undefined);
                           setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
                         }}><X /></Button>}
@@ -1153,6 +1202,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   </label>
                 </div>
               </div>
+              {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
               <label className="create-preview-render-field" htmlFor="create-preview-count">Images
                 <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
                   disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} />
@@ -1180,7 +1230,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             </div>
           </div>
         </form>
-        <section className="create-preview-canvas" aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
+        <section inert={continuationPending && !busy} className="create-preview-canvas" aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
             {stageReady && <CreatePreviewStage
               desktopResultActions={desktop ? resultActions : undefined}
               workflow={mode}
@@ -1229,7 +1279,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               cancelling={activeCancel?.pending}
               liveFrame={liveFrame}
               liveBlur={liveBlur}
-              renderRatio={resuming ? resuming.aspect : mode === "generate" ? size.width / size.height : undefined}
+              renderRatio={resuming ? resuming.aspect : mode === "generate" || editAspectRatio !== "original" ? size.width / size.height : undefined}
               status={liveCaption ?? status}
               onBrowse={() => chooseImage(mode === "edit" ? 0 : 4)}
               onUseInput={(file) => attachImage(file, 0)}
@@ -1241,7 +1291,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 try {
                   if (image.assetId) setStatus("Loading source image…");
                   const file = await loadCreateResultSource(image, controller.signal, isMediaUploadMimeType);
-                  if (image.assetId) sourceAssets.current.set(file, image.assetId);
+                  if (image.assetId) sourceAssets.current.set(file, { type: "media-asset", id: image.assetId });
                   if (controller.signal.aborted || active.current || preparing.current) return;
                   sourceLoad.current = null;
                   attachImage(file, 0);
