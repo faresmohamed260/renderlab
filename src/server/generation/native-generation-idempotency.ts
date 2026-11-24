@@ -174,10 +174,11 @@ export async function acceptIdempotentFiboGeneration(input: {
     p_payload: payload,
     p_admission_deadline: new Date(Date.now() + fiboAdmissionDeadlineMs).toISOString(),
   };
+  const serializedBody = JSON.stringify(body);
   let primary: IdentityRow | null;
   try {
     const rows: unknown = await supabaseRest("rpc/renderlab_accept_generation_dispatch_idempotent", {
-      method: "POST", body: JSON.stringify(body),
+      method: "POST", body: serializedBody,
     });
     primary = parseIdentity(rows, ["accepted", "replayed", "conflict"]);
     if (!primary) return invalid();

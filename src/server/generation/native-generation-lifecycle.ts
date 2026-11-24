@@ -88,8 +88,8 @@ export async function submitNativeGeneration(
     return { ok: false, error: { code: "generation_backend_unavailable", message: "Native generation infrastructure is not configured." } };
   }
 
-  const workflow = workflowFor(request);
   try {
+    const workflow = workflowFor(request);
     const sources = await resolveInputs(ownerId, request);
     const maskBytes = await resolveMaskBytes(ownerId, request);
     const submission = await prepareWorkerSubmission(workflow, request, sources, maskBytes);
@@ -105,12 +105,8 @@ export async function submitNativeGeneration(
     const job = await acceptDurableDispatch(ownerId, request, workflow, payload);
     return { ok: true, job: toGenerationJob(job) };
   } catch (error) {
-    if (idempotencyKey) {
-      return { ok: false, error: {
-        code: "generation_acceptance_unconfirmed",
-        message: "Generation acceptance could not be confirmed. Retry using the same Idempotency-Key.",
-      } };
-    }
+    // The keyed acceptance adapter classifies RPC ambiguity and recovery itself.
+    // Exceptions during input resolution or payload preparation are not acceptance.
     return {
       ok: false,
       error: {

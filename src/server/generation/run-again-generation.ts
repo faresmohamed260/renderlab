@@ -39,6 +39,7 @@ export async function runAgainGeneration(
       || code === "generation_disabled"
       || code === "generation_active_limit_reached"
       || code === "generation_rate_limit_reached"
+      || code === "generation_submission_failed"
     ) {
       return { ok: false, error: { code, message: submitted.error.message } };
     }
