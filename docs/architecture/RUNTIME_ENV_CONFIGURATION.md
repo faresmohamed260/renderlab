@@ -28,7 +28,7 @@
 | `R2_ACCOUNT_ID` | optional | unset (undefined) | string. Legacy R2 alias; only read if canonical CLOUDFLARE_R2_* setting is absent. |
 | `R2_BUCKET_NAME` | optional | unset (undefined) | string. Legacy R2 alias; only read if canonical CLOUDFLARE_R2_* setting is absent. |
 | `R2_SECRET_ACCESS_KEY` | optional | unset (undefined) | string. Legacy R2 alias; only read if canonical CLOUDFLARE_R2_* setting is absent. |
-| `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED` | feature-required (Production required) | false | boolean, exact flex. Mandatory Production = true (legacy yes/on/1 accepted); defaults false off Production. Runtime drift must fail closed and log only this setting name. |
+| `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED` | feature-required (Production required) | false | boolean, exact flex. Enforced in Production even if configuration drifts (legacy yes/on/1 accepted); outside Production the explicit configured flag controls enforcement and defaults false. Runtime drift must fail closed and log only this setting name. |
 | `RENDERLAB_CREATE_PREVIEW` | optional | false | boolean, exact 1. Local/development preview only; disabled unless explicitly enabled with its declared strict boolean encoding. |
 | `RENDERLAB_CREATE_PREVIEW_ADVANCED_PROMPT` | optional | false | boolean, exact 1. Local/development preview only; disabled unless explicitly enabled with its declared strict boolean encoding. |
 | `RENDERLAB_CREATE_PREVIEW_CANCEL` | optional | false | boolean, exact 1. Local/development preview only; disabled unless explicitly enabled with its declared strict boolean encoding. |

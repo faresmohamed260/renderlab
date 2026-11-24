@@ -34,7 +34,7 @@ test("retired public route keeps 410 and historical storage remains undisturbed"
   assert.match(route, /feature_retired/);
   assert.match(route, /status:\s*410/);
   assert.equal(existsSync(join(root, "src/server/media/media-assets.ts")), true);
-  assert.equal(existsSync(join(root, "src/server/generation/upscale-lifecycle.ts")), true);
+  assert.equal(existsSync(join(root, "src/server/generation/upscale-lifecycle.ts")), false);
 });
 
 test("no current GitHub workflow or package script depends on removed worker", async () => {
@@ -48,4 +48,25 @@ test("no current GitHub workflow or package script depends on removed worker", a
   }
   const packageJson = await readFile(join(root, "package.json"), "utf8");
   assert(!packageJson.includes("workers/image-upscale"));
+});
+
+test("retired upscale scripts and lifecycle have no current executable consumers", async () => {
+  const removed = [
+    "scripts/verify-image-upscale.mjs",
+    "scripts/mock-image-upscale-worker.mjs",
+    "src/server/generation/upscale-lifecycle.ts",
+  ];
+  for (const name of removed) assert.equal(existsSync(join(root, name)), false);
+  const needles = ["upscale-lifecycle", "pollNativeUpscaleGeneration", "verify-image-upscale.mjs", "mock-image-upscale-worker.mjs"];
+  async function visit(dir) {
+    for (const entry of await readdir(dir, {withFileTypes:true})) {
+      const target = join(dir, entry.name);
+      if (entry.isDirectory()) await visit(target);
+      else if (/\.(?:[cm]?js|tsx?|ya?ml|json)$/.test(entry.name) && entry.name !== "upscale-worker-retirement.test.mjs") {
+        const source = await readFile(target, "utf8");
+        for (const needle of needles) assert(!source.includes(needle), target + " still references retired source " + needle);
+      }
+    }
+  }
+  for (const dir of ["src", "scripts", "tests", ".github"]) await visit(join(root, dir));
 });
