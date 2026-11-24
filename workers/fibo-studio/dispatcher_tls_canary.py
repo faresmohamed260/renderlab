@@ -15,21 +15,29 @@ from modal_native_production import gateway_image, dispatcher_secret, runtime_en
 
 app = modal.App("renderlab-dispatcher-tls-canary")
 
+# Preserve the gateway dependency/CA image, adding only the modules needed
+# to cold-import this entrypoint and its production declaration remotely.
+canary_image = gateway_image.add_local_python_source(
+    "modal_native_production", "dispatcher_tls_canary"
+)
+
 
 @app.function(
-    image=gateway_image, env=runtime_env, secrets=[dispatcher_secret],
+    image=canary_image, env=runtime_env, secrets=[dispatcher_secret],
     cpu=0.25, timeout=45,
 )
 def probe():
-    from dispatch_supabase import SupabaseDispatchStore
+    try:
+        from dispatch_supabase import SupabaseDispatchStore
+    except Exception:
+        return {"ok": False, "reason": "remote_import_failed"}
 
     # The dispatcher intentionally has an encrypted-only fallback when an
     # OS CA bundle is absent. This *canary* must not report that as verified.
-    ca_path = os.environ.get("PGSSLROOTCERT") or "/etc/ssl/certs/ca-certificates.crt"
-    if not Path(ca_path).is_file():
-        return {"ok": False, "reason": "ca_bundle_unavailable_no_verify_full"}
-
     try:
+        ca_path = os.environ.get("PGSSLROOTCERT") or "/etc/ssl/certs/ca-certificates.crt"
+        if not Path(ca_path).is_file():
+            return {"ok": False, "reason": "ca_bundle_unavailable_no_verify_full"}
         # _query uses the same psycopg connection, sslmode=verify-full, trust
         # root, connect_timeout and role as the live dispatcher. SELECT only.
         rows = SupabaseDispatchStore()._query("select 1 as probe_ok", ())
@@ -55,7 +63,7 @@ def probe():
 def main():
     try:
         result = probe.remote()
-    except Exception:
+    except (Exception, KeyboardInterrupt, SystemExit):
         print("FAIL dispatcher_tls_canary_remote_unavailable", flush=True)
         raise SystemExit(1) from None
 
@@ -70,9 +78,10 @@ def main():
         "tls_certificate_or_connection_rejected",
         "dispatcher_configuration_or_query_rejected",
         "dispatcher_readonly_query_failed",
+        "remote_import_failed",
     }
     reason = result.get("reason") if isinstance(result, dict) else None
-    if reason not in allowed:
+    if not isinstance(reason, str) or reason not in allowed:
         reason = "unexpected_canary_result"
     print("FAIL dispatcher_tls_" + reason, flush=True)
     raise SystemExit(1)

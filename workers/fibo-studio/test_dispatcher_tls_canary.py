@@ -6,7 +6,7 @@ import runpy
 import sys
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 HERE = Path(__file__).parent
 CANARY = HERE / "dispatcher_tls_canary.py"
@@ -30,7 +30,9 @@ class DispatcherTlsCanaryTest(unittest.TestCase):
         modal = types.ModuleType("modal")
         modal.App = lambda name: app
         prod = types.ModuleType("modal_native_production")
-        prod.gateway_image = object()
+        prod.gateway_image = MagicMock()
+        packaged_image = object()
+        prod.gateway_image.add_local_python_source.return_value = packaged_image
         prod.dispatcher_secret = object()
         prod.runtime_env = {"RENDERLAB_MODAL_ENVIRONMENT": "qualification"}
         db = types.ModuleType("dispatch_supabase")
@@ -54,7 +56,10 @@ class DispatcherTlsCanaryTest(unittest.TestCase):
             with patch.dict(sys.modules, {"dispatch_supabase": db}):
                 return original_probe()
         program["probe"] = probe_with_fake_db
-        self.assertIs(app.function_options["image"], prod.gateway_image)
+        prod.gateway_image.add_local_python_source.assert_called_once_with(
+            "modal_native_production", "dispatcher_tls_canary"
+        )
+        self.assertIs(app.function_options["image"], packaged_image)
         self.assertEqual([prod.dispatcher_secret], app.function_options["secrets"])
         self.assertIs(app.function_options["env"], prod.runtime_env)
         self.assertEqual(0.25, app.function_options["cpu"])
