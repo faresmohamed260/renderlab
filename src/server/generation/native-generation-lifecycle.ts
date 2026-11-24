@@ -32,6 +32,7 @@ import {
 import { persistResult, recoverPersistingResult } from "@/server/generation/native-generation-output-persistence";
 import { getJobRow, patchJobRow } from "@/server/generation/native-generation-job-store";
 import { toGenerationJob } from "@/server/generation/native-generation-job-projection";
+import { acceptIdempotentFiboGeneration, type IdempotentGenerationResult } from "@/server/generation/native-generation-idempotency";
 import type { NativeGenerationJobRow } from "@/server/generation/native-generation-job-projection";
 
 type JobRow = NativeGenerationJobRow;
@@ -79,7 +80,9 @@ async function acceptDurableDispatch(
   return rows[0];
 }
 
-export async function submitNativeGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
+export async function submitNativeGeneration(
+  ownerId: string, request: GenerationRequest, idempotencyKey?: string,
+): Promise<SubmitGenerationResponse | IdempotentGenerationResult> {
   if (!isNativeGenerationConfigured()) {
     return { ok: false, error: { code: "generation_backend_unavailable", message: "Native generation infrastructure is not configured." } };
   }
@@ -93,9 +96,20 @@ export async function submitNativeGeneration(ownerId: string, request: Generatio
       throw new Error("Durable dispatch accepts the FIBO JSON protocol only.");
     }
     const payload = JSON.parse(submission.body) as Record<string, unknown>;
+    if (idempotencyKey) {
+      return await acceptIdempotentFiboGeneration({
+        ownerId, key: idempotencyKey, request, workflow, payload,
+      });
+    }
     const job = await acceptDurableDispatch(ownerId, request, workflow, payload);
     return { ok: true, job: toGenerationJob(job) };
   } catch (error) {
+    if (idempotencyKey) {
+      return { ok: false, error: {
+        code: "generation_acceptance_unconfirmed",
+        message: "Generation acceptance could not be confirmed. Retry using the same Idempotency-Key.",
+      } };
+    }
     return {
       ok: false,
       error: {

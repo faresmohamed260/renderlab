@@ -607,7 +607,7 @@
       "ownerEvidence": "owner-filter-query"
     },
     {
-      "id": "src/server/generation/native-generation-lifecycle.ts:53:22",
+      "id": "src/server/generation/native-generation-lifecycle.ts:54:22",
       "tableOrRpc": "rpc/renderlab_accept_generation_dispatch",
       "classification": "internal",
       "family": "jobs",
@@ -1298,6 +1298,24 @@
       "negativeHarness": "I1/I2",
       "principalDerivation": "Privileged server diagnostics/health/alert process, no browser-selected owner",
       "ownerEvidence": "server-internal-secret-or-verified-worker"
+    },
+    {
+      "id": "src/server/generation/native-generation-idempotency.ts:135:33",
+      "tableOrRpc": "rpc/renderlab_accept_generation_dispatch_idempotent",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "I2/O1",
+      "principalDerivation": "Authenticated API account ID forwarded as p_owner_id; atomic SQL admission checks account access, owner and same-key replay",
+      "ownerEvidence": "actor-derived-RPC-p_owner_id"
+    },
+    {
+      "id": "src/server/generation/native-generation-idempotency.ts:73:33",
+      "tableOrRpc": "rpc/renderlab_lookup_generation_request_acceptance",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "I2/O1",
+      "principalDerivation": "Authenticated API account ID forwarded as p_owner_id; server-side request key digest, no unverified browser owner ID",
+      "ownerEvidence": "actor-derived-RPC-p_owner_id"
     }
   ]
 }

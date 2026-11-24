@@ -15,6 +15,9 @@ const allowedDomainOutcomes = new Set([
   "renderlab_generation_disabled",
   "renderlab_generation_active_limit_reached",
   "renderlab_generation_rate_limit_reached",
+  "renderlab_idempotency_invalid_request",
+  "renderlab_idempotency_admission_unavailable",
+  "renderlab_idempotency_admission_bind_failed",
   "renderlab_upload_active_limit_reached",
   "renderlab_upload_rate_limit_reached",
   "renderlab_beta_invitations_open_email_idx",
@@ -93,7 +96,15 @@ export async function supabaseRest<T>(path: string, init: RequestInit = {}): Pro
     // A value is read only to whitelist domain classifications, never attached
     // to the exception, sent to a route, stored, logged, or forwarded.
     const body: unknown = await response.json().catch(() => null);
-    throw new SupabaseRestError(response.status, classifyUpstreamError(body));
+    const classified = classifyUpstreamError(body);
+    // Only a literal PostgREST schema-cache "function not found" classification
+    // can declare 0034 unavailable. Generic 404s are not safe fallback evidence.
+    const missingRpc = path === "rpc/renderlab_accept_generation_dispatch_idempotent"
+      && response.status === 404 && body && typeof body === "object"
+      && !Array.isArray(body) && (body as Record<string, unknown>).code === "PGRST202";
+    throw new SupabaseRestError(response.status, {
+      ...classified, ...(missingRpc ? { sqlState: "PGRST202" } : {}),
+    });
   }
 
   if (response.status === 204) return null as T;

@@ -34,6 +34,12 @@ export const buildGenerationOpenApi = function buildGenerationOpenApi(source) {
         schema: { type: "string", pattern: uuidPattern },
       }];
     }
+    if (endpoint.requestHeaders) {
+      operation.parameters = [...(operation.parameters ?? []), ...endpoint.requestHeaders.map((header) => ({
+        name: header.name, in: "header", required: header.required,
+        description: header.description, schema: header.schema,
+      }))];
+    }
     if (endpoint.request) {
       operation.requestBody = {
         required: true,

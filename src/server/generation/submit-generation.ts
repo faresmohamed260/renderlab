@@ -162,7 +162,9 @@ function scheduleFiboDispatcherWake(jobId: string) {
   }
 }
 
-export async function submitGeneration(ownerId: string, request: GenerationRequest): Promise<SubmitGenerationResponse> {
+export async function submitGeneration(
+  ownerId: string, request: GenerationRequest, idempotencyKey?: string,
+): Promise<SubmitGenerationResponse> {
   const startedAt = Date.now();
   const operation = resolveCreativeOperation(request);
   const requestCorrelationId = createDiagnosticCorrelationId();
@@ -209,7 +211,28 @@ export async function submitGeneration(ownerId: string, request: GenerationReque
     });
   }
 
-  let admission = await reserveGenerationAdmission(ownerId);
+  // R8: the keyed path is a single SQL transaction (admission + job +
+  // durable outbox + binding + identity). Never reserve or release separately.
+  // Old clients without a key retain the exact legacy flow.
+  if (idempotencyKey && isFibo) {
+    const accepted = await submitNativeGeneration(ownerId, request, idempotencyKey);
+    if (!accepted.ok) return reject(accepted);
+    if ("newAcceptance" in accepted && accepted.newAcceptance) {
+      scheduleFiboDispatcherWake(accepted.job.id);
+    }
+    await emitDiagnosticEvent({
+      event: "generation.submission",
+      correlationId: correlationIdForGenerationJob(accepted.job.id),
+      jobId: accepted.job.id,
+      operation: accepted.job.operation,
+      phase: "accepted",
+      status: accepted.job.status,
+      durationMs: Date.now() - startedAt,
+    });
+    return { ok: true, job: accepted.job };
+  }
+
+    let admission = await reserveGenerationAdmission(ownerId);
   if (!admission.ok && admission.error.code === "generation_active_limit_reached"
     && await settleOwnerGenerationWithinResponse(ownerId, "submit")) {
     admission = await reserveGenerationAdmission(ownerId);
