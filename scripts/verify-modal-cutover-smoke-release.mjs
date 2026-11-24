@@ -83,6 +83,11 @@ try {
     const artifactId = env.RENDERLAB_CUTOVER_RECEIPT_ARTIFACT_ID;
     assert(verifyCutoverDispatchInputs({ deploymentId, artifactId, cutoverAt, exclusiveWindow,
       runAttempt: env.GITHUB_RUN_ATTEMPT || "1" }), "Cutover receipt required.");
+    // A prior dispatch for the same candidate can have spent the allowance even if cancelled.
+    // The exclusive window serializes authorized operators; no rerun or second dispatch is accepted.
+    const runs = await github("/actions/workflows/production-fibo-smoke.yml/runs?event=workflow_dispatch&head_sha=" + sha + "&per_page=100");
+    assert(Array.isArray(runs?.workflow_runs) && runs.total_count === runs.workflow_runs.length &&
+      runs.workflow_runs.every(run => String(run.id) === env.GITHUB_RUN_ID), "A prior or competing smoke dispatch exists; reconcile and use record-first fallback.");
     const { receipt, digest, producerRunId } = await readReceipt(Number(artifactId));
     const qualification = await verifyCutoverQualification({ sha, readinessRunId: receipt.qualification?.readinessRunId,
       github, before: receipt.observedAt, expected: receipt.qualification });
