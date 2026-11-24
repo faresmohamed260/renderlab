@@ -165,40 +165,58 @@ export async function verifyProductionLiveState({
   });
 }
 
-const CUTOVER_REPLACEMENT_SHA = "c3f92247b21b9761fde6cee610cce2c9084441f8";
-const CUTOVER_RECOVERY_SHA = "e93481466806b3a88f986cd547f11ef62e9543fb";
 const CUTOVER_DOMAIN = "renderlab.faresuniform.uk";
 
-// The transient cutover target is not the accepted release in the production manifest.
+// Pre-record verification is identity-based, not an authorization allowlist.
 export async function verifyModalCutoverSmokeRelease({
-  expectedSha, deploymentId, scenario, vercelToken, fetchImpl = fetch,
+  expectedSha, deploymentId, scenario, vercelToken, cutoverAt, exclusiveWindow, fetchImpl = fetch,
 } = {}) {
-  const sha = expectedSha?.toLowerCase();
-  if (![CUTOVER_REPLACEMENT_SHA, CUTOVER_RECOVERY_SHA].includes(sha)) {
-    throw new Error("Cutover smoke SHA must match an exact runbook source.");
-  }
-  if (!/^dpl_[a-zA-Z0-9]+$/.test(deploymentId ?? "")) {
-    throw new Error("Cutover smoke requires an exact Vercel deployment ID.");
-  }
-  if (!["text-to-image", "reference-edit"].includes(scenario)) {
-    throw new Error("Cutover smoke scenario must be text-to-image or reference-edit.");
-  }
+  if (typeof expectedSha !== "string" || !/^[0-9a-f]{40}$/i.test(expectedSha)) throw new Error("Cutover requires exact Git SHA.");
+  const sha = expectedSha.toLowerCase();
+  if (!/^dpl_[a-zA-Z0-9]+$/.test(deploymentId ?? "")) throw new Error("Cutover smoke requires an exact Vercel deployment ID.");
+  if (!["text-to-image", "reference-edit"].includes(scenario)) throw new Error("Cutover smoke scenario must be text-to-image or reference-edit.");
   if (!vercelToken) throw new Error("VERCEL_TOKEN is required for cutover verification.");
-
+  if (exclusiveWindow !== true) throw new Error("Exclusive release window required.");
+  if (!Number.isFinite(Date.parse(cutoverAt)) || new Date(cutoverAt).toISOString() !== cutoverAt) throw new Error("Invalid cutover assignment timestamp.");
   const scope = `teamId=${RENDERLAB_VERCEL_TEAM_ID}`;
   const [alias, deployment] = await Promise.all([
-    fetchJson(`https://api.vercel.com/v4/aliases/${CUTOVER_DOMAIN}?projectId=${RENDERLAB_VERCEL_PROJECT_ID}&${scope}`,
-      { token: vercelToken, fetchImpl, label: "Vercel cutover alias" }),
-    fetchJson(`https://api.vercel.com/v13/deployments/${deploymentId}?withGitRepoInfo=true&${scope}`,
-      { token: vercelToken, fetchImpl, label: "Vercel cutover deployment" }),
+    cutoverReadJson(`https://api.vercel.com/v4/aliases/${CUTOVER_DOMAIN}?projectId=${RENDERLAB_VERCEL_PROJECT_ID}&${scope}`, vercelToken, fetchImpl),
+    cutoverReadJson(`https://api.vercel.com/v13/deployments/${deploymentId}?withGitRepoInfo=true&${scope}`, vercelToken, fetchImpl),
   ]);
   assertEqual(alias?.alias, CUTOVER_DOMAIN, "Cutover domain");
   assertEqual(alias?.projectId, RENDERLAB_VERCEL_PROJECT_ID, "Cutover alias project");
-  assertEqual(alias?.deploymentId || alias?.deployment?.id, deploymentId, "Cutover alias target");
-  assertEqual(deployment?.id, deploymentId, "Cutover deployment ID");
+  const aliasIds = [alias?.deploymentId, alias?.deployment?.id].filter(value => value != null);
+  if (!aliasIds.length || aliasIds.some(id => id !== deploymentId)) throw new Error("Cutover alias target mismatch.");
+  assertEqual(isoFromMilliseconds(alias?.updatedAt, "Cutover alias assignment"), cutoverAt, "Cutover alias assignment");
+  const candidate = validateCutoverDeployment(deployment, deploymentId, sha);
+  return { ...candidate, domain: CUTOVER_DOMAIN, cutoverAt };
+}
+
+export async function cutoverReadJson(url, token, fetchImpl = fetch) {
+  const parsed = new URL(url);
+  if (!["https://api.vercel.com", "https://api.github.com"].includes(parsed.origin) || !token) throw new Error("Invalid cutover read endpoint or credential.");
+  let response;
+  try {
+    response = await fetchImpl(url, { method: "GET", redirect: "error", signal: AbortSignal.timeout(15000),
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json", "User-Agent": "renderlab-cutover-verifier" } });
+  } catch { throw new Error("Cutover read failed."); }
+  if (!response.ok) throw new Error(`Cutover read failed with HTTP ${response.status}.`);
+  try { return await response.json(); } catch { throw new Error("Invalid cutover response."); }
+}
+
+export function validateCutoverDeployment(deployment, id, sha) {
+  assertEqual(deployment?.id, id, "Cutover deployment ID");
   assertEqual(deployment?.project?.id, RENDERLAB_VERCEL_PROJECT_ID, "Cutover deployment project");
-  assertEqual(deploymentState(deployment), "READY", "Cutover deployment state");
+  const states = [deployment?.readyState, deployment?.state].filter(value => value != null);
+  if (!states.length || states.some(value => value !== "READY")) throw new Error("Cutover deployment state mismatch.");
   assertEqual(deployment?.target, "production", "Cutover deployment target");
-  assertEqual(deploymentSha(deployment).toLowerCase(), sha, "Cutover deployment Git SHA");
-  return { sha, deploymentId, domain: CUTOVER_DOMAIN };
+  const sources = [deployment?.meta?.githubCommitSha, deployment?.gitSource?.sha].filter(value => value != null);
+  if (!sources.length || sources.some(value => typeof value !== "string" || value.toLowerCase() !== sha)) throw new Error("Cutover deployment Git SHA mismatch.");
+  if (["true", true, "1", 1].includes(deployment?.meta?.gitDirty) ||
+      ["true", true, "1", 1].includes(deployment?.meta?.githubCommitDirty)) throw new Error("Cutover deployment dirty source.");
+  const deploymentUrl = deploymentOrigin(deployment);
+  let url;
+  try { url = new URL(deploymentUrl); } catch { throw new Error("Invalid cutover deployment URL."); }
+  if (url.protocol !== "https:" || url.username || url.password || url.port || url.pathname !== "/" || url.search || url.hash || url.origin !== deploymentUrl) throw new Error("Invalid cutover deployment URL.");
+  return { sha, deploymentId: id, deploymentUrl };
 }
