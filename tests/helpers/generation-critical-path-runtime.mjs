@@ -184,6 +184,18 @@ function rpcResponse(rpc, body) {
         admitted_at:new Date().toISOString(),
       });
       return Response.json([{reservation_id:RESERVATION_ID}]);
+    case "renderlab_accept_generation_dispatch_idempotent": {
+      if (runtime.admissionFailure) {
+        return Response.json({code:"P0001",message:"renderlab_"+runtime.admissionFailure},{status:400});
+      }
+      // Model one committed atomic RPC. Calls inside this SQL boundary are
+      // not separate network requests, and no partial admission can escape.
+      rpcResponse("renderlab_reserve_generation_admission",body);
+      rpcResponse("renderlab_accept_generation_dispatch",body);
+      rpcResponse("renderlab_bind_generation_admission",{...body,p_reservation_id:RESERVATION_ID,p_job_id:JOB_ID});
+      return Response.json([{outcome:"accepted",job_id:JOB_ID,attempt_id:body.p_attempt_id,
+        reservation_id:RESERVATION_ID,admission_deadline:body.p_admission_deadline}]);
+    }
     case "renderlab_accept_generation_dispatch": {
       assert.equal(body.p_owner_id, OWNER_A);
       assert.ok(!job, "Accepted attempt must not be resubmitted as the same job");

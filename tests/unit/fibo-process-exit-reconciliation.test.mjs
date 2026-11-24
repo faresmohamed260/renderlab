@@ -183,6 +183,9 @@ function fixture(t, {
         return Response.json([row]);
       }
 
+      if (query.get("id") === "eq.90000000-0000-4000-8000-000000000000" && method === "GET") {
+        return Response.json([{ ...row, id: "90000000-0000-4000-8000-000000000000", status:"queued", output_asset_ids:[] }]);
+      }
       assert.equal(query.get("id"), "eq." + id);
       if (method === "PATCH") {
         patches.push(body);
@@ -227,24 +230,14 @@ function fixture(t, {
       admissionSteps.push("release");
       return Response.json([{ id: "admission" }]);
     }
-    if (url.pathname === "/rest/v1/rpc/renderlab_reserve_generation_admission") {
+    if (url.pathname === "/rest/v1/rpc/renderlab_accept_generation_dispatch_idempotent") {
       assert.equal(body.p_owner_id, ownerId);
-      admissionSteps.push("reserve");
+      admissionSteps.push("atomic-accept");
       return reservationReleased && !denyRetry
-        ? Response.json([{ reservation_id: "new-admission" }])
-        : Response.json({ message: "renderlab_generation_active_limit_reached" }, { status: 400 });
-    }
-    if (url.pathname === "/rest/v1/rpc/renderlab_accept_generation_dispatch") {
-      assert.equal(body.p_owner_id, ownerId);
-      admissionSteps.push("commit");
-      return Response.json([{ ...row, id: "new-job", status: "queued", output_asset_ids: [] }]);
-    }
-    if (url.pathname === "/rest/v1/rpc/renderlab_bind_generation_admission") {
-      assert.equal(body.p_owner_id, ownerId);
-      assert.equal(body.p_reservation_id, "new-admission");
-      assert.equal(body.p_job_id, "new-job");
-      admissionSteps.push("bind");
-      return Response.json(true);
+        ? Response.json([{outcome:"accepted",job_id:"90000000-0000-4000-8000-000000000000",
+          reservation_id:"91000000-0000-4000-8000-000000000000",attempt_id:body.p_attempt_id,
+          admission_deadline:body.p_admission_deadline}])
+        : Response.json({code:"P0001",message:"renderlab_generation_active_limit_reached"},{status:400});
     }
     if (url.pathname === "/rest/v1/renderlab_account_preferences") {
       assert.equal(method, "GET");
@@ -632,7 +625,7 @@ for (const denyRetry of [false, true]) {
     assert.equal(response.status, denyRetry ? 429 : 202);
     assert.equal(job.row.status, "succeeded");
     assert.deepEqual(job.admissionSteps, [
-      "reserve", "lookup", "release", "reserve", ...(denyRetry ? [] : ["commit", "bind"]),
+      "atomic-accept", "lookup", "release", "atomic-accept",
     ]);
     assert.equal(job.reads, 1);
   });
@@ -712,7 +705,7 @@ test("a provider deadline preserves the original occupied response and job state
 
   assert.equal(response.status, 429);
   assert.equal((await response.json()).error.code, "generation_active_limit_reached");
-  assert.deepEqual(job.admissionSteps, ["reserve", "lookup"]);
+  assert.deepEqual(job.admissionSteps, ["atomic-accept", "lookup"]);
   assert.deepEqual(job.patches, []);
   assert.equal(requestedDeadlines.at(-1), 4_000);
   assert.ok(requestedDeadlines.slice(0, -1).every((ms) => ms === 1_500));

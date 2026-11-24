@@ -42,7 +42,7 @@ test("P1-02 provider wiring retains exactly one app accept, one outbox dispatch 
   assert.equal(runtime.releases, 1);
   assert.equal(heldReservation(), false);
   const accepts = runtime.traces.filter(x => x.side === "db"
-    && x.table === "rpc/renderlab_accept_generation_dispatch");
+    && x.table === "rpc/renderlab_accept_generation_dispatch_idempotent");
   assert.equal(accepts.length, 1);
   assert.equal(runtime.traces.filter(x => x.side === "provider"
     && x.method === "POST" && x.path === "/jobs/fibo").length, 0);
@@ -95,7 +95,7 @@ test("P1-02 cancellation keeps owner claim, one signed provider DELETE and exact
   const providerDeletes = runtime.traces.filter(x => x.side === "provider" && x.method === "DELETE");
   assert.deepEqual(providerDeletes.map(x => x.path), ["/jobs"]);
   assert.equal(runtime.traces.filter(x => x.side === "db"
-    && x.table === "rpc/renderlab_accept_generation_dispatch").length, 1);
+    && x.table === "rpc/renderlab_accept_generation_dispatch_idempotent").length, 1);
   const again = await cancellation.requestGenerationCancellation(OWNER_A, JOB_ID);
   assert.equal(again.ok, true);
   assert.equal(again.job.status, "cancelled");

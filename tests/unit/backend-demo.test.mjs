@@ -43,13 +43,12 @@ for (const [scenario, status, errorCode, phases, releases, mediaAssets] of matri
     assert.equal(result.final.providerCancels, scenario === "cancel-mid-run" ? 1 : 0);
     const operations = result.trace.map((item) => item.operation);
     if (scenario === "admission-denied") {
-      assert.ok(operations.includes("rpc/renderlab_reserve_generation_admission"));
-      assert.ok(!operations.includes("rpc/renderlab_accept_generation_dispatch"));
+      assert.ok(operations.includes("rpc/renderlab_accept_generation_dispatch_idempotent"));
+      assert.ok(!operations.includes("rpc/renderlab_reserve_generation_admission"));
     } else {
       const ordered = [
-        "rpc/renderlab_reserve_generation_admission",
-        "rpc/renderlab_accept_generation_dispatch",
-        "rpc/renderlab_bind_generation_admission",
+        "rpc/renderlab_accept_generation_dispatch_idempotent",
+        "generation_jobs",
         "/dispatch/wake",
       ].map((operation) => operations.indexOf(operation));
       assert.ok(ordered.every((value, index) => value >= 0 && (!index || value > ordered[index - 1])));

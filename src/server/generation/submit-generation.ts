@@ -2,6 +2,7 @@ import { envFlag, envString, fiboMaskEnabled } from "../../lib/config/runtime-en
 import "server-only";
 
 import { after } from "next/server";
+import { randomUUID } from "node:crypto";
 
 import { fiboGenerationModel, resolveCreativeOperation, type GenerationJob, type GenerationRequest } from "@/lib/capabilities/generation";
 import type { SubmitGenerationResponse } from "@/lib/api/generation-contract";
@@ -184,8 +185,6 @@ export async function submitGeneration(
   };
 
   const isFibo = request.model === fiboGenerationModel;
-  // Never silently downgrade a keyed intent to a non-idempotent backend.
-  // Reject before capability checks, source reads, admission or dispatch.
   if (idempotencyKey !== undefined && !isFibo) {
     return reject({ ok: false, error: { code: "invalid_request", message: "Idempotency-Key is supported only for FIBO image generation." } });
   }
@@ -216,19 +215,26 @@ export async function submitGeneration(
     });
   }
 
-  // R8: the keyed path is a single SQL transaction (admission + job +
-  // durable outbox + binding + identity). Never reserve or release separately.
-  // Old clients without a key retain the exact legacy flow.
-  if (idempotencyKey && isFibo) {
-    let accepted = await submitNativeGeneration(ownerId, request, idempotencyKey);
+  // Every FIBO client uses one atomic transaction for admission, job, outbox,
+  // binding and identity. An omitted header gets a unique internal key for
+  // this server request only; separate HTTP requests remain separate intents.
+  if (isFibo) {
+    const effectiveKey = idempotencyKey ?? randomUUID();
+    let accepted = await submitNativeGeneration(ownerId, request, effectiveKey);
     // The named active-limit denial proves the accept transaction rolled back.
     // Settle existing owner work, then retry the same intent once; never retry
     // an ambiguous acceptance or separately reserve/release a slot.
     if (!accepted.ok && accepted.error.code === "generation_active_limit_reached"
       && await settleOwnerGenerationWithinResponse(ownerId, "submit")) {
-      accepted = await submitNativeGeneration(ownerId, request, idempotencyKey);
+      accepted = await submitNativeGeneration(ownerId, request, effectiveKey);
     }
-    if (!accepted.ok) return reject(accepted);
+    if (!accepted.ok) {
+      if (idempotencyKey === undefined && accepted.error.code === "generation_acceptance_unconfirmed") {
+        return reject({ ok: false, error: { code: accepted.error.code,
+          message: "Generation acceptance could not be confirmed. Check Activity before submitting again." } });
+      }
+      return reject(accepted);
+    }
     if ("newAcceptance" in accepted && accepted.newAcceptance) {
       scheduleFiboDispatcherWake(accepted.job.id);
     }
