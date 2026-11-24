@@ -94,8 +94,9 @@ offline conformance, never in production policy. No additional model, capability
 provider fallback, API response or schema is enabled. This source integration is
 **not proof of deployment**; Worker 1 owns the separately authorized release and
 production evidence. Exact-head tests and CI for the staged implementation are
-recorded in PRs #626 (provider-only port), #627 (payload and status), and the
-following dedicated cancellation-wiring PR.
+recorded in PRs #626 (provider-only port), #627 (payload and status), and #630
+(cancellation wiring). PR #627 was merged into its former stacked base, so #630
+replays those reviewed payload/status changes onto protected main as well.
 
 ## Planned migration, incremental and gated (NOT part of this task)
 
