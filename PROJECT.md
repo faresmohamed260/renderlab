@@ -39,7 +39,7 @@ Generation is modeled as:
 
 Generation inputs and media actions use opaque product identities. R2 storage keys, provider IDs and worker routing remain server-side implementation details.
 
-Accepted generation dispatch and recovery do not require the initiating browser to remain open. For this beta, a finished job may settle to a durable terminal state on the owner's next Create, Library, Activity or blocked-submit return; owners who never return are not guaranteed unattended finalization. This is a recorded Phase 2 operational decision, not a new background scheduler.
+Accepted generation dispatch and recovery do not require the initiating browser to remain open. For this beta, a finished job may settle to a durable terminal state on the owner's next Create, Library, Activity or blocked-submit return; owners who never return are not guaranteed unattended finalization. The Phase 2 policy was reaffirmed by the owner at Phase 4 closeout; H1 restores late-return settlement for retained ready results, not a background scheduler. Revisit at materially larger beta user count, significant dormant-result accumulation or retention risk.
 
 ## Web product areas
 
@@ -81,7 +81,7 @@ The repository contains extensive exact-SHA workflow, artifact and rollout evide
 
 ## Current work and phase handoff
 
-[Phase 1 correctness](docs/history/contracts/architecture/FIBO_BETA_CORRECTNESS_PHASE_1.md) and [Phase 2 operational reliability](docs/history/contracts/architecture/FIBO_OPERATIONAL_RELIABILITY_PHASE_2_CONTRACT.md) are closed with verification evidence. The current **Phase 3 — Backend professional baseline (P0)** is owner-approved, ordered P0-01 through P0-05, and governed by the [active execution contract](docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md). It replaces creative productivity as the next implementation phase. **P0-01 and P0-02 are merged; P0-03a sanitized privileged errors is merged and production-live. P0-03b owner-isolation tests may start only after P0-03a Production Documentation Sync passes.** P1 provider/generalization follow-ons and future creative-productivity/frontend work stay deferred, not canceled. No runtime release is implied by a docs-only merge.
+[Phase 1 correctness](docs/history/contracts/architecture/FIBO_BETA_CORRECTNESS_PHASE_1.md), [Phase 2 operational reliability](docs/history/contracts/architecture/FIBO_OPERATIONAL_RELIABILITY_PHASE_2_CONTRACT.md), [Phase 3 backend P0](docs/audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md) and [Phase 4 backend P1](docs/audits/PHASE4_BACKEND_P1_CLOSEOUT_2026-11-24.md) are closed with bounded evidence and recorded residual gaps. **On 2026-11-24 the project owner signed off the backend-first gate and authorized frontend work to resume in Integration Mode, not Authorized Redesign Mode.** Phase 5 frontend polish is next for progressive planning after the merged frontend QA pass, code audit and test strategy; implementation requires its reviewed, merged contract. Preserve approved surfaces and current backend/API contracts. Human independent engineer review is optional; third AI-assisted verification review result remains pending. New capabilities, redesign, and unrelated backend work require separate scope. No runtime release is implied by a docs-only merge.
 
 This handoff deliberately does **not** restate completed phase journals or infer new authority from historical plans.
 

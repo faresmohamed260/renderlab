@@ -210,7 +210,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` — accepted incident/recovery operating procedure, operator roles, review cadence, and exercise metadata.
 - `docs/operations/PRODUCTION_RELEASE_RUNBOOK.md` — current Vercel and Modal release, rollback, and ADR-005 operator procedure.
 - `docs/operations/MODAL_DIRECT_PRODUCTION_CUTOVER.md` — historical one-time planned-outage cutover and recovery evidence.
-- `docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md` — active Phase 3 backend professional baseline (P0) contract; five separately reviewed backend-first units.
+- `docs/architecture/BACKEND_PROFESSIONAL_BASELINE_P0_CONTRACT.md` — historical Phase 3 backend professional baseline (P0) contract; see Phase 3 and Phase 4 closeouts.
 - `docs/architecture/P0_03_TRUST_BOUNDARIES_AND_OWNER_ISOLATION_CONTRACT.md` — P0-03 trust/principal model, owner-isolation test inventory, and service-role negative-test obligations; consult linked test evidence and current production state.
 - `docs/architecture/P0_04_GENERATION_STATE_MACHINE_SPEC.md` — P0-04 generation-job state inventory, pure transition policy, SQL conformance and explicitly unenforced invariants.
 - Active architecture contracts remain beside current architecture while execution requires them. Closed bounded implementation contracts are historical evidence under `docs/history/contracts/architecture/**`; current architecture/roadmaps carry forward any still-binding constraints.
@@ -252,7 +252,9 @@ When two repository records appear to conflict:
 
 ChatGPT Project context and the current chat remain supplementary/temporary continuity only, as defined by `AGENTS.md`; neither can override the repository.
 
-## Phase 4 backend P1 (accepted contract; implementation gated)
+## Phase 4 closeout and Phase 5 handoff
 
-- [P1-07 sanitized independent-review evidence pack](audits/P1_07_INDEPENDENT_REVIEW_EVIDENCE_PACK_2026-11-24.md) and [truthfulness claims sheet](audits/P1_07_TRUTHFULNESS_CLAIMS_SHEET_2026-11-24.md): dated source/deployment evidence, diagrams, migration/privilege limits, test/CI/restore links and review challenges. Reviewer preparation only; **no independent review sign-off is claimed**.
-- [Backend P1 Phase 4 execution contract](architecture/BACKEND_P1_PHASE4_CONTRACT.md): accepted immediate-phase plan, normative on protected-main merge; **P1-00 R1–R13 remediation comes first**. Contract merge is not implementation or release authorization. [Phase 3 P0 closeout](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md) is the evidence baseline; the 2026-11-23 three-reviewer pass was interim and the final independent external engineering review remains an exit gate.
+- [Phase 4 P1 closeout](audits/PHASE4_BACKEND_P1_CLOSEOUT_2026-11-24.md): exit ledger, owner dispositions, release evidence and residual limitations. Backend-first gate signed off by the owner on 2026-11-24; frontend resumes in Integration Mode.
+- [Phase 4 execution contract](architecture/BACKEND_P1_PHASE4_CONTRACT.md) and [Phase 3 closeout](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md): historical planning and evidence baseline, not active work authority.
+- [P1-07 evidence pack](audits/P1_07_INDEPENDENT_REVIEW_EVIDENCE_PACK_2026-11-24.md) and [claims sheet](audits/P1_07_TRUTHFULNESS_CLAIMS_SHEET_2026-11-24.md): dated reviewer preparation, not current production status or human independent review certification. Third verification review pending.
+- Phase 5 frontend polish contract is not yet accepted; merged QA pass, code audit and test strategy are prerequisite inputs. No redesign or new capability is authorized by the gate decision.
