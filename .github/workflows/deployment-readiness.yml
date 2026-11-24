@@ -80,6 +80,13 @@ jobs:
       - name: Verify Vercel environment preflight
         env:
           VERCEL: "1"
+          VERCEL_ENV: "production"
+          RENDERLAB_GENERATION_GATEWAY_URL: "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run"
+          RENDERLAB_FIBO_GENERATION: "1"
+          RENDERLAB_FIBO_MODAL_KEY: "offline-fixture-modal-key"
+          RENDERLAB_FIBO_MODAL_SECRET: "offline-fixture-modal-secret"
+          RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true"
+          RENDERLAB_FIBO_MASK_ENABLED: "true"
           SUPABASE_URL: "https://rashyleshocuvpgcooxy.supabase.co"
           SUPABASE_PUBLISHABLE_KEY: "test-publishable-key"
           SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key"

@@ -18,7 +18,7 @@ const baseline = () => {
     CRON_SECRET: "fixture-cron-credential-minimum-length",
     RENDERLAB_GENERATION_RECONCILER_SECRET: "fixture-reconciler-credential-minimum-length",
     RENDERLAB_FIBO_GENERATION: "1",
-    RENDERLAB_GENERATION_GATEWAY_URL: "https://faresmohamed260--renderlab-generation-gateway-web.modal.run",
+    RENDERLAB_GENERATION_GATEWAY_URL: "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run",
     RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true",
     RENDERLAB_FIBO_MASK_ENABLED: "true",
   });
@@ -62,16 +62,34 @@ test("malformed approvals, gateway URL, flags, weak secrets are rejected with sa
   }
 });
 
-test("gateway origin is pinned to the approved workspace and app, not any Modal tenant", () => {
-  for (const url of [
-    "https://other-user--renderlab-generation-gateway-web.modal.run",
-    "https://faresmohamed260--other-app-web.modal.run",
-    "https://faresmohamed260--renderlab-generation-gateway-web.modal.run.evil.example",
-    "http://faresmohamed260--renderlab-generation-gateway-web.modal.run",
-    "https://faresmohamed260--renderlab-generation-gateway-web.modal.run:8443",
-    "https://faresmohamed260--renderlab-generation-gateway-web.modal.run/other",
-  ]) {
-    assert(has(validateRuntimeEnvironment({...baseline(), RENDERLAB_GENERATION_GATEWAY_URL: url}, "fixture"), "RENDERLAB_GENERATION_GATEWAY_URL"), url);
+test("real production gateway origin is accepted and all other identities and URL components are rejected", () => {
+  const valid = "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run";
+  for (const context of ["production", "fixture"]) {
+    assert.deepEqual(validateRuntimeEnvironment({...baseline(), RENDERLAB_GENERATION_GATEWAY_URL: valid}, context), []);
+    for (const url of [
+      "https://other-user-main--renderlab-generation-gateway-web.us-east.modal.run",
+      "https://faresmohamed260-main--other-app-web.us-east.modal.run",
+      "https://faresmohamed260-main--renderlab-generation-gateway-other.us-east.modal.run",
+      "https://faresmohamed260-preview--renderlab-generation-gateway-web.us-east.modal.run",
+      "https://faresmohamed260--renderlab-generation-gateway-web.modal.run",
+      "https://faresmohamed260-main--renderlab-generation-gateway-web.modal.run",
+      "https://faresmohamed260-main--renderlab-generation-gateway-web.eu-west.modal.run",
+      "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run.evil.example",
+      "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.example",
+      "http://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run",
+      "https://fixture-user@faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run",
+      valid + ":443",
+      valid + ":8443",
+      valid + "/other",
+      valid + "?x=1",
+      valid + "#fragment",
+    ]) {
+      const fixture = {...baseline(), RENDERLAB_GENERATION_GATEWAY_URL: url};
+      assert(has(validateRuntimeEnvironment(fixture, context), "RENDERLAB_GENERATION_GATEWAY_URL"), url);
+      delete fixture.RENDERLAB_GENERATION_GATEWAY_URL;
+      fixture.RENDERLAB_FIBO_GATEWAY_URL = url;
+      assert(has(validateRuntimeEnvironment(fixture, context), "RENDERLAB_GENERATION_GATEWAY_URL"), "legacy alias: " + url);
+    }
   }
 });
 
@@ -91,7 +109,7 @@ test("gateway credentials are required together only when active or gateway conf
   }
   const legacy = baseline();
   delete legacy.RENDERLAB_GENERATION_GATEWAY_URL;
-  legacy.RENDERLAB_FIBO_GATEWAY_URL = "https://faresmohamed260--renderlab-generation-gateway-web.modal.run";
+  legacy.RENDERLAB_FIBO_GATEWAY_URL = "https://faresmohamed260-main--renderlab-generation-gateway-web.us-east.modal.run";
   assert.deepEqual(validateRuntimeEnvironment(legacy, "fixture"), []);
   delete legacy.RENDERLAB_FIBO_MODAL_KEY;
   assert(has(validateRuntimeEnvironment(legacy, "fixture"), "RENDERLAB_FIBO_MODAL_KEY"));
