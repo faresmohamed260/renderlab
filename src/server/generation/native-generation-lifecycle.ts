@@ -1,4 +1,5 @@
 import { envString } from "../../lib/config/runtime-env.ts";
+import { fiboAdmissionDeadlineMs } from "@/server/generation/fibo-admission-deadline";
 import { fiboProvider } from "@/server/generation/adapters/fibo-provider-port";
 import { persistFiboMaskInputs } from "@/lib/capabilities/fibo-mask";
 import type {
@@ -73,7 +74,7 @@ async function acceptDurableDispatch(
       p_model_key: "fibo-2.0-turbo",
       p_model_version: "bria-fibo-2.0-turbo",
       p_payload: payload,
-      p_admission_deadline: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+      p_admission_deadline: new Date(Date.now() + fiboAdmissionDeadlineMs).toISOString(),
     }),
   });
   if (!rows?.[0]) throw new Error("Generation job and dispatch intent could not be committed.");
