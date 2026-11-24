@@ -37,7 +37,7 @@ class SupabaseDispatchStore:
 
     def claim_due(self, *, now, lease_until, limit):
         rows = self._query(
-            "select * from public.renderlab_claim_generation_dispatch(%s::uuid, %s::integer, %s::integer)",
+            "select * from public.renderlab_claim_generation_dispatch_bounded(%s::uuid, %s::integer, %s::integer)",
             (self.claim_token, max(30, int((lease_until - now).total_seconds())), limit),
         )
         return [DispatchIntent(

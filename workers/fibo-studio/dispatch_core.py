@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+import logging
 from typing import Any, Mapping, Protocol
 
 
@@ -95,8 +96,20 @@ class Dispatcher:
         )
         totals = {"claimed": len(intents), "dispatched": 0, "retried": 0, "failed": 0, "unresolved": 0}
         for intent in intents:
-            outcome = self._dispatch(intent, now)
-            totals[outcome] += 1
+            try:
+                outcome = self._dispatch(intent, now)
+                totals[outcome] += 1
+            except Exception:
+                # A lookup/finish/claim-lost fault must not abandon later
+                # leases. No retry or new provider send on uncertain state.
+                # Conditional finish may itself fail (including lost claims).
+                # Count the observed outcome as unresolved, not as a durable
+                # write acknowledgement; the DB delivery cap bounds redelivery.
+                try:
+                    self.store.mark_unresolved(intent, error="unexpected dispatch processing failure")
+                except Exception:
+                    logging.getLogger(__name__).warning("dispatch_intent_unresolved_write_unconfirmed")
+                totals["unresolved"] += 1
         return DispatchSummary(**totals)
 
     def _dispatch(self, intent: DispatchIntent, now: datetime) -> str:
@@ -138,9 +151,16 @@ class Dispatcher:
             self.store.mark_retry(intent, next_attempt_at=next_attempt, error=str(error)[:500])
             return "retried"
         except UnknownDispatchOutcome as error:
-            reconciled = backend.lookup(intent.attempt_id)
-            if reconciled.state is LookupState.ACCEPTED and reconciled.handle:
-                self.store.mark_dispatched(intent, reconciled.handle)
-                return "dispatched"
-            self.store.mark_unresolved(intent, error=str(error)[:500])
-            return "unresolved"
+            return self._recover_unknown(backend, intent, str(error)[:500])
+        except Exception:
+            # Unexpected validation/provider/finish exceptions do not prove
+            # non-acceptance. Reconcile once, never retry or send again.
+            return self._recover_unknown(backend, intent, "unexpected dispatch outcome")
+
+    def _recover_unknown(self, backend: DispatchBackend, intent: DispatchIntent, error: str) -> str:
+        reconciled = backend.lookup(intent.attempt_id)
+        if reconciled.state is LookupState.ACCEPTED and reconciled.handle:
+            self.store.mark_dispatched(intent, reconciled.handle)
+            return "dispatched"
+        self.store.mark_unresolved(intent, error=error)
+        return "unresolved"
