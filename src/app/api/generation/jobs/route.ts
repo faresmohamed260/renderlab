@@ -10,6 +10,7 @@ import { isFiboGenerationAvailable, isFiboMaskGenerationAvailable, isFiboAutoVgl
 export const maxDuration = 60;
 
 function submissionStatus(code: SubmitGenerationErrorCode) {
+  if (code === "invalid_request") return 400;
   if (code === "generation_access_denied") return 403;
   if (code === "generation_disabled" || code === "generation_backend_unavailable") return 503;
   if (code === "generation_active_limit_reached" || code === "generation_rate_limit_reached") return 429;

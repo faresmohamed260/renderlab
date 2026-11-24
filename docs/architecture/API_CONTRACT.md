@@ -1,6 +1,6 @@
 # Generation API contract — private v1 (OpenAPI 3.1)
 
-**Scope:** invite-only beta generation HTTP routes; **contract document version:** 1.0.0. **Deployment:** this repository contract does not attest production rollout. Merging it does not authorize release; the owner will plan the next batched release. It does not enable a public API, add `/v1` routes, new authentication modes or provider features.
+**Scope:** invite-only beta generation HTTP routes; **contract document version:** 1.1.0. **Deployment:** this repository contract does not attest production rollout. Merging it does not authorize release; the owner will plan the next batched release. It does not enable a public API, add `/v1` routes, new authentication modes or provider features.
 
 ## Source and reproducibility
 
@@ -28,7 +28,7 @@ OpenAPI 3.1's structural schema is augmented with `x-renderlab-semantic-rules`: 
 
 ## Idempotency, settlement, and versioning
 
-**No client request-idempotency promise:** there is no supported `Idempotency-Key` contract. Replaying submit, retry or run-again may create a new job. An *accepted individual job* instead has a durable dispatch/outbox attempt guard. Durable media has a unique output index/recovery path, but neither guarantees exactly one provider execution or one R2 PUT. Cancellation is status-dependent and terminal jobs cannot be reopened. Finished jobs can require **owner-return reconciliation**; no unattended settlement scheduler is promised. These are distinct properties, not interchangeable claims.
+**FIBO Create POST request identity:** an optional 16–128 character opaque ASCII `Idempotency-Key` applies only to FIBO image generation on `POST /api/generation/jobs`. Non-FIBO requests supplying it are rejected with sanitized HTTP 400 `invalid_request` before admission or dispatch; the public parser already permits FIBO only. When migration 0034 is installed, the same owner/key/normalized intent replays the original job, a changed intent returns 409, a missing migration returns 503 without legacy downgrade, and unconfirmed acceptance returns 503 with Retry-After. Unkeyed submit, Retry and Run Again remain non-idempotent. This is a defense-in-depth correction to the existing FIBO-only public contract, not a new model or endpoint. An *accepted individual job* instead has a durable dispatch/outbox attempt guard. Durable media has a unique output index/recovery path, but neither guarantees exactly one provider execution or one R2 PUT. Cancellation is status-dependent and terminal jobs cannot be reopened. Finished jobs can require **owner-return reconciliation**; no unattended settlement scheduler is promised. These are distinct properties, not interchangeable claims.
 
 **Document semver:** breaking field, error/status, authentication or idempotency behavior requires a new major and explicitly approved migration/release; additive compatible fields/endpoints increment minor; documentation corrections with unchanged behavior increment patch. This is **contract document versioning**, not a new public endpoint version or automatic deployment. A compatibility snapshot change must be deliberate, reviewed, differential-tested and green on the exact head; production release is a separate owner-authorized runbook process.
 

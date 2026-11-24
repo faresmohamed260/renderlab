@@ -184,6 +184,11 @@ export async function submitGeneration(
   };
 
   const isFibo = request.model === fiboGenerationModel;
+  // Never silently downgrade a keyed intent to a non-idempotent backend.
+  // Reject before capability checks, source reads, admission or dispatch.
+  if (idempotencyKey !== undefined && !isFibo) {
+    return reject({ ok: false, error: { code: "invalid_request", message: "Idempotency-Key is supported only for FIBO image generation." } });
+  }
   if (request.autoVgl && !isFiboAutoVglAvailable()) {
     return reject({ ok: false, error: { code: "generation_disabled", message: "Generated FIBO VGL has not been qualified for this environment." } });
   }
