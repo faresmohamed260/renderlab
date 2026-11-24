@@ -128,7 +128,9 @@ async function cleanupFixture() {
   await collectTrackedStorageKeys(ownerIdentity.id);
   await deleteConfiguredTestAccount(ownerIdentity);
   const result = await assertIndependentCleanup(ownerIdentity.id);
-  for (const table of ["generation_dispatch_outbox", "renderlab_generation_request_keys"]) {
+  // Migration 0034 intentionally denies direct service_role SELECT on request keys.
+  // The release operator independently verifies zero key rows via read-only SQL.
+  for (const table of ["generation_dispatch_outbox"]) {
     const residue = await serviceRows(table + "?owner_id=eq." + encodeURIComponent(ownerIdentity.id) + "&select=*&limit=1");
     assert(residue.length === 0, "dispatch or request key residue");
   }
