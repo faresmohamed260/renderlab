@@ -18,7 +18,7 @@ const baseline = () => {
     CRON_SECRET: "fixture-cron-credential-minimum-length",
     RENDERLAB_GENERATION_RECONCILER_SECRET: "fixture-reconciler-credential-minimum-length",
     RENDERLAB_FIBO_GENERATION: "1",
-    RENDERLAB_GENERATION_GATEWAY_URL: "https://test-worker.modal.run",
+    RENDERLAB_GENERATION_GATEWAY_URL: "https://faresmohamed260--renderlab-generation-gateway-web.modal.run",
     RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED: "true",
     RENDERLAB_FIBO_MASK_ENABLED: "true",
   });
@@ -62,6 +62,19 @@ test("malformed approvals, gateway URL, flags, weak secrets are rejected with sa
   }
 });
 
+test("gateway origin is pinned to the approved workspace and app, not any Modal tenant", () => {
+  for (const url of [
+    "https://other-user--renderlab-generation-gateway-web.modal.run",
+    "https://faresmohamed260--other-app-web.modal.run",
+    "https://faresmohamed260--renderlab-generation-gateway-web.modal.run.evil.example",
+    "http://faresmohamed260--renderlab-generation-gateway-web.modal.run",
+    "https://faresmohamed260--renderlab-generation-gateway-web.modal.run:8443",
+    "https://faresmohamed260--renderlab-generation-gateway-web.modal.run/other",
+  ]) {
+    assert(has(validateRuntimeEnvironment({...baseline(), RENDERLAB_GENERATION_GATEWAY_URL: url}, "fixture"), "RENDERLAB_GENERATION_GATEWAY_URL"), url);
+  }
+});
+
 test("gateway credentials are required together only when active or gateway configured", () => {
   const disabled = baseline();
   disabled.RENDERLAB_FIBO_GENERATION = "0";
@@ -78,7 +91,7 @@ test("gateway credentials are required together only when active or gateway conf
   }
   const legacy = baseline();
   delete legacy.RENDERLAB_GENERATION_GATEWAY_URL;
-  legacy.RENDERLAB_FIBO_GATEWAY_URL = "https://legacy-fibo.modal.run";
+  legacy.RENDERLAB_FIBO_GATEWAY_URL = "https://faresmohamed260--renderlab-generation-gateway-web.modal.run";
   assert.deepEqual(validateRuntimeEnvironment(legacy, "fixture"), []);
   delete legacy.RENDERLAB_FIBO_MODAL_KEY;
   assert(has(validateRuntimeEnvironment(legacy, "fixture"), "RENDERLAB_FIBO_MODAL_KEY"));
