@@ -345,10 +345,9 @@
 }
 .create-preview-modes button[aria-pressed="true"] { color: #f6f2ff; }
 .create-preview-tools { display: flex; gap: 4px; align-items: center; position: absolute; inset-inline-end: 0; inset-block-start: 0; }
-.create-preview-queue { position: relative; z-index: 1; }
 .create-preview-workspace summary { cursor: pointer; }
-.create-preview-queue summary { display: flex; align-items: center; gap: 6px; padding: 7px 9px; font-size: 12px; }
-.create-preview-queue p, .create-preview-recents > div { position: absolute; inset-inline-end: 0; margin-block-start: 4px; inline-size: 200px; border-radius: 16px; background: rgb(32 27 43 / 90%); backdrop-filter: blur(18px); box-shadow: 0 8px 28px rgb(0 0 0 / 24%); padding: 12px; font-size: 12px; }
+.create-preview-workspace .create-preview-toolbar-trigger { display: flex; align-items: center; gap: 6px; padding: 7px 9px; min-block-size: 38px; font-size: 12px; font-weight: normal; color: inherit; }
+.create-preview-recents > div { position: absolute; inset-inline-end: 0; margin-block-start: 4px; inline-size: 200px; border-radius: 16px; background: rgb(32 27 43 / 90%); backdrop-filter: blur(18px); box-shadow: 0 8px 28px rgb(0 0 0 / 24%); padding: 12px; font-size: 12px; }
 .create-preview-grid {
   display: grid;
   grid-template-columns: clamp(260px, 20.4vw, 360px) minmax(0, 1fr) clamp(144px, 11.8vw, 214px);
@@ -440,8 +439,6 @@
   .create-preview-canvas { order: -1; inline-size: min(80%, 336px); }
   .create-preview-toolbar { flex-wrap: wrap; align-items: center; }
   .create-preview-tools { position: relative; inset: auto; }
-  .create-preview-queue p { inset-inline-end: auto; inset-inline-start: 0; }
-  .create-preview-queue:last-child p { inset-inline-start: auto; inset-inline-end: 0; }
 }
 
 /* Keep focus rings on interactive glass surfaces without resting outlines. */
@@ -1289,20 +1286,25 @@
   .create-preview-canvas .create-preview-stage-live { transition: filter .24s ease-out; }
 }
 
-.create-preview-queue-jobs {
-  position: absolute;
-  inset-inline-end: 0;
-  margin-block-start: 4px;
-  inline-size: min(300px, 80vw);
-  max-block-size: 50dvh;
+/* Radix positions this portalled layer; no ancestor clipping or manual offsets. */
+.create-preview-toolbar-popover {
+  box-sizing: border-box;
+  max-inline-size: min(calc(100dvw - 24px), var(--radix-popover-content-available-width));
+  max-block-size: min(50dvh, var(--radix-popover-content-available-height));
+  min-inline-size: 0;
   overflow: auto;
-  border-radius: 16px;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: var(--radius-xl);
   background: rgb(32 27 43 / 95%);
   backdrop-filter: blur(18px);
   box-shadow: 0 8px 28px rgb(0 0 0 / 24%);
   padding: 12px;
   font-size: 12px;
 }
+.create-preview-queue-jobs { inline-size: 300px; }
+.create-preview-shortcuts-popover { inline-size: 200px; }
 .create-preview-queue-entry { display: grid; gap: 4px; margin-block-start: 8px; overflow-wrap: anywhere; }
 
 /* Desktop Studio input surfaces. Keep the same setup-row footprint in both workflows. */

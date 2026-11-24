@@ -169,6 +169,7 @@ Current approved local primitives under `src/components/ui`:
 - `Input`
 - `Label`
 - `NativeSelect`
+- `Popover` / trigger / portalled content
 - `Spinner`
 - `Textarea`
 - `Toggle` / `ToggleGroup` / `ToggleGroupItem`

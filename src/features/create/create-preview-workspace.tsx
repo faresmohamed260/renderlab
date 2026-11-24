@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { nextCreateToolbarPopover, type CreateToolbarPopover } from "./create-toolbar-popover-state";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -213,7 +215,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }, []);
 
   const [busy, setBusy] = useState(false);
-  const queue = useRef<HTMLDetailsElement>(null);
+  const queue = useRef<HTMLButtonElement>(null);
+  const [toolbarPopover, setToolbarPopover] = useState<CreateToolbarPopover>(null);
   const preparing = useRef<AbortController | null>(null);
   const [enqueueing, setEnqueueing] = useState(false);
   const [activeCancel, setActiveCancel] = useState<{ id: string; pending: boolean }>();
@@ -1034,9 +1037,11 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     <section className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
       <div className="create-preview-toolbar">
         <div className="create-preview-tools">
-          <details ref={queue} className="create-preview-queue">
-                        <summary><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</summary>
-            <div className="create-preview-queue-jobs">
+          <Popover open={toolbarPopover === "queue"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "queue", open))}>
+            <PopoverTrigger asChild>
+              <Button ref={queue} type="button" variant="ghost" className="create-preview-toolbar-trigger"><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</Button>
+            </PopoverTrigger>
+            <PopoverContent aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs">
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               <div className="create-preview-caption">Waiting requests keep their prompt and inputs in this preview until they start, are removed, or expire.</div>
               {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
@@ -1050,12 +1055,16 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     onClick={() => void removeWaiting(bookmark.id)}>Remove waiting render</Button>
                 </div>
               ))}
-            </div>
-          </details>
-          <details className="create-preview-queue">
-            <summary><Keyboard size={16} aria-hidden="true" /> Shortcuts</summary>
-            <p>Ctrl + Enter to generate when the form is ready.</p>
-          </details>
+            </PopoverContent>
+          </Popover>
+          <Popover open={toolbarPopover === "shortcuts"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "shortcuts", open))}>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
+            </PopoverTrigger>
+            <PopoverContent aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover">
+              <p>Ctrl + Enter to generate when the form is ready.</p>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
       {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
@@ -1372,10 +1381,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           <div ref={setHistoryRail} className="create-preview-history-rail">
             {queueCount > 0 && <Button type="button" variant="ghost" className="create-preview-history-progress"
               aria-label={"Open Queue, " + queueCount + (queueCount === 1 ? " active render" : " renders")} onClick={() => {
-                if (queue.current) {
-                  queue.current.open = true;
-                  queue.current.querySelector("summary")?.focus({ preventScroll: true });
-                }
+                queue.current?.focus({ preventScroll: true });
+                setToolbarPopover("queue");
               }}>
               <span>Rendering</span><span>{queueCount} in Queue</span>
             </Button>}
