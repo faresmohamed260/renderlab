@@ -312,8 +312,25 @@ function envSource(name: RuntimeEnvName): string | undefined {
   return process.env[name];
 }
 const reportedMissingProductionEnv = new Set<string>();
-export function envString(name: RuntimeEnvName): string | undefined {
+const refusedProductionTestOverrides = new Set<RuntimeEnvName>([
+  "RENDERLAB_TEST_NATIVE_WORKER_OVERRIDE",
+  "RENDERLAB_TEST_NATIVE_WORKER_GATEWAY_URL",
+  "RENDERLAB_TEST_ADMIN_HEALTH_OWNER_SCOPE",
+]);
+const reportedRefusedProductionTestOverrides = new Set<RuntimeEnvName>();
+function runtimeValue(name: RuntimeEnvName): string | undefined {
   const value = envSource(name);
+  if (envSource("VERCEL_ENV") === "production" && refusedProductionTestOverrides.has(name)) {
+    if (value?.trim() && !reportedRefusedProductionTestOverrides.has(name)) {
+      reportedRefusedProductionTestOverrides.add(name);
+      console.error(`Configuration error: ${name}: test-only override refused in Production.`);
+    }
+    return undefined;
+  }
+  return value;
+}
+export function envString(name: RuntimeEnvName): string | undefined {
+  const value = runtimeValue(name);
   if (envSource("VERCEL_ENV") === "production" && !value?.trim() &&
       runtimeEnvSchema[name].category === "production-required" &&
       !reportedMissingProductionEnv.has(name)) {
@@ -331,7 +348,7 @@ function enabled(value: string | undefined, mode: "1" | "true" | "flex"): boolea
 export function envFlag(name: BooleanEnvName): boolean {
   const spec = runtimeEnvSchema[name];
   if (spec.kind !== "boolean") return false;
-  return enabled(envSource(name), spec.encoding as "1" | "true" | "flex");
+  return enabled(runtimeValue(name), spec.encoding as "1" | "true" | "flex");
 }
 /** Old route semantics retained: Number(raw || 8), finite-or-default; default lives in schema. */
 export function maintenanceBatchLimit(): number {
@@ -408,7 +425,7 @@ export function validateRuntimeEnvironment(
     }
   }
   if (source.SUPABASE_URL?.trim() && source.SUPABASE_URL.trim().replace(/\/$/, "") !== approvedSupabaseUrl) issue("SUPABASE_URL", "wrong approved project URL");
-  if (source.CRON_SECRET?.trim() && source.CRON_SECRET.trim().length < 16) issue("CRON_SECRET", "below required minimum length");
+  if (source.CRON_SECRET?.trim() && source.CRON_SECRET.trim().length < 32) issue("CRON_SECRET", "below required minimum length");
   if (source.RENDERLAB_GENERATION_RECONCILER_SECRET?.trim() && source.RENDERLAB_GENERATION_RECONCILER_SECRET.trim().length < 32) issue("RENDERLAB_GENERATION_RECONCILER_SECRET", "below required minimum length");
 
   const fiboEnabled = enabled(source.RENDERLAB_FIBO_GENERATION, "1");
