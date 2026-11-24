@@ -35,6 +35,17 @@
 
 - Canonical `docs/production/current.json` and the five human-readable mirrors were advanced to `e28b419` with the exact Vercel alias cutover, six protected check IDs, readiness completion, migrations 0032/0033, worker versions, and rollback anchors. GitHub merge, production documentation sync, and the hosted fixture each require their own later proof; this statement does not assert they have passed.
 
+## Batch A acceptance closeout — 2026-11-24 UTC
+
+- Record [PR #634](https://github.com/faresmohamed260/renderlab/pull/634) merged as `94fe89906e5d81f2f9c3bb8ba81fd4f80f96ccb5` after all six required checks and CodeQL passed. Vercel's unrelated PR integration reported account blocked, not a protected-main required check.
+- [Production Documentation Sync #45293729989](https://github.com/faresmohamed260/renderlab/actions/runs/45293729989): **SUCCESS**, independently compared manifest and five mirrors to exact production SHA `e28b41922728e1052f9021b36bef67a84684f979`, Vercel alias `updatedAt=2026-11-23T23:25:33.592Z`, GitHub qualification and rollback. Latest qualification `2026-11-23T23:19:40.000Z` preceded cutover.
+- [Production FIBO Smoke #45294385227](https://github.com/faresmohamed260/renderlab/actions/runs/45294385227): **SUCCESS**, exactly one `text-to-image` generation, protected-main harness `94fe899`, expected production SHA `e28b419`, no cutover override; release preflight passed before fixture work. **Standing one-generation allowance consumed; do not retry or dispatch another.**
+- Downloaded artifact `production-fibo-smoke-45294385227-1/manifest.json`: `passed=true`, `providerGenerationCount=1`, `smokeDurableProof.status=succeeded`, exactly one output asset and Library asset, `completedAt` and `reservationReleasedAt` both `2026-11-24T02:10:22.35998+02:00`, `stableAfterSecondLibraryLoad=true`. Browser harness asserts accepted HTTP 202 submission, succeeded activity and stable Library revisit; screenshots retained in workflow artifact.
+- Independent Supabase `pg_stat_statements` normalized atomic RPC query ID `-2583045759348788091`: calls **1 before**, **2 after**, exactly one additional atomic terminalization. This is a bounded counter observation, not permanent per-job tracing.
+- Cleanup in workflow and final independent `--cleanup-only` both passed. Artifact `cleanup.verified=true`, `contractedDbAuthResidue=0`, `trackedR2ObjectsChecked=3`; independent production SQL: **0 active jobs, 0 unreleased reservations, 0 outbox rows**.
+- Read-only `modal app history --env main`: renderer `renderlab-image-generation` **v10** and gateway/dispatcher `renderlab-generation-gateway` **v11**, both tagged `e28b419`. Rollback pair renderer v9, gateway v10 tagged `decd2f6`. These are deployed-version read-backs, not per-request distributed traces.
+- **Disposition: PASS, batch A closed.** App `e28b419` remains live, migrations 0032/0033 remain applied, no rollback required. Batch B may merge only through required gates and must **not release** without a separate head-engineer order.
+
 ## Release stop state
 
 No further merges or unrelated PRs are included. **Batch B and TLS canary remain blocked pending the production documentation sync and verified hosted acceptance.** On a real runtime/auth/data/dispatch regression, stop without repeating provider work, roll back the web deployment and restore the previous renderer then gateway versions; installed additive migrations remain.

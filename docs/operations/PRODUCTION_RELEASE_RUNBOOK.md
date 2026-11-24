@@ -18,6 +18,8 @@ The active FIBO workspace is one label in the existing reciprocal Modal allocati
 
 ## Production environment preflight
 
+One-off verification scripts require their internal secret supplied **at run time**: the account-data-lifecycle script uses the maintenance secret; reconciliation, cancellation, activity, and QA scripts use the generation reconciler secret. Vercel stores both secrets **write-only**, so their values cannot be retrieved from Vercel for later script execution; obtain authorized values through the secure operator channel without printing or committing them.
+
 Before a release or account migration, compare the Vercel Production variable names against the required names in [the build preflight](../../scripts/verify-vercel-env.mjs) and the active [FIBO connection contract](../architecture/INFRASTRUCTURE.md). The [typed runtime environment contract](../architecture/RUNTIME_ENV_CONFIGURATION.md) and [16-name dashboard inventory](PRODUCTION_ENV_REQUIRED_NAMES.json) are the single schema/approved-inventory pair; CI exercises the same validator with synthetic credentials, and the staged Production build validates actual masked values without printing them. Check the team, project, and Production scope. Record names only and keep credential values out of logs and release notes.
 
 Production also requires `RENDERLAB_CLOSED_BETA_ACCESS_ENFORCEMENT_ENABLED=true` for invitation-only access and `RENDERLAB_FIBO_MASK_ENABLED=true` for masked editing. Confirm both are present in Production and verify effective behavior after cutover with an admitted and a non-admitted fixture and the live capabilities response.
