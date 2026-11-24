@@ -220,3 +220,54 @@ test("N4 keyed admission leaves 420 seconds plus 30 seconds before job cutoff",a
   const delta=Date.parse(accept.body.p_admission_deadline)-now;
   assert.ok(delta>=750000 && delta<=751000, "13-minute admission budget must leave render and settlement margin");
 });
+
+test("N6 headerless POST gets a new opaque server key and single atomic accept",async t=>{
+  const f=fixture(t);
+  const first=await submit(null);
+  assert.equal(first.status,202);
+  const second=await submit(null);
+  assert.equal(second.status,202);
+  const accepts=f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent"));
+  assert.equal(accepts.length,2);
+  assert.match(accepts[0].body.p_request_key,/^[A-Za-z0-9_-]{16,128}$/);
+  assert.notEqual(accepts[0].body.p_request_key,accepts[1].body.p_request_key);
+  assert.equal(accepts[0].body.p_request_digest,accepts[1].body.p_request_digest);
+  assert.ok(!f.calls.some(c=>c.path.includes("reserve_generation_admission")||c.path.includes("release_generation_admission")||c.path.endsWith("/rpc/renderlab_accept_generation_dispatch")));
+  assert.equal(f.tasks.length,2);
+});
+test("N6 headerless lost acceptance response recovers using same generated key without release or another accept",async t=>{
+  const f=fixture(t,{mode:"ambiguous",lookup:"accepted"});
+  const response=await submit(null);
+  assert.equal(response.status,202);
+  assert.equal((await response.json()).job.id,job);
+  const accepts=f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent"));
+  const lookups=f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_lookup_generation_request_acceptance"));
+  assert.equal(accepts.length,1);
+  assert.equal(lookups.length,1);
+  assert.equal(lookups[0].body.p_request_key,accepts[0].body.p_request_key);
+  assert.equal(lookups[0].body.p_request_digest,accepts[0].body.p_request_digest);
+  assert.ok(!f.calls.some(c=>c.path.includes("release_generation_admission")));
+  assert.equal(f.tasks.length,0);
+});
+test("N6 headerless active-limit settlement retries with exactly the same generated key",async t=>{
+  const f=fixture(t,{mode:"denied-once",settles:true});
+  assert.equal((await submit(null)).status,202);
+  const accepts=f.calls.filter(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent"));
+  assert.equal(accepts.length,2);
+  assert.equal(accepts[0].body.p_request_key,accepts[1].body.p_request_key);
+  assert.equal(f.settlements.length,1);
+  assert.equal(f.tasks.length,1);
+});
+test("N6 headerless unconfirmed acceptance does not promise a client replay key",async t=>{
+  const f=fixture(t,{mode:"ambiguous",lookup:"in_flight"});
+  const response=await submit(null);
+  assert.equal(response.status,503);
+  const body=await response.json();
+  assert.equal(body.error.code,"generation_acceptance_unconfirmed");
+  assert.doesNotMatch(body.error.message,/same Idempotency-Key/);
+  assert.match(body.error.message,/Activity/);
+  const accept=f.calls.find(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent"));
+  assert.ok(!JSON.stringify(body).includes(accept.body.p_request_key));
+  assert.ok(!f.calls.some(c=>c.path.includes("release_generation_admission")));
+  assert.equal(f.tasks.length,0);
+});
