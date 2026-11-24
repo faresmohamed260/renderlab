@@ -84,7 +84,7 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
 **Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
-**Current primitives:** Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Spinner, Textarea, Toggle, ToggleGroup.
+**Current primitives:** Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Popover, Spinner, Textarea, Toggle, ToggleGroup.
 **Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/selection/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download/Delete actions.
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
@@ -156,6 +156,14 @@ Before copying/installing an external component:
 **Used by:** Create Advanced  
 **Reuse rules:** Reuse for ordinary disclosure; keep feature state/copy outside the primitive.  
 **Notes:** Adopted through PR #6 and normalized into the maintained primitive foundation through PR #13.
+
+### Popover
+**Status:** APPROVED foundation composition; rendered feature acceptance pending.  
+**Source:** `src/components/ui/popover.tsx`  
+**Origin:** RenderLab wrapper around the existing `radix-ui` 1.6.7 Popover (locked `@radix-ui/react-popover` 1.1.23, MIT in package-lock). No new package or copied third-party code.  
+**Purpose:** Nonmodal, collision-aware floating content with maintained Escape dismissal and trigger focus restoration.  
+**Used by:** FIBO Create Queue and Shortcuts.  
+**Reuse rules:** Use controlled open state when panels are mutually exclusive. Keep default focus and Escape behavior, portal content, collision padding and available-width/height bounds; keep feature copy and state outside the primitive. Desktop/narrow rendered evidence belongs to the release acceptance matrix.
 
 ### PreviewNavigationShell and CreatePreviewWorkspace (current source composition)
 **Status:** EXPERIMENTAL — current production-mode path, not complete rendered acceptance.

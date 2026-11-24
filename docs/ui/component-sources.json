@@ -30,7 +30,7 @@
       "expectedVersion": "1.6.7",
       "licenseStatus": "lockfile-verified",
       "licenseSpdx": "MIT",
-      "notes": "Active maintained primitives: src/components/ui/button.tsx imports Slot; other shared wrappers use Radix mechanics. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy.",
+      "notes": "Active maintained primitives: src/components/ui/button.tsx imports Slot; other shared wrappers use Radix mechanics. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy. Popover uses locked @radix-ui/react-popover 1.1.23 (MIT declaration); no new dependency.",
       "searchLabel": "shadcn/ui + Radix"
     },
     {
