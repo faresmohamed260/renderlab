@@ -235,12 +235,16 @@ async function exercise(page, name, reducedMotion, rows, mark) {
       break;
     }
     case "error":
-      invariant(await page.getByRole("alert").isVisible(), "recoverable error missing");
+      const recoverable = page.getByRole("region", { name: "Image composer" }).getByRole("alert");
+      invariant(await recoverable.count() === 1 && await recoverable.isVisible(), "recoverable error missing or duplicated in composer");
+      invariant((await recoverable.textContent()).includes("Could not submit the sample."), "wrong recoverable error message");
       invariant((await page.locator(prompt).inputValue()).length > 0, "error lost prompt");
       await generate.click(); await phase(page, "active"); await job(page, "accepted");
       break;
     case "failed":
-      invariant(await page.getByRole("alert").isVisible(), "terminal failure missing");
+      const terminal = page.getByRole("region", { name: "Media stage" }).getByRole("alert");
+      invariant(await terminal.count() === 1 && await terminal.isVisible(), "terminal failure missing or duplicated in stage");
+      invariant((await terminal.textContent()).includes("No result was saved."), "wrong terminal failure message");
       invariant(await page.getByRole("img", { name: "Synthetic sandstone arch result" }).count() === 0, "terminal failure fabricated media");
       await button(page, "Reuse settings").click(); await phase(page, "draft");
       invariant((await page.locator(prompt).inputValue()).length > 0, "failed reuse lost recipe");
