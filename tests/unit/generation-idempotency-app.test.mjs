@@ -177,3 +177,12 @@ test("F4: non-FIBO public request with an intent key is a sanitized 400", async 
   assert.deepEqual(f.calls, []);
   assert.deepEqual(f.tasks, []);
 });
+
+test("N4 keyed admission leaves 420 seconds plus 30 seconds before job cutoff",async t=>{
+  const now=Date.now();
+  const f=fixture(t);
+  assert.equal((await submit()).status,202);
+  const accept=f.calls.find(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent"));
+  const delta=Date.parse(accept.body.p_admission_deadline)-now;
+  assert.ok(delta>=750000 && delta<=751000, "13-minute admission budget must leave render and settlement margin");
+});
