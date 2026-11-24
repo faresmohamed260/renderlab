@@ -90,6 +90,52 @@ class GatewayPackagingTest(unittest.TestCase):
                             with self.assertRaisesRegex(RuntimeError, "does not match"):
                                 runpy.run_path(path, run_name=module)
 
+    def test_dispatch_heartbeat_attempted_on_tick_and_setup_failure(self):
+        import types
+        from unittest.mock import Mock
+        env = {
+            "RENDERLAB_MODAL_ENVIRONMENT": "qualification",
+            "RENDERLAB_MODAL_GATEWAY_SECRET": "fixture-gateway",
+            "RENDERLAB_MODAL_DISPATCHER_SECRET": "fixture-dispatcher",
+            "RENDERLAB_MODAL_MONITOR_SECRET": "fixture-monitor",
+        }
+        for module in ("modal_native_production", "modal_native_candidate"):
+            for fail_at in ("tick", "setup", "heartbeat", "none"):
+                with self.subTest(module=module, fail_at=fail_at):
+                    sdk = MagicMock()
+                    sdk.App.return_value.function.side_effect = lambda **_: lambda fn: fn
+                    sdk.asgi_app.side_effect = lambda **_: lambda fn: fn
+                    store = Mock()
+                    tick = Mock()
+                    from dispatch_core import DispatchSummary
+                    summary = DispatchSummary(claimed=2, dispatched=1, unresolved=1)
+                    tick.tick.return_value = summary
+                    if fail_at == "tick":
+                        tick.tick.side_effect = RuntimeError("tick fixture")
+                    if fail_at == "heartbeat":
+                        store.record_heartbeat.side_effect = RuntimeError("heartbeat fixture")
+                    factory = Mock(return_value=object())
+                    if fail_at == "setup":
+                        factory.side_effect = RuntimeError("setup fixture")
+                    with patch.dict(sys.modules, {"modal": sdk}), patch.dict(os.environ, env, clear=True):
+                        program = runpy.run_path(str(DIRECTORY / (module + ".py")), run_name=module)
+                    db = types.ModuleType("dispatch_supabase")
+                    db.SupabaseDispatchStore = lambda: store
+                    adapter = types.ModuleType("modal_dispatch_backend")
+                    adapter.ModalImageBackend = factory
+                    gateway = types.ModuleType("native_gateway")
+                    gateway.call_handle_signer = lambda _: object()
+                    with patch.dict(sys.modules, {"dispatch_supabase": db, "modal_dispatch_backend": adapter,
+                                                  "native_gateway": gateway}), \
+                         patch("dispatch_core.Dispatcher", return_value=tick):
+                        if fail_at == "none":
+                            self.assertEqual(summary.__dict__, program["dispatch_tick"]("wake"))
+                        else:
+                            with self.assertRaisesRegex(RuntimeError, fail_at + " fixture"):
+                                program["dispatch_tick"]("wake")
+                    expected = summary.__dict__ if fail_at in ("none", "heartbeat") else DispatchSummary().__dict__
+                    store.record_heartbeat.assert_called_once_with(environment="qualification", trigger="wake", summary=expected)
+
     def test_gateway_and_worker_images_pin_the_postgres_driver(self):
         for module in ("modal_native_production", "modal_native_candidate", RENDERER):
             with self.subTest(module=module):

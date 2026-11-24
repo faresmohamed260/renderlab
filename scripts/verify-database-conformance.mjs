@@ -108,6 +108,8 @@ psql(["-f", join(root, "tests", "fixtures", "generation-request-idempotency.sql"
 execFileSync(process.execPath, [join(root, "scripts", "verify-idempotent-acceptance-concurrency.mjs")], {
   cwd: root, env, stdio: "inherit", timeout: 120_000,
 });
+psql(["-f", join(root, "tests", "fixtures", "dispatch-delivery-cap.sql")]);
+console.log("PASS: N2 bounded dispatch claim and expired-lease isolation.");
 console.log("PASS: " + names.length + " migrations from scratch; second pass skipped "
   + second.skipped + " with verified checksums.");
 console.log("PASS: real DB constraints, RPCs, privileges, RLS and all 64 model state pairs; new atomic RPC and two-connection races.");

@@ -108,5 +108,65 @@ class DispatchCoreTest(unittest.TestCase):
         self.assertEqual(Dispatcher(missing_store, {}).tick(NOW).failed, 1)
 
 
+    def test_unexpected_submit_reconciles_without_resending_and_continues_batch(self):
+        for fault in (OverflowError("SECRET"), KeyError("SECRET")):
+            with self.subTest(fault=type(fault).__name__):
+                store = Store([intent(), intent("attempt-2")])
+                backend = Backend(outcomes=[fault], lookups=[
+                    Lookup(LookupState.ABSENT), Lookup(LookupState.ACCEPTED, "fc-recovered"),
+                ])
+                summary = Dispatcher(store, {"fibo": backend}).tick(NOW)
+                self.assertEqual((2, 2, 0), (summary.claimed, summary.dispatched, summary.unresolved))
+                self.assertEqual(2, backend.renders)
+                self.assertEqual(("dispatched", "attempt-1", "fc-recovered"), store.events[0])
+
+    def test_unexpected_submit_with_unknown_acceptance_never_retries(self):
+        store = Store([intent(), intent("attempt-2")])
+        backend = Backend(outcomes=[OverflowError("SECRET")])
+        summary = Dispatcher(store, {"fibo": backend}).tick(NOW)
+        self.assertEqual((2, 1, 1), (summary.claimed, summary.dispatched, summary.unresolved))
+        self.assertEqual(2, backend.renders)
+        self.assertEqual("unresolved", store.events[0][0])
+        self.assertNotIn("SECRET", repr(store.events))
+
+    def test_lookup_and_all_finish_failures_are_isolated_even_if_unresolved_write_fails(self):
+        from unittest.mock import patch
+        cases = (
+            ("lookup", None),
+            ("mark_dispatched", None),
+            ("mark_retry", TransientDispatchError("busy")),
+            ("mark_failed", PermanentDispatchError("invalid")),
+            ("mark_unresolved", UnknownDispatchOutcome("timeout")),
+        )
+        for method, error in cases:
+            with self.subTest(method=method):
+                store = Store([intent(), intent("attempt-2")])
+                backend = Backend(outcomes=[error] if error else [])
+                target = backend if method == "lookup" else store
+                original = getattr(target, method)
+                def fail_first(item, *args, **kwargs):
+                    if (item if isinstance(item, str) else item.attempt_id) == "attempt-1":
+                        raise RuntimeError("claim lost SECRET")
+                    return original(item, *args, **kwargs)
+                with patch.object(target, method, side_effect=fail_first), \
+                     patch.object(store, "mark_unresolved", side_effect=RuntimeError("write failed SECRET")):
+                    summary = Dispatcher(store, {"fibo": backend}).tick(NOW)
+                self.assertEqual((2, 1, 1), (summary.claimed, summary.dispatched, summary.unresolved))
+                self.assertEqual(("dispatched", "attempt-2", "fc-handle"), store.events[-1])
+                self.assertEqual(1 if method == "lookup" else 2, backend.renders)
+
+    def test_lookup_failure_never_calls_provider_for_that_intent(self):
+        store = Store([intent(), intent("attempt-2")])
+        backend = Backend()
+        from unittest.mock import patch
+        with patch.object(backend, "lookup", side_effect=[
+            KeyError("SECRET"), Lookup(LookupState.ABSENT)
+        ]):
+            summary = Dispatcher(store, {"fibo": backend}).tick(NOW)
+        self.assertEqual((2, 1, 1), (summary.claimed, summary.dispatched, summary.unresolved))
+        self.assertEqual(1, backend.renders)
+        self.assertEqual("unresolved", store.events[0][0])
+        self.assertNotIn("SECRET", repr(store.events))
+
 if __name__ == "__main__":
     unittest.main()

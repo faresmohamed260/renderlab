@@ -91,5 +91,20 @@ class SupabaseDispatchStoreTest(unittest.TestCase):
                 )
 
 
+    def test_claim_uses_bounded_rpc_without_unbounded_fallback(self):
+        from datetime import datetime, timedelta, timezone
+        store = SupabaseDispatchStore(database_url="postgresql://dispatcher:fixture@pooler.example/postgres")
+        now = datetime.now(timezone.utc)
+        with patch.object(store, "_query", return_value=[]) as query:
+            self.assertEqual([], store.claim_due(now=now, lease_until=now + timedelta(seconds=90), limit=8))
+        statement, parameters = query.call_args.args
+        self.assertIn("renderlab_claim_generation_dispatch_bounded", statement)
+        self.assertEqual((store.claim_token, 90, 8), parameters)
+        with patch.object(store, "_query", side_effect=RuntimeError("missing migration")) as query:
+            with self.assertRaisesRegex(RuntimeError, "missing migration"):
+                store.claim_due(now=now, lease_until=now + timedelta(seconds=90), limit=8)
+            query.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()
