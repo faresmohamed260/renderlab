@@ -180,7 +180,16 @@ async function verifyShowcase(page, reducedMotion, viewport) {
   const toggle = page.getByRole("button", { name: "Grid view" });
   await toggle.click();
   if (await toggle.getAttribute("aria-pressed") !== "true") throw new Error("Toggle state failed");
+  const group = page.getByRole("group", { name: "View", exact: true });
+  await group.getByRole("radio", { name: "One" }).focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Space");
+  if (await group.getByRole("radio", { name: "Two" }).getAttribute("aria-checked") !== "true") throw new Error("Toggle group keyboard selection failed");
   await page.locator("#select-idle").selectOption("b");
+  if (await page.locator("#select-idle").inputValue() !== "b") throw new Error("Native select did not change");
+  await page.locator("#sample-text").fill("Edited in the local fixture");
+  if (await page.locator("#sample-text").inputValue() !== "Edited in the local fixture") throw new Error("Textarea did not edit");
+  if (!(await page.getByRole("button", { name: "Working" }).isDisabled())) throw new Error("Pending action must be disabled");
   const disclosure = page.getByRole("button", { name: /Advanced settings/ });
   await disclosure.click();
   if (await disclosure.getAttribute("aria-expanded") !== "true") throw new Error("Disclosure did not open");

@@ -1,6 +1,6 @@
 # P6-02a isolated design workspace
 
-Foundation only. See [merged contract](../../../docs/ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) and [V2 spec](../../../docs/ui/DESIGN_LANGUAGE_V2.md). No production imports, routes, credentials, calls, user data, remote assets or new dependencies. The shared CSS and TS owners are under `design/system/v2/`. This skeleton is not a reviewed Create design.
+Foundation and shared-primitives showcase. See [merged contract](../../../docs/ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) and [V2 spec](../../../docs/ui/DESIGN_LANGUAGE_V2.md). No production imports, routes, credentials, calls, user data, remote assets or new dependencies. The shared CSS and TS owners are under `design/system/v2/`. This skeleton is not a reviewed Create design.
 
 From the repository root with the pinned Node/npm toolchain:
 
