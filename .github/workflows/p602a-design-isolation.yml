@@ -1,31 +1,43 @@
 name: P6-02a Design Isolation
 
 on:
+  # Scoped pre-PR qualification for the owner-authorized step 3 branch only.
+  push:
+    branches: ["w2/p602a-create-compositions"]
+    paths:
+      - "design/system/v2/**"
+      - "design/rd/p6-02a-create/**"
+      - "scripts/run-p602a-design-prototype.mjs"
+      - "scripts/lib/p602a-create-capture.mjs"
+      - "scripts/verify-p602a-isolation.mjs"
+      - "tests/unit/p602a-*.test.mjs"
+      - ".github/workflows/p602a-design-isolation.yml"
   pull_request:
     paths:
       - "design/system/v2/**"
       - "design/rd/p6-02a-create/**"
       - "scripts/run-p602a-design-prototype.mjs"
+      - "scripts/lib/p602a-create-capture.mjs"
       - "scripts/verify-p602a-isolation.mjs"
-      - "tests/unit/p602a-foundation.test.mjs"
+      - "tests/unit/p602a-*.test.mjs"
       - ".github/workflows/p602a-design-isolation.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: renderlab-p602a-isolation-${{ github.event.pull_request.number }}
+  group: renderlab-p602a-isolation-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   p602a-isolation:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout exact head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
@@ -36,9 +48,22 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Verify foundation and source boundary
         run: |
-          node --test tests/unit/p602a-foundation.test.mjs
+          node --test tests/unit/p602a-foundation.test.mjs tests/unit/p602a-create.test.mjs
           node scripts/verify-p602a-isolation.mjs
       - name: Install Chromium for offline fixture smoke
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
-      - name: Verify isolated browser launch and shutdown
-        run: node scripts/run-p602a-design-prototype.mjs --smoke
+      - name: Verify isolated browser launch, compositions and capture
+        run: node scripts/run-p602a-design-prototype.mjs --capture
+      - name: Typecheck repository
+        run: npm run typecheck
+      - name: Build offline and verify production exclusion
+        run: |
+          npm run build
+          node scripts/verify-p602a-isolation.mjs --build
+      - name: Retain private capture evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: p602a-create-evidence
+          path: artifacts/p602a-create-evidence-*/
+          if-no-files-found: error
+          retention-days: 14

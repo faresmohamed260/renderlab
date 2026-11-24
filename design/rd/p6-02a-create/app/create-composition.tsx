@@ -144,7 +144,7 @@ export function CreateComposition() {
     </aside>
     <div className="p602a-composition" data-create-composition={selected} data-create-phase={state.phase} data-job-status={state.phase === "active" ? state.status : undefined}>
       <header className="p602a-create-header"><div><p className="p602a-kicker" data-contrast="">RenderLab / Create</p><h1 data-contrast="">Make an image</h1></div><Toolbar key={revision} state={state} /></header>
-      <div className="p602a-create-grid" key={revision}><Stage state={state} send={send} /><Composer state={state} send={send} /></div>
+      <div className="p602a-create-grid" key={revision}><Composer state={state} send={send} /><Stage state={state} send={send} /></div>
     </div>
   </main>;
 }

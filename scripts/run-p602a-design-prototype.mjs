@@ -1,6 +1,7 @@
 import { spawn, spawnSync, execFileSync } from "node:child_process";
 import { copyFile, lstat, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:net";
+import { captureCreate } from "./lib/p602a-create-capture.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,10 +12,11 @@ const host = "127.0.0.1";
 const port = 4316;
 const origin = "http://" + host + ":" + port;
 const args = process.argv.slice(2);
-if (args.length > 1 || (args.length === 1 && args[0] !== "--smoke")) {
-  throw new Error("Usage: node scripts/run-p602a-design-prototype.mjs [--smoke]");
+if (args.length > 1 || (args.length === 1 && !["--smoke", "--capture"].includes(args[0]))) {
+  throw new Error("Usage: node scripts/run-p602a-design-prototype.mjs [--smoke | --capture]");
 }
-const smoke = args[0] === "--smoke";
+const smoke = args[0] === "--smoke" || args[0] === "--capture";
+const capture = args[0] === "--capture";
 
 // Explicit allowlist; no NODE_OPTIONS, NEXT_PUBLIC_*, service credentials or proxy variables.
 const allowedEnv = new Set(["PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT",
@@ -241,7 +243,7 @@ async function verifyShowcase(page, reducedMotion, viewport) {
 
 async function browserSmoke() {
   const { chromium } = await import("@playwright/test");
-  browser = await chromium.launch({ env });
+  browser = await chromium.launch({ env, ignoreDefaultArgs: ["--hide-scrollbars"], args: ["--disable-features=OverlayScrollbar"] });
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     for (const reducedMotion of ["no-preference", "reduce"]) {
       const unexpected = [];
@@ -323,7 +325,10 @@ try {
   child.once("exit", (code) => { childCode = code; exited = true; });
   await waitForApp();
   console.log("Isolated prototype:", origin);
-  if (smoke) await browserSmoke();
+  if (smoke) {
+    await browserSmoke();
+    if (capture) await captureCreate({ browser, root, origin, host, port });
+  }
   else while (!exited && !requestedStop) await sleep(250);
   if (spawnError) throw spawnError;
   if (exited && !requestedStop) throw new Error("Prototype server exited unexpectedly: " + childCode);

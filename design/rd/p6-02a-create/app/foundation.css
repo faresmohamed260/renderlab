@@ -283,6 +283,8 @@ html { scrollbar-gutter: stable; }
   align-items: start;
   min-inline-size: 0;
 }
+.p602a-stage { grid-column: 1; grid-row: 1; }
+.p602a-composer { grid-column: 2; grid-row: 1; }
 .p602a-stage, .p602a-composer {
   display: flex;
   flex-direction: column;
@@ -386,7 +388,7 @@ html { scrollbar-gutter: stable; }
 .p602a-sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 760px) {
   .p602a-create-grid { grid-template-columns: minmax(0, 1fr); }
-  .p602a-composer { grid-row: 1; }
+  .p602a-composer, .p602a-stage { grid-row: auto; grid-column: auto; }
   .p602a-media { aspect-ratio: 4 / 3; min-block-size: 11rem; }
   .p602a-stage-message { padding: var(--rlv2-space-16); }
 }
