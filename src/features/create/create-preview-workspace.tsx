@@ -14,6 +14,7 @@ import { clearSavedEdits, readSavedEdits, saveEdits } from "./create-preview-sav
 import { CreatePreviewStage, type StageTurn } from "./create-preview-stage";
 import { previewImageSizes } from "./create-preview-sizes";
 import { loadCreateResultSource } from "./create-result-source";
+import { fetchHostedCreateCapabilities, rejectUnavailableInspirationDrop, type HostedCreateCapabilities } from "./create-hosted-capabilities";
 import { loadContinuationFiles, type CreateContinuationPlan } from "./create-continuation";
 
 import { fiboImageAspectRatios, type AspectRatio, type PresetAspectRatio, type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
@@ -129,7 +130,27 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null }: { initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null }: { initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+  const hosted = hostedOnly || !!hostedModel;
+  const [hostedCapabilities, setHostedCapabilities] = useState<HostedCreateCapabilities>();
+  const [capabilityReadFailed, setCapabilityReadFailed] = useState(false);
+  useEffect(() => {
+    if (!hosted) return;
+    const controller = new AbortController();
+    void fetchHostedCreateCapabilities(controller.signal).then((capabilities) => {
+      if (!controller.signal.aborted) setHostedCapabilities(capabilities);
+    }).catch(() => {
+      if (!controller.signal.aborted) setCapabilityReadFailed(true);
+    });
+    return () => controller.abort();
+  }, [hosted]);
+  // Private preview controls are not evidence of deployed capabilities.
+  const inspirationEnabled = !hosted || hostedCapabilities?.inspiration === true;
+  const multiOutputEnabled = !hosted || hostedCapabilities?.multiOutput === true;
+  const negativeConditioningEnabled = !hosted || hostedCapabilities?.negativeConditioning === true;
+  const masksEnabled = configuredMasksEnabled && (!hosted || hostedCapabilities?.mask === true);
+  const generatedVglNotice = hostedCapabilities?.generatedVglNotice ?? "Generated VGL availability is not confirmed. Manual VGL JSON is the supported workspace input.";
+  const inspirationNotice = "Text-to-image inspiration is unavailable. Use Image Editing to attach images.";
   const bookmarkKey = hostedModel && hostedAccountKey ? "renderlab:hosted-fibo-stage:" + hostedAccountKey
     : admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
@@ -155,7 +176,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const mask = mode === "edit" && selection?.source === files[0] ? selection?.mask : undefined;
   const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
-  const { prompt: promptDraft, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen, seed, randomize, imageCount } = drafts[mode];
+  const { prompt: promptDraft, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen, seed, randomize, imageCount: draftImageCount } = drafts[mode];
+  const imageCount = multiOutputEnabled ? draftImageCount : "1";
   let missingPromptImage = false;
   const prompt = promptDraft.replace(slotMarkers, (_, slot: string) => {
     const index = Number(slot);
@@ -163,7 +185,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     return imageTag(index);
   });
   // Legacy workers can return VGL, but cannot accept it back as a manual instruction.
-  const manualVgl = !advancedPrompt && generatedVgl ? "" : vgl.trim();
+  const manualVgl = (hosted || !advancedPrompt) && generatedVgl ? "" : vgl.trim();
 
   function updateDraft(workflow: Workflow, patch: Partial<PromptDraft>) {
     setDrafts((previous) => ({ ...previous, [workflow]: { ...previous[workflow], ...patch } }));
@@ -174,6 +196,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }
 
   function setReference(file?: File) {
+    if (file && !inspirationEnabled) return;
     setInspiration(file);
     updateDraft("generate", { vgl: "", generatedVgl: false });
   }
@@ -474,7 +497,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             ...(hostedVgl ? { vgl: hostedVgl } : {}),
             ...(hostedMask ? { mask: hostedMask } : {}),
             output: { kind: "image", aspectRatio: mode === "edit" ? editAspectRatio : hostedRatios[sizeIndex] },
-            advanced: { steps, negativePrompt: negativePrompt.trim(),
+            advanced: { steps, negativePrompt: negativeConditioningEnabled ? negativePrompt.trim() : "",
               seed: randomize ? (crypto.getRandomValues(new Uint32Array(1))[0]! & 0x7fffffff) : Number(seed) } }),
         });
         if (!hostedJobId.test(response.job.id)) throw new Error("Hosted job ID was invalid.");
@@ -531,7 +554,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       if (signal.aborted) return;
       finishTurn(images, error);
       const image = images[0];
-      if (typeof image.json_instruction === "string" && image.json_instruction.trim()) {
+      if (!hosted && typeof image.json_instruction === "string" && image.json_instruction.trim()) {
         updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
       }
       if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
@@ -779,7 +802,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }
 
   function chooseImage(index: number) {
-    if (!admitted || busy) return;
+    if (!admitted || busy || (index === 4 && !inspirationEnabled)) return;
     slot.current = index;
     picker.current?.click();
   }
@@ -912,6 +935,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     readPromptEditor();
   }
   function uploadDropTarget(target: number | "canvas") {
+    if (!inspirationEnabled && (target === 4 || (target === "canvas" && mode === "generate"))) return {
+      onDragOver: rejectUnavailableInspirationDrop,
+      onDrop: rejectUnavailableInspirationDrop,
+    };
     return {
       "data-drag-over": admitted && !busy && dragTarget === target ? "true" : undefined,
       onDragOver(event: DragEvent<HTMLElement>) {
@@ -973,10 +1000,12 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
     } catch { return false; }
   })();
-  const hostedBlocker = hostedOnly && !hostedModel
-    ? "This Create preview cannot render until production supports the selected workflow."
-    : hostedModel && (inspiration && mode === "generate" || imageCount !== "1")
-      ? "The hosted workflow supports one image per job and does not use inspiration images." : "";
+  const hostedBlocker = hosted && !hostedModel
+    ? "Image generation is not available for this account right now."
+    : hosted && !hostedCapabilities?.ready
+      ? capabilityReadFailed ? "Could not verify generation availability. Reload Create to try again."
+        : hostedCapabilities ? "FIBO generation is currently unavailable." : "Checking generation availability…"
+      : "";
   const blocker = hostedBlocker || (!admitted ? "Sign in with an account that has Create access."
     : needsUpgrade ? "Reference images and non-square renders need the private worker update."
     : !variableSteps && steps !== 4 ? "The current worker supports 4 steps. Select 4 to generate."
@@ -984,7 +1013,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     : mask && files.slice(1).some(Boolean) ? "Remove references to use a mask."
     : mask && !masksEnabled ? "Masked edits are not enabled on the current worker."
     : !vglValid ? "Enter a non-empty VGL JSON object."
-    : !advancedPrompt && (manualVgl || negativePrompt.trim()) ? "Advanced prompts need the private worker update."
+    : !advancedPrompt && (manualVgl || (negativeConditioningEnabled && negativePrompt.trim())) ? "Advanced prompts are unavailable on the current worker."
     : !manualVgl && missingPromptImage ? "Restore the missing image or remove its prompt tag."
     : !manualVgl && !prompt.trim() ? "Enter a prompt or VGL JSON to generate."
     : !/^[1-4]$/.test(imageCount) ? "Choose 1 to 4 images."
@@ -1090,7 +1119,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   ))}
                 </div>
                 <div className="create-preview-size" inert={mode !== "generate"}>
-                  <div className="create-preview-tile" {...uploadDropTarget(4)}>
+                  {inspirationEnabled ? <div className="create-preview-tile" {...uploadDropTarget(4)}>
                     <Button type="button" variant="outline" disabled={!admitted || busy}
                       aria-label="Choose reference image" onClick={() => chooseImage(4)}>
                       {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
@@ -1098,7 +1127,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     </Button>
                     {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="create-preview-remove"
                       aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
-                  </div>
+                  </div> : <div className="create-preview-tile" {...uploadDropTarget(4)}><Button type="button" variant="outline" disabled aria-label="Inspiration unavailable" aria-describedby="create-preview-inspiration-unavailable"><span>Inspiration</span></Button></div>}
                   <label className="create-preview-aspect">Aspect ratio
                     <span className="create-preview-aspect-preview" aria-hidden="true"><span style={{ "--create-aspect": size.width / size.height } as CSSProperties} /></span>
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
@@ -1109,6 +1138,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   </label>
                 </div>
               </div>
+              {mode === "generate" && !inspirationEnabled && <p id="create-preview-inspiration-unavailable" className="create-preview-caption">{inspirationNotice}</p>}
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file && admitted && !busy) {
@@ -1170,15 +1200,18 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               <details open={negativeOpen} onToggle={(event) => {
                 if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
               }}>
-                <summary id="create-preview-negative-label">Negative prompt</summary>
+                <summary id="create-preview-negative-label">Negative prompt{!negativeConditioningEnabled && " · unavailable"}</summary>
+                {!negativeConditioningEnabled && <p id="create-preview-negative-unavailable" className="create-preview-caption">FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.</p>}
                 <Textarea aria-labelledby="create-preview-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
-                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy}
+                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy || !negativeConditioningEnabled}
+                  aria-describedby={!negativeConditioningEnabled ? "create-preview-negative-unavailable" : undefined}
                   onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
               </details>
               <details open={vglOpen} onToggle={(event) => {
                 if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
               }}>
-                <summary id="create-preview-vgl-label">VGL JSON</summary>
+                <summary id="create-preview-vgl-label">{hosted ? "Manual VGL JSON" : "VGL JSON"}</summary>
+                {hosted && <p className="create-preview-caption">{generatedVglNotice}</p>}
                 <Textarea aria-labelledby="create-preview-vgl-label" className="create-preview-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
                   placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
                   title={!vglValid ? "Enter a non-empty JSON object." : undefined}
@@ -1204,8 +1237,9 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               </div>
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
               <label className="create-preview-render-field" htmlFor="create-preview-count">Images
-                <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
-                  disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} />
+                {multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
+                  disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : <Input id="create-preview-count" type="number" value="1" disabled aria-describedby="create-preview-single-output" />}
+                {!multiOutputEnabled && <span id="create-preview-single-output" className="create-preview-caption">One image per render.</span>}
               </label>
               <label className="create-preview-steps" htmlFor="create-preview-steps">
                 <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
@@ -1237,6 +1271,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               turns={turns[mode]}
               inlineMask={maskEditor === "inline" ? maskEditorNode : undefined}
               browseDisabled={!admitted}
+              browseUnavailableReason={mode === "generate" && !inspirationEnabled ? inspirationNotice : undefined}
               maskAction={admitted && mode === "edit" && files[0] && !result && !busy ? {
                 mask, blocked: files.slice(1).some(Boolean), open: () => setMaskEditor(matchMedia("(min-width: 1025px)").matches ? "inline" : "dialog"),
                 clear: () => { setSelection(undefined); updateDraft("edit", { vgl: "", generatedVgl: false }); },
@@ -1273,7 +1308,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 setResult(undefined);
               }}
               expectedImages={resuming?.count ?? Number(imageCount)}
-              input={mode === "edit" ? previews[0] : inspirationPreview}
+              input={mode === "edit" ? previews[0] : inspirationEnabled ? inspirationPreview : undefined}
               inputLabel={mode === "edit" ? "Source image" : "Reference image"}
               busy={busy}
               cancelling={activeCancel?.pending}

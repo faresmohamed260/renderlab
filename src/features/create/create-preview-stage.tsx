@@ -82,6 +82,7 @@ type Props<T extends StageResult> = {
   input?: string;
   inputLabel: string;
   browseDisabled?: boolean;
+  browseUnavailableReason?: string;
   maskAction?: { mask?: File; blocked: boolean; open: () => void; clear: () => void };
   busy: boolean;
   cancelling?: boolean;
@@ -94,7 +95,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function CreatePreviewStage<T extends StageResult>({ historySelection, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function CreatePreviewStage<T extends StageResult>({ historySelection, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, browseUnavailableReason, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -544,7 +545,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, de
               {!viewerOpen && tools()}
               <Button ref={opener} type="button" className="create-preview-stage-open" variant="ghost" size="icon-sm"
                 aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => openViewer()} />
-            </> : <Button type="button" variant="ghost" className="create-preview-canvas-upload"
+            </> : browseUnavailableReason ? <p className="create-preview-caption mx-auto max-w-[24rem] px-4 text-center">{browseUnavailableReason}</p> : <Button type="button" variant="ghost" className="create-preview-canvas-upload"
               disabled={browseDisabled || inputPending} title={browseDisabled ? "Sign in to upload an image" : "Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
               <svg className="create-preview-stage-empty-icon" width="25" height="25" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
