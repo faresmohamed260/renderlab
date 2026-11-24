@@ -1,5 +1,7 @@
 import { HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { assertCutoverFixtureSettled, claimCutoverPost } from "./lib/cutover-smoke-gate.mjs";
 import sharp from "sharp";
 import { chromium } from "@playwright/test";
 import {
@@ -16,6 +18,10 @@ const smokeScenario = process.env.RENDERLAB_FIBO_SMOKE_SCENARIO ?? "text-to-imag
 const referenceEdit = smoke && smokeScenario === "reference-edit";
 const recordWalkthrough = !smoke && process.env.RENDERLAB_RECORD_WALKTHROUGH === "true";
 const cleanupOnly = process.argv.includes("--cleanup-only");
+const cutoverSmoke = smoke && Boolean(process.env.RENDERLAB_CUTOVER_DEPLOYMENT_ID);
+let possibleSubmission = process.env.RENDERLAB_CUTOVER_POSSIBLE_SUBMISSION === "true";
+let forwardedPosts = 0;
+let unexpectedCutoverPost = false;
 const namespace = smoke ? "production-fibo-smoke" : "production-complete-user-journey";
 const desktop = { width: 1440, height: 1024 };
 const mobile = { width: 390, height: 844 };
@@ -139,6 +145,7 @@ async function assertIndependentCleanup(ownerId) {
   for (const [table, column] of [
     ["generation_admission_reservations", "owner_id"],
     ["generation_jobs", "owner_id"],
+    ...(cutoverSmoke ? [["generation_dispatch_outbox", "owner_id"]] : []),
     ["generation_sources", "owner_id"],
     ["media_upload_sessions", "owner_id"],
     ["media_assets", "owner_id"],
@@ -370,6 +377,10 @@ async function submitCurrentCreate(page, { kind, prompt, label, submitViewport, 
     const url = new URL(response.url());
     return url.pathname === "/api/generation/jobs" && response.request().method() === "POST";
   }, { timeout: 120_000 });
+  if (cutoverSmoke) {
+    assert(!possibleSubmission, "Cutover smoke cannot submit twice.");
+    possibleSubmission = true;
+  }
   await generate.click();
   const response = await responsePromise;
   const payload = await response.json().catch(() => null);
@@ -450,7 +461,44 @@ requireAuditConfig();
 const ownerIdentity = configuredTestAccountIdentity(namespace);
 
 async function cleanupFixture() {
+  if (cutoverSmoke) {
+    const owner = "owner_id=eq." + encodeURIComponent(ownerIdentity.id);
+    const [jobs, reservations, outbox] = await Promise.all([
+      serviceRows("generation_jobs?" + owner + "&select=id,status"),
+      serviceRows("generation_admission_reservations?" + owner + "&select=job_id,released_at"),
+      serviceRows("generation_dispatch_outbox?" + owner + "&select=job_id,status,claim_token,claim_until"),
+    ]);
+    const witnessPath = artifactDir + "/cutover-settlement.json";
+    let settledPreviously = false;
+    try {
+      const witness = JSON.parse(await readFile(witnessPath, "utf8"));
+      settledPreviously = witness.ownerId === ownerIdentity.id && witness.runId === runId &&
+        witness.runAttempt === runAttempt && witness.sha === expectedSource && witness.settled === true;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    assertCutoverFixtureSettled({ jobs, reservations, outbox, possibleSubmission, settledPreviously });
+    if (possibleSubmission && jobs.length === 1) {
+      await writeFile(witnessPath, JSON.stringify({ ownerId: ownerIdentity.id, runId, runAttempt, sha: expectedSource,
+        jobId: jobs[0].id, settled: true }) + "\n");
+    }
+  }
   await collectTrackedStorageKeys(ownerIdentity.id);
+  if (cutoverSmoke) {
+    // Retain exact storage keys across the separate cleanup process without publishing them.
+    // A lost runner still requires independent operator reconciliation.
+    assert(process.env.RUNNER_TEMP && /^[1-9][0-9]*$/.test(runId) && runAttempt === "1", "Cutover cleanup requires original runner identity.");
+    const keysPath = join(process.env.RUNNER_TEMP, "renderlab-cutover-" + runId + "-" + runAttempt + "-keys.json");
+    try {
+      const saved = JSON.parse(await readFile(keysPath, "utf8"));
+      assert(saved.ownerId === ownerIdentity.id && Array.isArray(saved.keys) &&
+        saved.keys.every(key => typeof key === "string" && key.startsWith("renderlab/")), "Invalid exact cleanup key witness.");
+      for (const key of saved.keys) trackedStorageKeys.add(key);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    await writeFile(keysPath, JSON.stringify({ ownerId: ownerIdentity.id, keys: [...trackedStorageKeys] }), { mode: 0o600 });
+  }
   await deleteConfiguredTestAccount(ownerIdentity);
   return assertIndependentCleanup(ownerIdentity.id);
 }
@@ -480,6 +528,18 @@ try {
   const context = await browser.newContext({ viewport: desktop, colorScheme: "dark", reducedMotion: "no-preference", ...(recordWalkthrough ? { recordVideo: { dir: artifactDir + "/video", size: desktop } } : {}) });
   const page = await context.newPage();
   await routeLocalAppRequestsWithAccount(page, baseUrl, account);
+  if (cutoverSmoke) {
+    await page.route("**/api/generation/jobs", async route => {
+      const request = route.request();
+      if (request.method() !== "POST" || new URL(request.url()).origin !== new URL(baseUrl).origin) return route.fallback();
+      let key;
+      try { key = claimCutoverPost({ possibleSubmission, forwardedPosts, runId, runAttempt }); }
+      catch { unexpectedCutoverPost = true; return route.abort(); }
+      forwardedPosts++;
+      // Retain the existing authenticated route beneath this one; do not forward a second POST.
+      return route.fallback({ headers: { ...request.headers(), "idempotency-key": key } });
+    });
+  }
 
 
   if (recordWalkthrough) {
@@ -616,6 +676,7 @@ try {
     libraryDeletion = await verifyLibraryDeletion(page, account.id, image);
   }
 
+  if (cutoverSmoke) assert(forwardedPosts === 1 && !unexpectedCutoverPost, "Cutover smoke must forward exactly one submission.");
   console.log("Complete production user journey passed owner=" + account.id + " generations=" + generations.length + ".");
 } catch (error) {
   primaryError = error;
@@ -653,7 +714,8 @@ const manifest = {
   accountRoutes,
   cleanup,
   evidenceFiles: await evidenceFiles(),
-  passed: !primaryError && cleanup?.verified === true && generations.length === expectedGenerations,
+  ...(cutoverSmoke ? { journeyPassed: !primaryError && cleanup?.verified === true && generations.length === expectedGenerations, cutoverGateFinalized: false } : {}),
+  passed: !cutoverSmoke && !primaryError && cleanup?.verified === true && generations.length === expectedGenerations,
   completedAt: new Date().toISOString(),
 };
 await writeFile(artifactDir + "/manifest.json", JSON.stringify(manifest, null, 2) + "\n", "utf8");

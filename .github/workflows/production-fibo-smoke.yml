@@ -15,9 +15,22 @@ on:
         required: true
         type: string
       cutover_deployment_id:
-        description: Exact live Vercel deployment ID for the approved Modal cutover only; leave blank for routine smoke
+        description: Exact staged and live Vercel deployment ID; leave blank for routine smoke
         required: false
         type: string
+      staging_receipt_artifact_id:
+        description: Exact protected-main stage receipt artifact ID (cutover only)
+        required: false
+        type: string
+      cutover_alias_updated_at:
+        description: Independently read-back alias assignment in canonical UTC (cutover only)
+        required: false
+        type: string
+      confirm_exclusive_release_window:
+        description: Confirm single releaser, merge freeze, and no concurrent promotion (cutover only)
+        required: false
+        type: boolean
+        default: false
       confirm_bounded_fixture_provider_work:
         description: Confirm this run may dispatch exactly one FIBO generation owned by a disposable smoke fixture
         required: true
@@ -42,22 +55,30 @@ jobs:
       RENDERLAB_FIBO_SMOKE: "true"
       RENDERLAB_FIBO_SMOKE_SCENARIO: ${{ inputs.scenario }}
       SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: https://rashyleshocuvpgcooxy.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_Erz_UUs49DgHHDkFoXfztA_m6CbHTqw
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
       RENDERLAB_TEST_BASE_URL: https://renderlab.faresuniform.uk
       RENDERLAB_EXPECTED_PRODUCTION_SHA: ${{ inputs.expected_production_sha }}
       RENDERLAB_CONFIRM_BOUNDED_FIXTURE_PROVIDER_WORK: ${{ inputs.confirm_bounded_fixture_provider_work }}
       RENDERLAB_TEST_ACCOUNT_SCOPE: production-fibo-smoke-${{ github.run_id }}
       RENDERLAB_COMPLETE_JOURNEY_ARTIFACT_DIR: artifacts/production-fibo-smoke
+      RENDERLAB_CUTOVER_DEPLOYMENT_ID: ${{ inputs.cutover_deployment_id }}
+      RENDERLAB_CUTOVER_RECEIPT_ARTIFACT_ID: ${{ inputs.staging_receipt_artifact_id }}
+      RENDERLAB_CUTOVER_ALIAS_UPDATED_AT: ${{ inputs.cutover_alias_updated_at }}
+      RENDERLAB_CONFIRM_EXCLUSIVE_RELEASE_WINDOW: ${{ inputs.confirm_exclusive_release_window }}
 
     steps:
       - name: Checkout protected main harness
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Validate manual production-audit dispatch
         shell: bash
@@ -74,12 +95,19 @@ jobs:
             echo "::error::expected_production_sha must be an exact 40-character Git SHA."
             exit 1
           fi
+          node --input-type=module <<'EOF'
+          import { verifyCutoverDispatchInputs } from "./scripts/lib/cutover-smoke-gate.mjs";
+          const env = process.env;
+          verifyCutoverDispatchInputs({ deploymentId: env.RENDERLAB_CUTOVER_DEPLOYMENT_ID,
+            artifactId: env.RENDERLAB_CUTOVER_RECEIPT_ARTIFACT_ID, cutoverAt: env.RENDERLAB_CUTOVER_ALIAS_UPDATED_AT,
+            exclusiveWindow: env.RENDERLAB_CONFIRM_EXCLUSIVE_RELEASE_WINDOW === "true", runAttempt: env.GITHUB_RUN_ATTEMPT });
+          EOF
 
       - name: Verify live release before fixture work
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
-          RENDERLAB_CUTOVER_DEPLOYMENT_ID: ${{ inputs.cutover_deployment_id }}
+          RENDERLAB_CUTOVER_EVIDENCE_PATH: artifacts/production-fibo-smoke/cutover-initial.json
         run: |
           if [ -n "$RENDERLAB_CUTOVER_DEPLOYMENT_ID" ]; then
             node scripts/verify-modal-cutover-smoke-release.mjs
@@ -89,6 +117,12 @@ jobs:
           fi
 
       - name: Validate shared-resource secrets
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         shell: bash
         run: |
           missing=0
@@ -100,13 +134,6 @@ jobs:
           done
           exit "$missing"
 
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: package-lock.json
-
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
@@ -116,18 +143,97 @@ jobs:
       - name: Validate FIBO smoke audit harness
         run: |
           node --check scripts/verify-production-complete-user-journey.mjs
-          node --test tests/unit/production-complete-user-journey-contract.test.mjs
+          node --test tests/unit/production-complete-user-journey-contract.test.mjs tests/unit/modal-cutover-smoke-release.test.mjs
 
       - name: Clean smoke fixture before audit
         id: fixture
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: node scripts/verify-production-complete-user-journey.mjs --cleanup-only
 
+      - name: Persist bounded cutover intent
+        if: ${{ inputs.cutover_deployment_id != '' }}
+        run: |
+          mkdir -p artifacts/production-fibo-smoke
+          node --input-type=module <<'EOF'
+          import { writeFileSync } from "node:fs";
+          const e = process.env;
+          writeFileSync("artifacts/production-fibo-smoke/cutover-intent.json", JSON.stringify({
+            sha: e.RENDERLAB_EXPECTED_PRODUCTION_SHA, deploymentId: e.RENDERLAB_CUTOVER_DEPLOYMENT_ID,
+            receiptArtifactId: e.RENDERLAB_CUTOVER_RECEIPT_ARTIFACT_ID, runId: e.GITHUB_RUN_ID,
+            attempt: e.GITHUB_RUN_ATTEMPT, fixtureScope: e.RENDERLAB_TEST_ACCOUNT_SCOPE,
+            possibleProviderSpend: true
+          }) + "\n");
+          EOF
+
+      - name: Retain cutover intent before provider work
+        if: ${{ inputs.cutover_deployment_id != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cutover-intent-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/production-fibo-smoke/cutover-intent.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Recheck cutover immediately before generation
+        if: ${{ inputs.cutover_deployment_id != '' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          RENDERLAB_CUTOVER_EVIDENCE_PATH: artifacts/production-fibo-smoke/cutover-pre-generation.json
+        run: node scripts/verify-modal-cutover-smoke-release.mjs
+
       - name: Run exactly one FIBO generation
+        id: generation
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: node scripts/verify-production-complete-user-journey.mjs
+
+      - name: Recheck cutover after generation
+        if: ${{ always() && inputs.cutover_deployment_id != '' && steps.generation.outcome != 'skipped' && steps.generation.outcome != '' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          RENDERLAB_CUTOVER_EVIDENCE_PATH: artifacts/production-fibo-smoke/cutover-post-generation.json
+        run: node scripts/verify-modal-cutover-smoke-release.mjs
 
       - name: Clean exact FIBO smoke fixture after audit
         if: ${{ always() && steps.fixture.outcome != 'skipped' && steps.fixture.outcome != '' }}
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          RENDERLAB_CUTOVER_POSSIBLE_SUBMISSION: ${{ steps.generation.outcome != 'skipped' && steps.generation.outcome != '' }}
         run: node scripts/verify-production-complete-user-journey.mjs --cleanup-only
+
+      - name: Finalize successful cutover evidence
+        if: ${{ inputs.cutover_deployment_id != '' }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const directory = "artifacts/production-fibo-smoke/";
+          const load = name => JSON.parse(readFileSync(directory + name, "utf8"));
+          const manifest = load("manifest.json");
+          const initial = load("cutover-initial.json");
+          const before = load("cutover-pre-generation.json");
+          const after = load("cutover-post-generation.json");
+          if (!manifest.journeyPassed || manifest.providerGenerationCount !== 1 || !manifest.cleanup?.verified ||
+            JSON.stringify(initial.live) !== JSON.stringify(before.live) || JSON.stringify(before.live) !== JSON.stringify(after.live) ||
+            initial.digest !== before.digest || before.digest !== after.digest) throw Error("Cutover evidence is incomplete or inconsistent.");
+          manifest.cutoverGateFinalized = true;
+          manifest.passed = true;
+          writeFileSync(directory + "manifest.json", JSON.stringify(manifest, null, 2) + "\n");
+          EOF
 
       - name: Upload FIBO smoke evidence
         if: always()
