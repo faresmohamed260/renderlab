@@ -101,3 +101,6 @@ jobs:
       - name: Production build
         if: steps.ci-scope.outputs.docs_only != 'true'
         run: npm run build
+      - name: Verify design-only prototype excluded from production build
+        if: steps.ci-scope.outputs.docs_only != 'true'
+        run: node scripts/verify-p602a-isolation.mjs --build

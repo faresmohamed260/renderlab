@@ -1,0 +1,44 @@
+name: P6-02a Design Isolation
+
+on:
+  pull_request:
+    paths:
+      - "design/system/v2/**"
+      - "design/rd/p6-02a-create/**"
+      - "scripts/run-p602a-design-prototype.mjs"
+      - "scripts/verify-p602a-isolation.mjs"
+      - "tests/unit/p602a-foundation.test.mjs"
+      - ".github/workflows/p602a-design-isolation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-p602a-isolation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  p602a-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify foundation and source boundary
+        run: |
+          node --test tests/unit/p602a-foundation.test.mjs
+          node scripts/verify-p602a-isolation.mjs
+      - name: Install Chromium for offline fixture smoke
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Verify isolated browser launch and shutdown
+        run: node scripts/run-p602a-design-prototype.mjs --smoke
