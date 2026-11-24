@@ -281,6 +281,9 @@ export async function pollNativeGeneration(
   const row = await getJobRow(ownerId, jobId, lookupSignal);
   if (!row) return null;
   if (["succeeded", "failed", "cancelled"].includes(row.status)) return toGenerationJob(row);
+  // Cancellation can win between the claimed reconciliation snapshot and this
+  // owner-scoped reread. Never observe or persist a result from this status.
+  if (row.status === "cancelling") return toGenerationJob(row);
 
   const recovered = await recoverPersistingResult(row);
   if (recovered) {
