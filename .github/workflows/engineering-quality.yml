@@ -81,6 +81,7 @@ jobs:
           python3 workers/fibo-studio/test_dispatch_core.py
           python3 workers/fibo-studio/test_modal_dispatch_backend.py
           python3 workers/fibo-studio/test_dispatch_supabase.py
+          python3 workers/fibo-studio/test_dispatcher_tls_canary.py
 
       - name: Verify production Modal deploy guards offline
         if: steps.ci-scope.outputs.docs_only != 'true'
