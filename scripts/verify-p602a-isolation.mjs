@@ -22,6 +22,28 @@ export function productionSourceLeak(file, content) {
   return productionLeak(file, content);
 }
 
+// Next 16 serializes the same config into both required-server-files manifests.
+// Parse data only; never execute generated JavaScript. Only the exact exclusion
+// field is configuration, not a packaged file reference. Everything else is scanned.
+export function productionBuildLeak(file, content) {
+  if (file !== "required-server-files.json" && file !== "required-server-files.js") {
+    return productionLeak(file, content);
+  }
+  try {
+    const prefix = "self.__SERVER_FILES_MANIFEST=";
+    const body = content.trim();
+    if (file.endsWith(".js") && !body.startsWith(prefix)) return true;
+    const manifest = JSON.parse(file.endsWith(".js") ? body.slice(prefix.length).replace(/;$/, "") : body);
+    if (!Array.isArray(manifest.files) || !Array.isArray(manifest.ignore)) return true;
+    const exclusions = manifest.config?.outputFileTracingExcludes;
+    if (JSON.stringify(exclusions) !== JSON.stringify({ "/**": ["./design/rd/p6-02a-create/**/*", "./design/system/v2/**/*"] })) return true;
+    delete manifest.config.outputFileTracingExcludes;
+    return productionLeak(file, JSON.stringify(manifest));
+  } catch {
+    return true;
+  }
+}
+
 export function prototypeProblems(file, content) {
   const problems = [];
   if (/(?:^|\/)(?:api|proxy|middleware)(?:\/|\.|$)|\/route\.[jt]sx?$/.test(file)) problems.push("backend route or middleware");
@@ -89,7 +111,7 @@ async function assertBuildBoundary() {
   for (const entry of await readdir(build, { withFileTypes: true })) {
     if (entry.isFile() && textual.test(entry.name)) {
       scanned++;
-      if (productionLeak(entry.name, await readFile(path.join(build, entry.name), "utf8"))) problems.push(entry.name);
+      if (productionBuildLeak(entry.name, await readFile(path.join(build, entry.name), "utf8"))) problems.push(entry.name);
     }
   }
   if (!scanned || problems.length) throw new Error("Prototype found in production build or missing output: " + problems.join(", "));

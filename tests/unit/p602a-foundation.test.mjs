@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { springs } from "../../design/system/v2/springs.ts";
-import { productionLeak, productionSourceLeak, prototypeProblems } from "../../scripts/verify-p602a-isolation.mjs";
+import { productionLeak, productionSourceLeak, productionBuildLeak, prototypeProblems } from "../../scripts/verify-p602a-isolation.mjs";
 
 const spec = await readFile(new URL("../../docs/ui/DESIGN_LANGUAGE_V2.md", import.meta.url), "utf8");
 const css = await readFile(new URL("../../design/system/v2/tokens.css", import.meta.url), "utf8");
@@ -120,4 +120,22 @@ test("only the precise production tracing exclusion is permitted; trace manifest
   assert.equal(productionSourceLeak("next.config.ts", config + 'import "./design/system/v2/springs";'), true);
   assert.equal(productionSourceLeak("src/app/page.tsx", config), true);
   assert.equal(productionLeak("server/app/create-preview/[...path]/route.js.nft.json", '{"files":["../../../../../design/system/v2/tokens.css"]}'), true);
+});
+
+test("serialized Next exclusion is configuration only; all packaged paths and unexpected metadata remain guarded", () => {
+  const manifest = { version: 1, files: ["server/app/page.js"], ignore: [], config: {
+    outputFileTracingExcludes: { "/**": ["./design/rd/p6-02a-create/**/*", "./design/system/v2/**/*"] },
+  } };
+  const serialize = (file, data) => (file.endsWith(".js") ? "self.__SERVER_FILES_MANIFEST=" : "") + JSON.stringify(data, null, 2);
+  for (const file of ["required-server-files.json", "required-server-files.js"]) {
+    assert.equal(productionBuildLeak(file, serialize(file, manifest)), false);
+    assert.equal(productionBuildLeak(file, serialize(file, { ...manifest, files: ["design/system/v2/tokens.css"] })), true);
+    assert.equal(productionBuildLeak(file, serialize(file, { ...manifest, ignore: ["design/rd/p6-02a-create/app/page.tsx"] })), true);
+    assert.equal(productionBuildLeak(file, serialize(file, { ...manifest, config: { ...manifest.config, extra: "data-p602a-isolated" } })), true);
+    assert.equal(productionBuildLeak(file, serialize(file, { ...manifest, config: { outputFileTracingExcludes: { "/**": ["./design/**/*"] } } })), true);
+    assert.equal(productionBuildLeak(file, serialize(file, { ...manifest, config: {} })), true);
+    assert.equal(productionBuildLeak(file, "malformed"), true);
+  }
+  assert.equal(productionBuildLeak("server/app/create-preview/[...path]/route.js.nft.json", '{"files":["../../../../../design/system/v2/tokens.css"]}'), true);
+  assert.equal(productionBuildLeak("static/chunks/leak.css", "--rlv2-canvas:#0b0c10"), true);
 });
