@@ -1,6 +1,7 @@
 """RenderLab production FIBO gateway; admission remains owned by RenderLab."""
 import json
 import os
+from pathlib import Path
 
 import modal
 
@@ -19,6 +20,11 @@ gateway_image = modal.Image.debian_slim(python_version="3.12").pip_install(
 gateway_image = gateway_image.add_local_python_source(
     "dispatch_core", "dispatch_monitor", "dispatch_supabase", "modal_dispatch_backend", "native_gateway", "native_graph",
     "native_generated_vgl", "native_mask", "native_render_errors", "workload_contract", "workload_environment"
+)
+gateway_image = gateway_image.add_local_file(
+    str(Path(__file__).parent / "certs" / "supabase-root-ca.pem"), "/opt/renderlab/certs/supabase-root-ca.pem"
+).add_local_file(
+    str(Path(__file__).parent / "certs" / "supabase-root-ca.json"), "/opt/renderlab/certs/supabase-root-ca.json"
 )
 
 

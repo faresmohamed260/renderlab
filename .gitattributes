@@ -12,3 +12,6 @@
 *.woff2 binary
 *.pdf binary
 *.zip binary
+
+# Public PEM is canonical LF text; preserve its reviewed file digest.
+workers/fibo-studio/certs/supabase-root-ca.pem text eol=lf
