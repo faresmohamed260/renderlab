@@ -39,6 +39,9 @@ export type GenerationReconciliationSummary = {
 const terminalStatuses = new Set<GenerationJob["status"]>(["succeeded", "failed", "cancelled"]);
 const candidateStatuses = "queued,preparing,running,cancelling,persisting";
 const staleMissingDispatchGraceMs = 15 * 60 * 1000;
+// Finalization may recover durable bytes after the worker deadline, but a
+// permanent storage/metadata failure must not hold admission indefinitely.
+const fiboPersistingHardCeilingMs = fiboJobDeadlineMs + 5 * 60 * 1000;
 
 function toGenerationJob(row: JobSnapshotRow): GenerationJob {
   return {
@@ -110,6 +113,7 @@ function isExpiredFiboJob(row: JobSnapshotRow) {
  */
 async function failExpiredFiboJob(row: JobSnapshotRow, token: string) {
   if (!isExpiredFiboJob(row)) return null;
+  if (row.status === "persisting" && Date.now() - Date.parse(row.created_at) < fiboPersistingHardCeilingMs) return row;
 
   const cancelling = row.status === "cancelling";
   const outcome = await tryAtomicTerminalizeGeneration({
@@ -222,10 +226,28 @@ export async function reconcileNativeGeneration(
       // observes the existing handle once, using the owner-return short budgets.
       if (claimedSnapshot.status !== "cancelling"
         && (claimedSnapshot.provider_job_id || claimedSnapshot.status === "persisting")) {
-        const observed = await pollNativeGeneration(
-          ownerId, jobId, deadlines?.providerMs ?? 4_000,
-          lookupSignal() ?? AbortSignal.timeout(1_500), true,
-        );
+        let observed: GenerationJob | null;
+        try {
+          observed = await pollNativeGeneration(
+            ownerId, jobId, deadlines?.providerMs ?? 4_000,
+            lookupSignal() ?? AbortSignal.timeout(1_500), true,
+          );
+        } catch (error) {
+          // A ready result may have transitioned running -> persisting before
+          // the failing storage operation. Re-read the current owner-scoped
+          // state under the existing claim; never fail a stale status.
+          if (Date.now() - Date.parse(claimedSnapshot.created_at) < fiboPersistingHardCeilingMs) throw error;
+          const current = await getSnapshot(ownerId, jobId, lookupSignal());
+          if (!current || current.status !== "persisting" || !isExpiredFiboJob(current)) throw error;
+          // Migration 0036 atomically refuses failure if a canonical asset
+          // already exists. Leave that conflict recoverable, never release
+          // admission independently of a successful terminal transition.
+          const expired = await failExpiredFiboJob(current, token);
+          if (!expired || !terminalStatuses.has(expired.status)) throw error;
+          const terminal = toGenerationJob(expired);
+          await settleTerminalAdmission(terminal, ownerId);
+          return diagnose(terminal, "deadline", terminal.error?.code);
+        }
         if (!observed || terminalStatuses.has(observed.status)
           || observed.status !== claimedSnapshot.status) {
           // A competing status CAS may win; do not fail its newer snapshot.
