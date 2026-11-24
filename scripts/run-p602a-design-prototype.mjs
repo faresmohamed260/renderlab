@@ -148,6 +148,13 @@ async function verifyShowcase(page, reducedMotion, viewport) {
       return rows;
     }, { selector, label });
     if (!result.length) throw new Error("No rendered contrast samples for " + label);
+    // Emit measurements immediately, even if a later interaction or assertion fails.
+    const phaseSummary = Object.fromEntries([...new Set(result.map((row) => row.role))].map((role) => {
+      const samples = result.filter((row) => row.role === role);
+      return [role, { count: samples.length, minimum: Math.min(...samples.map((row) => row.ratio)) }];
+    }));
+    console.log("P6-02a rendered contrast phase:", JSON.stringify({ viewport, reducedMotion, label, summary: phaseSummary }));
+    console.log("P6-02a rendered contrast phase samples:", JSON.stringify({ viewport, reducedMotion, label, measurements: result }));
     const failed = result.filter((row) => row.ratio < row.threshold);
     if (failed.length) throw new Error("Rendered contrast below threshold: " + JSON.stringify(failed));
     return result;
@@ -180,11 +187,14 @@ async function verifyShowcase(page, reducedMotion, viewport) {
   const toggle = page.getByRole("button", { name: "Grid view" });
   await toggle.click();
   if (await toggle.getAttribute("aria-pressed") !== "true") throw new Error("Toggle state failed");
-  const group = page.getByRole("group", { name: "View", exact: true });
+  const group = page.getByRole("radiogroup", { name: "View", exact: true });
   await group.getByRole("radio", { name: "One" }).focus();
   await page.keyboard.press("ArrowRight");
+  await page.waitForFunction(() => document.activeElement?.getAttribute("role") === "radio" && document.activeElement.textContent === "Two");
   await page.keyboard.press("Space");
-  if (await group.getByRole("radio", { name: "Two" }).getAttribute("aria-checked") !== "true") throw new Error("Toggle group keyboard selection failed");
+  await page.waitForFunction(() => document.activeElement?.getAttribute("aria-checked") === "true");
+  if (await group.getByRole("radio", { name: "Two" }).getAttribute("aria-checked") !== "true" ||
+      await group.getByRole("radio", { name: "One" }).getAttribute("aria-checked") !== "false") throw new Error("Toggle group keyboard selection failed");
   await page.locator("#select-idle").selectOption("b");
   if (await page.locator("#select-idle").inputValue() !== "b") throw new Error("Native select did not change");
   await page.locator("#sample-text").fill("Edited in the local fixture");
@@ -254,6 +264,9 @@ async function browserSmoke() {
         const page = await context.newPage();
         const errors = [];
         page.on("pageerror", (error) => errors.push(error.message));
+        page.on("console", (message) => {
+          if (message.type() === "error" && /hydrat|server.rendered HTML/i.test(message.text())) errors.push(message.text());
+        });
         await page.goto(origin, { waitUntil: "load" });
         await page.locator("[data-p602a-isolated='foundation']").waitFor();
         const state = await page.evaluate(() => {

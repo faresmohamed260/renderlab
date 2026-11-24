@@ -78,10 +78,13 @@ export function Disclosure({ disabled = false, initial = false, label = "Advance
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(initial);
   const style = useSpring({ opacity: open ? 1 : 0, y: open ? 0 : -1, config: springs.smooth, immediate: reduced });
+  // Keep animated numeric values separate from CSS token resolution. React Spring
+  // normalizes CSS var() inside animated strings differently on server and client.
+  const insetStyle = { opacity: style.opacity, "--p602a-disclosure-offset": style.y };
   return <Collapsible.Root open={open} onOpenChange={setOpen} disabled={disabled} className="p602a-stack">
     <Collapsible.Trigger asChild><Button disabled={disabled}>{label} {open ? "−" : "+"}</Button></Collapsible.Trigger>
     <Collapsible.Content forceMount hidden={!open}>
-      <animated.div style={{ opacity: style.opacity, transform: style.y.to((y) => "translateY(calc(var(--rlv2-space-4) * " + y + "))") }} className="p602a-inset">
+      <animated.div style={insetStyle} className="p602a-inset p602a-disclosure-inset">
         <p data-contrast="">Optional settings remain attached to the trigger.</p>
       </animated.div>
     </Collapsible.Content>

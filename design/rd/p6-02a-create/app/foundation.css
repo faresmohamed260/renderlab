@@ -227,3 +227,7 @@ body {
   z-index: 4;
 }
 .p602a-dialog .p602a-row > * { flex: 1 1 auto; }
+
+.p602a-disclosure-inset {
+  transform: translateY(calc(var(--rlv2-space-4) * var(--p602a-disclosure-offset, 0)));
+}
