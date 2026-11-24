@@ -1,5 +1,6 @@
 import { enforceSameOriginMutation } from "@/server/security/same-origin-mutation";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { isRenderLabMfaChallengeRequired } from "@/lib/auth/mfa-assurance";
 import { getFreshCurrentRenderLabAuthentication } from "@/lib/supabase/server";
 import { getRenderLabAccountAccess } from "@/server/account/account-access";
 import {
@@ -13,12 +14,13 @@ type RequestOwner =
   | {
       ok: false;
       status: 401 | 403 | 503;
-      code: "authentication_required" | "renderlab_access_required" | "account_preferences_unavailable";
+      code: "authentication_required" | "mfa_required" | "renderlab_access_required" | "account_preferences_unavailable";
     };
 
 async function getPreferenceRequestOwner(requireActive = false): Promise<RequestOwner> {
   const authentication = await getFreshCurrentRenderLabAuthentication();
   if (!authentication) return { ok: false, status: 401, code: "authentication_required" };
+  if (isRenderLabMfaChallengeRequired(authentication.assurance)) return { ok: false, status: 403, code: "mfa_required" };
   try {
     const access = await getRenderLabAccountAccess(authentication.identity.id);
     if (!access || (requireActive && access.status !== "active")) {

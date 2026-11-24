@@ -131,3 +131,21 @@ test("C batch deletion: one failing delete is sanitized and does not abort anoth
  assert.equal(r.status,200);assert.deepEqual(body.summary,{requested:2,deleted:1,cleanupPending:0,failed:1});
  assert.equal(body.results[0].error.code,"media_unavailable");noSecret(body);
 });
+
+const preferences = await import("../../src/app/api/account/preferences/route.ts");
+for (const [method, invoke, service] of [
+  ["GET", () => preferences.GET(), "preferences-get"],
+  ["PUT", () => preferences.PUT(req({create:{imageAspectRatio:"1:1"}})), "preferences-put"],
+  ["DELETE", () => preferences.DELETE(req(null)), "preferences-delete"],
+]) {
+  test("C F2 preferences " + method + " MFA challenge denies before account or preference I/O", async () => {
+    reset({auth:{identity:{id:A},assurance:{challengeRequired:true}}});
+    const response = await invoke();
+    assert.equal(response.status,403);
+    assert.equal((await response.json()).error.code,"mfa_required");
+    assert.deepEqual(s.calls,method === "GET" ? [["fresh-auth"]] : [["origin"],["fresh-auth"]]);
+    reset({access:{userId:A,status:"active"}});
+    assert.equal((await invoke()).status,200);
+    assert(s.calls.some(c=>c[0]===service&&c[1]===A));
+  });
+}
