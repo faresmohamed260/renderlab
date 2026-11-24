@@ -323,11 +323,19 @@ export async function pollNativeGeneration(
   // through the port. Historical worker reads preserve their original path.
   let response: Response;
   let options: RequestInit;
+  let observedBytes: Buffer | undefined;
   if (row.worker_id === FIBO_DISPATCH_BACKEND) {
     try {
-      const observed = await fiboProvider.status(worker, row.provider_job_id, row.output_kind, providerTimeoutMs);
-      response = observed.response;
-      options = observed.options;
+      if (finalObservation) {
+        const observed = await fiboProvider.finalStatus(worker, row.provider_job_id, row.output_kind, providerTimeoutMs);
+        response = observed.response;
+        options = observed.options;
+        observedBytes = observed.bytes;
+      } else {
+        const observed = await fiboProvider.status(worker, row.provider_job_id, row.output_kind, providerTimeoutMs);
+        response = observed.response;
+        options = observed.options;
+      }
     } catch (error) {
       if (finalObservation) return toGenerationJob(row);
       throw error;
@@ -492,18 +500,9 @@ export async function pollNativeGeneration(
       throw error;
     }
   }
-  // Confirm the final observation's response body before transitioning to
-  // persisting. A provider read failure is different from a failed DB/R2 write;
-  // persistence/recovery exceptions must escape for a future claimed recovery.
-  let observedBytes: Buffer | undefined;
-  if (finalObservation) {
-    try {
-      observedBytes = Buffer.from(await response.arrayBuffer());
-      options.signal?.throwIfAborted();
-    } catch {
-      return toGenerationJob(row);
-    }
-  }
+  // The final observation already drained the image body under its own budget
+  // before fetching the independently bounded generated-VGL sidecar. Database
+  // and R2 errors below still escape for claimed recovery.
   // The gateway response is the first observed ready result, not the provider's
   // actual GPU finish timestamp. This clock is never reconstructed on replay.
   const observedReadyAtMs = Date.now();
