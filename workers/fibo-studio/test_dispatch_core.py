@@ -38,11 +38,14 @@ class Backend:
         self.outcomes = list(outcomes)
         self.lookups = list(lookups)
         self.renders = 0
+        self.attempted = set()
 
-    def lookup(self, _):
-        return self.lookups.pop(0) if self.lookups else Lookup(LookupState.ABSENT)
+    def lookup(self, attempt_id):
+        return self.lookups.pop(0) if self.lookups else Lookup(
+            LookupState.UNRESOLVED if attempt_id in self.attempted else LookupState.ABSENT)
 
-    def submit(self, _):
+    def submit(self, item):
+        self.attempted.add(item.attempt_id)
         self.renders += 1
         outcome = self.outcomes.pop(0) if self.outcomes else "fc-handle"
         if isinstance(outcome, Exception): raise outcome
@@ -160,13 +163,44 @@ class DispatchCoreTest(unittest.TestCase):
         backend = Backend()
         from unittest.mock import patch
         with patch.object(backend, "lookup", side_effect=[
-            KeyError("SECRET"), Lookup(LookupState.ABSENT)
+            KeyError("SECRET"), Lookup(LookupState.UNRESOLVED), Lookup(LookupState.ABSENT)
         ]):
             summary = Dispatcher(store, {"fibo": backend}).tick(NOW)
         self.assertEqual((2, 1, 1), (summary.claimed, summary.dispatched, summary.unresolved))
         self.assertEqual(1, backend.renders)
         self.assertEqual("unresolved", store.events[0][0])
         self.assertNotIn("SECRET", repr(store.events))
+
+    def test_first_lookup_fault_retries_only_after_confirmed_absence(self):
+        from unittest.mock import patch
+        store, backend = Store([intent(), intent("attempt-2")]), Backend()
+        with patch.object(backend, "lookup", side_effect=[
+            RuntimeError("database unavailable SECRET"), Lookup(LookupState.ABSENT),
+            Lookup(LookupState.ABSENT),
+        ]):
+            summary = Dispatcher(store, {"fibo": backend}).tick(NOW)
+        self.assertEqual((1, 1, 0), (summary.retried, summary.dispatched, summary.unresolved))
+        self.assertEqual(1, backend.renders)
+        self.assertEqual("retry", store.events[0][0])
+        self.assertEqual(NOW + timedelta(seconds=5), store.events[0][2]["next_attempt_at"])
+        self.assertNotIn("SECRET", repr(store.events))
+
+    def test_confirmed_absence_retry_respects_cap_and_deadline(self):
+        for item in (intent(count=3), intent(deadline=NOW + timedelta(seconds=4))):
+            with self.subTest(item=item):
+                store = Store([item])
+                backend = Backend(outcomes=[RuntimeError("reserve failed")],
+                                  lookups=[Lookup(LookupState.ABSENT), Lookup(LookupState.ABSENT)])
+                self.assertEqual(1, Dispatcher(store, {"fibo": backend}).tick(NOW).failed)
+                self.assertEqual("failed", store.events[0][0])
+
+    def test_unavailable_recovery_lookup_leaves_claim_for_guarded_lease_expiry(self):
+        from unittest.mock import patch
+        store, backend = Store([intent()]), Backend()
+        with patch.object(backend, "lookup", side_effect=RuntimeError("database unavailable")):
+            self.assertEqual(1, Dispatcher(store, {"fibo": backend}).tick(NOW).unresolved)
+        self.assertEqual([], store.events)
+        self.assertEqual(0, backend.renders)
 
 if __name__ == "__main__":
     unittest.main()

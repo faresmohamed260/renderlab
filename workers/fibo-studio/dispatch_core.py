@@ -100,16 +100,21 @@ class Dispatcher:
                 outcome = self._dispatch(intent, now)
                 totals[outcome] += 1
             except Exception:
-                # A lookup/finish/claim-lost fault must not abandon later
-                # leases. No retry or new provider send on uncertain state.
-                # Conditional finish may itself fail (including lost claims).
-                # Count the observed outcome as unresolved, not as a durable
-                # write acknowledgement; the DB delivery cap bounds redelivery.
+                # Recover once using durable acceptance evidence, never an
+                # exception type as proof that a provider send was absent.
+                # If lookup or the conditional finish is unavailable, leave
+                # the lease for guarded recovery instead of parking a
+                # potentially never-sent intent as permanently unresolved.
+                backend = self.backends.get(intent.backend)
                 try:
-                    self.store.mark_unresolved(intent, error="unexpected dispatch processing failure")
+                    if backend is None:
+                        raise RuntimeError("bound backend unavailable")
+                    outcome = self._recover_unknown(
+                        backend, intent, "unexpected dispatch processing failure", now)
+                    totals[outcome] += 1
                 except Exception:
-                    logging.getLogger(__name__).warning("dispatch_intent_unresolved_write_unconfirmed")
-                totals["unresolved"] += 1
+                    logging.getLogger(__name__).warning("dispatch_intent_recovery_unconfirmed")
+                    totals["unresolved"] += 1
         return DispatchSummary(**totals)
 
     def _dispatch(self, intent: DispatchIntent, now: datetime) -> str:
@@ -140,27 +145,32 @@ class Dispatcher:
             self.store.mark_failed(intent, error=str(error)[:500])
             return "failed"
         except TransientDispatchError as error:
-            if intent.attempt_count + 1 >= self.max_attempts:
-                self.store.mark_failed(intent, error="dispatch retry limit reached")
-                return "failed"
-            delay = min(5 * (2 ** intent.attempt_count), 60)
-            next_attempt = now + timedelta(seconds=delay)
-            if next_attempt >= intent.admission_deadline:
-                self.store.mark_failed(intent, error="dispatch retry would exceed admission deadline")
-                return "failed"
-            self.store.mark_retry(intent, next_attempt_at=next_attempt, error=str(error)[:500])
-            return "retried"
+            return self._retry_absent(intent, now, str(error)[:500])
         except UnknownDispatchOutcome as error:
-            return self._recover_unknown(backend, intent, str(error)[:500])
+            return self._recover_unknown(backend, intent, str(error)[:500], now)
         except Exception:
             # Unexpected validation/provider/finish exceptions do not prove
-            # non-acceptance. Reconcile once, never retry or send again.
-            return self._recover_unknown(backend, intent, "unexpected dispatch outcome")
+            # non-acceptance. Reconcile before deciding whether retry is safe.
+            return self._recover_unknown(backend, intent, "unexpected dispatch outcome", now)
 
-    def _recover_unknown(self, backend: DispatchBackend, intent: DispatchIntent, error: str) -> str:
+    def _retry_absent(self, intent: DispatchIntent, now: datetime, error: str) -> str:
+        if intent.attempt_count + 1 >= self.max_attempts:
+            self.store.mark_failed(intent, error="dispatch retry limit reached")
+            return "failed"
+        delay = min(5 * (2 ** intent.attempt_count), 60)
+        next_attempt = now + timedelta(seconds=delay)
+        if next_attempt >= intent.admission_deadline:
+            self.store.mark_failed(intent, error="dispatch retry would exceed admission deadline")
+            return "failed"
+        self.store.mark_retry(intent, next_attempt_at=next_attempt, error=error)
+        return "retried"
+
+    def _recover_unknown(self, backend: DispatchBackend, intent: DispatchIntent, error: str, now: datetime) -> str:
         reconciled = backend.lookup(intent.attempt_id)
         if reconciled.state is LookupState.ACCEPTED and reconciled.handle:
             self.store.mark_dispatched(intent, reconciled.handle)
             return "dispatched"
+        if reconciled.state is LookupState.ABSENT:
+            return self._retry_absent(intent, now, error)
         self.store.mark_unresolved(intent, error=error)
         return "unresolved"
