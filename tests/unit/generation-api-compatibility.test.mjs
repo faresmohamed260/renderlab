@@ -17,7 +17,7 @@ test("OpenAPI 3.1 source regeneration and compatibility snapshot are exact", asy
     buildGenerationCompatibility(source));
   const contract = buildGenerationOpenApi(source);
   assert.equal(contract.openapi,"3.1.0");
-  assert.equal(contract.info.version,"1.0.0");
+  assert.equal(contract.info.version,"1.1.0");
   assert.equal(Object.keys(contract.paths).length,5);
   assert.equal(source.endpoints.length,6);
   assert.deepEqual(contract.components.schemas.GenerationRequest.properties.model,
@@ -25,7 +25,8 @@ test("OpenAPI 3.1 source regeneration and compatibility snapshot are exact", asy
   assert.deepEqual(contract.components.schemas.GenerationRequest.properties.output.properties.kind,
     {const:"image"});
   assert.equal(contract.components.schemas.GenerationRequest["x-renderlab-semantic-rules"].length,10);
-  assert.ok(contract["x-renderlab-idempotency"].request.includes("No Idempotency-Key"));
+  assert.ok(contract["x-renderlab-idempotency"].request.includes("Optional Idempotency-Key"));
+  assert.equal(contract.paths["/api/generation/jobs"].post.parameters[0].name,"Idempotency-Key");
 });
 
 test("contract enumerates every existing route status envelope and preserves idempotency boundaries", () => {
@@ -34,7 +35,7 @@ test("contract enumerates every existing route status envelope and preserves ide
   assert.equal(unique.size,6);
   const expected = {
     "get /api/generation/jobs":"200",
-    "post /api/generation/jobs":"202,400,401,403,429,502,503",
+    "post /api/generation/jobs":"202,400,401,403,409,429,502,503",
     "get /api/generation/jobs/{jobId}":"200,400,401,404,503",
     "post /api/generation/jobs/{jobId}/cancel":"200,202,400,401,403,404,409,503",
     "post /api/generation/jobs/{jobId}/retry":"202,400,401,403,404,409,429,502,503",

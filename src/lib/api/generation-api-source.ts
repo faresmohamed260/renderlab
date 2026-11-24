@@ -4,8 +4,8 @@ export const generationApiContractSource = {
   "schemaVersion": 1,
   "info": {
     "title": "RenderLab private generation API",
-    "version": "1.0.0",
-    "description": "Invite-only FIBO image beta. This schema documents existing behavior; it does not activate public API support or change unversioned URLs."
+    "version": "1.1.0",
+    "description": "Invite-only FIBO image beta. Optional Idempotency-Key guarantees owner-scoped request identity only after migration 0034 is applied. Unkeyed clients remain legacy."
   },
   "schemas": {
     "GenerationRequest": {
@@ -415,7 +415,10 @@ export const generationApiContractSource = {
       "generation_active_limit_reached",
       "generation_rate_limit_reached",
       "generation_backend_unavailable",
-      "generation_submission_failed"
+      "generation_submission_failed",
+      "generation_idempotency_conflict",
+      "generation_idempotency_unavailable",
+      "generation_acceptance_unconfirmed"
     ],
     "cancel": [
       "job_not_found",
@@ -475,6 +478,9 @@ export const generationApiContractSource = {
           "cross_origin_request_blocked",
           "generation_access_denied"
         ],
+        "409": [
+          "generation_idempotency_conflict"
+        ],
         "429": [
           "generation_active_limit_reached",
           "generation_rate_limit_reached"
@@ -484,10 +490,25 @@ export const generationApiContractSource = {
         ],
         "503": [
           "generation_disabled",
-          "generation_backend_unavailable"
+          "generation_backend_unavailable",
+          "generation_idempotency_unavailable",
+          "generation_acceptance_unconfirmed"
         ]
       },
-      "description": "Request-level replay has no Idempotency-Key guarantee: repeating a valid POST may create a distinct job. Durable per-job outbox replay is separately deduplicated."
+      "description": "Idempotency-Key enables owner-scoped atomic accept: same key/normalized intent returns same job; changed intent is 409. Missing migration fails closed (503), ambiguous acceptance returns 503 Retry-After without releasing any reservation. Retry same key. Without header legacy POST is non-idempotent. No exactly-once provider guarantee.",
+      "requestHeaders": [
+        {
+          "name": "Idempotency-Key",
+          "required": false,
+          "description": "Optional 16–128 ASCII [A-Za-z0-9_-] opaque, cryptographically random per intended Create submission. Reuse only to retry this exact normalized request. Without migration 0034: 503, no non-idempotent fallback. Different request under same owner/key: 409. No guarantees for absent header.",
+          "schema": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]{16,128}$"
+          }
+        }
+      ]
     },
     {
       "path": "/api/generation/jobs/{jobId}",
@@ -624,7 +645,7 @@ export const generationApiContractSource = {
     }
   ],
   "idempotency": {
-    "request": "No Idempotency-Key is accepted or promised; repeated POST submissions can create new job IDs.",
+    "request": "Optional Idempotency-Key on POST /api/generation/jobs: 16–128 safe ASCII characters, strongly random intent key. After 0034 installed, same owner+key+normalized request returns original job and immutable attempt, mismatch is 409, missing function 503 without legacy downgrade, unknown acceptance conservatively unconfirmed (503). Omitted header retains legacy non-idempotent behavior. Retry and Run Again do not reuse the Create POST key.",
     "dispatch": "An accepted job uses a durable outbox with bounded per-job replay protection; not exactly-once provider execution.",
     "finalization": "Unique output index and owner-return recovery converge on one durable media row; storage writes need not be exactly once.",
     "cancellation": "Terminal replay cannot reopen the original job; repeated cancellation observes or rejects it according to status."

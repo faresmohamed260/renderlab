@@ -13,6 +13,8 @@ function submissionStatus(code: SubmitGenerationErrorCode) {
   if (code === "generation_access_denied") return 403;
   if (code === "generation_disabled" || code === "generation_backend_unavailable") return 503;
   if (code === "generation_active_limit_reached" || code === "generation_rate_limit_reached") return 429;
+  if (code === "generation_idempotency_conflict") return 409;
+  if (code === "generation_idempotency_unavailable" || code === "generation_acceptance_unconfirmed") return 503;
   return 502;
 }
 
@@ -51,15 +53,30 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await submitGeneration(account.id, parsed.request);
+  // An explicitly supplied intent key must be a bounded opaque ASCII token.
+  // Missing keys retain the legacy API; malformed keys are rejected before SQL.
+  const key = request.headers.get("Idempotency-Key");
+  if (key !== null && !/^[A-Za-z0-9_-]{16,128}$/.test(key)) {
+    metricOutcome = "rejected";
+    return NextResponse.json(
+      { ok: false, error: { code: "invalid_request", message: "Idempotency-Key must be a 16–128 character opaque ASCII token." } },
+      { status: 400, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
+
+  const result = await submitGeneration(account.id, parsed.request, key ?? undefined);
 
   if (!result.ok) {
     metricOutcome = "rejected";
-    return NextResponse.json(result, { status: submissionStatus(result.error.code) });
+    return NextResponse.json(result, {
+      status: submissionStatus(result.error.code),
+      headers: { "Cache-Control": "private, no-store", ...(result.error.code === "generation_acceptance_unconfirmed"
+        ? { "Retry-After": "3" } : {}) },
+    });
   }
 
   metricOutcome = "accepted";
-  return NextResponse.json(result, { status: 202 });
+  return NextResponse.json(result, { status: 202, headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     metricOutcome = error instanceof Error && error.name === "TimeoutError" ? "timeout" : "error";
     throw error;

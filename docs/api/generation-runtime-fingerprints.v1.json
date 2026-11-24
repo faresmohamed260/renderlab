@@ -3,7 +3,7 @@
   "algorithm": "git-blob-sha1",
   "purpose": "Review sentinel: changes to these runtime validators, type boundaries or API route handlers require intentional contract regeneration and compatibility review.",
   "files": {
-    "src/app/api/generation/jobs/route.ts": "ce4f8460893cb50ef311b71087cf4b3c3659a548",
+    "src/app/api/generation/jobs/route.ts": "d8a24954d09b990ea57b52037d6e12247bbbbf5e",
     "src/app/api/generation/jobs/[jobId]/route.ts": "e30fc82ba672bc7c85ce39d77145c877c345b54c",
     "src/app/api/generation/jobs/[jobId]/cancel/route.ts": "f2360c0acdfaa3686e6e6f6d847f0b99713cfcfb",
     "src/app/api/generation/jobs/[jobId]/retry/route.ts": "247760ce9c68f3ed36b9d8fa706ec225303db363",

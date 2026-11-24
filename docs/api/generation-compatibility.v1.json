@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "requestRequired": [
     "output",
     "inputs"
@@ -43,7 +43,10 @@
       "generation_active_limit_reached",
       "generation_rate_limit_reached",
       "generation_backend_unavailable",
-      "generation_submission_failed"
+      "generation_submission_failed",
+      "generation_idempotency_conflict",
+      "generation_idempotency_unavailable",
+      "generation_acceptance_unconfirmed"
     ],
     "cancel": [
       "job_not_found",
@@ -99,6 +102,9 @@
           "cross_origin_request_blocked",
           "generation_access_denied"
         ],
+        "409": [
+          "generation_idempotency_conflict"
+        ],
         "429": [
           "generation_active_limit_reached",
           "generation_rate_limit_reached"
@@ -107,8 +113,10 @@
           "generation_submission_failed"
         ],
         "503": [
+          "generation_acceptance_unconfirmed",
           "generation_backend_unavailable",
-          "generation_disabled"
+          "generation_disabled",
+          "generation_idempotency_unavailable"
         ]
       }
     },
