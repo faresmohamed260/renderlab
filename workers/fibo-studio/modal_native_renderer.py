@@ -33,6 +33,7 @@ image = (
     .add_local_file(str(Path(__file__).with_name("dispatch_supabase.py")), "/opt/renderlab/dispatch_supabase.py")
     .add_local_file(str(Path(__file__).with_name("workload_contract.py")), "/opt/renderlab/workload_contract.py")
     .add_local_file(str(Path(__file__).with_name("native_comfy_session.py")), "/opt/renderlab/native_comfy_session.py")
+    .add_local_file(str(Path(__file__).with_name("native_render_errors.py")), "/opt/renderlab/native_render_errors.py")
     .add_local_file(str(Path(__file__).with_name("native_fibo_adapter.py")), "/opt/renderlab/native_fibo_adapter.py")
     .add_local_python_source("workload_environment")
 )
@@ -58,6 +59,7 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
     if "/opt/renderlab" not in sys.path:
         sys.path.insert(0, "/opt/renderlab")
     from native_comfy_session import ComfySession, UncleanComfyWorker
+    from native_render_errors import FiboRenderTimeout
     from native_fibo_adapter import FiboAdapter
     from workload_contract import (
         FIBO_MODEL_KEY, FIBO_MODEL_VERSION, Operation, PRODUCTION_CATALOG, WorkloadRunner, WorkRequest,
@@ -99,6 +101,10 @@ def render(*, prompt, seed, sources=(), width=0, height=0, steps=4,
         # Reset confirmed the child was already dead and cleaned the workspace.
         print(f"renderlab attempt={attempt_id} phase=worker-process-exit", flush=True)
         return {"outcome": "process_exited"}
+    except TimeoutError as exc:
+        # A completed remote invocation raising a raw local I/O TimeoutError
+        # is not the SDK's pending get(timeout=0). The session already reset.
+        raise FiboRenderTimeout("ComfyUI execution timed out") from exc
     if generate_vgl:
         return {"image_png": result.content, "generated_vgl": result.metadata["generated_vgl"]}
     return result.content

@@ -117,6 +117,16 @@ class GatewayTests(unittest.TestCase):
                     if body is not None:
                         self.assertEqual(response.json(), body)
 
+    def test_plain_poll_timeout_remains_pending_without_message_matching(self):
+        handle = self.submit()
+        # The SDK's nonblocking get(timeout=0) uses the built-in type. A gateway
+        # cannot infer remote execution state from its text.
+        self.result = TimeoutError("ComfyUI did not finish the job")
+        for route in ("/jobs", "/jobs/vgl"):
+            response = self.client.get(route, headers={JOB_HANDLE_HEADER: handle})
+            self.assertEqual(response.status_code, 202)
+            self.assertEqual(response.json(), {"worker_state": "generating"})
+
     def test_real_modal_timeout_and_expiry_exceptions_are_terminal(self):
         # Exercise the actual Modal 1.6.4 exception inheritance, not fake subclasses.
         from importlib.metadata import version
@@ -379,6 +389,58 @@ class RendererProcessExitTest(unittest.TestCase):
             "image_png": self.png, "generated_vgl": '{"short_description":"A red cube"}',
         })
         self.assertEqual(self.start.call_count, 2)
+
+    def assert_terminal_renderer_timeout(self, mode):
+        # Reproduce the real renderer/session boundary with no GPU, wall-clock wait,
+        # network or provider submission. Transfer the exception like a remote poll.
+        import pickle
+        clock = [0]
+        original = self.comfy_request
+
+        def request(path, payload=None):
+            if mode == "readiness" and path == "/system_stats":
+                return None
+            if path.startswith("/history/"):
+                if mode == "remote":
+                    raise TimeoutError("private remote transport timeout")
+                if mode == "render":
+                    return {}
+            return original(path, payload)
+
+        self.session._request.side_effect = request
+        with patch("native_comfy_session.monotonic", side_effect=lambda: clock[0]):
+            with patch("native_comfy_session.sleep", side_effect=lambda seconds: clock.__setitem__(0, clock[0] + seconds)):
+                with self.assertRaises(Exception) as caught:
+                    self.render(prompt="Timeout fixture", seed=1, width=256, height=256)
+        self.assertIsNone(self.session._server)
+        self.assertIsNone(self.session._workspace)
+        error = pickle.loads(pickle.dumps(caught.exception))
+        call_id = "fc-" + "a" * 26
+        signing_key = b"test-only-signing-key" * 2
+        def poll(_):
+            raise error
+        client = TestClient(create_gateway(
+            spawn=lambda **_: self.fail("must not submit"), poll=poll,
+            cancel=lambda _: self.fail("must not cancel"), signing_key=signing_key,
+            expired_errors=(KeyError,), allow_direct_submit=False,
+        ))
+        for route in ("/jobs", "/jobs/vgl"):
+            with self.subTest(route=route, mode=mode):
+                response = client.get(route, headers={JOB_HANDLE_HEADER: call_handle_signer(signing_key)(call_id)})
+                self.assertEqual(response.status_code, 409)
+                self.assertEqual(response.json(), {"detail": "FIBO_RENDER_TIMED_OUT"})
+                self.assertEqual(response.headers["cache-control"], "private, no-store")
+        self.assertEqual(type(error).__name__, "FiboRenderTimeout")
+        self.assertNotIsInstance(error, TimeoutError)
+
+    def test_render_deadline_is_terminal_end_to_end(self):
+        self.assert_terminal_renderer_timeout("render")
+
+    def test_readiness_deadline_is_terminal_end_to_end(self):
+        self.assert_terminal_renderer_timeout("readiness")
+
+    def test_plain_remote_timeout_is_typed_before_poll(self):
+        self.assert_terminal_renderer_timeout("remote")
 
     def test_reset_that_requires_sigkill_still_recycles_container(self):
         child = self.children[0]
