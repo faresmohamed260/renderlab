@@ -4,7 +4,7 @@ import types
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dispatch_supabase import SupabaseDispatchStore, begin_generation_attempt
+from dispatch_supabase import SupabaseDispatchStore, begin_generation_attempt, verified_ca_path
 
 
 class Connection:
@@ -43,12 +43,66 @@ class SupabaseDispatchStoreTest(unittest.TestCase):
         store = SupabaseDispatchStore(
             database_url="postgresql://renderlab_modal_dispatcher:secret@pooler.example:5432/postgres?sslmode=disable",
         )
-        with patch.dict(sys.modules, {"psycopg": psycopg, "psycopg.rows": rows}):
+        with patch.dict(sys.modules, {"psycopg": psycopg, "psycopg.rows": rows}), \
+             patch("dispatch_supabase.verified_ca_path", return_value="/fixture/supabase-root-ca.pem"), \
+             patch.dict(os.environ, {"PGSSLROOTCERT": "/untrusted.pem", "PGSSLMODE": "disable"}):
             store._connect()
 
-        self.assertEqual(connect.call_args.kwargs["sslmode"], "require")
+        self.assertEqual(connect.call_args.kwargs["sslmode"], "verify-full")
+        self.assertEqual(connect.call_args.kwargs["sslrootcert"], "/fixture/supabase-root-ca.pem")
         self.assertEqual(connect.call_args.kwargs["connect_timeout"], 15)
         self.assertIs(connect.call_args.kwargs["row_factory"], rows.dict_row)
+
+    def test_missing_or_invalid_ca_never_connects(self):
+        store = SupabaseDispatchStore(database_url="postgresql://dispatcher:fixture@pooler.example/postgres")
+        with patch("dispatch_supabase.verified_ca_path", side_effect=RuntimeError("Dispatcher PostgreSQL TLS trust root is unavailable")):
+            with patch("psycopg.connect") as connect:
+                with self.assertRaisesRegex(RuntimeError, "trust root is unavailable"):
+                    store._connect()
+                connect.assert_not_called()
+
+    def test_certificate_rejection_is_sanitized_and_not_downgraded(self):
+        import psycopg
+        store = SupabaseDispatchStore(database_url="postgresql://dispatcher:fixture@pooler.example/postgres")
+        with patch("dispatch_supabase.verified_ca_path", return_value="/fixture/supabase-root-ca.pem"), \
+             patch("psycopg.connect", side_effect=psycopg.OperationalError("SECRET@private-host")) as connect:
+            with self.assertRaises(RuntimeError) as observed:
+                store._connect()
+        self.assertIn("sslmode=verify-full", str(observed.exception))
+        self.assertIn("without lowering TLS verification", str(observed.exception))
+        self.assertNotIn("SECRET", str(observed.exception))
+        self.assertNotIn("private-host", str(observed.exception))
+        self.assertTrue(observed.exception.__suppress_context__)
+        connect.assert_called_once()
+        self.assertEqual(15, connect.call_args.kwargs["connect_timeout"])
+
+    def test_repository_ca_has_reviewable_provenance_and_matching_bytes(self):
+        from pathlib import Path
+        from hashlib import sha256
+        import json
+        import ssl
+        directory = Path(__file__).with_name("certs")
+        pem = directory / "supabase-root-ca.pem"
+        provenance = json.loads((directory / "supabase-root-ca.json").read_text(encoding="utf-8"))
+        self.assertTrue(pem.is_file(), "Worker 1 must supply the dashboard CA before qualification")
+        raw = pem.read_bytes()
+        self.assertEqual(sha256(raw).hexdigest(), provenance["sha256"])
+        self.assertEqual("Supabase Dashboard > Database Settings > SSL Configuration > Download Certificate", provenance["source"])
+        self.assertNotIn(b"PRIVATE KEY", raw)
+        self.assertIn(b"-----BEGIN CERTIFICATE-----", raw)
+        self.assertGreater(ssl.create_default_context(cafile=str(pem)).cert_store_stats()["x509_ca"], 0)
+        self.assertEqual(str(pem), verified_ca_path(directory))
+
+    def test_provenance_digest_mismatch_fails_closed(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        import json
+        with TemporaryDirectory() as temp:
+            directory = Path(temp)
+            (directory / "supabase-root-ca.pem").write_bytes(b"not the reviewed certificate")
+            (directory / "supabase-root-ca.json").write_text(json.dumps({"sha256": "0" * 64}), encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "trust root is unavailable"):
+                verified_ca_path(directory)
 
     def test_lookup_uses_parameterized_rpc_over_the_database_connection(self):
         connection = Connection([{

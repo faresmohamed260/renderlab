@@ -136,6 +136,14 @@ class GatewayPackagingTest(unittest.TestCase):
                     expected = summary.__dict__ if fail_at in ("none", "heartbeat") else DispatchSummary().__dict__
                     store.record_heartbeat.assert_called_once_with(environment="qualification", trigger="wake", summary=expected)
 
+    def test_all_database_client_images_package_the_same_reviewed_ca(self):
+        for module in ("modal_native_production", "modal_native_candidate", RENDERER):
+            with self.subTest(module=module):
+                source = (DIRECTORY / (module + ".py")).read_text(encoding="utf-8")
+                for name in ("supabase-root-ca.pem", "supabase-root-ca.json"):
+                    self.assertIn('"/opt/renderlab/certs/' + name + '"', source)
+                    self.assertIn(' / "certs" / "' + name + '"', source)
+
     def test_gateway_and_worker_images_pin_the_postgres_driver(self):
         for module in ("modal_native_production", "modal_native_candidate", RENDERER):
             with self.subTest(module=module):
