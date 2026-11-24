@@ -1,0 +1,47 @@
+:root {
+  color-scheme: dark;
+  background: var(--rlv2-canvas);
+  color: var(--rlv2-text-primary);
+  font-family: var(--rlv2-type-family);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-size: var(--rlv2-type-body);
+  line-height: var(--rlv2-leading-body);
+  font-weight: var(--rlv2-weight-body);
+}
+:focus-visible {
+  outline: var(--rlv2-focus-width) solid var(--rlv2-focus);
+  outline-offset: var(--rlv2-focus-offset);
+}
+.rlv2-foundation {
+  max-inline-size: 48rem;
+  margin-inline: auto;
+  padding: var(--rlv2-space-32);
+  overflow-wrap: anywhere;
+}
+.rlv2-kicker {
+  color: var(--rlv2-text-secondary);
+  font-size: var(--rlv2-type-label);
+  line-height: var(--rlv2-leading-label);
+  font-weight: var(--rlv2-weight-label);
+}
+.rlv2-foundation h1 {
+  font-size: var(--rlv2-type-page);
+  font-weight: var(--rlv2-weight-heading);
+}
+.rlv2-specimen {
+  padding: var(--rlv2-space-16);
+  margin-block-start: var(--rlv2-space-24);
+  background: var(--rlv2-surface-panel);
+  border-radius: var(--rlv2-radius-panel);
+  box-shadow: var(--rlv2-elevation-panel);
+}
+.rlv2-specimen h2 {
+  font-size: var(--rlv2-type-section);
+  font-weight: var(--rlv2-weight-heading);
+}
+@media (max-width: 480px) {
+  .rlv2-foundation { padding: var(--rlv2-space-16); }
+}
