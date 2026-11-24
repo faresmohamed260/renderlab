@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Advanced sheet — phone app</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+input[type=range]{accent-color:#8575f5}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#07060b;color:#f5f5f7;font-family:-apple-system,'SF Pro Display','Inter',system-ui,sans-serif;letter-spacing:-0.01em">
+
+<div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(70% 32% at 80% 6%,rgba(117,94,210,.42),rgba(117,94,210,0) 70%),radial-gradient(60% 30% at 6% 86%,rgba(217,100,160,.20),rgba(217,100,160,0) 70%)"></div>
+<div aria-hidden="true" style="position:absolute;left:12px;top:64px;width:366px;height:500px;border-radius:34px;background:linear-gradient(160deg,#6f8196,#d9a98a 60%,#c07f5d)"></div>
+<div aria-hidden="true" style="position:absolute;inset:0;background:rgba(7,6,11,.58)"></div>
+
+<section aria-label="Advanced settings" style="position:absolute;left:0;top:300px;width:390px;height:544px;box-sizing:border-box;padding:8px 16px 20px;border-radius:34px 34px 0 0;background:rgba(26,21,46,.9);backdrop-filter:blur(40px) saturate(1.5);border-top:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 -30px 80px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:14px">
+<div aria-hidden="true" style="align-self:center;width:36px;height:5px;border-radius:3px;background:rgba(255,255,255,.3)"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:40px"><h2 style="margin:0;font-size:22px;font-weight:700">Advanced</h2><button type="button" style="height:44px;padding:0 6px;border:0;background:transparent;color:#b5a9ff;font:600 16px/1 -apple-system,'Inter',sans-serif;cursor:pointer">Done</button></div>
+<p style="margin:0 4px;font-size:13px;line-height:1.45;color:rgba(245,245,247,.66)">These apply to your next image. Mode, shape and references are in the prompt box.</p>
+
+<div style="border-radius:24px;background:rgba(255,255,255,.06);padding:0 16px">
+<div style="display:flex;align-items:center;gap:10px;height:60px"><label for="seedM4" style="flex:none;width:56px;font-size:15px;color:rgba(245,245,247,.78)">Seed</label><input id="seedM4" value="1889046298" style="flex:1;min-width:0;height:42px;box-sizing:border-box;border:0;outline:0;padding:0 14px;border-radius:14px;background:rgba(255,255,255,.08);color:#f5f5f7;font:400 15px/1 -apple-system,'Inter',sans-serif"><button type="button" aria-label="Randomize seed" style="flex:none;width:44px;height:44px;border-radius:22px;border:0;background:rgba(255,255,255,.08);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 12a8 8 0 0 1-14 5l-2-2M20 4v5h-5M4 20v-5h5"/></svg></button></div>
+<div style="display:flex;align-items:center;gap:10px;height:60px;border-top:1px solid rgba(255,255,255,.08)"><label for="stepsM4" style="flex:none;width:56px;font-size:15px;color:rgba(245,245,247,.78)">Steps</label><input id="stepsM4" type="range" min="1" max="8" value="4" style="flex:1;min-width:0"><span style="flex:none;width:20px;text-align:right;font-size:15px">4</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;height:60px;border-top:1px solid rgba(255,255,255,.08)"><label for="vglM4" style="font-size:15px;color:rgba(245,245,247,.9)">Use my own structured prompt</label><input id="vglM4" type="checkbox" role="switch" style="flex:none;width:44px;height:26px;accent-color:#8575f5"></div>
+</div>
+
+<div style="flex:1"></div>
+<button type="button" style="height:50px;border-radius:18px;border:0;background:rgba(255,255,255,.09);color:#f5f5f7;font:500 15px/1 -apple-system,'Inter',sans-serif;cursor:pointer">Reset to defaults</button>
+</section>
+
+</div>
+</x-dc>
+
+</body>
+</html>

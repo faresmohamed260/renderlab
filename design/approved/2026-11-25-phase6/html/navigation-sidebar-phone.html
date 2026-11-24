@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Navigation sidebar — phone app</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#07060b;color:#f5f5f7;font-family:-apple-system,'SF Pro Display','Inter',system-ui,sans-serif;letter-spacing:-0.01em">
+
+<div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(70% 32% at 80% 6%,rgba(117,94,210,.42),rgba(117,94,210,0) 70%),radial-gradient(60% 30% at 6% 86%,rgba(217,100,160,.20),rgba(217,100,160,0) 70%)"></div>
+<div aria-hidden="true" style="position:absolute;left:12px;top:64px;width:366px;height:500px;border-radius:34px;background:linear-gradient(160deg,#6f8196,#d9a98a 60%,#c07f5d)"></div>
+<div aria-hidden="true" style="position:absolute;inset:0;background:rgba(7,6,11,.62)"></div>
+
+<aside aria-label="Navigation" style="position:absolute;left:0;top:0;width:318px;height:844px;box-sizing:border-box;padding:14px 14px 18px;border-radius:0 34px 34px 0;background:rgba(26,21,46,.88);backdrop-filter:blur(40px) saturate(1.5);border-right:1px solid rgba(255,255,255,.12);box-shadow:inset -1px 0 0 rgba(255,255,255,.08),30px 0 80px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:6px">
+
+<div style="display:flex;align-items:center;justify-content:space-between;height:44px;margin-bottom:12px">
+<div style="display:flex;align-items:center;gap:10px;padding-left:6px;font-size:18px;font-weight:700"><span aria-hidden="true" style="width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#a89bff,#6251c7)"></span>RenderLab</div>
+<button type="button" aria-label="Close menu" style="width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.09);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+
+<nav aria-label="Main" style="display:flex;flex-direction:column;gap:4px">
+<a href="#" aria-current="page" style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:18px;background:rgba(255,255,255,.12);color:#fff;font-size:17px;font-weight:600;text-decoration:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l1.8 4.6L18 10l-4.2 1.4L12 16l-1.8-4.6L6 10l4.2-1.4z"/></svg>Create</a>
+<a href="#" style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:18px;color:rgba(245,245,247,.86);font-size:17px;font-weight:500;text-decoration:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>Library</a>
+</nav>
+
+<div aria-hidden="true" style="height:1px;margin:10px 16px;background:rgba(255,255,255,.1)"></div>
+
+<div style="padding:0 16px 4px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:rgba(245,245,247,.58)">Owner only</div>
+<a href="#" style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-radius:18px;color:rgba(245,245,247,.86);font-size:17px;font-weight:500;text-decoration:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>Admin</a>
+
+<div style="flex:1"></div>
+
+<section aria-label="Your account" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)">
+<span aria-hidden="true" style="flex:none;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#8575f5,#b05cf0);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg></span>
+<div style="flex:1;min-width:0;line-height:1.3"><div style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Your name</div><div style="font-size:13px;color:rgba(245,245,247,.66);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">you@example.com</div></div>
+<button type="button" aria-label="Settings" style="flex:none;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.09);color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></svg></button>
+</section>
+</aside>
+
+</div>
+</x-dc>
+
+</body>
+</html>

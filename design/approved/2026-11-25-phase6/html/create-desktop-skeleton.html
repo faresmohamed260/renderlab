@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Create — Layout 1, loading skeleton</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+@keyframes sh{0%{background-position:-480px 0}100%{background-position:480px 0}}
+.sk{background:linear-gradient(90deg,rgba(255,255,255,.055) 0,rgba(255,255,255,.12) 50%,rgba(255,255,255,.055) 100%);background-size:960px 100%;animation:sh 1.5s linear infinite}
+@media (prefers-reduced-motion:reduce){.sk{animation:none;background:rgba(255,255,255,.08)}}
+</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;overflow:hidden;background:#07060b;color:#f5f5f7;font-family:'Inter',-apple-system,system-ui,sans-serif;letter-spacing:-0.01em">
+
+<div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(45% 45% at 78% 6%,rgba(117,94,210,.38),rgba(117,94,210,0) 70%),radial-gradient(40% 45% at 8% 96%,rgba(217,100,160,.20),rgba(217,100,160,0) 70%)"></div>
+
+<div style="position:absolute;left:28px;top:20px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600"><div aria-hidden="true" style="width:26px;height:26px;border-radius:9px;background:linear-gradient(135deg,#a89bff,#6251c7)"></div>RenderLab</div>
+<nav aria-label="Main" style="position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:34px;font-size:15px">
+<a href="#" style="position:relative;color:#fff;font-weight:500;text-decoration:none;padding-bottom:8px">Create<span aria-hidden="true" style="position:absolute;left:50%;bottom:-2px;width:5px;height:5px;margin-left:-2px;border-radius:50%;background:#a89bff"></span></a>
+<a href="#" style="color:rgba(245,245,247,.68);text-decoration:none;padding-bottom:8px">Library</a>
+</nav>
+<div aria-hidden="true" style="position:absolute;right:28px;top:14px;display:flex;gap:10px"><span class="sk" style="width:160px;height:40px;border-radius:20px"></span><span class="sk" style="width:74px;height:40px;border-radius:20px"></span><span class="sk" style="width:40px;height:40px;border-radius:20px"></span></div>
+
+<div role="status" aria-label="Loading Create" style="position:absolute;left:24px;top:76px;width:288px;height:808px;box-sizing:border-box;padding:20px 16px;border-radius:28px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)">
+<div class="sk" style="width:110px;height:16px;border-radius:8px;margin-bottom:16px"></div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:12px;align-items:center"><span class="sk" style="width:56px;height:56px;border-radius:14px"></span><div style="flex:1"><div class="sk" style="height:13px;border-radius:7px;margin-bottom:8px"></div><div class="sk" style="width:60%;height:11px;border-radius:6px"></div></div></div>
+<div style="display:flex;gap:12px;align-items:center"><span class="sk" style="width:56px;height:56px;border-radius:14px"></span><div style="flex:1"><div class="sk" style="height:13px;border-radius:7px;margin-bottom:8px"></div><div class="sk" style="width:60%;height:11px;border-radius:6px"></div></div></div>
+<div style="display:flex;gap:12px;align-items:center"><span class="sk" style="width:56px;height:56px;border-radius:14px"></span><div style="flex:1"><div class="sk" style="height:13px;border-radius:7px;margin-bottom:8px"></div><div class="sk" style="width:60%;height:11px;border-radius:6px"></div></div></div>
+</div>
+<div class="sk" style="width:130px;height:16px;border-radius:8px;margin:34px 0 14px"></div>
+<div class="sk" style="height:42px;border-radius:21px;margin-bottom:14px"></div>
+<div class="sk" style="height:14px;border-radius:7px;margin-bottom:12px"></div><div class="sk" style="width:80%;height:14px;border-radius:7px;margin-bottom:22px"></div>
+<div class="sk" style="height:14px;border-radius:7px;margin-bottom:12px"></div><div class="sk" style="width:70%;height:14px;border-radius:7px"></div>
+</div>
+
+<div style="position:absolute;left:328px;top:76px;width:712px;height:808px">
+<div class="sk" style="width:712px;height:540px;border-radius:32px"></div>
+<div style="display:flex;gap:8px;margin-top:14px"><span class="sk" style="width:104px;height:44px;border-radius:22px"></span><span class="sk" style="width:140px;height:44px;border-radius:22px"></span><span class="sk" style="width:132px;height:44px;border-radius:22px"></span><span class="sk" style="width:44px;height:44px;border-radius:22px"></span><span class="sk" style="width:44px;height:44px;border-radius:22px"></span></div>
+<div style="margin-top:14px;height:150px;box-sizing:border-box;padding:20px 22px;border-radius:26px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09)"><div class="sk" style="width:150px;height:12px;border-radius:6px;margin-bottom:14px"></div><div class="sk" style="height:15px;border-radius:7px;margin-bottom:10px"></div><div class="sk" style="width:75%;height:15px;border-radius:7px"></div></div>
+</div>
+
+<aside aria-label="Controls" style="position:absolute;left:1056px;top:76px;width:360px;height:808px;box-sizing:border-box;padding:20px;border-radius:28px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;gap:16px">
+<div class="sk" style="height:48px;border-radius:24px"></div>
+<div class="sk" style="height:132px;border-radius:20px"></div>
+<div style="display:flex;gap:10px"><span class="sk" style="width:64px;height:64px;border-radius:18px"></span><span class="sk" style="width:64px;height:64px;border-radius:18px"></span><span class="sk" style="width:64px;height:64px;border-radius:18px"></span></div>
+<div style="display:flex;gap:6px"><span class="sk" style="width:52px;height:36px;border-radius:18px"></span><span class="sk" style="width:52px;height:36px;border-radius:18px"></span><span class="sk" style="width:60px;height:36px;border-radius:18px"></span><span class="sk" style="width:52px;height:36px;border-radius:18px"></span></div>
+<div class="sk" style="height:200px;border-radius:20px"></div>
+<div style="flex:1"></div>
+<button type="button" disabled style="height:56px;border-radius:20px;border:0;background:rgba(124,108,242,.3);color:rgba(255,255,255,.6);font:600 16px/1 'Inter',sans-serif">Generate</button>
+</aside>
+
+</div>
+</x-dc>
+
+</body>
+</html>
