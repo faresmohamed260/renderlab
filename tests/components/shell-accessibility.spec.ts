@@ -12,7 +12,7 @@ test("phone shell navigation text has actual composited contrast", async ({ page
   // Current main uses the legacy disclosure; the authorized phone Sheet
   // replaces it in #724. Exercise the real variant present, never both.
   const legacy = header.getByRole("button", { name: "RenderLab sections: Create", exact: true });
-  const sidebarTrigger = header.getByRole("button", { name: "Open navigation", exact: true });
+  const sidebarTrigger = header.getByRole("button", { name: "RenderLab — Open navigation", exact: true });
   const isLegacy = await legacy.isVisible();
   const trigger = isLegacy ? legacy : sidebarTrigger;
   await expect(trigger).toBeVisible();
