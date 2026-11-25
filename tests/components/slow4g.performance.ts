@@ -68,13 +68,17 @@ async function installObservers(context: BrowserContext) {
   }, resourceTimingCapacity);
 }
 
-async function fixtureContext(browser: Browser, width: number, height: number) {
+async function fixtureContext(browser: Browser, width: number, height: number, landing = false) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1,
     colorScheme: "dark", reducedMotion: "reduce", serviceWorkers: "block",
-    extraHTTPHeaders: { "x-renderlab-fixture-shell": "create" } });
+    extraHTTPHeaders: { "x-renderlab-fixture-shell": landing ? "signed-out" : "create" } });
   const unexpected: string[] = [], errors: string[] = [];
   await context.route("**/*", async route => {
     const request = route.request(), url = new URL(request.url());
+    // Match the existing offline Landing review: only decorative external images get a synthetic response.
+    if (landing && url.hostname === "images.unsplash.com" && request.resourceType() === "image" && request.method() === "GET") {
+      return route.fulfill({ contentType: "image/png", body: Buffer.from(fixtureImage.split(",")[1], "base64") });
+    }
     if (url.origin !== origin || request.method() !== "GET") {
       unexpected.push(request.method() + " " + url.origin + url.pathname);
       return route.abort();
@@ -108,7 +112,7 @@ async function throttle(context: BrowserContext, page: Page, cpu: number) {
 
 const metrics = (page: Page) => page.evaluate(() => (window as unknown as { fixturePerf: () => Metrics }).fixturePerf());
 
-for (const device of profiles) for (const route of ["/create", "/library"]) {
+for (const device of profiles) for (const route of ["/create", "/library", "/"]) {
   test("cold mounted performance " + device.name + " " + route, async ({ browser }) => {
     const results: Sample[] = [];
     const probe = await fixtureContext(browser, device.width, device.height);
@@ -131,14 +135,18 @@ for (const device of profiles) for (const route of ["/create", "/library"]) {
 
     for (let run = 1; run <= 5; run++) {
       const sample: Sample = { run, lcpMs: null, lcpTag: null, cls: null, interactionMs: null, interactions: 0, observationMs: null, navigationBytes: null, jsTransferBytes: null, jsResources: null };
-      const { context, page, unexpected, errors } = await fixtureContext(browser, device.width, device.height);
+      const { context, page, unexpected, errors } = await fixtureContext(browser, device.width, device.height, route === "/");
       try {
         await throttle(context, page, device.cpu);
-        await page.goto(origin + route, { waitUntil: "load", timeout: 60_000 });
+        await page.goto(origin + (route === "/" ? "/?landing-review=1" : route), { waitUntil: "load", timeout: 60_000 });
         if (route === "/create") {
           await expect(page.getByRole("region", { name: "Create with FIBO" })).toBeVisible();
           await expect(page.locator("[data-create-history-image]")).toHaveCount(1);
-        } else await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
+        } else if (route === "/library") await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
+        else {
+          await expect(page.locator("[data-landing-header]").getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+          await expect(page.locator("[data-landing-section=hero]").getByRole("heading", { level: 1 })).toBeVisible();
+        }
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
         // Observe a bounded no-input window, then finalize LCP via real trusted input.
         await page.waitForTimeout(1800);
@@ -155,16 +163,19 @@ for (const device of profiles) for (const route of ["/create", "/library"]) {
         if (route === "/create") {
           await page.getByRole("button", { name: "Text to Image", exact: true }).click();
           await expect(page.getByRole("button", { name: "Text to Image", exact: true })).toHaveAttribute("aria-pressed", "true");
-        } else {
+        } else if (route === "/library") {
           await page.getByRole("button", { name: "Collections", exact: true }).click();
           await expect(page.getByRole("menu")).toBeVisible();
+        } else {
+          // Trusted input ends LCP without navigating away; it is not an application interaction benchmark.
+          await page.locator("[data-landing-section=hero]").getByRole("heading", { level: 1 }).click();
         }
         await page.waitForTimeout(650);
         const after = await metrics(page);
         sample.cls = after.supported.includes("layout-shift") ? largestLayoutShiftWindow(after.shifts) : null;
         const durations = interactionDurations(after.events);
-        sample.interactions = durations.length;
-        sample.interactionMs = durations.length ? Math.max(...durations) : null;
+        sample.interactions = route === "/" ? 0 : durations.length;
+        sample.interactionMs = route !== "/" && durations.length ? Math.max(...durations) : null;
         sample.observationMs = after.observedUntil;
         if (unexpected.length || errors.length) throw Error(JSON.stringify({ unexpected, errors }));
       } catch (error) { sample.error = String(error); }
@@ -185,7 +196,7 @@ for (const device of profiles) for (const route of ["/create", "/library"]) {
       { metric: "Lab selected interaction max per sample, median ms (not INP)", observed: interaction, measured: results.filter(row => row.interactionMs !== null).length, initialReference: 200, productP75Goal: 200 },
     ]);
     console.log("SLOW4G BASELINE JSON", JSON.stringify({ sourceSha: process.env.REVIEW_SOURCE_SHA ?? "local-unverified",
-      browser: browser.version(), device, route, profile, results, median: { lcp, cls, interaction, jsTransferBytes },
+      browser: browser.version(), device, route, profile, inputPurpose: route === "/" ? "LCP finalization only; no selected application interaction measurement" : "selected application interaction", results, median: { lcp, cls, interaction, jsTransferBytes },
       budgetDisposition: "Initial measurement only; owner ratchets after repeatability. No field INP/p75 claim." }));
     expect(results).toHaveLength(5);
     expect(results.filter(row => row.error), "Structural fixture/instrumentation failures").toEqual([]);
