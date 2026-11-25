@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import path from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
 import { get as httpGet } from "node:http";
+import { attributeSharedChunks } from "./shared-chunk-attribution.mjs";
 
 const origin = "http://127.0.0.1:4184";
 
@@ -65,6 +66,7 @@ function routeManifests() {
 }
 async function reportProductionGraph() {
   const manifests=routeManifests();
+  const assets=[];
   const markerList=["Create with FIBO","Loading mask editor","Edit source mask","Invalid batch size.","Manage collections","Collection name","Creative image workspace","Make it.","Open navigation","Account options"];
   for(const route of ["/","/create","/library"]){
     const response=await fetch(origin+route,{headers:{accept:"text/html"},redirect:"manual",signal:AbortSignal.timeout(15000)});
@@ -91,13 +93,16 @@ async function reportProductionGraph() {
       totals[kind]={count:rows.length,wire:rows.reduce((n,x)=>n+x.bytes,0),raw:rows.reduce((n,x)=>n+x.rawBytes,0)};
     }
     console.log("PRODUCTION_ROUTE_GRAPH "+JSON.stringify({route,manifestKey:manifestKey??null,manifestModules:refs.length,totals,resources}));
+    assets.push({route,resources});
   }
+  return assets;
 }
 
 const next = path.resolve("node_modules/next/dist/bin/next");
 const env = { PATH: process.env.PATH, HOME: process.env.HOME, NODE_ENV: "production", NEXT_TELEMETRY_DISABLED: "1", CI: "true" };
 const server = spawn(process.execPath, [next, "start", "--hostname", "127.0.0.1", "--port", "4184"], { env, stdio: "inherit" });
 const exited = once(server, "exit");
+let emitted;
 try {
   let ready = false;
   for (let i = 0; i < 100; i++) {
@@ -132,11 +137,42 @@ try {
     } catch (error) { failures.push(c.route + ": " + String(error)); }
   }
   assert.deepEqual(failures, [], "All signed-out routes must preserve the same public contract");
-  await reportProductionGraph();
+  emitted = await reportProductionGraph();
 } finally {
   server.kill("SIGTERM");
   if (server.exitCode === null) {
     await Promise.race([exited, delay(5000)]);
     if (server.exitCode === null && server.signalCode === null) server.kill("SIGKILL");
   }
+}
+
+ 
+// One diagnostic capture in the candidate checkout only, after the measured
+// production server exits. The baseline is not rebuilt for analysis. Use the
+// already locked Next binary and existing network-isolated CI environment.
+if (path.resolve(import.meta.dirname,"../..") === process.cwd()) {
+  const run = args => {
+    const result=spawnSync(process.execPath,[next,...args],{
+      env,encoding:"utf8",timeout:240000,maxBuffer:128*1024*1024,
+    });
+    if(result.error || result.status!==0) throw new Error("Analyzer command failed: "+String(result.error??result.status)+" "+(result.stderr??"").slice(-2000));
+    return result.stdout;
+  };
+  run(["analyze","--output","--snapshot","shared-chunks"]);
+  const records=[];
+  for(const route of emitted.map(row=>row.route)){
+    const exported=run(["analyze","export","--snapshot","shared-chunks","--route",route]);
+    const rows=exported.trim().split("\n").filter(Boolean).map(line=>JSON.parse(line));
+    assert.equal(rows[0]?.schema_version,1,"Analyzer export schema");
+    assert.ok(rows.some(row=>row.type==="route"&&row.route===route),"Analyzer route data");
+    records.push(...rows);
+  }
+  const attribution=attributeSharedChunks(emitted,records);
+  assert.equal(attribution.shared.length,2,"Need two common initial JS chunks");
+  console.log("SHARED_CHUNK_ACTUAL_BYTES "+JSON.stringify(attribution.shared));
+  for(const route of attribution.routes)for(const chunk of route.chunks){
+    console.log("SHARED_CHUNK_MODULES "+JSON.stringify({route:route.route,syncClosure:route.syncClosure,...chunk}));
+  }
+  assert.ok(attribution.routes.every(route=>route.chunks.every(chunk=>chunk.coverage==="exact"&&chunk.modules.length>0)),
+    "Analyzer output must match actual emitted chunk filenames with exact membership; no inferred ownership");
 }
