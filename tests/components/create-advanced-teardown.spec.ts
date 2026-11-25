@@ -15,11 +15,13 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height, scrollX, scrollY };
     });
+    const openerNode = await opener.elementHandle();
+    if (!openerNode) throw new Error("Advanced opener disappeared before opening");
     await opener.click();
     const sheet = page.getByRole("dialog", { name: "Advanced" });
     await expect(sheet).toBeVisible();
     await expect.poll(() => sheet.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
-    await opener.evaluate(el => {
+    await openerNode.evaluate(el => {
       const frames: { x: number; y: number; width: number; height: number; scrollX: number; scrollY: number; viewportWidth: number; viewportHeight: number; focus: string; sheet: boolean; time: number }[] = [];
       const start = performance.now();
       const sample = () => {
