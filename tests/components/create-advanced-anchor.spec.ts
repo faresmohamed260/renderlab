@@ -7,9 +7,17 @@ import { fixtureJobId } from "../component-app/fixtures";
 const cases = [
   ...[195, 390].map(width => ({ width, suffix: "" })),
   ...Array.from({ length: 30 }, (_, i) => ({ width: 390, suffix: " cold reproduction " + (i + 1) + "/30" })),
+  ...Array.from({ length: 10 }, (_, i) => ({ width: 390, suffix: " cold CPU4x " + (i + 1) + "/10" })),
 ];
 for (const { width, suffix } of cases) {
   test("Advanced has an actual viewport anchor at " + width + suffix, async ({ page }) => {
+    // Separate diagnostic variant only: widen the hydration scheduling window
+    // on the production fixture. The original and 30 unthrottled bodies stay
+    // unchanged, with the same trusted click and assertions.
+    if (suffix.includes("CPU4x")) {
+      const session = await page.context().newCDPSession(page);
+      await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    }
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: width === 195 ? 422 : 844 });
     // Install before navigation: do not insert a hydration wait, a retry or a
