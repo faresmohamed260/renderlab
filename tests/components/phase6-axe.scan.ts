@@ -48,6 +48,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       if (url.pathname === "/api/media/assets" && url.searchParams.get("origin") === "generated") {
         return route.fulfill({ json: { ...emptyHistory, items: [fixtureAsset] } });
       }
+      // Exact content URL of the one synthetic asset returned by this fixture.
+      if (url.pathname === "/api/media/assets/" + fixtureAsset.id + "/content" && !url.search) {
+        return route.fulfill({ contentType: "image/png", body: Buffer.from(fixtureImage.split(",")[1], "base64") });
+      }
       if (url.pathname === "/api/account/profile") return route.fulfill({ json: { profile: { displayName: "Synthetic Member" } } });
       if (url.pathname === "/api/account/profile/avatar") {
         return route.fulfill({ contentType: "image/png", body: Buffer.from(fixtureImage.split(",")[1], "base64") });
