@@ -7,6 +7,7 @@ on:
       - "tests/component-app/**"
       - "tests/components/**"
       - "tests/unit/phase6-review-index.test.mjs"
+      - "tests/unit/p6-composited-contrast.test.mjs"
       - "scripts/lib/phase6-review-index.mjs"
       - "public/**"
       - "package.json"
@@ -51,7 +52,7 @@ jobs:
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: Test bundle completeness
-        run: node --test tests/unit/phase6-review-index.test.mjs
+        run: node --test tests/unit/phase6-review-index.test.mjs tests/unit/p6-composited-contrast.test.mjs
       - name: Install Chromium
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Capture real mounted components (loopback network namespace)

@@ -25,6 +25,9 @@ test("review index fails closed on missing states, keeps diagnostic index and ha
       for (const name of [...frames, ...clips]) await writeFile(path.join(dir, name), "synthetic index test bytes");
       await writeFile(path.join(dir, key + ".json"), JSON.stringify({ key, sourceSha: "test-sha", frames, clips, status: "PASS" }));
     }
+    for (const key of keys.filter(key => key.startsWith("1440") || key.startsWith("390"))) {
+      await writeFile(path.join(dir, "contrast-" + key + ".json"), JSON.stringify({ key, sourceSha: "test-sha", rows: [{status: "MANUAL"}] }));
+    }
     assert.deepEqual((await indexReview(dir, "test-sha")).missing, []);
     assert.notEqual((await indexReview(dir, "wrong-sha")).missing.length, 0);
   } finally { await rm(dir, { recursive: true, force: true }); }
