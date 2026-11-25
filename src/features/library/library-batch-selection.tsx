@@ -23,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Field, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import styles from "@/features/library/library-gallery.module.css";
 import { LibraryInspector } from "@/features/library/library-inspector";
 import type {
@@ -135,7 +136,16 @@ export function LibraryBatchSelection({
 }) {
   const router = useRouter();
   const [compactGrid, setCompactGrid] = useState(false);
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const query = matchMedia("(max-width: 1199px)");
+    const update = () => setNarrow(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const inspectTrigger = useRef<HTMLAnchorElement>(null);
+  const phoneInspectorTrigger = useRef<HTMLAnchorElement>(null);
   const galleryHeading = useRef<HTMLHeadingElement>(null);
   const collectionSelectId = useId();
   const [selectionMode, setSelectionMode] = useState(false);
@@ -359,6 +369,7 @@ export function LibraryBatchSelection({
     if (deletedId) {
       setHiddenDeletedIds((previous) => new Set([...previous, deletedId]));
       setSelectedIds((previous) => new Set([...previous].filter((id) => id !== deletedId)));
+      phoneInspectorTrigger.current = null;
       galleryHeading.current?.focus({ preventScroll: true });
     } else {
       inspectTrigger.current?.focus({ preventScroll: true });
@@ -594,7 +605,10 @@ export function LibraryBatchSelection({
                 onPointerLeave={clearCardPointer}
               >
                 <Link
-                  href={`/library/${encodeURIComponent(asset.id)}`}
+                  href={narrow ? `${viewHref}${viewHref.includes("?") ? "&" : "?"}inspect=${encodeURIComponent(asset.id)}` : `/library/${encodeURIComponent(asset.id)}`}
+                  scroll={!narrow}
+                  prefetch={narrow ? false : undefined}
+                  onClick={event => { if (narrow) phoneInspectorTrigger.current = event.currentTarget; }}
                   className={styles.cardLink}
                   data-selected={selected ? "true" : "false"}
                   aria-label={`Open ${title}`}
@@ -615,6 +629,7 @@ export function LibraryBatchSelection({
                     href={`${viewHref}${viewHref.includes("?") ? "&" : "?"}inspect=${encodeURIComponent(asset.id)}`}
                     scroll={false}
                     prefetch={false}
+                    onClick={event => { if (narrow) phoneInspectorTrigger.current = event.currentTarget; }}
                     aria-current={inspected?.id === asset.id ? "true" : undefined}
                     aria-label={`Inspect ${title}`}
                   >
@@ -640,7 +655,18 @@ export function LibraryBatchSelection({
         {children}
       </section>
 
-      <aside className={styles.inspector} aria-label="Media inspector">
+      {narrow ? <Sheet open={!!inspected} onOpenChange={open => { if (!open) dismissInspector(); }}>
+        {inspected ? <SheetContent side="bottom" className={styles.phoneInspector} showCloseButton={false} onCloseAutoFocus={event => {
+          event.preventDefault();
+          const target = phoneInspectorTrigger.current ?? inspectTrigger.current;
+          if (target?.isConnected) target.focus({ preventScroll: true });
+          else galleryHeading.current?.focus({ preventScroll: true });
+        }}>
+          <SheetTitle>Media inspector</SheetTitle>
+          <SheetDescription className="sr-only">Details and actions for selected Library media.</SheetDescription>
+          <LibraryInspector key={inspected.id} asset={inspected} reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null} onClose={() => dismissInspector()} onDeleted={() => dismissInspector(inspected.id)} />
+        </SheetContent> : null}
+      </Sheet> : <aside className={styles.inspector} aria-label="Media inspector">
         {inspected ? (
           <LibraryInspector
             key={inspected.id}
@@ -652,7 +678,7 @@ export function LibraryBatchSelection({
         ) : (
           <p className={styles.inspectorEmpty}>Select media to inspect</p>
         )}
-      </aside>
+      </aside>}
     </div>
   );
 }
