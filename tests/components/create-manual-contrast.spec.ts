@@ -87,12 +87,36 @@ for (const { width, route } of [{ width: 390, route: "/create" }, { width: 390, 
           if (modalNavigation) {
             const dialog = page.getByRole("dialog", { name: "RenderLab navigation" });
             await expect(dialog).toBeVisible();
-            await expect(page.locator(".preview-navigation-shell")).toHaveAttribute("aria-hidden", "true");
+            // Radix hides the siblings of the modal's ancestor path. The
+            // shell itself can be nested inside a hidden fixture wrapper;
+            // the contract is inaccessible background, not a specific node.
+            const logo = page.getByRole("button", { name: "Open navigation", exact: true });
+            const workspace = page.getByRole("region", { name: "Create with FIBO" });
+            const queue = page.locator('.create-preview-toolbar-trigger[data-slot=popover-trigger]:nth-child(1)');
+            const hiddenBy = (element: Locator) => element.evaluate(el =>
+              el.closest('[aria-hidden="true"]')?.tagName ?? null);
+            const hiddenLogo = await hiddenBy(trigger);
+            const hiddenQueue = await hiddenBy(queue);
+            console.log("CREATE_MODAL_ISOLATION " + JSON.stringify({ hiddenLogo, hiddenQueue }));
+            expect(hiddenLogo).not.toBeNull();
+            expect(hiddenQueue).not.toBeNull();
+            await expect(logo).toHaveCount(0);
+            await expect(workspace).toHaveCount(0);
             await expect(dialog.getByRole("button", { name: "Close navigation" })).toBeFocused();
+            for (const key of ["Tab", "Tab", "Shift+Tab"]) {
+              await page.keyboard.press(key);
+              expect(await dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+            }
+            await queue.evaluate(el => (el as HTMLElement).focus({ preventScroll: true }));
+            await expect.poll(() => dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
             await page.keyboard.press("Escape");
             await expect(dialog).toHaveCount(0);
             await expect(trigger).toBeFocused();
-            await expect(page.locator(".preview-navigation-shell")).not.toHaveAttribute("aria-hidden", "true");
+            await expect(trigger).toHaveAttribute("aria-expanded", "false");
+            await expect(logo).toBeVisible();
+            await expect(workspace).toBeVisible();
+            expect(await hiddenBy(trigger)).toBeNull();
+            expect(await hiddenBy(queue)).toBeNull();
           }
         }
         for (const [name, selector] of labels) {
