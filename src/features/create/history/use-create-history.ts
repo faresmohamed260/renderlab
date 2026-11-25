@@ -89,7 +89,8 @@ export function useCreateHistory(options: HistoryOptions) {
         const result = await callbacks.current.transport.reuse(job.id, controller.signal);
         if (controller.signal.aborted || liveAccount.current !== accountKey) return;
         if (!result.ok) { setAction({ key: accountKey, id: job.id, kind, pending: false, error: "These saved settings cannot be reused with the current inputs and capabilities." }); return; }
-        callbacks.current.onReuseDraft(result.draft);
+        await callbacks.current.onReuseDraft(result.draft, controller.signal);
+        if (controller.signal.aborted || liveAccount.current !== accountKey) return;
         setAction({ key: accountKey, id: job.id, kind, pending: false, notice: "Settings loaded. Generate when ready." });
       } else {
         const result = await callbacks.current.transport.mutate(kind, job.id, controller.signal);

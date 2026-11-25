@@ -31,6 +31,7 @@ import { getMediaAsset, publicMediaAsset } from "@/server/media/media-assets";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
 import { isR2Configured } from "@/server/storage/r2";
 import { scheduleOwnerGenerationSettlement } from "@/server/generation/owner-generation-settlement";
+import { readCreateHistoryJobs, readCreateHistoryPrompts, loadCreateHistoryReuse } from "@/server/generation/history/history-actions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -200,6 +201,7 @@ async function Create({ params }: { params: CreateSearchParams }) {
   return <CreatePreviewWorkspace key={(accountKey ?? "guest") + ":" + continuationKey} admitted={!!account} hostedOnly
     initialContinuation={continuation.plan} initialContinuationError={continuation.error}
     hostedModel={ready ? model : undefined} hostedAccountKey={accountKey}
+    historyActions={{ readJobsAction: readCreateHistoryJobs, readPromptsAction: readCreateHistoryPrompts, reuseAction: loadCreateHistoryReuse }}
     initialAspectRatio={fiboPreferenceAspectRatio(preferences?.create.imageAspectRatio ?? "1:1")}
     masksEnabled={ready && isFiboMaskGenerationAvailable()}
     advancedPrompt={ready} variableSteps={ready} extendedSetup={ready} />;

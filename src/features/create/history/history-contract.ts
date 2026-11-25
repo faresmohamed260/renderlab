@@ -26,7 +26,7 @@ export type HistoryOptions = {
   initialTab?: HistoryTab;
   initialOffset?: number;
   transport: HistoryTransport;
-  onReuseDraft: (draft: CreateContinuationPlan) => void;
+  onReuseDraft: (draft: CreateContinuationPlan, signal: AbortSignal) => void | Promise<void>;
   onPrompt: (prompt: string) => void;
   onSessionResult: (result: SessionResult) => void;
 };
