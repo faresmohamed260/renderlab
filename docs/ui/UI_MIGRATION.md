@@ -43,6 +43,8 @@ UI-074 through UI-080 remain the historical redesign family where not superseded
 
 ## Current migration/work state
 
+P6-03a/b (#714/#717) merged the additive `src/app/semantic-tokens.css` owner, `src/lib/ui/spring-roles.ts` owner and maintained glass wrappers, including Sheet, Slider, Switch, Tooltip, Skeleton and retained Popover. Shared primitives are catalogued in `COMPONENT_CATALOG.md` and `component-sources.json`; existing feature overrides and legacy token consumers are retained until scoped migration. #717 exact qualified head `fae783f0033720c0fc0917359ebb99da2a2049e2` passed mounted tests (26 passed, 2 skipped); the 195px overflow ratchet removed 48 proven resolved entries with controls present and operable. This is repository implementation evidence, not production deployment or final rendered contrast/zoom/motion approval; worker 4 review and shell/feature migration remain separate.
+
 The earlier migration checklist is closed; current Phase 5 frontend polish is governed by [its merged contract](../architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) and FIBO rollout remains separately bounded by [UI-084 rollout contract](../architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md). Production-live is not full verification or execution completion. Current and future work begins from repository reality, not historical Phase 0–29 checklists.
 
 - Ordinary feature/UI additions use Integration Mode and preserve the accepted family unless a product reason requires an approved bounded change.
