@@ -10,6 +10,13 @@ for (const width of [195, 320, 390, 1440]) {
       await page.goto("/library");
       const grid = page.locator("[data-library-media-grid]");
       await expect(grid).toBeVisible();
+      for (const title of ["First image", "Second image"]) {
+        const tile = grid.getByRole("link", { name: new RegExp("^Open " + title) });
+        const labelParts = await tile.locator("[data-library-media-meta] > :is(strong, span, time)").allTextContents();
+        expect(labelParts).toHaveLength(3);
+        const normalized = labelParts.join(" ").replace(/\s+/g, " ").trim();
+        await expect(tile).toHaveAccessibleName("Open " + normalized);
+      }
       const columns = await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length);
       expect(columns).toBe(width === 1440 ? 4 : 2);
       const overflow = await page.evaluate(() => ({
@@ -57,6 +64,7 @@ for (const width of [195, 320, 390, 1440]) {
       await trigger.click();
       const inspector = width === 1440 ? page.getByRole("complementary", { name: "Media inspector" }) : page.getByRole("dialog", { name: "Media inspector" });
       await expect(inspector).toBeVisible();
+      await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveAccessibleName(width === 1440 ? "Open in Create Edit image" : "Open in Create");
       await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveAttribute("href", "/create?source=" + firstAsset.id + "&action=edit-image");
       await expect(inspector.getByRole("link", { name: "Open Viewer" })).toHaveAttribute("href", "/library/" + firstAsset.id);
       await expect(inspector.getByRole("button", { name: "Favorite", exact: true })).toBeVisible();

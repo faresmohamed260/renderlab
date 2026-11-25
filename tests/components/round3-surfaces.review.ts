@@ -52,7 +52,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
         await capture("admin");
         await page.goto(origin+"/round3-library");
         await expect(page.getByRole("heading",{name:"Library",exact:true})).toBeVisible();
-        await expect(page.getByRole("link",{name:"Open First image"})).toBeVisible();
+        await expect(page.getByRole("link",{name:"Open First image image Nov 24"})).toBeVisible();
         await capture("library");
         await page.getByRole("button",{name:"Select",exact:true}).press("Enter");
         if (viewport.width===390) {
@@ -70,7 +70,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
         // product has no accessible inline inspector; its tile opens Viewer.
         // Record that baseline explicitly, never force hidden desktop CSS.
         await page.goto(origin+"/round3-library");
-        const tile=page.getByRole("link",{name:"Open First image",exact:true});
+        const tile=page.getByRole("link",{name:"Open First image image Nov 24",exact:true});
         await expect(tile).toBeVisible();
         if (viewport.width===1440) {
           await page.goto(origin+"/round3-library?inspect="+firstAsset.id);

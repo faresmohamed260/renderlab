@@ -622,7 +622,7 @@ export function LibraryBatchSelection({
                   onClick={event => { if (narrow) phoneInspectorTrigger.current = event.currentTarget; }}
                   className={styles.cardLink}
                   data-selected={selected ? "true" : "false"}
-                  aria-label={`Open ${title}`}
+                  aria-label={`Open ${title} ${asset.kind} ${createdLabel(asset.createdAt)}`}
                 >
                   <div className={styles.mediaFrame} data-library-media-frame="true">
                     <MediaPreview asset={asset} />
