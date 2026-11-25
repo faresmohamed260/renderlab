@@ -4,6 +4,7 @@ for (const width of [390, 1440]) {
   test("Sheet isolates background and Radix guards without losing keyboard restoration at " + width, async ({ page, io }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/primitives");
+    await expect(page.locator('[data-primitives-ready="true"]')).toBeAttached();
     const trigger = page.locator("button").filter({ hasText: /^Open sheet$/ });
     await trigger.focus();
     const dialog = page.getByRole("dialog", { name: "History fixture" });

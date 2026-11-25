@@ -2,6 +2,48 @@ import sharp from "sharp";
 import { test, expect } from "./isolated-io";
 import { contrastRatio } from "./composited-contrast";
 
+type FocusDiagnosticWindow = Window & { readPrimitiveMenuFocus?: () => unknown };
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    function describe(target: EventTarget | null) {
+      if (!(target instanceof Element)) return null;
+      return {
+        tag: target.localName,
+        role: target.getAttribute("role"),
+        slot: target.getAttribute("data-slot"),
+        state: target.getAttribute("data-state"),
+        text: target.matches('button, [role^="menuitem"]') ? target.textContent?.trim() : undefined,
+      };
+    }
+
+    const events: object[] = [];
+    for (const type of ["focusin", "focusout", "keydown", "pointerdown", "pointermove"]) {
+      document.addEventListener(type, event => {
+        events.push({
+          type: event.type,
+          time: event.timeStamp,
+          target: describe(event.target),
+          relatedTarget: event instanceof FocusEvent ? describe(event.relatedTarget) : undefined,
+          key: event instanceof KeyboardEvent ? event.key : undefined,
+          pointerType: event instanceof PointerEvent ? event.pointerType : undefined,
+        });
+      }, { capture: true });
+    }
+    (window as FocusDiagnosticWindow).readPrimitiveMenuFocus = () => ({
+      activeElement: describe(document.activeElement),
+      events,
+    });
+  });
+});
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+  const diagnostics = await page.evaluate(() => (window as FocusDiagnosticWindow).readPrimitiveMenuFocus?.())
+    .catch((error: unknown) => ({ collectionError: String(error) }));
+  console.log("PRIMITIVE_MENU_FOCUS " + JSON.stringify({ test: testInfo.title, diagnostics }));
+});
+
 const modes = [
   { name: "default", contrast: "no-preference", forcedColors: "none" },
   { name: "higher contrast", contrast: "more", forcedColors: "none" },
@@ -12,6 +54,7 @@ for (const { name, contrast, forcedColors } of modes) {
   test("keyboard focus has a visible menu outline in " + name, async ({ page, io }) => {
     await page.emulateMedia({ contrast, forcedColors });
     await page.goto("/primitives");
+    await expect(page.locator('[data-primitives-ready="true"]')).toBeAttached();
     const trigger = page.getByRole("button", { name: "Open menu" });
     await trigger.focus();
     await trigger.press("Enter");

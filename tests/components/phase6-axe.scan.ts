@@ -86,6 +86,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       await expect(page.getByText("Real shared popover")).toBeVisible();
       await measure("review-popover");
       await page.goto(origin + "/primitives");
+      await expect(page.locator('[data-primitives-ready="true"]')).toBeAttached();
       await expect(page.getByRole("button", { name: "Open sheet" })).toBeVisible();
       await measure("primitives");
       await page.getByRole("button", { name: "Open sheet" }).press("Enter");
