@@ -27,7 +27,9 @@ test("actions are distinct and gated by authoritative eligibility and actual job
   for (const status of ["cancelling", "persisting", "cancelled"])
     assert.deepEqual(historyActions({ ...base, status }), []);
   assert.deepEqual(historyActions({ ...base, status: "failed" }), ["retry", "reuse"]);
-  assert.deepEqual(historyActions({ ...base, status: "succeeded" }), ["runAgain"]);
+  assert.deepEqual(historyActions({ ...base, status: "succeeded" }), ["runAgain", "reuse"]);
+  assert.deepEqual(historyActions({ ...base, status: "succeeded", canReuse: false }), ["runAgain"]);
+  assert.deepEqual(historyActions({ ...base, status: "succeeded", canRunAgain: false }), ["reuse"]);
   assert.deepEqual(historyActions({ ...base, status: "failed", canRetry: false, canReuse: false }), []);
   assert.deepEqual(historyActions({ ...base, status: "running", canCancel: false }), []);
 });

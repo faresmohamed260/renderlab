@@ -5,7 +5,7 @@ import type { HistoryOptions, HistoryTab, HistoryJob, JobsPage, PromptCursor, Pr
 
 const tabHistory = createTabHistory();
 const emptySession: readonly SessionResult[] = [];
-type ReadState<T> = { key: string; value?: T; error?: string; pending: boolean };
+type ReadState<T> = { key: string; value?: T; error?: string; private?: boolean; pending: boolean };
 const readError = "History could not be loaded. Try again.";
 const actionError = "This action could not be completed. Your draft is unchanged.";
 const pageSize = 20;
@@ -13,15 +13,15 @@ const refreshMs = 5_000;
 
 export function useCreateHistory(options: HistoryOptions) {
   const { accountKey, visible, onPrompt, onSessionResult } = options;
-  const [tab, setTab] = useState<HistoryTab>("session");
-  const [offset, setOffset] = useState(0);
+  const [tab, setTab] = useState<HistoryTab>(options.initialTab ?? "session");
+  const [offset, setOffset] = useState(options.initialOffset ?? 0);
   const [search, setSearch] = useState("");
   const [cursor, setCursor] = useState<PromptCursor>();
   const [priorCursors, setPriorCursors] = useState<(PromptCursor | undefined)[]>([]);
   const [jobs, setJobs] = useState<ReadState<JobsPage>>();
   const [prompts, setPrompts] = useState<ReadState<PromptPage>>();
   const [revision, setRevision] = useState(0);
-  const [action, setAction] = useState<{ key: string; id: string; pending: boolean; error?: string; notice?: string }>();
+  const [action, setAction] = useState<{ key: string; id: string; kind: HistoryAction; pending: boolean; error?: string; notice?: string }>();
   const activeAction = useRef<AbortController | null>(null);
   const liveAccount = useRef(accountKey);
   const previousAccount = useRef(accountKey);
@@ -53,10 +53,14 @@ export function useCreateHistory(options: HistoryOptions) {
       try {
         const result = await callbacks.current.transport.readJobs(offset, controller.signal);
         if (controller.signal.aborted) return;
+        if (result.state !== "ready") {
+          setJobs({ key: jobsKey, pending: false, private: result.state === "private", error: result.state === "unavailable" ? readError : undefined });
+          return;
+        }
         setJobs({ key: jobsKey, value: result, pending: false });
         if (result.hasActive) timer = setTimeout(() => { void read(); }, refreshMs);
       } catch {
-        if (!controller.signal.aborted) setJobs(old => ({ key: jobsKey, value: old?.key === jobsKey ? old.value : undefined, pending: false, error: readError }));
+        if (!controller.signal.aborted) setJobs({ key: jobsKey, pending: false, error: readError });
       }
     }
     void read();
@@ -79,28 +83,29 @@ export function useCreateHistory(options: HistoryOptions) {
     if (!accountKey || liveAccount.current !== accountKey || activeAction.current || !historyActions(job).includes(kind)) return;
     const controller = new AbortController();
     activeAction.current = controller;
-    setAction({ key: accountKey, id: job.id, pending: true });
+    setAction({ key: accountKey, id: job.id, kind, pending: true });
     try {
       if (kind === "reuse") {
         const result = await callbacks.current.transport.reuse(job.id, controller.signal);
         if (controller.signal.aborted || liveAccount.current !== accountKey) return;
-        if (!result.ok) { setAction({ key: accountKey, id: job.id, pending: false, error: "These saved settings cannot be reused with the current inputs and capabilities." }); return; }
+        if (!result.ok) { setAction({ key: accountKey, id: job.id, kind, pending: false, error: "These saved settings cannot be reused with the current inputs and capabilities." }); return; }
         callbacks.current.onReuseDraft(result.draft);
-        setAction({ key: accountKey, id: job.id, pending: false, notice: "Settings loaded. Generate when ready." });
+        setAction({ key: accountKey, id: job.id, kind, pending: false, notice: "Settings loaded. Generate when ready." });
       } else {
         const result = await callbacks.current.transport.mutate(kind, job.id, controller.signal);
         if (controller.signal.aborted || liveAccount.current !== accountKey) return;
-        if (!result.ok) { setAction({ key: accountKey, id: job.id, pending: false, error: actionError }); return; }
-        setAction({ key: accountKey, id: job.id, pending: false, notice: kind === "cancel" ? "Cancellation requested." : "New attempt accepted." });
+        if (!result.ok) { setAction({ key: accountKey, id: job.id, kind, pending: false, error: result.message }); return; }
+        setAction({ key: accountKey, id: job.id, kind, pending: false, notice: kind === "cancel" ? "Cancellation requested." : "New attempt accepted." });
+        if (kind !== "cancel") setOffset(0);
         setRevision(old => old + 1);
       }
     } catch {
-      if (!controller.signal.aborted && liveAccount.current === accountKey) setAction({ key: accountKey, id: job.id, pending: false, error: actionError });
+      if (!controller.signal.aborted && liveAccount.current === accountKey) setAction({ key: accountKey, id: job.id, kind, pending: false, error: actionError });
     } finally { if (activeAction.current === controller) activeAction.current = null; }
   }, [accountKey]);
   return {
     accountAvailable: !!accountKey, tab, setTab, session, recordResult,
-    jobs: jobsValue, jobsPending: jobs?.key !== jobsKey || jobs.pending, jobsError: jobs?.key === jobsKey ? jobs.error : undefined,
+    jobs: jobsValue, jobsPrivate: jobs?.key === jobsKey && jobs.private === true, jobsPending: jobs?.key !== jobsKey || jobs.pending, jobsError: jobs?.key === jobsKey ? jobs.error : undefined,
     offset, olderJobs: () => { if (jobsValue?.page.hasMore) setOffset(offset + jobsValue.page.limit); },
     newerJobs: () => setOffset(Math.max(0, offset - (jobsValue?.page.limit ?? pageSize))),
     prompts: promptsValue, promptsPending: prompts?.key !== promptsKey || prompts.pending, promptsError: prompts?.key === promptsKey ? prompts.error : undefined,
