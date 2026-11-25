@@ -1556,3 +1556,13 @@
   }
   .preview-section-panel .preview-section-group a { color: var(--rl-text-primary); }
 }
+
+
+/* The four enabled reference labels failed actual composited contrast on
+ * phone (4.09–4.43:1). Keep their geometry and use the semantic secondary text
+ * role instead of the legacy 55% alpha tint. */
+@media (max-width: 700px) {
+  .create-preview-workspace .create-preview-tile > button:first-child:not(:disabled) > span:not(.create-preview-tile-tag) {
+    color: var(--rl-text-secondary);
+  }
+}
