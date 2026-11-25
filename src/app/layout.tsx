@@ -6,6 +6,7 @@ import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
 import { getCurrentRenderLabAdminAuthorization } from "@/server/admin/admin-auth";
 import { isCreatePreview } from "@/server/create-preview-mode";
 
+import { inter } from "./fonts";
 import "./globals.css";
 import "./renderlab-background.css";
 import "./create-clear-composer.css";
@@ -38,7 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const admin = account ? await getCurrentRenderLabAdminAuthorization().catch(() => null) : null;
   const showAdmin = admin?.status === "authorized" && admin.admin.identity.id === account?.id;
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body className={preview ? "renderlab-gradient" : undefined}>
         {preview && <div className="renderlab-reference-atmosphere" aria-hidden="true">
           <div className="renderlab-reference-wash" />

@@ -386,3 +386,7 @@ Still not authorized by this lock alone:
 - product behavior, route, backend/schema/infrastructure changes;
 - Phase 23/Cycle 5 implementation;
 - deployment.
+
+### Local Inter asset (P6, approved 2026-11-25)
+
+Inter variable normal Latin, weight 100–900, vendored unchanged from [Fontsource 5.3.0](https://github.com/fontsource/font-files/tree/5a72889057f592bb0659629e38337359f94d53b2/fonts/variable/inter), `files/inter-latin-wght-normal.woff2` (48,256 bytes; Git blob `d15208de03cd1ad7c5199f0a0ce915fe841e4722`). Copyright 2016 The Inter Project Authors; SIL OFL-1.1. Full unmodified license and copyright: [public/licenses/inter-OFL.txt](../../public/licenses/inter-OFL.txt), served with the app. No npm dependency, remote runtime font or build download. Non-Latin glyphs use existing system fallback; italic synthesized where needed. `src/app/fonts.ts` exports the shared Next local font, preloaded with swap and Arial metric-adjusted fallback. Review real loading/reflow separately; no measured CLS claim.
