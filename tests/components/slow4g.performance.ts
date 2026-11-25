@@ -1,8 +1,9 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { emptyHistory, fixtureAsset, fixtureImage } from "../component-app/fixtures";
-import { largestLayoutShiftWindow, interactionDurations, median, transferredJavaScript, type Shift, type Interaction } from "./performance-metrics";
+import { largestLayoutShiftWindow, interactionDurations, median, transferredJavaScript, type ResourceTransfer, type Shift, type Interaction } from "./performance-metrics";
 
 const origin = "http://127.0.0.1:4173";
+const resourceTimingCapacity = 1000;
 const profile = { latency: 150, downloadThroughput: 200000, uploadThroughput: 93750 };
 const profiles = [
   { name: "desktop-slow4g", width: 1440, height: 900, cpu: 1 },
@@ -14,6 +15,8 @@ type Metrics = {
   shifts: Shift[];
   events: Interaction[];
   observedUntil: number;
+  navigationBytes: number | null;
+  resources: ResourceTransfer[];
 };
 type Sample = {
   run: number; lcpMs: number | null; lcpTag: string | null; cls: number | null;
@@ -22,7 +25,8 @@ type Sample = {
 };
 
 async function installObservers(context: BrowserContext) {
-  await context.addInitScript(() => {
+  await context.addInitScript(capacity => {
+    performance.setResourceTimingBufferSize(capacity);
     const supported = PerformanceObserver.supportedEntryTypes;
     const lcp: Metrics["lcp"] = [], shifts: Shift[] = [], events: Interaction[] = [];
     const observers: { observer: PerformanceObserver; accept: (entries: PerformanceEntry[]) => void }[] = [];
@@ -52,9 +56,16 @@ async function installObservers(context: BrowserContext) {
     });
     (window as unknown as { fixturePerf: () => Metrics }).fixturePerf = () => {
       for (const { observer, accept } of observers) accept(observer.takeRecords());
-      return { supported: [...supported], lcp: [...lcp], shifts: [...shifts], events: [...events], observedUntil: performance.now() };
+      const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+      const resources = (performance.getEntriesByType("resource") as PerformanceResourceTiming[]).map(
+        ({ name, initiatorType, transferSize }) => ({ name, initiatorType, transferSize }),
+      );
+      return {
+        supported: [...supported], lcp: [...lcp], shifts: [...shifts], events: [...events],
+        observedUntil: performance.now(), navigationBytes: navigation?.transferSize ?? null, resources,
+      };
     };
-  });
+  }, resourceTimingCapacity);
 }
 
 async function fixtureContext(browser: Browser, width: number, height: number) {
@@ -135,18 +146,10 @@ for (const device of profiles) for (const route of ["/create", "/library"]) {
         const candidate = before.lcp.at(-1);
         sample.lcpMs = candidate?.startTime ?? null;
         sample.lcpTag = candidate?.tag ?? null;
-        sample.navigationBytes = await page.evaluate(() => {
-          const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
-          return navigation?.transferSize ?? null;
-        });
-        // Same cold, cache-disabled, pre-input window used for the LCP sample.
-        // ResourceTiming counts completed same-origin script transfers, including
-        // Next preload/prefetch JS within that window (not HTML or RSC payloads).
-        const resources = await page.evaluate(() => performance.getEntriesByType("resource").map(entry => {
-          const r = entry as PerformanceResourceTiming;
-          return { name: r.name, initiatorType: r.initiatorType, transferSize: r.transferSize };
-        }));
-        const js = transferredJavaScript(resources, origin);
+        sample.navigationBytes = before.navigationBytes;
+        // Count completed resource transfers from the same pre-input snapshot as LCP.
+        expect(before.resources.length, "Resource Timing saturated; transferred bytes may be incomplete").toBeLessThan(resourceTimingCapacity);
+        const js = transferredJavaScript(before.resources, origin);
         sample.jsTransferBytes = js.bytes;
         sample.jsResources = js.resources;
         if (route === "/create") {
