@@ -1,7 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { emptyHistory, fixtureAsset, fixtureImage } from "../component-app/fixtures";
+import sharp from "sharp";
+import { inspectReviewFidelity } from "./review-fidelity";
+import { emptyHistory, fixtureAsset } from "../component-app/fixtures";
 
 const origin = "http://127.0.0.1:4173";
 const bundle = path.resolve("artifacts/phase6-component-review");
@@ -22,8 +24,24 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
   const key = viewport.width + "x" + viewport.height + "-" + reducedMotion;
   test("real components and shell " + key, async ({ browser }) => {
     await mkdir(bundle, { recursive: true });
+    // Review-only synthetic artwork: recognizable even in a small history tile.
+    const historyImage = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+          <stop stop-color="#173B80"/><stop offset=".52" stop-color="#7754C8"/><stop offset="1" stop-color="#F3A178"/>
+        </linearGradient>
+        <linearGradient id="hills" x1="0" y1="0" x2="0" y2="1">
+          <stop stop-color="#344F9C"/><stop offset="1" stop-color="#142340"/>
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" fill="url(#sky)"/>
+      <circle cx="367" cy="149" r="64" fill="#FFD7A2"/>
+      <path d="M0 371 125 226 247 350 355 263 512 388V512H0Z" fill="url(#hills)"/>
+      <path d="M0 428 174 319 308 420 426 365 512 409V512H0Z" fill="#172D52"/>
+    </svg>`)).png().toBuffer();
     const frames: string[] = [], errors: string[] = [], unexpected: string[] = [];
     const geometry: unknown[] = [];
+    const fidelity: unknown[] = [];
     const clips: string[] = [];
     const sourceSha = process.env.REVIEW_SOURCE_SHA ?? "local-unverified";
     const context = await browser.newContext({
@@ -35,7 +53,20 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
     const page = await context.newPage();
     const video = page.video();
     page.on("pageerror", error => errors.push(error.message));
-    page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+    page.on("console", message => {
+      if (message.type() === "error") {
+        const detail = message.text() + " at " + (message.location().url || "<no browser location>");
+        errors.push(detail);
+        console.error("REVIEW CONSOLE ERROR", detail);
+      }
+    });
+    page.on("response", response => {
+      if (response.status() >= 400) {
+        const detail = "HTTP " + response.status() + " " + response.request().method() + " " + response.url() + " (" + response.request().resourceType() + ")";
+        errors.push(detail);
+        console.error("REVIEW HTTP ERROR", detail);
+      }
+    });
     await context.route("**/*", async route => {
       const request = route.request(), url = new URL(request.url());
       const get = request.method() === "GET";
@@ -49,11 +80,14 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
       if (url.pathname === "/api/media/assets" && url.searchParams.get("origin") === "generated") {
         return route.fulfill({ json: { ...emptyHistory, items: [fixtureAsset] } });
       }
+      if (url.pathname === "/api/media/assets/" + fixtureAsset.id + "/content" && !url.search) {
+        return route.fulfill({ contentType: "image/png", body: historyImage });
+      }
       if (url.pathname === "/api/account/profile") {
         return route.fulfill({ json: { profile: { displayName: "Synthetic Member" } } });
       }
       if (url.pathname === "/api/account/profile/avatar") {
-        return route.fulfill({ contentType: "image/png", body: Buffer.from(fixtureImage.split(",")[1], "base64") });
+        return route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><rect width="24" height="24" fill="#6d50d1"/><circle cx="12" cy="8" r="4" fill="#d5d1e1"/><path d="M3 24v-3a9 9 0 0 1 18 0v3" fill="#d5d1e1"/></svg>' });
       }
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/create-preview/")) {
         unexpected.push("GET " + url.pathname);
@@ -67,8 +101,12 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
       const name = key + "-" + state + ".png";
       await page.screenshot({ path: path.join(bundle, name), animations: "allow" });
       frames.push(name);
+      const evidence = await inspectReviewFidelity(page, state);
+      fidelity.push(evidence);
+      console.log("REVIEW FIDELITY", key, JSON.stringify(evidence));
+      errors.push(...evidence.fail.map(failure => state + ": " + failure));
       geometry.push(await page.evaluate(state => ({
-        state, viewport: [innerWidth, innerHeight], document: [document.documentElement.clientWidth, document.documentElement.scrollWidth],
+        state, viewport: [innerWidth, innerHeight], document: { clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth, clientHeight: document.documentElement.clientHeight, scrollHeight: document.documentElement.scrollHeight },
         header: [...document.querySelectorAll("header")].map(element => {
           const r = element.getBoundingClientRect();
           return { width: r.width, height: r.height, top: r.top };
@@ -136,7 +174,7 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
       } catch (error) { errors.push("video: " + String(error)); }
       await writeFile(path.join(bundle, key + ".json"), JSON.stringify({
         key, sourceSha, browser: browser.version(), viewport, reducedMotion, frames, clips,
-        geometry, errors, unexpected, status: errors.length || unexpected.length ? "FAIL" : "PASS",
+        geometry, fidelity, errors, unexpected, status: errors.length || unexpected.length ? "FAIL" : "PASS",
       }, null, 2) + "\n");
     }
     expect(unexpected, "No external or unknown API requests").toEqual([]);

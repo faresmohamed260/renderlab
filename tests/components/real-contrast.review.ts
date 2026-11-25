@@ -32,6 +32,14 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       });
       const page = await context.newPage();
       page.on("pageerror", error => errors.push(error.message));
+      page.on("response", response => {
+        if (response.status() >= 400) {
+          const detail = "HTTP " + response.status() + " " + response.request().method() + " " + response.url() + " (" + response.request().resourceType() + ")";
+          errors.push(detail);
+          console.error("REVIEW HTTP ERROR", detail);
+        }
+      });
+
       const collect = async (state: string, sample: string, locator: ReturnType<typeof page.locator>) => {
         rows.push(await collectTextContrast(page, locator, state, sample));
       };
