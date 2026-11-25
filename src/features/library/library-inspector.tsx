@@ -15,11 +15,13 @@ export function LibraryInspector({
   reuseRecipeJobId,
   onClose,
   onDeleted,
+  phone = false,
 }: {
   asset: PublicMediaAsset;
   reuseRecipeJobId: string | null;
   onClose: () => void;
   onDeleted: () => void;
+  phone?: boolean;
 }) {
   const title = asset.displayName || asset.originalFilename || `${asset.origin === "uploaded" ? "Uploaded" : "Generated"} ${asset.kind}`;
   const edit = continuationActionForMedia(asset.kind, "edit-image");
@@ -41,8 +43,8 @@ export function LibraryInspector({
       </animated.div>
       <div className={styles.inspectorHeader}>
         <h3>{title}</h3>
-        <Button type="button" variant="ghost" size="icon-lg" aria-label="Close inspector" onClick={onClose}>
-          <X aria-hidden="true" />
+        <Button type="button" variant={phone ? "link" : "ghost"} className={phone ? styles.phoneDone : undefined} size={phone ? "lg" : "icon-lg"} aria-label="Close inspector" onClick={onClose}>
+          {phone ? "Done" : <X aria-hidden="true" />}
         </Button>
       </div>
       {asset.prompt ? <p className={styles.inspectorPrompt}>{asset.prompt}</p> : null}
@@ -56,7 +58,7 @@ export function LibraryInspector({
           <Button asChild size="lg" className={styles.createAction}>
             <Link href={editHref} prefetch={false} aria-label="Open in Create" aria-description="Edit image">
               <span>Open in Create</span>
-              <span className={styles.editLabel}>Edit image</span>
+              {!phone ? <span className={styles.editLabel}>Edit image</span> : null}
             </Link>
           </Button>
         ) : null}
