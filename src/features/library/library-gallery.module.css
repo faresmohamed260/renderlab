@@ -1274,7 +1274,7 @@
 @media (max-width: 1199px) {
   .contextBlock .eyebrow, .contextBlock .support { display: none; }
   .contextBlock { margin-block-end: var(--rl-space-8); }
-  .title { font-size: var(--rl-type-title); color: var(--rl-text-primary); }
+  .title { font-size: var(--rl-type-page); color: var(--rl-text-primary); }
   .commandSurface, .commandSurface[data-selection="on"] {
     display: block;
     overflow: visible;
@@ -1381,4 +1381,38 @@
   .sortWrap { grid-area: 4 / 1; justify-content: start; }
   .searchCell { grid-area: 5 / 1; }
   .kindCell { grid-area: 6 / 1; }
+}
+
+/* Keep the page heading and truthful page count in the same compact row.
+   Narrow search remains a real, reachable Library action, not a shell overlay. */
+@media (max-width: 1199px) {
+  .workspace { padding-block-start: 0; }
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls {
+    grid-template-rows: auto auto auto auto auto;
+    gap: var(--rl-space-4) var(--rl-space-8);
+  }
+  .defaultControls > .contextBlock {
+    grid-area: 2 / 1;
+    margin: 0;
+    min-width: 0;
+  }
+  .title { margin: 0; line-height: var(--rl-leading-label); font-weight: var(--rl-weight-heading); }
+  .actionCell { grid-area: 1 / 1 / 2 / -1; }
+  .desktopContext { grid-area: 2 / 2; justify-content: end; }
+  .sourceCell { grid-area: 3 / 1; }
+  .sortWrap { grid-area: 3 / 2; }
+  .searchCell { grid-area: 4 / 1 / 5 / -1; }
+  .kindCell { grid-area: 5 / 1 / 6 / -1; }
+  .phoneFilters { padding-block: 0; }
+}
+@media (max-width: 24rem) {
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .defaultControls > .contextBlock { grid-area: 2 / 1; }
+  .desktopContext { grid-area: 3 / 1; justify-content: start; }
+  .sourceCell { grid-area: 4 / 1; }
+  .sortWrap { grid-area: 5 / 1; justify-content: start; }
+  .searchCell { grid-area: 6 / 1; }
+  .kindCell { grid-area: 7 / 1; }
 }

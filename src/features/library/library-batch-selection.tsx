@@ -100,6 +100,7 @@ function itemCountLabel(count: number) {
 }
 
 export function LibraryBatchSelection({
+  heading,
   items,
   collections,
   sourceControls,
@@ -117,6 +118,7 @@ export function LibraryBatchSelection({
   reuseRecipeJobId,
   children,
 }: {
+  heading: ReactNode;
   items: PublicMediaAsset[];
   collections: PublicMediaCollection[];
   sourceControls: ReactNode;
@@ -390,6 +392,7 @@ export function LibraryBatchSelection({
         data-selection={selectionMode ? "on" : "off"}
       >
         <div className={styles.defaultControls} data-library-default-controls="true">
+          {heading}
           <aside className={styles.discovery} aria-label="Library discovery">
             <div ref={searchContainer} className={styles.searchCell} data-phone-search-open={searchOpen}>{searchControls}</div>
             <div className={styles.sourceCell}>{sourceControls}</div>

@@ -311,6 +311,7 @@ export function LibraryView({
   return (
     <LibraryDropUploadSurface enabled={accountAvailable && uploadAvailable && tab === "uploads"}>
       <section className={`${styles.workspace} mx-auto w-full max-w-[1440px] px-4 pb-28 pt-6 sm:px-8 sm:pb-16 sm:pt-8 lg:px-12 lg:pt-9`}>
+        {!accountAvailable ? (
         <div className={styles.contextBlock} data-library-ready={accountAvailable}>
           <p className={styles.eyebrow}>LIBRARY / MEDIA INDEX</p>
           <h2 className={styles.title}>Library</h2>
@@ -318,6 +319,7 @@ export function LibraryView({
             Browse, find and organize durable work without putting controls ahead of the work itself.
           </p>
         </div>
+        ) : null}
 
         {!accountAvailable ? (
           <Empty className={`${styles.emptyState} min-h-72 rounded-xl border border-dashed border-border bg-surface-1 px-6`}>
@@ -337,6 +339,13 @@ export function LibraryView({
         ) : (
           <LibraryBatchSelection
             key={batchSelectionKey}
+            heading={<div className={styles.contextBlock} data-library-ready="true">
+          <p className={styles.eyebrow}>LIBRARY / MEDIA INDEX</p>
+          <h2 className={styles.title}>Library</h2>
+          <p className={styles.support}>
+            Browse, find and organize durable work without putting controls ahead of the work itself.
+          </p>
+        </div>}
             items={items}
             collections={collections}
             sourceControls={sourceControls}

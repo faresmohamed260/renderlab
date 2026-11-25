@@ -476,3 +476,34 @@
   .sort { grid-area: 4 / 1; justify-self: start; }
   .phoneFilters { grid-area: 6 / 1; }
 }
+
+/* Phone header fidelity: reserve the same reordered rows before hydration.
+   The production page uses the page type scale and a collapsed search form. */
+@media (max-width: 1199px) {
+  .workspace { padding-block-start: 0; }
+  .heading { display: contents; }
+  .title { display: none; }
+  .controls { grid-template-rows: auto auto auto auto auto; }
+  .actions { grid-area: 1 / 1 / 2 / -1; }
+  .galleryTitle { grid-area: 2 / 2; justify-self: end; }
+  .galleryTitle > * { inline-size: 7rem; block-size: calc(var(--rl-type-label) * var(--rl-leading-body)); }
+  .sources { grid-area: 3 / 1; }
+  .sort { grid-area: 3 / 2; }
+  .phoneFilters { grid-area: 5 / 1 / 6 / -1; padding-block: 0; }
+  .controls::before {
+    content: "";
+    grid-area: 2 / 1;
+    block-size: calc(var(--rl-type-page) * var(--rl-leading-label));
+    inline-size: min(100%, 10rem);
+    border-radius: var(--rl-radius-micro);
+    background: var(--rl-surface-control);
+  }
+}
+@media (max-width: 24rem) {
+  .actions { grid-area: 1 / 1; justify-content: start; }
+  .controls::before { grid-area: 2 / 1; }
+  .galleryTitle { grid-area: 3 / 1; justify-self: start; }
+  .sources { grid-area: 4 / 1; }
+  .sort { grid-area: 5 / 1; justify-self: start; }
+  .phoneFilters { grid-area: 7 / 1; }
+}
