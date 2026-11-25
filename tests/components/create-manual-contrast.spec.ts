@@ -85,6 +85,29 @@ for (const width of [390, 1440]) {
           await expect(trigger).toHaveAttribute("aria-expanded", "true");
         }
         for (const [name, selector] of labels) {
+          if (state === "shell-disclosure" && (name === "Queue" || name === "Shortcuts")) {
+            const target = page.locator(selector);
+            await target.scrollIntoViewIfNeeded();
+            const paint = await target.evaluate(el => {
+              const ranges = [...el.childNodes].filter(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()).flatMap(node => {
+                const range = document.createRange();
+                range.selectNodeContents(node);
+                return [...range.getClientRects()];
+              });
+              const panel = document.querySelector('.preview-section-panel[data-open="true"], .preview-account-menu[aria-hidden="false"]');
+              const panelRect = panel?.getBoundingClientRect();
+              const points = ranges.flatMap(r => [0.15, 0.5, 0.85].map(fraction => {
+                const x = r.left + r.width * fraction, y = r.top + r.height / 2;
+                const top = document.elementFromPoint(x, y);
+                return { x, y, hit: top?.getAttribute("class"), ownTarget: Boolean(top && el.contains(top)),
+                  insideDisclosure: Boolean(panelRect && x >= panelRect.left && x <= panelRect.right && y >= panelRect.top && y <= panelRect.bottom) };
+              }));
+              return { target: el.getBoundingClientRect().toJSON(), panel: panelRect?.toJSON() ?? null, points };
+            });
+            console.log("CREATE_TOOLBAR_PAINT " + JSON.stringify({ viewportWidth: width, name, ...paint }));
+            expect(paint.points.length, name + " actual text ranges").toBeGreaterThan(0);
+            expect(paint.points.every(point => point.ownTarget && !point.insideDisclosure), name + " glyph area must remain clear of the disclosure").toBe(true);
+          }
           const row = await collectTextContrast(page, page.locator(selector), state, name + " " + selector);
           rows.push(row);
           console.log("CREATE_MANUAL_CONTRAST " + JSON.stringify({ width, ...row }));
