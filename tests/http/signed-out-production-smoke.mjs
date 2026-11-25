@@ -5,6 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import path from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
 import { get as httpGet } from "node:http";
+import { createHash } from "node:crypto";
 import { attributeSharedChunks } from "./shared-chunk-attribution.mjs";
 
 const origin = "http://127.0.0.1:4184";
@@ -158,13 +159,23 @@ if (path.resolve(import.meta.dirname,"../..") === process.cwd()) {
     if(result.error || result.status!==0) throw new Error("Analyzer command failed: "+String(result.error??result.status)+" "+(result.stderr??"").slice(-2000));
     return result.stdout;
   };
-  run(["analyze","--output","--snapshot","shared-chunks"]);
+  // Build-integrated analysis, unlike standalone analyze, describes emitted assets.
+  const before=attributeSharedChunks(emitted,[]).shared.map(asset=>({
+    path:asset.path, hash:createHash("sha256").update(readFileSync(path.resolve(".next",asset.path.slice("/_next/".length)))).digest("hex")
+  }));
+  assert.equal(before.length,2,"Need two measured shared chunks before analyzed build");
+  run(["build","--analyze"]);
+  for(const asset of before){
+    const hash=createHash("sha256").update(readFileSync(path.resolve(".next",asset.path.slice("/_next/".length)))).digest("hex");
+    assert.equal(hash,asset.hash,"Analyzed build must preserve measured chunk identity: "+asset.path);
+  }
   const records=[];
   for(const route of emitted.map(row=>row.route)){
-    const exported=run(["analyze","export","--snapshot","shared-chunks","--route",route]);
+    const exported=run(["analyze","export","--route",route]);
     const rows=exported.trim().split("\n").filter(Boolean).map(line=>JSON.parse(line));
     assert.equal(rows[0]?.schema_version,1,"Analyzer export schema");
     assert.ok(rows.some(row=>row.type==="route"&&row.route===route),"Analyzer route data");
+    console.log("ANALYZER_OUTPUT_PATHS "+JSON.stringify({route,paths:rows.filter(row=>row.type==="output").map(row=>row.filename)}));
     records.push(...rows);
   }
   const attribution=attributeSharedChunks(emitted,records);
