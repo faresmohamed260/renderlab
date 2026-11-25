@@ -1,5 +1,7 @@
 "use client";
 
+import columns from "./create-desktop-columns.module.css";
+
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
@@ -40,7 +42,7 @@ async function hostedRequest<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 function hostedResult(asset: PublicMediaAsset): Result {
-  return { image_data: "/api/media/assets/" + asset.id + "/content", assetId: asset.id,
+  return { image_data: "/api/media/assets/" + asset.id + "/content", assetId: asset.id, promptUsed: asset.prompt ?? undefined,
     filename: asset.originalFilename ?? "result.png", seed: 0, batchId: asset.generationJobId ?? asset.id,
     aspect: asset.width && asset.height ? asset.width / asset.height : undefined };
 }
@@ -49,7 +51,7 @@ const api = "/create-preview/";
 const slotMarker = (index: number) => "\uE000" + index + "\uE001";
 const slotMarkers = /\uE000([0-3])\uE001/g;
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
+type Result = { promptUsed?: string; assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
@@ -211,7 +213,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }
   const [steps, setSteps] = useState(4);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
-  const [resultActions, setResultActions] = useState<HTMLDivElement | null>(null);
   const [desktop, setDesktop] = useState(false);
   const [advancedSheetOpen, setAdvancedSheetOpen] = useState(false);
   const [advancedOffset, setAdvancedOffset] = useState(0);
@@ -1218,7 +1219,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       </div>
       {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
       {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
-      <div className="create-preview-grid">
+      <div className={"create-preview-grid " + columns.grid}>
         <form inert={continuationPending} className={"create-preview-controls " + phoneStyles.composer} noValidate onSubmit={submit}
           onKeyDown={(event) => {
             if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
@@ -1405,9 +1406,9 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             </div>
           </div>
         </form>
-        <section inert={continuationPending && !busy} className="create-preview-canvas" aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
+        <section inert={continuationPending && !busy} className={"create-preview-canvas" + (desktop && result && !busy ? " " + columns.withMetadata : "")} aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
+            <div className={columns.stageRegion}>
             {stageReady && <CreatePreviewStage
-              desktopResultActions={desktop ? resultActions : undefined}
               workflow={mode}
               turns={turns[mode]}
               inlineMask={maskEditor === "inline" ? maskEditorNode : undefined}
@@ -1490,6 +1491,11 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 }
               }}
             />}
+            </div>
+            {desktop && result && !busy && <section aria-label="Prompt used" className={columns.promptUsed}>
+              <h2>Prompt used</h2>
+              <p>{result.run?.prompt ?? result.promptUsed ?? "Prompt not available for this result."}</p>
+            </section>}
             {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="create-preview-stage-sign-in">Sign in to upload</Link>}
         </section>
@@ -1506,7 +1512,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             next.click();
           }}>
           <h2 id="create-preview-history-title">History</h2>
-          <div ref={setResultActions} className="create-preview-history-result-actions" />
+          <div className={columns.historySlot}>
+            <h3>Prompt and job history</h3>
+            <p>Not available here yet. Activity remains available.</p>
+          </div>
           {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
           {savedStatus && <p className="create-preview-caption" role="status">{savedStatus}</p>}
