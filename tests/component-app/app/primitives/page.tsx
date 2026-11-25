@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,18 @@ import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle, 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 
 export default function PrimitiveFixture() {
-  return <div className="flex min-w-0 flex-col items-start gap-4 p-4">
+  const fixtureRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fixture = fixtureRef.current;
+    if (!fixture) return;
+
+    // This parent effect runs after its children, including Radix Menu's keyboard listener setup.
+    fixture.dataset.primitivesReady = "true";
+    return () => { delete fixture.dataset.primitivesReady; };
+  }, []);
+
+  return <div ref={fixtureRef} className="flex min-w-0 flex-col items-start gap-4 p-4">
     <Sheet><SheetTrigger asChild><Button>Open sheet</Button></SheetTrigger>
       <SheetContent side="bottom"><SheetTitle>History fixture</SheetTitle><SheetDescription>Keyboard fixture</SheetDescription><Input aria-label="Sheet input" /></SheetContent>
     </Sheet>
