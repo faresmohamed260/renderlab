@@ -493,12 +493,15 @@
 }
 
 .create-preview-workspace .create-preview-generate {
-  background: linear-gradient(175deg, #755ed2, #5140aa);
-  color: #fff;
-  box-shadow: 0 4px 16px rgb(107 80 219 / 22%);
+  background: var(--rl-gradient-primary);
+  color: var(--rl-on-accent);
+  box-shadow: var(--rl-elevation-primary);
 }
 .create-preview-workspace .create-preview-generate:not(:disabled):hover {
-  background: linear-gradient(175deg, #816bdb, #5a48b6);
+  background: var(--rl-gradient-hover);
+}
+.create-preview-workspace .create-preview-generate:not(:disabled):active {
+  background: var(--rl-gradient-pressed);
 }
 .create-preview-workspace .create-preview-canvas-upload { border-radius: inherit; }
 .create-preview-workspace :is(button, summary, input, textarea):focus-visible {
@@ -631,11 +634,16 @@
   white-space: nowrap;
   padding: 3px 6px;
   border-radius: 7px;
-  background: rgb(22 15 62 / 32%);
+  background: var(--rl-surface-raised);
   font: inherit;
   font-size: 10px;
 }
-.create-preview-workspace .create-preview-generate:disabled { opacity: .68; }
+.create-preview-workspace .create-preview-generate:disabled {
+  background: var(--rl-surface-disabled);
+  color: var(--rl-text-disabled);
+  opacity: 1;
+  box-shadow: none;
+}
 
 .create-preview-workspace .create-preview-tile[data-drag-over="true"] > button:first-child,
 .create-preview-workspace .create-preview-canvas[data-drag-over="true"],
