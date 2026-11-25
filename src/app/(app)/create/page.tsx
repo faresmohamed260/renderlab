@@ -1,6 +1,7 @@
 import { envFlag, envString } from "../../../lib/config/runtime-env.ts";
 import { createHash } from "node:crypto";
 import { Suspense } from "react";
+import { RouteLoading } from "@/components/shell/route-loading";
 import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
 import { resolveCreateContinuation, type CreateSearchParams } from "@/features/create/create-continuation";
 import {
@@ -79,7 +80,12 @@ export default async function CreatePage({
     const params = await searchParams;
     return <ProductionCreatePage params={params} />;
   }
-  if (await isCreatePreview()) return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}><CreatePreviewCreate /></Suspense>;
+  if (await isCreatePreview()) {
+    const hostedOnly = envFlag("RENDERLAB_HOSTED_CREATE");
+    const owner = await getCreatePreviewOwner().catch(() => null);
+    if (!owner) return CreatePreviewCreate({ owner, hostedOnly });
+    return <Suspense fallback={<RouteLoading surface="create" />}><CreatePreviewCreate owner={owner} hostedOnly={hostedOnly} /></Suspense>;
+  }
 
   const params = await searchParams;
   const hosted = await getHostedCreateState();
@@ -162,9 +168,7 @@ export default async function CreatePage({
   );
 }
 
-async function CreatePreviewCreate() {
-  const hostedOnly = envFlag("RENDERLAB_HOSTED_CREATE");
-  const owner = await getCreatePreviewOwner().catch(() => null);
+async function CreatePreviewCreate({ owner, hostedOnly }: { owner: Awaited<ReturnType<typeof getCreatePreviewOwner>> | null; hostedOnly: boolean }) {
   const hosted = hostedOnly && owner ? await getHostedCreateState().catch(() => null) : null;
   const hostedReady = !!(hosted?.fiboAvailable && hosted.mediaUploadAvailable && hosted.accountAvailable && owner);
   const accountKey = owner && hostedReady ? createHash("sha256").update("fibo-hosted-stage:" + owner).digest("hex") : undefined;
@@ -174,14 +178,16 @@ async function CreatePreviewCreate() {
 
 const model = { id: fiboGenerationModel, label: "Bria FIBO 2.0 Edit Turbo" };
 
-function ProductionCreatePage({ params }: { params: CreateSearchParams }) {
-  return <Suspense fallback={<p className="create-preview-create-loading" role="status">Loading Create…</p>}>
-    <Create params={params} />
+async function ProductionCreatePage({ params }: { params: CreateSearchParams }) {
+  // Resolve the original account gate before any content fallback may stream.
+  const account = await getCurrentRenderLabAccount();
+  if (!account) return Create({ params, account });
+  return <Suspense fallback={<RouteLoading surface="create" />}>
+    <Create params={params} account={account} />
   </Suspense>;
 }
 
-async function Create({ params }: { params: CreateSearchParams }) {
-  const account = await getCurrentRenderLabAccount();
+async function Create({ params, account }: { params: CreateSearchParams; account: Awaited<ReturnType<typeof getCurrentRenderLabAccount>> }) {
   if (account && isSupabaseConfigured()) scheduleOwnerGenerationSettlement(account.id);
   const accountKey = account ? createHash("sha256").update("create-stage:" + account.id).digest("hex") : undefined;
   const ready = !!account && isFiboGenerationAvailable() && isMediaUploadConfigured();
