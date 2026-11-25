@@ -291,7 +291,7 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
   return <div className={styles.mobileNavigation}>
     <Sheet open={open} onOpenChange={changeOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="lg" className={styles.logo} aria-label="Open navigation">
+        <Button variant="ghost" size="lg" className={styles.logo} aria-label="RenderLab — Open navigation">
           <RenderLabMark className="size-6" /><span>RenderLab</span>
         </Button>
       </SheetTrigger>
@@ -320,9 +320,9 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
           </div>}
         </nav>
         <Button asChild variant="secondary" size="lg" className={styles.profile}>
-          <Link data-shell-profile="" href={settingsPath} onNavigate={closeImmediately} aria-current={isSettingsRoute(pathname) ? "page" : undefined} aria-label={"Account settings: " + name}>
+          <Link data-shell-profile="" href={settingsPath} onNavigate={closeImmediately} aria-current={isSettingsRoute(pathname) ? "page" : undefined}>
             <UserRound aria-hidden="true" />
-            <span className={styles.profileText}><span>{name}</span><span className={styles.profileMeta}>Settings</span></span>
+            <span className={styles.profileText}><span>{name}</span>{" "}<span className={styles.profileMeta}>Settings</span></span>
             <Settings aria-hidden="true" className={styles.settingsIcon} />
           </Link>
         </Button>
