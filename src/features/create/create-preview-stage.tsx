@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Download, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildImageBatchZip } from "./create-preview-batch-zip";
+import pagerStyles from "./create-result-pager.module.css";
 
 type StageResult = { assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
 export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
@@ -63,6 +64,7 @@ function TurnInput({ file, busy, onOpen, onReuse }: { file: File; busy: boolean;
 
 type Props<T extends StageResult> = {
   historySelection?: { image: T };
+  resultPosition?: { index: number; count: number };
   desktopArrows?: boolean;
   dropTarget?: Pick<HTMLAttributes<HTMLDivElement>, "onDragOver" | "onDragLeave" | "onDrop"> & { "data-drag-over"?: string };
   desktopResultActions?: HTMLElement | null;
@@ -95,7 +97,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function CreatePreviewStage<T extends StageResult>({ historySelection, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, browseUnavailableReason, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function CreatePreviewStage<T extends StageResult>({ historySelection, resultPosition, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, browseUnavailableReason, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -526,9 +528,24 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, de
     );
   }
 
+  // This is the workspace's ordered result scope, not the batch carousel.
+  // The existing live announcement is the accessible equivalent.
+  function resultPager(threadLayout = false) {
+    if (!resultPosition || !displayedResult || busy || viewerOpen || inlineMask) return null;
+    const { index, count } = resultPosition;
+    return <div data-create-result-pager="" aria-hidden="true"
+      className={pagerStyles.pager + (threadLayout ? " " + pagerStyles.thread : "")}>
+      <span className={pagerStyles.count}>Result {index + 1} of {count}</span>
+      <span className={pagerStyles.dots}>
+        {Array.from({ length: count }, (_, i) => <span key={i} className={pagerStyles.dot}
+          data-create-result-dot="" data-selected={i === index} />)}
+      </span>
+    </div>;
+  }
+
   function stageDocument() {
     return (
-        <div className="create-preview-stage-document">
+        <div className={"create-preview-stage-document " + pagerStyles.document}>
         <div className="create-preview-stage-surface" {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
           aria-label={label} aria-busy={busy || inputPending} data-portrait={ratio < 1}
           onClick={(event) => {
@@ -556,6 +573,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, de
               <span>Drop an image or click to upload</span>
             </Button>)}
         </div>
+        {!inThread && resultPager()}
         {!viewerOpen && carousel()}
         {!viewerOpen && !desktopResultActions && runActions()}
         </div>
@@ -587,6 +605,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, de
             </article>
           ))}
           {!busy && input && (!result || reviewing) && <div className="create-preview-thread-live">{stageDocument()}</div>}
+          {resultPager(true)}
         </div> : stageDocument()}
         {notice && !viewerOpen && <p className="create-preview-stage-notice" role="status">{notice}</p>}
       </div>

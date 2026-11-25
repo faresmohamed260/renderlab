@@ -1552,6 +1552,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               result={busy ? inspected : result}
               history={historyGroups.map((group) => group[0])}
               historySelection={historySelection}
+              resultPosition={selectedResultIndex >= 0 ? { index: selectedResultIndex, count: shortcutResults.length } : undefined}
               desktopArrows={desktop && !maskEditor}
               dropTarget={desktop && !maskEditor ? uploadDropTarget("canvas") : undefined}
               onRestore={restoreRun}
