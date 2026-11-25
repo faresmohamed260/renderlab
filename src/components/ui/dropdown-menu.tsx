@@ -56,6 +56,8 @@ function DropdownMenuLabel({
   );
 }
 
+const menuItemFocus = "focus:bg-[var(--rl-surface-selected)] focus:outline-solid focus:outline-[length:var(--rl-focus-width)] focus:-outline-offset-[var(--rl-focus-width)] focus:outline-[color:var(--rl-focus)]";
+
 function DropdownMenuItem({
   className,
   variant = "default",
@@ -68,7 +70,8 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] px-2 py-2 text-sm outline-none transition-colors focus:bg-[var(--rl-surface-selected)] focus:shadow-[inset_0_0_0_1px_var(--rl-border-action-selection)] data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] data-[variant=destructive]:text-[color:var(--rl-danger)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] px-2 py-2 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] data-[variant=destructive]:text-[color:var(--rl-danger)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        menuItemFocus,
         className,
       )}
       {...props}
@@ -89,7 +92,8 @@ function DropdownMenuRadioItem({
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] py-2 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-[var(--rl-surface-selected)] focus:shadow-[inset_0_0_0_1px_var(--rl-border-action-selection)] data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] py-2 pl-8 pr-2 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        menuItemFocus,
         className,
       )}
       {...props}
@@ -114,7 +118,8 @@ function DropdownMenuCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] py-2 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-[var(--rl-surface-selected)] focus:shadow-[inset_0_0_0_1px_var(--rl-border-action-selection)] data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] py-2 pl-8 pr-2 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        menuItemFocus,
         className,
       )}
       checked={checked}
