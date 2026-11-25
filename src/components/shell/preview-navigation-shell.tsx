@@ -231,10 +231,10 @@ const navigationGroups = [
 ];
 
 
-function PhoneNavigation({ pathname, accountId, profile, showAdmin }: {
+function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, setOpenPath }: {
   pathname: string; accountId: string | null; profile: ShellProfile | null; showAdmin: boolean;
+  openPath: string | null; setOpenPath: (path: string | null) => void;
 }) {
-  const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
   const reduced = usePreviewReducedMotion();
   const [slide, api] = useSpring(() => ({ offset: -100 }));
@@ -335,6 +335,10 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
   const pathname = usePathname();
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
   const legacy = pathname === "/";
+  // Preserve isolation throughout the phone modal's lifetime, including its
+  // closing spring. Live-region ancestor paths can survive Radix hideOthers.
+  const [phoneOpenPath, setPhoneOpenPath] = useState<string | null>(null);
+  const phoneModalOpen = !legacy && phoneOpenPath === pathname;
   const sectionLabel = isSettingsRoute(pathname) ? "Settings" : current?.label ?? "RenderLab";
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
@@ -411,7 +415,7 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
   return (
     <div ref={shellRoot} className="preview-navigation-shell">
       <header className={"preview-navigation-header" + (legacy ? "" : " " + styles.applicationHeader)} data-p6-desktop={legacy ? undefined : "true"}>
-        {!legacy && <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} />}
+        {!legacy && <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} openPath={phoneOpenPath} setOpenPath={setPhoneOpenPath} />}
         {!legacy && <div className="p6-desktop-navigation">
           <Button asChild variant="ghost" size="lg" className="p6-desktop-brand"><Link href="/" aria-label="RenderLab home"><RenderLabMark className="size-6" /><span>RenderLab</span></Link></Button>
           <nav aria-label="Primary navigation" className="p6-desktop-links">
@@ -469,7 +473,7 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
         </div>}
         <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={legacy} />
       </header>
-      <div className="preview-navigation-content">{children}</div>
+      <div className="preview-navigation-content" inert={phoneModalOpen} aria-hidden={phoneModalOpen || undefined}>{children}</div>
     </div>
   );
 }

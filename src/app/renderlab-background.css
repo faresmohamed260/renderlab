@@ -1400,7 +1400,7 @@
     line-height: 1.6;
     background-color: rgb(255 255 255 / 4.5%);
   }
-  .create-preview-fields #create-preview-prompt::placeholder { color: #878794; }
+  .create-preview-fields #create-preview-prompt::placeholder { color: var(--rl-text-placeholder); }
   .create-preview-fields #create-preview-prompt:focus { background-color: rgb(255 255 255 / 7%); }
   .create-preview-aspect { position: relative; padding-inline-end: 44px; }
   .create-preview-aspect-preview {
@@ -1435,7 +1435,7 @@
   position: absolute;
   inset: 10px 11px auto;
   content: attr(aria-placeholder);
-  color: #878794;
+  color: var(--rl-text-placeholder);
   pointer-events: none;
   user-select: none;
 }
@@ -1559,13 +1559,10 @@
 }
 
 
-/* The four enabled reference labels failed actual composited contrast on
- * phone (4.09–4.43:1). Keep their geometry and use the semantic secondary text
- * role instead of the legacy 55% alpha tint. */
-@media (max-width: 700px) {
-  .create-preview-workspace .create-preview-tile > button:first-child:not(:disabled) > span:not(.create-preview-tile-tag) {
-    color: var(--rl-text-secondary);
-  }
+/* Enabled reference labels fail on both phone and desktop glass. Preserve
+ * geometry and use semantic foreground instead of the legacy alpha tint. */
+.create-preview-workspace .create-preview-tile > button:first-child:not(:disabled) > span:not(.create-preview-tile-tag) {
+  color: var(--rl-text-secondary);
 }
 
 
