@@ -6,7 +6,8 @@ export type JobEligibility = { status: GenerationJobStatus; canCancel: boolean; 
 export function historyActions(job: JobEligibility): HistoryAction[] {
   if (job.status === "queued" || job.status === "preparing" || job.status === "running") return job.canCancel ? ["cancel"] : [];
   if (job.status === "failed") return [...(job.canRetry ? ["retry" as const] : []), ...(job.canReuse ? ["reuse" as const] : [])];
-  return job.status === "succeeded" && job.canRunAgain ? ["runAgain"] : [];
+  if (job.status === "succeeded") return [...(job.canRunAgain ? ["runAgain" as const] : []), ...(job.canReuse ? ["reuse" as const] : [])];
+  return [];
 }
 const empty: readonly SessionResult[] = [];
 

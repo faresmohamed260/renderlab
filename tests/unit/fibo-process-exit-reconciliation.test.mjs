@@ -30,6 +30,12 @@ registerHooks({
       return stub(`export async function getCurrentRenderLabAccount() { return globalThis[Symbol.for("renderlab.p603c.fixture.account")] === undefined ? { id: "${ownerId}" } : globalThis[Symbol.for("renderlab.p603c.fixture.account")]; }
         export const getCurrentRenderLabIdentity = getCurrentRenderLabAccount;`);
     }
+    // The route only passes these references across the stubbed client boundary.
+    // If it invokes History IO during SSR, fail rather than silently returning data.
+    if (specifier === "@/server/generation/history/history-actions") {
+      return stub("const unexpected = () => { throw new Error('Unexpected History action during route render'); };"
+        + " export const readCreateHistoryJobs = unexpected, readCreateHistoryPrompts = unexpected, loadCreateHistoryReuse = unexpected;");
+    }
     if (specifier === "@/server/hosted-create") {
       return stub("export const getCreatePreviewOwner = () => null, getHostedCreateMedia = () => null,"
         + " getHostedCreatePreferences = () => null, getHostedCreateState = () => null;");
