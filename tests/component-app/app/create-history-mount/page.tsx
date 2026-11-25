@@ -1,12 +1,30 @@
+import { cookies } from "next/headers";
+import { activityFixtures, activityIds, newAttempt } from "../../activity-fixtures";
+import { isActiveGenerationStatus } from "@/lib/api/generation-activity-contract";
 import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
 import type { HistoryReadActions } from "@/features/create/history/history-transport";
 import { createProps, fixtureJobId } from "../../fixtures";
 
-export default async function FixtureHistoryMount({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
-  const account = (await searchParams).account === "guest" ? null : "fixture-owner";
+export default async function FixtureHistoryMount({ searchParams }: { searchParams: Promise<{ account?: string; matrix?: string }> }) {
+  const query = await searchParams;
+  const account = query.account === "guest" ? null : query.account === "other" ? "fixture-other" : "fixture-owner";
+  const matrix = query.matrix === "1";
   async function readJobsAction(offset: number): ReturnType<HistoryReadActions["readJobsAction"]> {
       "use server";
       if (!account) return { state: "private" };
+      if (matrix) {
+        const jar = await cookies();
+        const items = account === "fixture-owner" && offset === 0 ? activityFixtures.map(item => {
+          const cancel = item.id === activityIds.running ? jar.get("fixture-activity-cancel")?.value : undefined;
+          const failed = item.id === activityIds.failed;
+          return { ...item, ...(cancel ? { status: (cancel === "terminal" ? "cancelled" : "cancelling") as "cancelled" | "cancelling", canCancel: false } : {}), canRetry: failed, canReuse: failed || item.id === activityIds.succeeded };
+        }) : [];
+        if (account === "fixture-owner" && offset === 0) {
+          if (jar.get("fixture-activity-retry")?.value) items.unshift({ ...newAttempt("retry"), canRetry: false, canReuse: false });
+          if (jar.get("fixture-activity-run-again")?.value) items.unshift({ ...newAttempt("run-again"), canRetry: false, canReuse: false });
+        }
+        return { state: "ready", items, page: { offset, limit: 20, hasMore: offset === 0 && account === "fixture-owner" }, hasActive: items.some(item => isActiveGenerationStatus(item.status)) };
+      }
       return { state: "ready", items: [{
         id: fixtureJobId, status: "failed", operation: "create-image", outputKind: "image", prompt: "Fixture failed job", summary: "Fixture failed job",
         outputAssetIds: [], canCancel: false, canRetry: true, canRunAgain: false, canReuse: true, error: null,
@@ -19,7 +37,7 @@ export default async function FixtureHistoryMount({ searchParams }: { searchPara
   }
   async function reuseAction(id: string): ReturnType<HistoryReadActions["reuseAction"]> {
       "use server";
-      if (!account || id !== fixtureJobId) return { ok: false, reason: "unavailable" };
+      if (!account || (matrix ? account !== "fixture-owner" || ![activityIds.failed, activityIds.succeeded].includes(id) : id !== fixtureJobId)) return { ok: false, reason: "unavailable" };
       return { ok: true, draft: { mode: "generate", references: [], prompt: "Fixture editable draft", vgl: "", seed: "42", randomize: false, steps: 4, negativePrompt: "", aspectRatio: "1:1" } };
   }
   const actions: HistoryReadActions = { readJobsAction, readPromptsAction, reuseAction };
