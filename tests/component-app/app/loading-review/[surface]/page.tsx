@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { RouteLoading } from "@/components/shell/route-loading";
-import { CreateLoading } from "@/features/create/create-loading";
 import { ActivityView } from "@/features/activity/activity-view";
 import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
 import type { PublicGenerationActivity } from "@/lib/api/generation-activity-contract";
@@ -27,5 +26,5 @@ export default async function LoadingReview({ params, searchParams }: {
 }) {
   const surface = (await params).surface === "create" ? "create" : "activity";
   const outcome = (await searchParams).outcome ?? "loaded";
-  return <Suspense fallback={surface === "create" ? <CreateLoading /> : <RouteLoading surface="activity" />}><Content surface={surface} outcome={outcome} /></Suspense>;
+  return <Suspense fallback={<RouteLoading surface={surface} />}><Content surface={surface} outcome={outcome} /></Suspense>;
 }
