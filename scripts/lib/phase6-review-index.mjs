@@ -41,11 +41,22 @@ export async function indexReview(directory, sourceSha) {
     if (sample.status !== "PASS") missing.push(key + ": sample failed");
     samples.push(sample);
   }
-  const manifest = { sourceSha, expectedSamples: keys.length, expectedFrames: keys.length * states.length, expectedClips: keys.length, samples, missing, files };
+  const contrastReports = [];
+  for (const key of keys.filter(key => key.startsWith("1440") || key.startsWith("390"))) {
+    const name = "contrast-" + key + ".json";
+    if (await verify(name)) {
+      try {
+        const report = JSON.parse(await readFile(path.join(directory, name), "utf8"));
+        if (report.key !== key || report.sourceSha !== sourceSha || !Array.isArray(report.rows) || !report.rows.length) throw Error("identity or rows missing");
+        contrastReports.push(name);
+      } catch (error) { missing.push(name + ": " + String(error)); }
+    }
+  }
+  const manifest = { sourceSha, contrastReports, expectedSamples: keys.length, expectedFrames: keys.length * states.length, expectedClips: keys.length, samples, missing, files };
   await writeFile(path.join(directory, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   const link = name => files[name] ? '<a href="' + escape(name) + '">' + escape(name) + "</a>" : escape(name) + " (missing)";
   await writeFile(path.join(directory, "index.html"), '<!doctype html><html lang="en"><meta charset="utf-8"><title>RenderLab component review</title><style>body{font:16px system-ui;max-width:1100px;margin:auto;padding:24px}section{border-top:1px solid #aaa;padding:16px 0}figure{display:inline-block;vertical-align:top;width:min(100%,480px);margin:8px}img,video{max-width:100%;height:auto}figcaption{overflow-wrap:anywhere}</style><h1>RenderLab component review</h1><p>Source SHA: ' + escape(sourceSha) + '</p><p>' + (missing.length ? "INCOMPLETE — see manifest.json" : "Capture complete — visual approval still required") + '</p><p><a href="README.md">README</a> · <a href="manifest.json">Manifest and diagnostics</a></p>' +
-    samples.map(sample => '<section><h2>' + escape(sample.key) + ' — ' + escape(sample.status) + '</h2>' +
+    contrastReports.map(name => "<p>Contrast report: " + link(name) + "</p>").join("") + samples.map(sample => '<section><h2>' + escape(sample.key) + ' — ' + escape(sample.status) + '</h2>' +
       sample.frames.map(name => '<figure>' + (files[name] ? '<a href="' + escape(name) + '"><img loading="lazy" src="' + escape(name) + '" alt="' + escape(name) + '"></a>' : "") + '<figcaption>' + link(name) + '</figcaption></figure>').join("") +
       sample.clips.map(name => '<figure>' + (files[name] ? '<video controls preload="none" src="' + escape(name) + '"></video>' : "") + '<figcaption>' + link(name) + '</figcaption></figure>').join("") + '</section>').join("") + "</html>");
   await writeFile(path.join(directory, "README.md"), [
