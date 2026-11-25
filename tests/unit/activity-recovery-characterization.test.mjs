@@ -1,0 +1,30 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { runtime, resetRuntime, fakeFetch, OWNER_A, FIXED_TIME } from "../helpers/generation-critical-path-runtime.mjs";
+
+const ownerReturn = await import("../../src/server/generation/owner-generation-settlement.ts");
+const query = () => new URLSearchParams(runtime.traces.find(x=>x.table==="generation_jobs"&&x.method==="GET").search);
+test("Activity alone requests cancelling and stale missing-dispatch recovery, bounded and owner-scoped", async t => {
+  resetRuntime();
+  t.mock.method(globalThis,"fetch",fakeFetch);
+  t.mock.method(AbortSignal,"timeout",()=>new AbortController().signal);
+  t.mock.method(console,"warn",()=>{});
+  assert.equal(await ownerReturn.settleOwnerGenerationWithinResponse(OWNER_A,"activity"),false);
+  let q=query();
+  assert.equal(q.get("owner_id"),"eq."+OWNER_A);
+  assert.equal(q.get("limit"),"1");
+  assert.equal(q.get("order"),"last_reconciled_at.asc.nullsfirst,updated_at.asc,id.asc");
+  assert.match(q.get("status"),/cancelling/);
+  assert.ok(q.get("or").includes("status.eq.cancelling"));
+  assert.ok(q.get("or").includes("updated_at.lt."+new Date(FIXED_TIME-15*60*1000).toISOString()));
+  assert.ok(q.get("or").includes("or(worker_id.is.null,worker_id.neq.fibo)"));
+  assert.ok(q.get("or").includes("status.eq.persisting"));
+  assert.ok(q.get("or").includes("worker_id.eq.fibo"));
+  runtime.traces.length=0;
+  assert.equal(await ownerReturn.settleOwnerGenerationWithinResponse(OWNER_A,"library"),false);
+  q=query();
+  assert.doesNotMatch(q.get("status"),/cancelling/);
+  assert.doesNotMatch(q.get("or"),/status\.eq\.cancelling|updated_at\.lt\./);
+  assert.equal(runtime.providerPolls,0);
+  assert.equal(runtime.dispatchCalls,0);
+});
