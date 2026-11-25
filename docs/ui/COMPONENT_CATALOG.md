@@ -174,13 +174,14 @@ Before copying/installing an external component:
 ### PreviewNavigationShell
 **Status:** EXPERIMENTAL — authoritative production implementation; rendered design acceptance remains UNAUDITED.
 **Source:** `src/components/shell/preview-navigation-shell.tsx`, shell styles in `src/app/renderlab-background.css`.
-**Reachability:** `src/app/layout.tsx:33–41` wraps production children (including Landing) and the authorized loopback preview. `src/app/(app)/layout.tsx:7–8` bypasses AppShell in those modes. The shell owns section navigation (Home/Create/Library/Activity), account disclosure and Settings access; feature content and route authorization remain separate. Shared Button, RenderLabMark, React Spring and Lucide are active.
+**Reachability:** `src/app/layout.tsx` wraps production-mode children (including Landing) and the authorized loopback preview. `src/app/(app)/layout.tsx` bypasses AppShell in those modes. The merged P6-03 desktop application header adds direct section links and a server-gated Admin link in the account disclosure. Landing and narrow navigation use the existing section selector. Shared Button, RenderLabMark, React Spring and Lucide are active.
 **Reuse rules:** Current implementation authority, not new visual approval. UI-052/UI-074 remain binding outside scoped Create; retain both shells until the separately reviewed Phase 6 Shell step. See [P5-06 shell authority disposition](../audits/P5_06_SHELL_AUTHORITY_PROPOSAL_2026-11-24.md). No shell-specific approval inferred from mounted feature tests or historical AppShell evidence.
 
 ### CreatePreviewWorkspace
 **Status:** EXPERIMENTAL — current production-mode Create path, not complete rendered acceptance.
-**Source:** `src/features/create/create-preview-workspace.tsx`, `src/features/create/create-preview-stage.tsx`, `src/features/create/create-preview-mask-editor.tsx`.
+**Source:** `src/features/create/create-preview-workspace.tsx`, `src/features/create/create-preview-stage.tsx`, `src/features/create/create-preview-deferred-mask-editor.tsx`, `src/features/create/create-preview-mask-editor.tsx`.
 **Reachability:** `src/app/(app)/create/page.tsx` selects hosted-only FIBO workspace with owner-scoped continuation resolution and supported account defaults. Rich prompt, mask and stage are feature-owned, not shell primitives. Shared primitive mechanics, React Spring and Lucide are active. UI-084/FIBO rollout contract and current capabilities govern behavior; no claim of full parity or visual approval. Phase 5 contract owns correctness/QA.
+**Phase 6 composition:** The workspace defers loading the mask editor until opened and uses shared Button for the loading state's Cancel control. The feature-local `CreateHistoryPanel` and `CreateHistorySheet` under `src/features/create/history/` compose existing AlertDialog, Button, Input, Sheet and Skeleton wrappers. Their route integration and rendered acceptance are pending under the [P6-04 contract](P6_04_CREATE_CONTRACT.md).
 
 ### CreateWorkspace
 **Status:** DEPRECATED for production Create; retained alternate non-production branch, historical approval only

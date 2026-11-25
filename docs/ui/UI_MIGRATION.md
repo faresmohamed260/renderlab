@@ -32,7 +32,7 @@ The earlier whole-product redesign/migration program is historical closure evide
 Current product family:
 - Landing uses the approved Lab Matrix / Lab Grid identity and composition.
 - P5-06 source-authority disposition accepted: `PreviewNavigationShell` is the current production implementation, including Landing; `AppShell` remains reachable in ordinary non-production, non-preview application routes. UI-074 remains approved geometry outside scoped Create; UI-052 separate Landing chrome intent and current wrapper fidelity are unresolved, not retrospectively approved by UI-085. Retain both shells and their historical evidence until the separately reviewed Phase 6 Shell step ([V2 roadmap](DESIGN_LANGUAGE_V2.md)); no deletion or runtime change in P5-06. See [P5-06 shell authority disposition](../audits/P5_06_SHELL_AUTHORITY_PROPOSAL_2026-11-24.md).
-- Create uses the production-mode FIBO-only CreatePreviewWorkspace under UI-084; Clear Composer is a retained alternate non-production branch and historical evidence. Current Create appearance is unfinished; full FIBO parity and responsive/interaction acceptance remain open.
+- Create uses the production-mode FIBO-only CreatePreviewWorkspace under UI-084. Clear Composer is a retained alternate non-production branch and historical evidence. The Phase 6 composition migration, full FIBO parity and responsive/interaction acceptance remain open.
 - Library uses the approved Gallery Rail family and current server/URL-owned discovery/organization behavior.
 - Media Viewer uses the approved Media Register + Source Fold family.
 - Activity uses the approved Job Matrix + History Register family.
@@ -43,9 +43,23 @@ UI-074 through UI-080 remain the historical redesign family where not superseded
 
 ## Current migration/work state
 
-P6-03a/b (#714/#717) merged the additive `src/app/semantic-tokens.css` owner, `src/lib/ui/spring-roles.ts` owner and maintained glass wrappers, including Sheet, Slider, Switch, Tooltip, Skeleton and retained Popover. Shared primitives are catalogued in `COMPONENT_CATALOG.md` and `component-sources.json`; existing feature overrides and legacy token consumers are retained until scoped migration. #717 exact qualified head `fae783f0033720c0fc0917359ebb99da2a2049e2` passed mounted tests (26 passed, 2 skipped); the 195px overflow ratchet removed 48 proven resolved entries with controls present and operable. This is repository implementation evidence, not production deployment or final rendered contrast/zoom/motion approval; worker 4 review and shell/feature migration remain separate.
+[Design Language V2](DESIGN_LANGUAGE_V2.md) sets the dark-only Violet Studio glass direction. Phase 6 implementation proceeds under the bounded contracts below.
 
-The earlier migration checklist is closed; current Phase 5 frontend polish is governed by [its merged contract](../architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) and FIBO rollout remains separately bounded by [UI-084 rollout contract](../architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md). Production-live is not full verification or execution completion. Current and future work begins from repository reality, not historical Phase 0–29 checklists.
+- **P6-03 Shell and primitives.** The [shell contract](P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md) governs the merged semantic tokens, named spring roles, shared glass wrappers and desktop navigation slice. Phone sidebar and auth-safe loading are outside the merged baseline. Responsive shell composition, composited contrast, zoom and motion review remain acceptance gates.
+- **P6-04 Create and History.** Under the [Create contract](P6_04_CREATE_CONTRACT.md), Create now defers loading the mask editor until opened. The History panel, sheet and state hook, owner-scoped prompt-history reader and failed-job draft reconstruction are merged groundwork (#745). Route wiring and mounted parity remain open. The Activity route and navigation stay in place until History and Queue meet lifecycle parity and the compatibility redirect is separately reviewed. The merged Activity characterization (#737, #729) covers the current projection, owner recovery and mounted lifecycle expectations for that comparison.
+- **P6-05 Library.** The [Library contract](P6_05_LIBRARY_CONTRACT.md) is merged via #763; desktop implementation and phone acceptance remain separate.
+- **P6-06 Admin Observe.** The [read-only Observe contract](P6_06_ADMIN_OBSERVE_CONTRACT.md) is merged (#749); the desktop slice is merged via #763. Human rendered acceptance and production verification remain pending. The slice carries forward deferred P5-03 Health presentation using existing aggregates.
+
+The [Phase 5 polish contract](../architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) governs its correctness scope. The [UI-084 rollout contract](../architecture/FIBO_PRODUCTION_ROLLOUT_CONTRACT.md) separately governs the FIBO rollout.
+
+### Phase 6 validation lanes
+
+These workflows have optional check status. Exact-head protected checks and the evidence required by each surface contract still apply. Responsive rendered fidelity and applicable motion evidence require human review for UI approval.
+
+- [Component Review](../../.github/workflows/phase6-component-review.yml) mounts real components with production stylesheet discovery and staged production assets in an optimized fixture. It gates bundle completeness, material/token and desktop layout sentinels, and browser/resource errors. The bundle supplies geometry, composited contrast and normal/reduced-motion evidence. The [measured stylesheet correction](../../tests/components/OVERFLOW_REBASELINE_731.md) was a one-time overflow rebaseline. Future changes use the shrink-only ratchet.
+- [Axe Smoke](../../.github/workflows/phase6-axe-smoke.yml) checks scanner controls, expected mounted scan coverage, fixture isolation and scanner exclusion from production output. Violation findings are informational and feed accessibility triage.
+- [Slow 4G Performance](../../.github/workflows/phase6-slow4g-performance.yml) checks throttling calibration, fixture integrity and complete LCP/CLS measurements across cold Create and Library samples. Lab timings and the 4 s LCP reference are advisory pending a repeatable baseline. Field performance and INP require separate evidence.
+- [Signed-out Production HTTP](../../.github/workflows/phase6-signed-out-http.yml) compares real loopback production builds of the PR base and candidate. It checks status, Location, HTML and signed-out page markers for Create, Activity and Library, plus the concealed Admin 404. Signed-in ownership, MFA and deployment qualification use separate gates.
 
 - Ordinary feature/UI additions use Integration Mode and preserve the accepted family unless a product reason requires an approved bounded change.
 - Explicit redesign requests use Authorized Redesign Mode from `AGENTS.md` and `docs/ui/DESIGN_WORKFLOW.md`.

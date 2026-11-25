@@ -1,6 +1,6 @@
 # Documentation Index and Authority Taxonomy
 
-Updated: 2026-11-23
+Updated: 2026-11-25
 
 This file is the repository-wide navigation and documentation taxonomy for RenderLab. It explains what each class of document means, how apparently conflicting records are resolved, and what does or does not establish backlog authority. It does not replace the domain-specific authorities it points to.
 
@@ -225,9 +225,11 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent authority. Keep durable decision/status/reason/consequence/supersession content current here; move detailed run/artifact/merge/deployment chronology to historical evidence and retain only concise evidence links when useful.
 - `docs/ui/UI_SYSTEM.md` — normative UI-system rules; existing runtime baseline until reviewed V2 implementation.
 - [Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — Phase 6 approved visual direction, candidate glass tokens/springs and high-level roadmap; no runtime authorization.
-- [P6-04 Create contract](ui/P6_04_CREATE_CONTRACT.md) — accepted next-phase execution contract; sequencing and P6-03 composition gates apply.
+- [P6-03 shared tokens, primitives and shell contract](ui/P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md) — governs shared foundations and shell composition acceptance.
+- [P6-04 Create contract](ui/P6_04_CREATE_CONTRACT.md) — current Create composition and History parity contract, including the gate for Activity retirement.
 - [P6-05 Library contract](ui/P6_05_LIBRARY_CONTRACT.md) — desktop Library and inspector execution contract with a proposed phone layout.
-- [P6-06 Admin Observe contract](ui/P6_06_ADMIN_OBSERVE_CONTRACT.md) — read-only Health aggregate presentation; operational controls remain roadmap items.
+- [P6-06 Admin Observe contract](ui/P6_06_ADMIN_OBSERVE_CONTRACT.md) — merged contract and read-only desktop Health slice; rendered acceptance remains open.
+- [Phase 6 validation lanes](ui/UI_MIGRATION.md#phase-6-validation-lanes) — implemented review, axe, Slow 4G and signed-out HTTP workflow coverage and acceptance boundaries.
 - [P6-02a shared-primitives and Create prototype contract](ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) — superseded historical isolated design checkpoint; prototype #706 rejected.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
 - `docs/ui/VISUAL_NORTH_STAR.md` — normative visual direction for authorized redesign work.
@@ -264,4 +266,4 @@ ChatGPT Project context and the current chat remain supplementary/temporary cont
 - [Phase 4 execution contract](architecture/BACKEND_P1_PHASE4_CONTRACT.md) and [Phase 3 closeout](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md): historical planning and evidence baseline, not active work authority.
 - [P1-07 evidence pack](audits/P1_07_INDEPENDENT_REVIEW_EVIDENCE_PACK_2026-11-24.md) and [claims sheet](audits/P1_07_TRUTHFULNESS_CLAIMS_SHEET_2026-11-24.md): dated reviewer preparation, not current production status or human independent review certification. Third verification review pending.
 - [Phase 5 frontend polish contract](architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) — merged #677; correctness work remains Integration Mode. P5-03 deferred to later Admin Observe; QA gaps remain.
-- [Phase 6 Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — owner-approved static direction; [P6-03 shared tokens, primitives and shell contract](ui/P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md) requires acceptance and merge before implementation. No production authorization.
+- [Phase 6 Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — owner-approved static direction. The [current UI tracker](ui/UI_MIGRATION.md#current-migrationwork-state) records implementation and acceptance status.
