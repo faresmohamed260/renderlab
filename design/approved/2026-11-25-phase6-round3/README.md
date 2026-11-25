@@ -23,3 +23,7 @@ Motion choreography; Settings sub-pages (profile, email, MFA, password, preferen
 ## Files
 
 `renders/*.png` (1x) are the primary references; `html/*.html` are the same comps as plain HTML for inspection (they load Inter from Google Fonts if online).
+
+## Admin data-truthfulness addendum (2026-11-25)
+
+The head engineer approved the deviation in [#782](https://github.com/faresmohamed260/renderlab/pull/782): the existing Observe contract exposes recent confirmed-dispatch percentiles (15-minute window), not a 24-hour time series or separate confirmation-latency measurement, and aggregate terminal-reservation status counts, not individual reservation or job identities. Use the real percentile bars, confirmation sample count and status-count table instead of the illustrative chart and job rows; preserve unavailable, empty, measured zero and lower-bound distinctions. Do not introduce queries, endpoints, migrations or Admin controls to fill the gap.
