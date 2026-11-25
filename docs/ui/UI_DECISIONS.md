@@ -742,6 +742,8 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 **Reason:** Owner selected this direction over flat boxed prototype.
 **Consequences:** V2 revised tokens and named springs need composited contrast, responsive and temporal review; no motion or runtime approval implied. Preserve locked brand, UI-026, UI-083, FIBO-only behavior and Settings/Admin calm ceilings. P6-03 shell/primitives first, later surfaces roadmap only.
 
+**Implementation record (not a new decision):** The merged P6-03 phone application navigation uses the logo-triggered shared Sheet, with profile/Settings at the bottom, server-derived Admin visibility and transitional Activity retained. Landing retains its existing section selector. The separate AppShell remains retained. Create's scoped keyboard shortcuts use `/` to focus the prompt, Ctrl/Command+Enter to submit the existing form only when ready, and `[`/`]` to step through available results. Editable targets, composition and active overlays are guarded; a local preference toggles shortcuts. Ctrl+K search is not implemented by this slice. Merged source #787 (`9812f8e99c6a1040cadb47589fa2085f7559261e`), exact qualification head `c207ff2e8171d4acc5a243a42371864ff0990eee`: mounted run 45658941004/job 139363181777 and component review 45658941279/job 139363181890 passed. The 390 CSS px Textarea placeholder measured 7.11:1 in normal and reduced motion; retain diagnostics and treat any later main MANUAL row as a defect. No deployment or human visual/motion acceptance is implied.
+
 ### UI-087 — Retire Activity destination; preserve lifecycle through History and Queue
 **Status:** Accepted
 **Date:** 2026-11-25
@@ -769,3 +771,10 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 **Decision:** Render stable shell/header/navigation and composer structure promptly; skeleton only in unresolved content regions, matching final geometry. Shimmer is bounded to loading; Reduce Motion static. UI-019 remains binding: actual generation progress/status is server-derived and success requires durable result.
 **Reason:** Improve perceived responsiveness without misleading users or shifting controls.
 **Consequences:** Empty/error/loaded states replace placeholders; accessible busy/status indication, no focusable fake controls, no indefinitely animated skeleton or fabricated progress. Preserve prompt and references on errors.
+
+### UI-091 — Phase 6 Round 3 bounded visual direction
+**Status:** Accepted
+**Date:** 2026-11-25
+**Decision:** Owner-approved [Round 3 static comps](../../design/approved/2026-11-25-phase6-round3/README.md) govern Settings desktop and grouped phone account/security/Create rows, Library phone filter/grid and inspector Sheet, Landing hero and read-only Admin Observe. Landing uses “Make it. Shape it. Refine it.”, Open Create and truthful invitation-only messaging; lower sections retain existing content. Settings and Library retain current ownership, account/MFA, session, delete and Viewer behavior.
+**Reason:** Extend Violet Studio to the remaining bounded surfaces without inventing product capabilities or data.
+**Consequences:** Admin uses existing confirmed-dispatch percentile bars (15-minute window), confirmation sample count and aggregate reservation status counts instead of illustrative 24-hour chart and individual job rows, per the accepted comp addendum. Preserve unavailable, empty, zero and lower-bound distinctions. Admin controls, Limits/Access expansion, new endpoints/queries/migrations and motion approval are outside this decision. No production authorization.

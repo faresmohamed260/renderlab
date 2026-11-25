@@ -87,7 +87,7 @@ const { pollNativeGeneration } = await import("../../src/server/generation/nativ
 const { adminDiagnosticProjection } = await import("../../src/server/observability/diagnostic-store.ts");
 const { POST: submitRoute } = await import("../../src/app/api/generation/jobs/route.ts");
 const { default: loadCreate, maxDuration: createDuration } = await import("../../src/app/(app)/create/page.tsx");
-const { default: loadLibrary, maxDuration: libraryDuration } = await import("../../src/app/(app)/library/page.tsx");
+const { default: loadLibraryPage, maxDuration: libraryDuration } = await import("../../src/app/(app)/library/page.tsx");
 const { default: loadActivity, maxDuration: activityDuration } = await import("../../src/app/(app)/activity/page.tsx");
 const { settleOwnerGenerationWithinResponse } = await import("../../src/server/generation/owner-generation-settlement.ts");
 const png = await sharp({
@@ -558,6 +558,17 @@ function pageInput() {
   return { searchParams: Promise.resolve({}) };
 }
 
+// The admitted Library route now returns a content Suspense boundary. Execute
+// its real async child, as the Create and Activity tests do, rather than
+// mistaking the returned boundary for the settled view.
+async function loadLibrary(input) {
+  const boundary = await loadLibraryPage(input);
+  assert.equal(boundary.type, Suspense);
+  assert.equal(boundary.props.fallback.props.surface, "library");
+  assert.equal(typeof boundary.props.children.type, "function");
+  return boundary.props.children.type(boundary.props.children.props);
+}
+
 function submitAnotherGeneration() {
   const origin = "https://renderlab.example.invalid";
   return submitRoute(new Request(origin + "/api/generation/jobs", {
@@ -654,7 +665,7 @@ test("concurrent Library responses use one claim, asset, primary write and relea
   job.respond(() => { startRead(); return result; });
 
   const first = loadLibrary(pageInput());
-  await reading;
+  await Promise.race([reading, first.then(() => assert.fail("Library completed before provider read started"))]);
   const second = await loadLibrary(pageInput());
   assert.equal(second.props.available, true);
   assert.deepEqual(second.props.items, []);
@@ -678,7 +689,7 @@ test("Library returns normally at six seconds while the claimed PNG write finish
   job.respond(pngResult());
 
   const page = loadLibrary(pageInput());
-  await writing;
+  await Promise.race([writing, page.then(() => assert.fail("Library completed before primary write started"))]);
   t.mock.timers.tick(6_000);
   const view = await page;
   assert.equal(view.props.available, true);
@@ -758,6 +769,11 @@ for (const session of ["signed-out", "suspended", "denied"]) {
     assert.equal(view.props.admitted, false);
     assert.equal(view.props.hostedModel, undefined);
     assert.equal(view.props.hostedAccountKey, undefined);
+    const library = await loadLibraryPage(pageInput());
+    assert.notEqual(library.type, Suspense);
+    assert.equal(library.props.accountAvailable, false);
+    assert.deepEqual(library.props.items, []);
+    assert.equal(library.props.hasMore, false);
     const activity = await loadActivity(pageInput());
     assert.notEqual(activity.type, Suspense);
     assert.equal(activity.props.accountAvailable, false);
