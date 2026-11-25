@@ -49,6 +49,7 @@ registerHooks({
       "@/features/create/create-workspace": "CreateWorkspace",
       "@/features/create/create-preview-workspace": "CreatePreviewWorkspace",
       "@/components/shell/route-loading": "RouteLoading",
+      "@/features/create/create-loading": "CreateLoading",
     };
     if (views[specifier]) {
       return stub(`export function ${views[specifier]}() {}`);
