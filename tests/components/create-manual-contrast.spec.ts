@@ -27,7 +27,7 @@ async function placeholderContrast(page: Page, field: Locator, state: string): P
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     const hidden = await raw(), repeat = await raw();
     measured = measurePixels(before.data, hidden.data, repeat.data, hidden.info.width, hidden.info.height, [info.rect], info.fg);
-  } finally { await rule.evaluate(el => el.remove()); }
+  } finally { await rule.evaluate(node => node.parentNode?.removeChild(node)); }
   const ratio = measured.ratio;
   return { state, sample: "#create-preview-prompt placeholder", minimum: 4.5, ratio, pixels: measured.pixels,
     status: measured.unstable || ratio === null ? "MANUAL" : ratio >= 4.5 ? "PASS" : "FAIL",
@@ -97,7 +97,7 @@ for (const width of [390, 1440]) {
           return { text: el.textContent, position: s.position, clip: s.clip, clipPath: s.clipPath,
             width: r.width, height: r.height, describedBy: document.querySelector('[aria-describedby="create-preview-blocker"]') !== null };
         });
-        console.log("CREATE_MANUAL_BLOCKER " + JSON.stringify({ width, state, ...blocker }));
+        console.log("CREATE_MANUAL_BLOCKER " + JSON.stringify({ viewportWidth: width, state, ...blocker }));
         expect(blocker.describedBy).toBe(true);
         expect(blocker.width).toBeLessThanOrEqual(1);
         expect(blocker.height).toBeLessThanOrEqual(1);
