@@ -1326,14 +1326,23 @@
     position: absolute;
     inset: 0;
     display: grid;
+    /* Size the label track from the tile's available width, including when
+       the composer reserves space for a vertical scrollbar. */
+    grid-template-columns: minmax(0, 1fr);
     place-content: center;
     justify-items: center;
-    gap: 5px;
+    gap: var(--rl-space-4);
     min-block-size: 0;
-    padding: 5px 2px;
+    padding: var(--rl-space-4) 2px;
     overflow: hidden;
     font-size: clamp(11px, 1vw, 13px);
     line-height: 1.2;
+  }
+  .create-preview-tile > button:first-child > span:not(.create-preview-tile-tag) {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+    text-align: center;
   }
   .create-preview-tile > button:first-child > svg { color: #a5b4fc; inline-size: 18px; block-size: 18px; }
   .create-preview-tile img {
