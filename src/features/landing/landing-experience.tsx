@@ -5,12 +5,12 @@ import { ArrowRight, ArrowUpRight, Layers } from "lucide-react";
 import {
   motion,
   useMotionValueEvent,
-  useReducedMotion,
   useScroll,
 } from "motion/react";
 import {
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -136,14 +136,22 @@ function GeometryDefs() {
   );
 }
 
+// React must use the same preference snapshot for SSR and hydration.
+function serverReducedMotion() { return false; }
+function readReducedMotion() { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+function subscribeReducedMotion(listener: () => void) {
+  const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
+}
+
 export function LandingExperience() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useSyncExternalStore(subscribeReducedMotion, readReducedMotion, serverReducedMotion);
   const threadRef = useRef<HTMLElement>(null);
   const resolveRef = useRef<HTMLElement>(null);
   const [threadStep, setThreadStep] = useState(0);
   const [activeLibrary, setActiveLibrary] = useState(0);
   const [resolveProgress, setResolveProgress] = useState(0);
-  const [heroPointer, setHeroPointer] = useState({ x: 0, y: 0 });
   const [threadPointer, setThreadPointer] = useState({ x: 0, y: 0 });
 
   const { scrollYProgress: threadProgress } = useScroll({
@@ -167,11 +175,6 @@ export function LandingExperience() {
   useMotionValueEvent(resolveScrollProgress, "change", (value) => {
     setResolveProgress(reduceMotion ? 1 : clamp(value / 0.82));
   });
-
-  const heroStyle = {
-    "--hero-x": reduceMotion ? "0px" : `${heroPointer.x}px`,
-    "--hero-y": reduceMotion ? "0px" : `${heroPointer.y}px`,
-  } as CSSProperties;
 
   const stageStyle = {
     "--stage-x": reduceMotion ? "0px" : `${threadPointer.x * 7}px`,
@@ -202,44 +205,26 @@ export function LandingExperience() {
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>Creative image workspace</p>
             <h1 id="landing-hero-title">
-              <span>Render what</span>
-              <span>you imagine.</span>
+              <span>Make it.</span>
+              <span>Shape it.</span>
+              <span>Refine it.</span>
             </h1>
             <p className={styles.dek}>Create images. Shape them with references. Save the results and pick up where you left off.</p>
             <div className={styles.heroActions}>
               <Button asChild size="lg" className={styles.heroPrimary}>
                 <Link href="/create">Open Create <ArrowRight aria-hidden="true" /></Link>
               </Button>
-              <span className={styles.truth}>Closed beta · invitation only</span>
+              <span className={styles.truth}>Invitation-only Closed Beta</span>
             </div>
           </div>
 
           <div className={styles.heroMatrixWrap}>
-            <div className={styles.heroHalo} aria-hidden="true" />
-            <div
-              className={styles.heroMatrix}
-              style={heroStyle}
-              onPointerMove={(event) => {
-                if (reduceMotion || event.pointerType === "touch") return;
-                const vector = pointerVector(event);
-                setHeroPointer({ x: vector.x * 15, y: vector.y * 13 });
-              }}
-              onPointerLeave={() => setHeroPointer({ x: 0, y: 0 })}
-              aria-label="Four creative states arranged as the RenderLab Lab Grid R"
-            >
-              <HeroCell className={styles.heroTopLeft} image={media.glass} index="01" title="Create" detail="Image" />
-              <HeroCell className={styles.heroUpperRight} image={media.mountain} index="02" title="Shape" detail="With references" />
-              <HeroCell className={styles.heroBottomLeft} image={media.ocean} index="03" title="Refine" detail="Image edit" motion />
-              <HeroCell className={`${styles.heroBottomRight} ${styles.quarterArc}`} image={media.jelly} index="04" title="Keep" detail="And continue" quarterArc />
-              <span className={`${styles.matrixAxis} ${styles.axisX}`} aria-hidden="true" />
-              <span className={`${styles.matrixAxis} ${styles.axisY}`} aria-hidden="true" />
-              <span className={styles.matrixStatus} aria-hidden="true">LIVE CREATIVE THREAD <i /> 04 STATES</span>
-            </div>
+            <HeroPreview />
           </div>
         </div>
-        <div className={styles.heroFoot} aria-hidden="true">
-          <span>CREATE IMAGE</span><span>EDIT IMAGE</span><span>USE REFERENCES</span><span>SAVE TO LIBRARY</span>
-        </div>
+        <ul className={styles.heroFoot} aria-label="What you can do">
+          {["Create image", "Edit image", "Use references", "Save to Library"].map(label => <li key={label}>{label}</li>)}
+        </ul>
       </section>
 
       <section ref={threadRef} className={styles.thread} aria-labelledby="thread-title" data-landing-section="thread">
@@ -320,7 +305,7 @@ export function LandingExperience() {
                 "--yield-x": active ? "0px" : `${side * 22}px`,
                 "--yield-y": active ? "-8px" : `${(index % 2 === 0 ? 1 : -1) * 8}px`,
                 "--yield-scale": active ? "1.035" : "0.94",
-              } as CSSProperties;
+              } as CSSProperties & Record<`--${string}`, string>;
               return (
                 <Button
                   key={item.title}
@@ -418,30 +403,32 @@ export function LandingExperience() {
   );
 }
 
-function HeroCell({
-  className,
-  image,
-  index,
-  title,
-  detail,
-  motion: hasMotion = false,
-  quarterArc = false,
-}: {
-  className: string;
-  image: string;
-  index: string;
-  title: string;
-  detail: string;
-  motion?: boolean;
-  quarterArc?: boolean;
-}) {
+// Illustrative artwork and composer, not a live user job or actionable control.
+function HeroPreview() {
   return (
-    <article className={`${styles.heroCell} ${className}`} data-quarter-arc={quarterArc ? "locked" : undefined}>
-      <img src={image} alt="" />
-      <span className={styles.cardShade} aria-hidden="true" />
-      <span className={styles.cellLabel}><b>{index}</b><strong>{title}</strong><small>{detail}</small></span>
-      {hasMotion ? <span className={styles.motionStreak} aria-hidden="true" /> : null}
-    </article>
+    <div className={styles.heroPreview} role="img" aria-label="RenderLab Create preview">
+      <div className={styles.previewDots} aria-hidden="true"><i /><i /><i /></div>
+      <div className={styles.previewThumbnails} aria-hidden="true"><i /><i /><i /><i /></div>
+      <div className={styles.previewArtwork} aria-hidden="true">
+        <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" focusable="false">
+          <defs>
+            <linearGradient id="landing-preview-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#6f8196" /><stop offset=".55" stopColor="#d9a98a" /><stop offset="1" stopColor="#f1c79a" />
+            </linearGradient>
+            <linearGradient id="landing-preview-arch" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#ebbd93" /><stop offset="1" stopColor="#a8694f" />
+            </linearGradient>
+          </defs>
+          <rect width="800" height="600" fill="url(#landing-preview-sky)" />
+          <circle cx="580" cy="170" r="58" fill="#f6d9a6" />
+          <path d="M0 420 C140 360 260 380 380 410 C520 445 650 400 800 380 V600 H0Z" fill="#c07f5d" />
+          <path d="M0 480 C160 430 300 470 440 490 C580 510 700 470 800 450 V600 H0Z" fill="#a5694f" />
+          <path d="M200 480 V290 C200 190 260 130 330 130 C400 130 460 190 460 290 V480 H390 V300 C390 250 365 215 330 215 C295 215 270 250 270 300 V480 Z" fill="url(#landing-preview-arch)" />
+          <path d="M0 545 C200 515 420 565 800 525 V600 H0Z" fill="#8c5540" />
+        </svg>
+      </div>
+      <div className={styles.previewComposer} aria-hidden="true"><span>A sculptural arch under a warm sunset</span><i><ArrowRight /></i></div>
+    </div>
   );
 }
 
