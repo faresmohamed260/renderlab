@@ -504,6 +504,17 @@
         "docs/ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md"
       ],
       "supersededBy": []
+    },
+    {
+      "path": "docs/ui/P6_04_CREATE_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-25",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
     }
   ]
 }
