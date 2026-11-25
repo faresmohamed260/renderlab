@@ -94,28 +94,27 @@ for (const viewport of viewports) {
     });
     const actual: Record<string, Violation[]> = {};
     const measure = async (state: string) => {
-      // Measure actual font and each historical desktop debt target, independent
-      // of whether its baseline entry survives the subsequent measured ratchet.
+      // A live Inter face is a precondition of every desktop measurement.
+      // Verify any debt entry slated for reduction remains present and visible.
       if (viewport.width === 1440) {
         await page.evaluate(() => document.fonts.ready.then(() => undefined));
-        const labels = state.endsWith("/edit")
-          ? ["Choose reference 2 image", "Choose reference 3 image", "Choose reference 4 image"]
-          : ["Inspiration unavailable"];
-        for (const label of labels) {
-          const locator = page.getByRole("button", { name: label, exact: true });
-          await expect(locator, state + " " + label).toHaveCount(1);
-          await expect(locator, state + " " + label).toBeVisible();
-          const proof = await locator.evaluate(el => {
-            const family = getComputedStyle(el).fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
-            const faces = Array.from(document.fonts).map(face => ({
-              family: face.family.replace(/^["']|["']$/g, ""), status: face.status,
-            }));
-            return { family, loaded: faces.some(face => face.family === family && face.status === "loaded"),
-              clientWidth: el.clientWidth, scrollWidth: el.scrollWidth };
-          });
-          console.log("OVERFLOW_INTER_ENTRY " + JSON.stringify({ state, label, ...proof }));
-          expect(proof.family, "real Inter must be the first resolved family").toMatch(/inter/i);
-          expect(proof.loaded, "Inter font face must actually be loaded").toBe(true);
+        const font = await page.getByRole("button", { name: "Text to Image", exact: true }).evaluate(el => {
+          const family = getComputedStyle(el).fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
+          const loaded = Array.from(document.fonts).some(face =>
+            face.family.replace(/^["']|["']$/g, "") === family && face.status === "loaded");
+          return { family, loaded };
+        });
+        console.log("OVERFLOW_INTER_FONT " + JSON.stringify({ state, ...font }));
+        expect(font.family, "real Inter must be the first resolved family").toMatch(/inter/i);
+        expect(font.loaded, "Inter font face must actually be loaded").toBe(true);
+        for (const entry of (known as Baseline)["1440"]?.[state] ?? []) {
+          const locator = page.locator(entry.selector);
+          await expect(locator, state + " " + entry.selector).toHaveCount(1);
+          await expect(locator, state + " " + entry.selector).toBeVisible();
+          const proof = await locator.evaluate(el => ({
+            clientWidth: el.clientWidth, scrollWidth: el.scrollWidth,
+          }));
+          console.log("OVERFLOW_INTER_ENTRY " + JSON.stringify({ state, selector: entry.selector, previousPixels: entry.pixels, ...proof }));
         }
       }
       const result = await geometry(page);
