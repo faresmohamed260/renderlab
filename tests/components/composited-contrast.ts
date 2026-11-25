@@ -4,9 +4,13 @@ import type { Locator, Page } from "@playwright/test";
 type RGB = readonly [number, number, number];
 type RGBA = readonly [number, number, number, number];
 type Rect = { x: number; y: number; width: number; height: number };
+type Point = [number, number];
+type PixelPair = { a: Point; b: Point };
+type PixelEvidence = PixelPair & { edge: string; kind: string; painted: RGB; adjacent: RGB; ratio: number };
 export type ContrastRow = {
   state: string; sample: string; status: "PASS" | "FAIL" | "MANUAL";
   minimum: number; ratio: number | null; pixels: number; detail: string;
+  pixelEvidence?: { scale: number; viewport: [number, number]; borderWidths: number[]; outlineWidth: number; outlineOffset: number; pairs: PixelEvidence[]; interior: PixelEvidence[] };
 };
 const linear = (value: number) => {
   const s = value / 255;
@@ -142,19 +146,66 @@ export function measureBoundarySamples(data: Uint8Array, width: number, height: 
 export async function collectControlBoundary(page: Page, locator: Locator, state: string, sample: string, focused: boolean): Promise<ContrastRow> {
   await locator.scrollIntoViewIfNeeded();
   const info = await locator.evaluate(el => {
-    const r=el.getBoundingClientRect(),s=getComputedStyle(el);
-    return { x:r.x,y:r.y,w:r.width,h:r.height,outline:parseFloat(s.outlineWidth),offset:parseFloat(s.outlineOffset),style:s.outlineStyle,focus:el.matches(":focus-visible") };
+    const r = el.getBoundingClientRect(), s = getComputedStyle(el);
+    return {
+      x: r.x, y: r.y, w: r.width, h: r.height, outline: parseFloat(s.outlineWidth),
+      offset: parseFloat(s.outlineOffset), style: s.outlineStyle, focus: el.matches(":focus-visible"),
+      borders: [s.borderTopWidth, s.borderBottomWidth, s.borderLeftWidth, s.borderRightWidth].map(parseFloat),
+      scale: devicePixelRatio, viewportWidth: innerWidth, viewportHeight: innerHeight,
+    };
   });
-  const manual = (detail:string): ContrastRow => ({state,sample,status:"MANUAL",minimum:3,ratio:null,pixels:0,detail});
-  if (focused && (!info.focus || info.style === "none" || info.outline <= 0)) return {state,sample,status:"FAIL",minimum:3,ratio:1,pixels:0,detail:"No visible CSS focus outline"};
-  const {x,y,w,h}=info;
-  const edges: {x:number;y:number;dx:number;dy:number}[] = [{x:x+w/2,y,dx:0,dy:-1},{x:x+w/2,y:y+h,dx:0,dy:1},{x,y:y+h/2,dx:-1,dy:0},{x:x+w,y:y+h/2,dx:1,dy:0}];
-  const pairs = edges.flatMap(e => {
-    const at = (d:number):[number,number] => [e.x+e.dx*d,e.y+e.dy*d];
-    return focused ? [{a:at(info.offset+info.outline/2),b:at(info.offset+info.outline+2)},{a:at(info.offset+info.outline/2),b:at(info.offset-2)}] : [{a:at(-3),b:at(3)}];
+  const manual = (detail: string): ContrastRow => ({ state, sample, status: "MANUAL", minimum: 3, ratio: null, pixels: 0, detail });
+  if (focused && (!info.focus || info.style === "none" || info.outline <= 0)) return { state, sample, status: "FAIL", minimum: 3, ratio: 1, pixels: 0, detail: "No visible CSS focus outline" };
+  if (!focused && info.borders.some(width => !(width > 0))) return { state, sample, status: "FAIL", minimum: 3, ratio: 1, pixels: 0, detail: "Missing painted control border" };
+
+  const { x, y, w, h, scale } = info;
+  if (!(scale > 0) || !Number.isFinite(scale)) return manual("Invalid device scale");
+  const edges = [
+    { name: "top", x: x+w/2, y, dx: 0, dy: -1 },
+    { name: "bottom", x: x+w/2, y: y+h, dx: 0, dy: 1 },
+    { name: "left", x, y: y+h/2, dx: -1, dy: 0 },
+    { name: "right", x: x+w, y: y+h/2, dx: 1, dy: 0 },
+  ];
+  type NamedPair = PixelPair & { edge: string; kind: string };
+  const interior: NamedPair[] = [];
+  const pairs: NamedPair[] = edges.flatMap((e, i) => {
+    // Snap the normal axis to the raster edge, and choose actual device-pixel
+    // centers on either side. Never downsample a one-CSS-pixel stroke.
+    const px = e.dx ? Math.round(e.x * scale) : Math.floor(e.x * scale);
+    const py = e.dy ? Math.round(e.y * scale) : Math.floor(e.y * scale);
+    const at = (d: number): Point => [Math.floor(px + e.dx*d), Math.floor(py + e.dy*d)];
+    const pair = (a: number, b: number, kind: string): NamedPair => ({ a: at(a), b: at(b), edge: e.name, kind });
+    if (focused) {
+      const inner = Math.round(info.offset * scale);
+      const outer = Math.round((info.offset + info.outline) * scale);
+      const ring = (inner + outer) / 2;
+      return [pair(ring, outer + .5, "ring/exterior"), pair(ring, inner - .5, "ring/interior")];
+    }
+    const width = Math.max(1, Math.round(info.borders[i] * scale));
+    const border = -width / 2;
+    interior.push(pair(border, -width - .5, "border/fill"));
+    return [pair(border, .5, "border/exterior")];
   });
-  const a=await raw(page), b=await raw(page);
-  const first=measureBoundarySamples(a.data,a.info.width,a.info.height,pairs), second=measureBoundarySamples(b.data,b.info.width,b.info.height,pairs);
-  if (first.ratio === null || second.ratio === null || Math.abs(first.ratio-second.ratio)>.05) return manual("Boundary outside viewport or unstable");
-  return {state,sample,minimum:3,ratio:Math.min(first.ratio,second.ratio),pixels:first.pixels,status:Math.min(first.ratio,second.ratio)>=3?"PASS":"FAIL",detail:"Actual straight mid-edge pixel pairs; representative control boundary / outline"};
+  const capture = async () => sharp(await page.screenshot({ animations: "allow", scale: "device" }))
+    .removeAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
+  const a = await capture(), b = await capture();
+  const { width, height, channels } = a.info;
+  if (channels !== 3 || b.info.channels !== 3 || b.info.width !== width || b.info.height !== height ||
+    Math.abs(width - info.viewportWidth * scale) > 1 || Math.abs(height - info.viewportHeight * scale) > 1) return manual("Device raster or viewport changed");
+  const first = measureBoundarySamples(a.data, width, height, pairs), second = measureBoundarySamples(b.data, width, height, pairs);
+  if (first.ratio === null || second.ratio === null || Math.abs(first.ratio-second.ratio) > .05) return manual("Boundary outside viewport or unstable");
+  const rgb = ([px, py]: Point): RGB => {
+    const index = (py * width + px) * 3;
+    return [a.data[index], a.data[index+1], a.data[index+2]];
+  };
+  const evidence = (p: NamedPair): PixelEvidence => {
+    const painted = rgb(p.a), adjacent = rgb(p.b);
+    return { ...p, painted, adjacent, ratio: contrastRatio(painted, adjacent) };
+  };
+  const pixelEvidence = { scale, viewport: [width, height] as [number, number], borderWidths: info.borders,
+    outlineWidth: info.outline, outlineOffset: info.offset, pairs: pairs.map(evidence),
+    interior: interior.filter(p => [p.a,p.b].every(([px,py]) => px >= 0 && py >= 0 && px < width && py < height)).map(evidence) };
+  const ratio = Math.min(first.ratio, second.ratio);
+  return { state, sample, minimum: 3, ratio, pixels: first.pixels, status: ratio >= 3 ? "PASS" : "FAIL",
+    detail: "Actual native device-pixel stroke / adjacent surface; minimum across straight mid-edges", pixelEvidence };
 }
