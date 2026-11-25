@@ -17,6 +17,7 @@ export async function inspectReviewFidelity(page: Page, state: string) {
     const tokens = Object.fromEntries([
       "--rl-canvas", "--rl-accent-primary", "--rl-on-accent", "--rl-surface-overlay",
       "--rl-surface-panel-layered", "--rl-material-panel", "--rl-type-family",
+      "--rl-modal-scrim",
       "--rl-radius-control", "--rl-control-regular",
     ].map(name => [name, rootStyle.getPropertyValue(name).trim()]));
     const fail: string[] = [];
@@ -55,24 +56,64 @@ export async function inspectReviewFidelity(page: Page, state: string) {
       if (panels.length !== 3 || panels.some(p => p.width < 100 || p.height < 100 || p.x < -1 || p.y < 0 || p.right > innerWidth + 1 || p.bottom > innerHeight + 1 || !p.hit)) fail.push("Desktop Create panel clipped, occluded or missing");
     }
     const filled = (s: CSSStyleDeclaration) => s.backgroundImage !== "none" || !["transparent", "rgba(0, 0, 0, 0)"].includes(s.backgroundColor);
-    const glassSelector = state === "shell-open" ? ".preview-menu-glass" : state === "create" ? ".create-preview-controls" : state === "popover-open" ? '[data-slot="popover-content"]' : null;
-    const material = glassSelector ? [...document.querySelectorAll(glassSelector)].filter(el => {
+    const phone = matchMedia("(max-width: 700px)").matches;
+    const phoneSidebarOpen = state === "shell-open" && phone;
+    const desktopDisclosureOpen = state === "shell-open" && !phone;
+    const glassSelector = desktopDisclosureOpen ? ".preview-menu-glass" : state === "create" ? ".create-preview-controls" : state === "popover-open" ? '[data-slot="popover-content"]' : null;
+    const hasVisibleBox = (el: Element) => {
       const r = box(el); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden" && !el.closest('[aria-hidden="true"]');
-    }).map(el => {
+    };
+    const materialStyle = (el: Element) => {
       const s = getComputedStyle(el);
-      return { background: s.backgroundColor, image: s.backgroundImage, backdrop: s.backdropFilter, filled: filled(s) };
-    }) : [];
+      return { background: s.backgroundColor, image: s.backgroundImage, backdrop: s.backdropFilter, filled: filled(s), opacity: s.opacity };
+    };
+    const material = glassSelector ? [...document.querySelectorAll(glassSelector)].filter(hasVisibleBox).map(materialStyle) : [];
     // The shell glass itself is aria-hidden decoration; inspect its open
     // parent disclosure rather than treating the decorative child as absent.
-    if (state === "shell-open") {
-      const open = document.querySelector('.preview-account-menu[aria-hidden="false"] .preview-menu-glass, .preview-section-panel[data-open="true"] .preview-menu-glass');
-      if (open) {
-        const s = getComputedStyle(open);
-        material.push({ background: s.backgroundColor, image: s.backgroundImage, backdrop: s.backdropFilter, filled: filled(s) });
+    if (desktopDisclosureOpen) {
+      const open = document.querySelector('.preview-account-menu[aria-hidden="false"]');
+      const glass = open?.querySelector(".preview-menu-glass");
+      if (open && hasVisibleBox(open) && glass) {
+        material.push(materialStyle(glass));
       }
     }
     if (glassSelector && (!material.length || material.every(m => !m.filled))) fail.push("Expected material absent or transparent: " + glassSelector);
-    if ((state === "create" || state === "shell-open") && CSS.supports("backdrop-filter", "blur(1px)") && !material.some(m => m.filled && m.backdrop !== "none")) fail.push("Expected glass has no computed backdrop");
+    if ((state === "create" || desktopDisclosureOpen) && CSS.supports("backdrop-filter", "blur(1px)") && !material.some(m => m.filled && m.backdrop !== "none")) fail.push("Expected glass has no computed backdrop");
+    if (phoneSidebarOpen) {
+      // The shared Sheet can cover arbitrary artwork. Its text sits on the
+      // opaque V2 overlay token, with a separate scrim behind the dialog.
+      // Normalize CSS color spellings without altering the mounted styles.
+      const colorStyle = document.createElement("div").style;
+      const normalizedColor = (value: string) => {
+        colorStyle.backgroundColor = "";
+        colorStyle.backgroundColor = value;
+        return colorStyle.backgroundColor;
+      };
+      const sidebar = document.querySelector('[data-slot="sheet-content"][role="dialog"][data-state="open"]');
+      const scrim = document.querySelector('[data-slot="sheet-overlay"][data-state="open"]');
+      if (sidebar && hasVisibleBox(sidebar)) {
+        const surface = materialStyle(sidebar);
+        material.push(surface);
+        const opaque = /^rgb\(\d+, \d+, \d+\)$/.test(surface.background);
+        if (!opaque || normalizedColor(surface.background) !== normalizedColor(tokens["--rl-surface-overlay"]) ||
+          surface.image !== "none" || surface.backdrop !== "none" || surface.opacity !== "1") {
+          fail.push("Phone navigation requires the opaque semantic overlay with no backdrop filter");
+        }
+      } else {
+        fail.push("Open phone navigation sheet is missing or hidden");
+      }
+      // Radix hides the decorative overlay from assistive technology.
+      if (scrim && box(scrim).width > 0 && box(scrim).height > 0 && getComputedStyle(scrim).visibility === "visible") {
+        const backdrop = materialStyle(scrim);
+        material.push(backdrop);
+        if (!backdrop.filled || normalizedColor(backdrop.background) !== normalizedColor(tokens["--rl-modal-scrim"]) ||
+          backdrop.image !== "none" || backdrop.backdrop !== "none" || backdrop.opacity !== "1") {
+          fail.push("Phone navigation requires the semantic modal scrim with no backdrop filter");
+        }
+      } else {
+        fail.push("Open phone navigation scrim is missing or hidden");
+      }
+    }
     const primary = [...document.querySelectorAll('button[data-variant="default"]')].find(el => el.textContent?.trim() === "Primary");
     const primaryStyle = primary ? getComputedStyle(primary) : null;
     const avatar = document.querySelector<HTMLImageElement>(".preview-navigation-avatar");
@@ -81,7 +122,8 @@ export async function inspectReviewFidelity(page: Page, state: string) {
     if (state === "primitives") {
       // A flex-item inline-flex wrapper is blockified to flex by CSS; both are real flex layout.
       if (!primaryStyle || !filled(primaryStyle) || !["inline-flex", "flex"].includes(primaryStyle.display) || parseFloat(primaryStyle.minHeight) < 32) fail.push("Primary button missing production utility fill or sizing");
-      if (!avatar || !avatar.complete || !avatar.naturalWidth || !avatarStyle || avatarStyle.objectFit !== "cover" || !parseFloat(avatarStyle.borderRadius) || !avatarBox || avatarBox.width < 20 || avatarBox.height < 20) fail.push("Real shell avatar styling or image missing");
+      if (!avatar || !avatar.complete || !avatar.naturalWidth || !avatarStyle || avatarStyle.objectFit !== "cover" || !parseFloat(avatarStyle.borderRadius) || !avatarBox) fail.push("Real shell avatar styling or image missing");
+      if (phone ? !!avatarBox?.width || !!avatarBox?.height : !avatarBox || avatarBox.width < 20 || avatarBox.height < 20) fail.push("Desktop shell avatar has incorrect responsive geometry");
     }
     return { state, tokens, font, expectedFont, semanticFont, fontStatus: document.fonts.status, declaredFaces: [...document.fonts].map(face => ({ family: face.family, status: face.status })), documentSize, header: header ? box(header) : null, workspace: workspace ? box(workspace) : null, panels, material, primary: primaryStyle ? { background: primaryStyle.backgroundColor, image: primaryStyle.backgroundImage, minHeight: primaryStyle.minHeight, display: primaryStyle.display } : null, avatar: avatarBox, sheets: [...document.styleSheets].map(s => s.href), fail };
   }, { state, productionFontLoader });

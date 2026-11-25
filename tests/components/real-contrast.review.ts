@@ -60,7 +60,29 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
           await field.fill("");
           await field.blur();
           await page.waitForTimeout(250);
-          rows.push(await collectTextContrast(page, field, "control-text", name + " placeholder", "placeholder"));
+          // Capture the actual control state around the failing sample without
+          // changing the collector, its thresholds, or the rendered styles.
+          const evidence = () => field.evaluate(el => {
+            const rect = el.getBoundingClientRect();
+            const style = getComputedStyle(el);
+            const pseudo = getComputedStyle(el, "::placeholder");
+            return {
+              rect: [rect.x, rect.y, rect.width, rect.height], viewport: [innerWidth, innerHeight],
+              scroll: [scrollX, scrollY, el.scrollTop, el.scrollLeft],
+              active: document.activeElement?.id || document.activeElement?.tagName,
+              focused: el.matches(":focus"), value: (el as HTMLInputElement | HTMLTextAreaElement).value,
+              background: style.backgroundColor, color: pseudo.color, textFill: pseudo.webkitTextFillColor,
+              animations: el.getAnimations({ subtree: true }).map(animation => ({ state: animation.playState, time: animation.currentTime })),
+              ancestors: [...(function* () { for (let node = el.parentElement; node; node = node.parentElement) yield node; })()].map(node => ({ tag: node.tagName, top: node.scrollTop, left: node.scrollLeft })),
+            };
+          });
+          await expect(field).not.toBeFocused();
+          const beforePlaceholder = await evidence();
+          const placeholder = await collectTextContrast(page, field, "control-text", name + " placeholder", "placeholder");
+          rows.push(placeholder);
+          if (placeholder.status === "MANUAL") {
+            console.log("PLACEHOLDER CAPTURE DIAGNOSTIC", key, name, JSON.stringify({ before: beforePlaceholder, after: await evidence(), row: placeholder }));
+          }
           await field.fill(value);
           await field.blur();
           await page.waitForTimeout(250);
