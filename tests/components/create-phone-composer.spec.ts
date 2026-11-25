@@ -24,6 +24,58 @@ for (const width of [390, 320, 195]) {
     await expect(sheet).toHaveCount(0);
     await expect(opener).toBeFocused();
     await expect(workspace.getByRole("textbox", { name: "Seed", exact: true })).toHaveValue("4567");
+    if (width === 390) {
+      // Diagnostic only: observe the original second click concurrently, without
+      // waiting for stability, retrying, forcing, or changing its assertions.
+      page.on("console", message => {
+        if (message.text().startsWith("ADVANCED_REOPEN_DIAGNOSTIC ")) console.log(message.text());
+      });
+      await opener.evaluate(element => {
+        const start = performance.now();
+        const describe = (node: Element | null) => {
+          if (!node) return null;
+          const style = getComputedStyle(node);
+          const r = node.getBoundingClientRect();
+          return { tag: node.tagName, id: node.id, slot: node.getAttribute("data-slot"),
+            label: node.getAttribute("aria-label"), state: node.getAttribute("data-state"),
+            rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+            display: style.display, visibility: style.visibility, pointerEvents: style.pointerEvents,
+            transform: style.transform, inert: node.hasAttribute("inert"),
+            ariaHidden: node.getAttribute("aria-hidden") };
+        };
+        let frames = 0;
+        const sample = (phase: string) => {
+          const r = element.getBoundingClientRect(), cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+          const hit = document.elementFromPoint(cx, cy);
+          const ancestors = [];
+          for (let node: Element | null = element; node; node = node.parentElement) {
+            if (node.hasAttribute("inert") || node.hasAttribute("aria-hidden") || getComputedStyle(node).pointerEvents === "none") ancestors.push(describe(node));
+          }
+          console.log("ADVANCED_REOPEN_DIAGNOSTIC " + JSON.stringify({
+            phase, frame: frames, ms: performance.now() - start, opener: describe(element),
+            connected: element.isConnected, disabled: element.matches(":disabled"),
+            expanded: element.getAttribute("aria-expanded"), center: [cx, cy],
+            hit: describe(hit), hitOpener: hit !== null && element.contains(hit),
+            sheet: describe(document.querySelector('[data-slot="sheet-content"]')),
+            overlay: describe(document.querySelector('[data-slot="sheet-overlay"]')),
+            body: describe(document.body), ancestors, active: describe(document.activeElement),
+            scroll: [scrollX, scrollY], viewport: [innerWidth, innerHeight],
+            reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+            fonts: { status: document.fonts.status, faces: [...document.fonts].map(face => ({family: face.family, status: face.status})) },
+          }));
+        };
+        sample("before-click");
+        const tick = () => {
+          frames++;
+          sample("frame");
+          if (frames < 20) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        // If animation frames themselves stall, report their count and the
+        // last observable DOM state without blocking the unchanged click.
+        setTimeout(() => sample("timer-1000ms"), 1000);
+      });
+    }
     await opener.click();
     await expect(sheet.getByRole("textbox", { name: "Seed", exact: true })).toHaveValue("4567");
     await sheet.getByRole("button", { name: "Reset to defaults" }).click();
