@@ -1,7 +1,7 @@
 import { envFlag, envString } from "../../../lib/config/runtime-env.ts";
 import { createHash } from "node:crypto";
 import { Suspense } from "react";
-import { RouteLoading } from "@/components/shell/route-loading";
+import { CreateLoading } from "@/features/create/create-loading";
 import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspace";
 import { resolveCreateContinuation, type CreateSearchParams } from "@/features/create/create-continuation";
 import {
@@ -85,7 +85,7 @@ export default async function CreatePage({
     const hostedOnly = envFlag("RENDERLAB_HOSTED_CREATE");
     const owner = await getCreatePreviewOwner().catch(() => null);
     if (!owner) return CreatePreviewCreate({ owner, hostedOnly });
-    return <Suspense fallback={<RouteLoading surface="create" />}><CreatePreviewCreate owner={owner} hostedOnly={hostedOnly} /></Suspense>;
+    return <Suspense fallback={<CreateLoading />}><CreatePreviewCreate owner={owner} hostedOnly={hostedOnly} /></Suspense>;
   }
 
   const params = await searchParams;
@@ -183,7 +183,7 @@ async function ProductionCreatePage({ params }: { params: CreateSearchParams }) 
   // Resolve the original account gate before any content fallback may stream.
   const account = await getCurrentRenderLabAccount();
   if (!account) return Create({ params, account });
-  return <Suspense fallback={<RouteLoading surface="create" />}>
+  return <Suspense fallback={<CreateLoading />}>
     <Create params={params} account={account} />
   </Suspense>;
 }
