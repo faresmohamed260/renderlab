@@ -1602,3 +1602,30 @@
     border-radius: var(--rl-radius-micro);
   }
 }
+
+
+/* The phone canvas and composer are sequential scroll content. With constrained
+ * auto grid rows, the ratio-sized canvas can extend past its assigned row:
+ * axe reported the absolute canvas-upload button overlapping Text to Image.
+ * Reserve the actual canvas height, rather than relying on min-block-size:0
+ * and the implicit track. Keep the desktop grid untouched. */
+@media (max-width: 700px) {
+  .create-preview-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .create-preview-grid > :is(.create-preview-canvas, .create-preview-controls, .create-preview-history) {
+    flex: 0 0 auto;
+  }
+  .create-preview-grid > .create-preview-canvas {
+    align-self: center;
+  }
+  .create-preview-stage-surface > .create-preview-canvas-upload {
+    box-sizing: border-box;
+    min-inline-size: 0;
+    min-block-size: 0;
+    max-inline-size: 100%;
+    max-block-size: 100%;
+  }
+}
