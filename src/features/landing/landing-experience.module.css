@@ -646,7 +646,7 @@
 .libraryStackMini i:nth-child(1) { transform: translate(-24px, 20px) scale(0.9); opacity: 0.4; }
 .libraryStackMini i:nth-child(2) { transform: translate(-12px, 10px) scale(0.95); opacity: 0.65; }
 .savedChip { position: absolute; right: 22px; bottom: 22px; display: grid; grid-template-columns: auto 1fr; gap: 1px 9px; align-items: center; padding: 12px 14px; border: 1px solid rgb(255 255 255 / 15%); border-radius: 12px; background: rgb(5 8 13 / 72%); }.savedChip > i { grid-row: 1 / 3; width: 7px; height: 7px; border-radius: 999px; background: var(--color-success); box-shadow: 0 0 12px rgb(63 191 138 / 55%); }.savedChip span { font-size: 10px; font-weight: 700; }.savedChip small { color: #838e9e; font-size: 9px; }
-.threadMeta { display: flex; justify-content: space-between; padding: 12px 2px 0; color: #5b6675; font-size: 8px; font-weight: 700; letter-spacing: 0.15em; }
+.threadMeta { display: flex; justify-content: space-between; padding: 12px 2px 0; color: var(--rl-text-secondary); font-size: 8px; font-weight: 700; letter-spacing: 0.15em; }
 
 .library {
   position: relative;

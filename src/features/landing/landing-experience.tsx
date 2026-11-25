@@ -314,7 +314,7 @@ export function LandingExperience() {
                   style={itemStyle}
                   data-library-card={index}
                   aria-pressed={active}
-                  aria-label={`${item.title}. ${item.meta}`}
+                  aria-description={item.meta}
                   onPointerEnter={(event) => event.pointerType !== "touch" && setActiveLibrary(index)}
                   onFocus={() => setActiveLibrary(index)}
                   onClick={() => setActiveLibrary(index)}

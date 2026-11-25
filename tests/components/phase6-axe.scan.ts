@@ -135,7 +135,8 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
     };
     const measure=async(page:Page,label:string)=>{
       await page.evaluate(()=>document.fonts.ready.then(()=>undefined));
-      await scan(page,viewport.width+"/round3/"+label);
+      const report=await scan(page,viewport.width+"/round3/"+label);
+      if(label==="landing") expect(report.violations.filter(rule=>["color-contrast","label-content-name-mismatch"].includes(rule.id))).toEqual([]);
       scanned.push(label);
     };
     const {context,page}=await openContext("owner");
@@ -180,16 +181,15 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
         const inspector=page.getByRole("complementary",{name:"Media inspector"});
         await expect(inspector.getByRole("heading",{name:"First image",exact:true})).toBeVisible();
         inspectorState="library-inspector";
-      }else if((await tile.getAttribute("href"))?.includes("inspect=")){
+      }else{
+        // SSR starts with the desktop viewer link. Require the hydrated phone
+        // inspector contract before opening the fixture's equivalent route.
+        await expect(tile).toHaveAttribute("href","/library?inspect="+firstAsset.id);
         await page.goto(origin+"/round3-library?inspect="+firstAsset.id);
         const sheet=page.getByRole("dialog",{name:"Media inspector"});
         await expect(sheet.getByRole("heading",{name:"First image",exact:true})).toBeVisible();
+        await expect(sheet.getByRole("link",{name:"Open Viewer",exact:true})).toHaveAttribute("href","/library/"+firstAsset.id);
         inspectorState="library-phone-sheet";
-      }else{
-        await expect(tile).toHaveAttribute("href","/library/"+firstAsset.id);
-        await tile.press("Enter");
-        await expect(page.getByRole("heading",{name:"First image",exact:true})).toBeVisible();
-        inspectorState="library-phone-viewer-baseline";
       }
       await measure(page,inspectorState);
     }finally{await context.close();}
