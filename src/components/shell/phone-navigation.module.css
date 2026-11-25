@@ -1,0 +1,39 @@
+/* Phone-only app navigation; Landing and desktop account disclosure stay intact.
+ * The modal mechanics come from the shared Sheet and the existing smooth spring. */
+.mobileNavigation { display: none; }
+@media (max-width: 700px) {
+  .mobileNavigation { display: flex; align-items: center; min-inline-size: 0; padding-block: var(--rl-space-8); }
+  .applicationHeader > :global(.preview-account-card) { display: none; }
+}
+.logo { min-block-size: var(--rl-hit-preferred); padding-inline: var(--rl-space-8); color: var(--rl-text-primary); }
+.sidebar {
+  inline-size: min(100%, 20rem);
+  max-inline-size: 100%;
+  block-size: 100dvh;
+  padding-block: max(var(--rl-space-12), env(safe-area-inset-top)) max(var(--rl-space-16), env(safe-area-inset-bottom));
+  padding-inline: max(var(--rl-space-12), env(safe-area-inset-left)) var(--rl-space-12);
+  gap: var(--rl-space-12);
+  background: var(--rl-surface-overlay);
+  border-color: var(--rl-border-subtle);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.heading { display: flex; align-items: center; gap: var(--rl-space-8); justify-content: space-between; min-inline-size: 0; }
+.title { display: flex; align-items: center; gap: var(--rl-space-8); min-inline-size: 0; font-size: var(--rl-type-label); font-weight: var(--rl-weight-heading); overflow-wrap: anywhere; }
+.title > svg { flex-shrink: 0; }
+.close { flex-shrink: 0; border-radius: var(--rl-radius-pill); }
+.description { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.links { display: flex; flex-direction: column; gap: var(--rl-space-4); min-inline-size: 0; }
+.link { justify-content: flex-start; min-inline-size: 0; min-block-size: var(--rl-hit-preferred); padding-inline: var(--rl-space-12); white-space: normal; overflow-wrap: anywhere; text-align: start; }
+.link[aria-current="page"] { color: var(--rl-text-primary); background: var(--rl-surface-selected); box-shadow: inset 0 0 0 1px var(--rl-border-action-selection); }
+.admin { border-block-start: 1px solid var(--rl-border-subtle); margin-block-start: var(--rl-space-8); padding-block-start: var(--rl-space-8); display: flex; flex-direction: column; gap: var(--rl-space-4); }
+.adminLabel { color: var(--rl-text-quiet); font-size: var(--rl-type-caption); padding-inline: var(--rl-space-12); }
+.profile { margin-block-start: auto; min-inline-size: 0; min-block-size: var(--rl-hit-preferred); height: auto; justify-content: flex-start; padding: var(--rl-space-12); white-space: normal; overflow-wrap: anywhere; text-align: start; border-radius: var(--rl-radius-control); }
+.avatar { border-radius: var(--rl-radius-pill); flex-shrink: 0; object-fit: cover; }
+.profileText { display: flex; flex: 1; flex-direction: column; min-inline-size: 0; }
+.profileMeta { color: var(--rl-text-secondary); font-weight: var(--rl-weight-body); font-size: var(--rl-type-caption); }
+.settingsIcon { flex-shrink: 0; }
+@media (max-width: 240px) {
+  .settingsIcon { display: none; }
+  .title { gap: var(--rl-space-4); }
+}

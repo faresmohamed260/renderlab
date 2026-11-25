@@ -459,6 +459,8 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, de
     const target = event.target;
     if (!(target instanceof Element) || target.closest("input, textarea, select, [contenteditable], [role=slider]")) return;
     const key = event.key.toLowerCase();
+    // Native modal Escape closes the viewer, not its underlying comparison.
+    if (key === "escape" && viewerOpen) return;
     const scope = viewerOpen ? dialog.current : frame.current;
     if ((key === "arrowleft" || key === "arrowright") && batch.length + Number(pending) > 1) {
       const chips = [...(scope?.querySelectorAll<HTMLButtonElement>(".create-preview-stage-batch button") ?? [])];

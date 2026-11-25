@@ -13,9 +13,14 @@ export default async function FixtureLayout({ children }: { children: ReactNode 
   // production root/body and app-main composition, without server auth or I/O.
   const requestHeaders = await headers();
   const variant = requestHeaders.get("x-renderlab-fixture-shell");
-  const shell = variant === "create" || variant === "signed-out" || variant === "member" || variant === "owner";
+  // Match the server-provided shell profile for the review that exercises the
+  // real avatar. Its browser test serves the exact synthetic thumbnail.
+  const profile = variant === "review"
+    ? { displayName: "Synthetic Member", avatarUrl: "/api/account/profile/avatar" }
+    : null;
+  const shell = variant === "create" || variant === "review" || variant === "signed-out" || variant === "member" || variant === "owner";
   return <html lang="en" className={inter.variable}><body className={shell ? "renderlab-gradient" : undefined}>
     {shell && <div className="renderlab-reference-atmosphere" aria-hidden="true"><div className="renderlab-reference-wash" /></div>}
-    {shell ? <PreviewNavigationShell accountId={variant === "signed-out" ? null : "synthetic-component-fixture"} hostedProfile={false} showAdmin={variant === "owner"}><main>{children}</main></PreviewNavigationShell> : <main>{children}</main>}
+    {shell ? <PreviewNavigationShell accountId={variant === "signed-out" ? null : "synthetic-component-fixture"} profile={profile} showAdmin={variant === "owner"}><main>{children}</main></PreviewNavigationShell> : <main>{children}</main>}
   </body></html>;
 }
