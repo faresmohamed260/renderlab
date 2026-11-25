@@ -733,4 +733,39 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 
 **Reason:** Shared tokens and controls have drifted across Create, shell and feature styles; current QA also demonstrates narrow-zoom reflow issues and undersized candidate disclosure targets. Create is the first-ranked audit finding and the signature proving ground after shared primitives; cohesion requires a shared language with measurable accessibility and motion acceptance, not wholesale copying of defects.
 
-**Consequences:** This authorization applies to visual/motion design only; Phase 5 correctness remains Integration Mode. Product behavior, routes, APIs, data, ownership/security, permission gates, WCAG-oriented accessibility, locked brand/quarter-circle, and capability truth remain binding. Require every component to meet 320 CSS px reflow, project zoom stress, effective 24 CSS px minimum targets and 44 CSS px where practical, keyboard/touch parity and reduced-motion equivalence. P5-03 Admin Health rendering is deferred to a separately scoped later Admin Observe stage; no Admin dashboard expansion in Phase 6. No new dependency, code, provider action or production release is authorized. After spec merge: shared primitives, Create, Shell, Library, Viewer, Activity, Settings, separately scoped Admin, Landing. Human design review, temporal prototype evidence and separate merged implementation contract precede runtime changes. UI-083's animation direction remains binding; no blanket supersession of approved or LOCKED surface designs.
+**Consequences:** See UI-086–UI-090 for the subsequently approved visual and bounded IA/capability direction. This original authorization applies to visual/motion design only; Phase 5 correctness remains Integration Mode. Product behavior, routes, APIs, data, ownership/security, permission gates, WCAG-oriented accessibility, locked brand/quarter-circle, and capability truth remain binding. Require every component to meet 320 CSS px reflow, project zoom stress, effective 24 CSS px minimum targets and 44 CSS px where practical, keyboard/touch parity and reduced-motion equivalence. P5-03 Admin Health rendering is deferred to a separately scoped later Admin Observe stage; no Admin dashboard expansion in Phase 6. No new dependency, code, provider action or production release is authorized. After spec merge: shared primitives, Create, Shell, Library, Viewer, Activity, Settings, separately scoped Admin, Landing. Human design review, temporal prototype evidence and separate merged implementation contract precede runtime changes. UI-083's animation direction remains binding; no blanket supersession of approved or LOCKED surface designs.
+
+### UI-086 — Phase 6 approved Violet Studio glass direction
+**Status:** Accepted
+**Date:** 2026-11-25
+**Decision:** Owner approves the dark-only static [Phase 6 comps](https://github.com/faresmohamed260/renderlab/tree/claude/renderlab-adr005-handoff-zsbdq7/design/approved/2026-11-25-phase6); Violet Studio atmosphere, translucent glass, generous radii, filled soft controls, no bottom tab bar. Desktop Create has session/prompt history left, result stage center, controls right; phone has logo-opened navigation, media-first stage, floating composer, History and Advanced sheets, profile pinned at sidebar bottom. Library has distinct media-grid/inspector layout. UI-085 planning remains historical context; its flat default and previous sequence are superseded in scope. #706 rejected, not approved implementation.
+**Reason:** Owner selected this direction over flat boxed prototype.
+**Consequences:** V2 revised tokens and named springs need composited contrast, responsive and temporal review; no motion or runtime approval implied. Preserve locked brand, UI-026, UI-083, FIBO-only behavior and Settings/Admin calm ceilings. P6-03 shell/primitives first, later surfaces roadmap only.
+
+### UI-087 — Retire Activity destination; preserve lifecycle through History and Queue
+**Status:** Accepted
+**Date:** 2026-11-25
+**Decision:** No Activity navigation tab or final /activity route. Move job status, sanitized failures, Cancel, Retry and eligible Reuse settings into History and Queue; preserve UI-035, UI-050, UI-055 and applicable UI-056 successful actions. UI-008, UI-011, UI-014, UI-074 and UI-077 destination/presentation portions are superseded only on verified replacement cutover; current production is unchanged. Owner-private bounded chronological history, real persisted state, same-owner active media links, sanitized errors, no provider metadata or fake progress remain binding. Retry failed-only reconstructs current validated intent, distinct job, immutable original and in-flight guard; Cancel server-derived canCancel, native serialized lifecycle, confirmation, cancelling/terminal cancelled, no cancel after persisting. Reuse is prefill, not automatic submission.
+**Reason:** Keep creative workspace and actionable job attention together without a redundant destination.
+**Consequences:** Keep server ownership and ordinary APIs, no cross-route global job store or broad polling. Before route removal verify signed-out, member/foreign ownership, active/persisting/cancelling/failed/cancelled/succeeded and deleted-result cases, retry/cancel race and failure paths, accessibility, navigation/back/deep-link compatibility; exact redirect/removal mechanics require separate reviewed implementation decision. No code here.
+
+### UI-088 — Owner-only Admin navigation
+**Status:** Accepted
+**Date:** 2026-11-25
+**Decision:** Admin navigation is visible only to the verified owner/admin account, including phone sidebar; ordinary members and signed-out users see no Admin entry. Visibility is server-derived, never inferred from display name or browser state.
+**Reason:** Operational controls are not ordinary creative tools.
+**Consequences:** Existing fresh server admin authorization, MFA and API guards remain unchanged; hiding a link is not authorization. Test signed-out, ordinary member and verified owner/admin and direct access. No permission expansion or new dashboard scope.
+
+### UI-089 — Truthful capability roadmap
+**Status:** Accepted
+**Date:** 2026-11-25
+**Decision:** Multi-output first, then Inspiration; reserve image-count and Inspiration positions but hide until hosted worker, API, persistence, entitlement and lifecycle support are verified. Negative prompt parked per owner-reported local Fibo 2.0 Edit Turbo comparison (no reliable effect); not a universal model claim.
+**Reason:** Avoid inert, misleading controls and preserve extensibility.
+**Consequences:** No capability implementation or unsupported disabled placeholders in P6-03; each future capability requires separately approved end-to-end contract.
+
+### UI-090 — Skeletons represent content loading, not job progress
+**Status:** Accepted
+**Date:** 2026-11-25
+**Decision:** Render stable shell/header/navigation and composer structure promptly; skeleton only in unresolved content regions, matching final geometry. Shimmer is bounded to loading; Reduce Motion static. UI-019 remains binding: actual generation progress/status is server-derived and success requires durable result.
+**Reason:** Improve perceived responsiveness without misleading users or shifting controls.
+**Consequences:** Empty/error/loaded states replace placeholders; accessible busy/status indication, no focusable fake controls, no indefinitely animated skeleton or fabricated progress. Preserve prompt and references on errors.

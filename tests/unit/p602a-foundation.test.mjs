@@ -28,14 +28,15 @@ test("palette owners match the authoritative candidate table, not historical inp
     ["canvas", ["canvas"]],
     ["surface.base / raised / high", ["surface-base", "surface-raised", "surface-high"]],
     ["surface.panel", ["surface-panel"]],
-    ["surface.control / hover / field-focus", ["surface-control", "surface-hover", "surface-field-focus"]],
+    ["surface.field-focus", ["surface-field-focus"]],
     ["surface.selected", ["surface-selected", "text-selected"]],
     ["surface.overlay", ["surface-overlay"]],
     ["text.primary / secondary / quiet", ["text-primary", "text-secondary", "text-quiet"]],
     ["text.placeholder / disabled", ["text-placeholder", "text-disabled"]],
-    ["accent.primary / hover / on-accent", ["accent-primary", "accent-hover", "on-accent"]],
+    ["accent.action / hover / pressed / on-accent", ["accent-primary", "accent-primary-end", "accent-hover", "accent-hover-end", "accent-pressed", "accent-pressed-end", "on-accent"]],
+    ["accent.decorative", ["accent-decorative-start", "accent-decorative-end"]],
     ["accent.focus / geometry", ["focus"]],
-    ["border.subtle / boundary", ["border-subtle", "border-boundary"]],
+    ["border.subtle / boundary", ["border-boundary"]],
     ["border.action-selection", ["border-action-selection"]],
     ["status.success / warning / danger", ["success", "warning", "danger"]],
   ];
@@ -46,23 +47,33 @@ test("palette owners match the authoritative candidate table, not historical inp
     ["surface.panel", "surface-panel-layered"],
     ["surface.overlay", "surface-overlay-layered"],
     ["atmosphere.creative", "atmosphere-creative"],
+    ["atmosphere.creative", "atmosphere-pink"],
+    ["atmosphere.creative", "atmosphere-indigo"],
+    ["surface.control / hover / pressed", "surface-control"],
+    ["surface.control / hover / pressed", "surface-hover"],
+    ["surface.control / hover / pressed", "surface-pressed"],
+    ["surface.control / hover / pressed", "surface-disabled"],
+    ["surface.overlay", "modal-scrim"],
+    ["border.subtle / boundary", "border-subtle"],
+    ["elevation.primary", "elevation-primary"],
     ["elevation.panel", "elevation-panel"],
     ["elevation.overlay", "elevation-overlay"],
   ]) {
     assert.ok(role(label).includes(readToken(name)), name);
   }
   assert.deepEqual([readToken("focus-width"), readToken("focus-offset")], role("accent.focus / geometry").match(/\d+px/g));
-  assert.equal(readToken("material-panel"), "blur(16px) saturate(110%)");
+  assert.equal(readToken("material-panel"), "blur(30px) saturate(150%)");
   assert.equal(readToken("material-shell"), readToken("material-panel"));
-  assert.equal(readToken("material-overlay"), "blur(16px)");
+  assert.equal(readToken("material-overlay"), "blur(30px) saturate(150%)");
   assert.equal(readToken("material-none"), "none");
-  for (const name of ["flat", "primary", "focus"]) assert.equal(readToken("elevation-" + name), "none");
+  for (const name of ["flat", "focus"]) assert.equal(readToken("elevation-" + name), "none");
 });
 
 test("geometry, type and timing roles use the reviewed spec values", () => {
   const numeric = (name) => Number.parseFloat(readToken(name));
   const numbers = (row) => row.match(/\d+(?:\.\d+)?/g).map(Number);
   assert.deepEqual(["micro", "control", "field", "panel", "pill"].map((name) => numeric("radius-" + name)), numbers(role("radius.micro / control / field / panel / pill").split("px;")[0]));
+  assert.equal(numeric("radius-sheet"), numbers(role("radius.sheet"))[0]);
   assert.deepEqual([4, 8, 12, 16, 24, 32, 48, 64].map((n) => numeric("space-" + n)), numbers(role("spacing").split("px modular")[0]));
   const body = role("type.body / label / caption");
   assert.deepEqual(["body", "label", "caption"].map((name) => numeric("type-" + name) * 16), numbers(body.split("px at")[0]));
