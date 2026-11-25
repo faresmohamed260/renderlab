@@ -691,3 +691,167 @@
     transition: none;
   }
 }
+
+/* Round 3 applies to the signed-in Settings overview only. Subpages and
+   signed-out flows retain their existing layout and security mechanics. */
+.round3 {
+  display: grid;
+  min-width: 0;
+  gap: var(--rl-space-16);
+  color: var(--rl-text-primary);
+}
+.settingsSections {
+  display: none;
+}
+.settingsCards {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rl-space-16);
+}
+.settingsCards > .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  min-width: 0;
+  border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-panel);
+  background: var(--rl-surface-panel-layered);
+  backdrop-filter: var(--rl-material-panel, none);
+}
+.settingsCards .labelCell {
+  display: block;
+  padding: var(--rl-space-16) var(--rl-space-16) 0;
+  border: 0;
+  background: none;
+}
+.settingsCards .index {
+  display: none;
+}
+.settingsCards .sectionTitle {
+  color: var(--rl-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.settingsCards .valueCell {
+  padding: var(--rl-space-12) var(--rl-space-16) var(--rl-space-16);
+}
+.settingsCards .valueLabel {
+  color: var(--rl-text-primary);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.settingsCards .emailValue {
+  color: var(--rl-text-primary);
+  font-family: inherit;
+}
+.settingsCards .helper, .settingsCards .sessionTimes {
+  color: var(--rl-text-secondary);
+  overflow-wrap: anywhere;
+}
+.settingsCards .actionRow, .settingsCards .factorRow, .settingsCards .valueHeader, .settingsCards .sessionHeader {
+  flex-wrap: wrap;
+  gap: var(--rl-space-8);
+}
+.settingsCards .actionRow > :first-child, .settingsCards .factorRow > :first-child {
+  flex: 1 1 9rem;
+  min-width: 0;
+}
+.settingsCards .factorRow {
+  border-color: var(--rl-border-subtle);
+}
+.settingsCards .sessionItem {
+  min-width: 0;
+  border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-control);
+  background: var(--rl-surface-control);
+  padding: var(--rl-space-12);
+}
+.settingsCards .status, .settingsCards .currentSession {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  border-radius: var(--rl-radius-pill);
+  background: var(--rl-surface-control);
+  color: var(--rl-text-primary);
+  border-color: var(--rl-border-subtle);
+}
+.settingsCards .status[data-access-state="active"] { color: var(--rl-success); }
+.settingsCards .status[data-access-state="suspended"] { color: var(--rl-warning); }
+.settingsCards .status[data-access-state="invitation-required"] { color: var(--rl-danger); }
+.settingsCards .profileAvatar {
+  border-radius: var(--rl-radius-pill);
+  background: var(--rl-surface-raised);
+  border-color: var(--rl-border-subtle);
+}
+.settingsCards .profileName { color: var(--rl-text-primary); }
+.settingsCards [data-slot="button"] {
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: var(--rl-control-large);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+@media (min-width: 1025px) {
+  .round3 {
+    grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--rl-space-24);
+  }
+  .settingsSections {
+    display: grid;
+    gap: var(--rl-space-4);
+    padding: var(--rl-space-12);
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-panel-layered);
+    backdrop-filter: var(--rl-material-panel, none);
+  }
+  .settingsSections a {
+    display: flex;
+    align-items: center;
+    min-height: var(--rl-control-large);
+    padding: var(--rl-space-8) var(--rl-space-12);
+    border-radius: var(--rl-radius-control);
+    color: var(--rl-text-primary);
+    text-decoration: none;
+  }
+  .settingsSections a:hover { background: var(--rl-surface-hover); }
+  .settingsSections a:focus-visible {
+    outline: var(--rl-focus-width) solid var(--rl-focus);
+    outline-offset: var(--rl-focus-offset);
+  }
+  .settingsCards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settingsCards > [id="settings-privacy"], .settingsCards > [id="settings-admin"] { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .settingsCards { gap: var(--rl-space-12); }
+  .settingsCards > .row { border-radius: var(--rl-radius-control); }
+  .settingsCards .actionRow > :first-child, .settingsCards .factorRow > :first-child { flex: auto; }
+  .settingsCards .valueCell { padding-inline: var(--rl-space-12); }
+  .settingsCards .labelCell { padding-inline: var(--rl-space-12); }
+  .settingsCards .profileIdentity { flex-wrap: wrap; }
+}
+
+.settingsCards .phoneSignOut {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .settingsCards .desktopSignOut {
+    display: none;
+  }
+  .settingsCards .phoneSignOut {
+    display: grid;
+  }
+  .settingsCards .phoneSignOut [data-slot="button"] {
+    width: 100%;
+    border-radius: var(--rl-radius-pill);
+    background: var(--rl-surface-panel-layered);
+  }
+}
