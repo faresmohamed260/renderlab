@@ -537,6 +537,17 @@
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
+    },
+    {
+      "path": "docs/ui/P6_06B_ADMIN_CONTROL_PROPOSAL.md",
+      "kind": "reference-guide",
+      "authority": "reference",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-25",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
     }
   ]
 }
