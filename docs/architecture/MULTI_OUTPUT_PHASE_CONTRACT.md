@@ -1,0 +1,65 @@
+# Multi-output capability — immediate phase contract (draft)
+
+**Status:** Proposed for head-engineer/owner review; not an accepted implementation contract. Source audit pinned to [63a715165b879fa97c68dc39bdbddf05c9657ae6](https://github.com/faresmohamed260/renderlab/tree/63a715165b879fa97c68dc39bdbddf05c9657ae6). The [accepted architecture direction and detailed alternatives](MULTI_OUTPUT_PROPOSAL_2026-11-25.md#decisions-taken-2026-11-25) remain the design reference. This draft does not authorize implementation, migration, runner, API change, flag activation, deployment or release. Review/merge an accepted contract before implementation. This is the next **capability** phase, not a replacement for the separate Phase 6 UI sequence or its parity holds.
+
+## Goal and user value
+
+Request 1–4 related text-to-image results once, see each durable result as it finishes, and retain completed work if a later image fails or the user cancels. The selected architecture is one durable batch parent with ordered, serialized single-image child jobs. Image count stays hidden until the whole capability is qualified.
+
+## Verified starting state
+
+Repository source, not live provider or DB inspection:
+
+- `src/server/generation/native-generation-idempotency.ts:63–67,152–187` hashes normalized request intent and fails closed on uncertain acceptance; migration `0034_generation_request_idempotency.sql:122–126` reserves one existing admission grant in the keyed transaction. `generation-admission.ts:41–53,60–103` is owner/job based; `0012_renderlab_generation_admission.sql` counts reservations, not requested images. Current default policy documented in Infrastructure is 1 active/12 hourly, not a universal account entitlement.
+- `fibo-worker-payload.ts` emits one seed, width, height, steps, and input list; no output-count parameter. `workers/fibo-studio/native_fibo_adapter.py:68–73` decodes one PNG and returns one WorkResult; `modal_native_renderer.py:44,54–56,79–111` uses A10, 420s timeout, max_containers=1, per-attempt admission guard, optional generated-VGL sidecar. This is not a global spend cap or proof of current hosted performance.
+- `0013_generation_reconciliation.sql` permits distinct zero-based indexed media rows per job and backfills canonical array order, preserving null-index historical extras. However `0036_terminal_outbox_and_asset_guard.sql:61–64,129–165` requires one canonical slot-0 asset on success and rejects failure/cancel with a canonical asset. `native-generation-job-store.ts:39–40` sends only the first asset to terminalization and `native-generation-output-persistence.ts:70–80,111` finalizes one asset. **Storage can represent multiple slots; current execution and settlement cannot.** Preserve child slot-0 behavior instead of rewriting terminalization.
+- `generation-activity.ts:44,61,73,94,118–123` projects asset arrays and filters against available owner assets; cancellation assumes no saved output. `src/features/create/history/history-contract.ts` models job identity and owner-bound transport, not a durable parent. Library's `src/server/media/media-assets.ts` is asset-oriented; individual generated outputs must remain independently available and deletable. Do not derive a complete group from one paginated asset page. `create-hosted-capabilities.ts:25–26` explicitly disables both multiOutput and inspiration.
+- Existing proposal documents the owner-reported Studio timings and A10 estimates; these are not fresh hosted measurements. Current production manifest is recorded repository state only.
+
+## Scope / non-scope
+
+First slice: source-free FIBO Edit Turbo text-to-image, 1–4 outputs, existing supported prompt modes, default 1, server-selected deterministic ordered seeds, one running child per group, durable results, progress, partial outcomes, cancel, reload/recovery, owner-scoped History and Library compatibility. Count=1 preserves existing request/response and admission semantics. Existing manual VGL may be reused as validated input; automatic generated-VGL reuse is out of scope.
+
+Out: parallel fan-out, other models, references/masks in groups, Inspiration, negative prompt, automatic failed-slot retries, resume or retry-partial, cross-owner/public groups, unrelated redesign, dependency additions, production release, worker redeploy, new flags/settings activation or spending beyond explicit separate approval. No Activity removal through this contract; retain the Create History parity gate and temporary redirect plan.
+
+## Proposed execution slices and acceptance gates
+
+1. **Policy and interface first.** Owner approves weighted image-unit quota, occupancy, aggregate execution-time bound B, per-slot ceiling T, hard parent deadline, queue/global stop limits and treatment of unused grants. Model 1–4 requested image units at acceptance, not 1–4 free groups. Default 1 active group OR ordinary job, honoring tighter limits. Establish actual allowable seed range and freeze server-resolved base seed once; prove wrapping and replay. Existing explicit-key replay cannot admit a changed count/intent.
+2. **Atomic parent and slot acceptance.** Under the owner admission lock, reserve all requested units, create parent/ordered immutable intents plus first child job/outbox, with stable owner/key/digest and child identities. No partial acceptance, no independent public POST loop, no duplicate grant on dispatch. Parent occupancy survives child release until group terminal. No network IO in transaction. Stop and seek authorization for every required schema/RPC/index change listed below.
+3. **Server-owned serial controller.** Advance only after previous child is durably terminal and parent has not stopped, under bounded claim/CAS; consume the pre-reserved unit. Check full remaining T plus persistence headroom before a new start, conservatively charge unknown execution, never blindly resend. Recover crash after child terminalization before advancement; preserve current attach-only semantics, deadlines and bounded owner recovery. Design unattended settlement/advance runner on paper only until separately approved. Owner-return-only continuation would be a product downgrade requiring explicit decision; do not promise background progress in its absence.
+4. **Outcome and stop.** Separate parent lifecycle from child enum. Parent complete only when all N succeed; partial if some but not all; failed/cancelled with zero saved results according to reason. Explicit stop fences future children under the advance lock; queued cancel, active cancel, or allow existing persisting child to finish. Keep completed assets on failure/cancel, report completion winning a late cancel truthfully, no automatic retries. Keep pending cancellation as stopping until reconciled; don't imply a provider stopped without proof.
+5. **Product projection and UI.** Versioned opt-in group submit/read/cancel contract with opaque parent ID, requested count, ordered slots, active owner asset IDs, status/reason, cancel eligibility; compatibility with old count=1 shape and schema drift checks. Server gate advertises count only when supported. Existing Create primitives and reserved placement, accessible incremental carousel, reconnect by stable group identity, retain selection. History shows one group with partial/count and selected-child recipe reuse; Library remains asset-first with bounded owner-scoped group lookup if needed. Asset deletion hides the asset without rewriting historical success or resurrecting media. No raw provider IDs/storage keys, raw native visible controls, or new UI dependencies.
+
+## Architecture, data and security decisions requiring explicit owner authorization
+
+| Proposed change | Authorization needed |
+|---|---|
+| New RLS-enabled browser-revoked parent/ordered-slot records, owner-consistent FKs, immutable request identity, slot uniqueness, deadline/lease, usage ledger | Migration + schema contract |
+| Shared owner/key namespace or explicit group discriminator and all-or-nothing weighted admission, occupancy and consume/release logic | Migration + new/changed service-role RPC and accounting policy |
+| Bounded parent claim/advance/stop and recovery lookup | Migration + new RPC and any new index |
+| Account export/delete/maintenance and unresolved-attempt retention coverage | Any required migration/RPC/index and retention policy |
+| Versioned group API/JSON Schema/OpenAPI and feature advertisement | API/ownership contract approval |
+| Unattended runner deployment, privileges, budget/stop policy and operational monitoring | Separate infrastructure, settings and spend approval |
+| Any provider payload, worker, renderer or generated-VGL change | Separate provider contract/deploy approval; not needed for proposed first slice |
+
+Each item is a proposal, not permission to execute. Determine exact DDL and privileges in a reviewed follow-up; no destructive migration or inferred historical group backfill. Service-role-only mutation and empty search_path, verified owner and same-origin admission, owner-consistent read/list/cancel/export, deletion fences admission and advancement, minimal runner privileges, sanitized reason and bounded diagnostics. Neither provider handles nor source content in telemetry. No new credentials.
+
+## Validation matrix
+
+| Gate | Required evidence |
+|---|---|
+| Pure/contract | Count boundary/disabled rejection, unchanged 1-image behavior, seed bounds/replay, canonical digest, parent/child transitions, budget/deadline calculations and schema/OpenAPI drift |
+| Disposable PostgreSQL | Atomic N-unit reserve, owner/key and ordinary-job races, active/hourly constraints, cancellation/advance race, lock ordering, same-owner FK/RLS/grants, uniqueness, crash/reclaim, export/delete and no orphan reservation |
+| Mock worker/dispatch/storage | Lost response/attach-only, bounded delivery, durable first result, fail/cancel before/after/persisting, R2/DB crash recovery, no duplicate asset/extra start, deadline and kill switch, no owner polling, next ordinary job works |
+| Mounted UI | Count visibility/default, incremental results, reload and second-device read, keyboard/reduced motion, 195/320/390/1440 widths and zoom, History/Library/deletion/recipe parity, isolation, honest progress/error/cancel, axe and composited contrast |
+| Hosted and operational | Required exact-head checks and affected mounted lanes; controlled nonproduction execution after separate approval, attributed GPU time including cold/warm distinction, first-result and full latency, no duplicate attempts/assets, terminal reservations/outbox, cleanup and zero run-owned residue. No local/sandbox claim substitutes for mounted CI. Human approval separate. |
+
+Development feasibility: the owner has authorized small same-seed FIBO Edit Turbo comparisons on modal-01 only (about 40 maximum per batch; record actual renderer starts including ambiguous/failing starts, GPU minutes and measurement source). Existing hosted API is single-output; comparisons can assess serial child cost/variation, not prove group acceptance, partial persistence or cancellation. First compare matched ordinary text-to-image inputs/steps/dimensions with fixed seeds, measure cold/warm time separately, stop on unexpected usage/identity, avoid production release traffic or new worker deployment. This draft makes no claim about billed GPU minutes, price, or qualified group behavior. No generations executed for this source audit. The earlier proposal's production qualification plan remains separately unauthorized.
+
+## Exit and release boundary
+
+Accepted phase contract merged first; owner-approved limits and all required contract/DDL changes; test-first implementation, exact-head required and mounted evidence, verified lifecycle, weighted quota, ownership, cancellation, recovery, output identity and cleanup, no unresolved critical failure; human review of responsive Create/History/Library; documentation and capability registry updated from verified behavior. Keep count hidden if any gate is missing. Rollback stops new groups but retains reconciliation/read/cancel and successful assets; do not revert to a build unable to settle existing groups. Production enablement and deployment require separate owner release authorization.
+
+## Next capability — Inspiration (roadmap only)
+
+After multi-output closure, plan image-to-editable-VGL using an owned image, not an implicit render or edit reference. The existing source-free generated-VGL candidate is not proof of image conditioning: Product Capabilities records unsuccessful contrasting-image conditioning tests. Future contract must establish licensed image-aware encoder path, ownership/limits and injection-safe bounded structured output, separate encoder admission/cost/cancellation, explicit user editing and subsequent normal submission. Qualify on contrasting owned synthetic inputs before showing the tile. Do not copy unlicensed Studio nodes; reverify exact pinned terms. No Inspiration implementation, GPU authorization expansion or premature phase contract here.
