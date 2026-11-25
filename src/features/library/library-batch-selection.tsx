@@ -669,7 +669,7 @@ export function LibraryBatchSelection({
         }}>
           <SheetTitle>Media inspector</SheetTitle>
           <SheetDescription className="sr-only">Details and actions for selected Library media.</SheetDescription>
-          <LibraryInspector key={inspected.id} asset={inspected} reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null} onClose={() => dismissInspector()} onDeleted={() => dismissInspector(inspected.id)} />
+          <LibraryInspector phone key={inspected.id} asset={inspected} reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null} onClose={() => dismissInspector()} onDeleted={() => dismissInspector(inspected.id)} />
         </SheetContent> : null}
       </Sheet> : <aside className={styles.inspector} aria-label="Media inspector">
         {inspected ? (
