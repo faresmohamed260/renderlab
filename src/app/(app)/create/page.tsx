@@ -19,7 +19,6 @@ import {
   fiboPreferenceAspectRatio,
   defaultGenerationModelForOutput,
 } from "@/lib/capabilities/generation";
-import { CreateWorkspace } from "@/features/create/create-workspace";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import {
   getRenderLabAccountPreferences,
@@ -156,6 +155,7 @@ export default async function CreatePage({
     }
   }
 
+  const { CreateWorkspace } = await import("@/features/create/create-workspace");
   return (
     <CreateWorkspace
       accountAvailable={accountAvailable}
