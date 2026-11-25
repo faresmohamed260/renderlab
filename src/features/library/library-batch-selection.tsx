@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { CheckSquare2, FolderOpen, Minus, Plus, Star, Trash2, Video, X } from "lucide-react";
+import { Check, CheckSquare2, Eye, FolderOpen, Grid2X2, Grid3X3, Minus, Plus, Star, Trash2, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -24,6 +24,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
 import styles from "@/features/library/library-gallery.module.css";
+import { LibraryInspector } from "@/features/library/library-inspector";
 import type {
   BatchDeleteMediaAssetsResponse,
   BatchFavoriteMediaAssetsResponse,
@@ -102,21 +103,40 @@ export function LibraryBatchSelection({
   collections,
   sourceControls,
   searchControls,
-  filterControls,
+  organizationControls,
+  kindControls,
+  sortControl,
   uploadAction,
   mediaContextLabel,
   dropHint,
+  viewTitle,
+  viewHref,
+  showCount,
+  inspectedAssetId,
+  reuseRecipeJobId,
+  children,
 }: {
   items: PublicMediaAsset[];
   collections: PublicMediaCollection[];
   sourceControls: ReactNode;
   searchControls: ReactNode;
-  filterControls: ReactNode;
+  organizationControls: ReactNode;
+  kindControls: ReactNode;
+  sortControl: ReactNode;
   uploadAction: ReactNode;
   mediaContextLabel: string;
   dropHint: string | null;
+  viewTitle: string;
+  viewHref: string;
+  showCount: boolean;
+  inspectedAssetId: string | null;
+  reuseRecipeJobId: string | null;
+  children: ReactNode;
 }) {
   const router = useRouter();
+  const [compactGrid, setCompactGrid] = useState(false);
+  const inspectTrigger = useRef<HTMLAnchorElement>(null);
+  const galleryHeading = useRef<HTMLHeadingElement>(null);
   const collectionSelectId = useId();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -124,6 +144,7 @@ export function LibraryBatchSelection({
   const [dialogOpen, setDialogOpen] = useState(false);
   const selectTrigger = useRef<HTMLButtonElement>(null);
   const returnToSelect = useRef(false);
+  const returnAfterCancel = useRef(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [organizeOpen, setOrganizeOpen] = useState(false);
@@ -146,6 +167,7 @@ export function LibraryBatchSelection({
   }, [collections]);
 
   const visibleItems = items.filter((item) => !hiddenDeletedIds.has(item.id));
+  const inspected = visibleItems.find((item) => item.id === inspectedAssetId);
   const selectedCount = selectedIds.size;
   const allSelected = visibleItems.length > 0 && selectedCount === visibleItems.length;
   const busy = deleting || organizingAction !== null;
@@ -165,7 +187,14 @@ export function LibraryBatchSelection({
     setDeleteError(null);
     setOrganizationError(null);
     setOrganizeOpen(false);
+    returnAfterCancel.current = true;
   }
+
+  useEffect(() => {
+    if (selectionMode || !returnAfterCancel.current) return;
+    returnAfterCancel.current = false;
+    selectTrigger.current?.focus({ preventScroll: true });
+  }, [selectionMode]);
 
   function toggleAsset(assetId: string, checked: boolean) {
     setFeedback(null);
@@ -326,28 +355,69 @@ export function LibraryBatchSelection({
     delete node.dataset.pointer;
   }
 
+  function dismissInspector(deletedId?: string) {
+    if (deletedId) {
+      setHiddenDeletedIds((previous) => new Set([...previous, deletedId]));
+      setSelectedIds((previous) => new Set([...previous].filter((id) => id !== deletedId)));
+      galleryHeading.current?.focus({ preventScroll: true });
+    } else {
+      inspectTrigger.current?.focus({ preventScroll: true });
+    }
+    router.replace(viewHref, { scroll: false });
+  }
+
   return (
-    <>
+    <div className={styles.layout}>
       <div
         className={styles.commandSurface}
         data-library-gallery-rail="true"
         data-selection={selectionMode ? "on" : "off"}
       >
-        <div
-          className={styles.defaultControls}
-          data-library-default-controls="true"
-          aria-hidden={selectionMode ? "true" : undefined}
-        >
-          <div className={styles.sourceCell}>{sourceControls}</div>
-          <div className={styles.searchCell}>{searchControls}</div>
-          <div className={styles.actionCell}>
-            {uploadAction}
-            <Button ref={selectTrigger} type="button" variant="ghost" size="sm" onClick={enterSelectionMode}>
-              <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-              Select
-            </Button>
+        <div className={styles.defaultControls} data-library-default-controls="true">
+          <aside className={styles.discovery} aria-label="Library discovery">
+            <div className={styles.searchCell}>{searchControls}</div>
+            <div className={styles.sourceCell}>{sourceControls}</div>
+            {organizationControls}
+          </aside>
+
+          <div className={styles.centerToolbar}>
+            <div className={styles.desktopContext}>
+              <h3 ref={galleryHeading} tabIndex={-1}>{viewTitle}</h3>
+              {showCount ? <span>{itemCountLabel(visibleItems.length)} on this page</span> : null}
+            </div>
+            <div className={styles.actionCell}>
+              {uploadAction}
+              {visibleItems.length || items.length ? (
+                <Button
+                  ref={selectTrigger}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    if (selectionMode) cancelSelection();
+                    else if (visibleItems.length > 0) enterSelectionMode();
+                  }}
+                  aria-disabled={busy || visibleItems.length === 0 || undefined}
+                  aria-pressed={selectionMode}
+                >
+                  <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
+                  Select
+                </Button>
+              ) : null}
+            </div>
+            <div className={styles.kindCell}>{kindControls}</div>
+            <div className={styles.sortWrap}>{sortControl}</div>
+            {visibleItems.length > 0 ? (
+              <div className={styles.density} role="group" aria-label="Grid size">
+                <Button type="button" variant="secondary" size="icon-lg" aria-label="Compact grid" aria-pressed={compactGrid} onClick={() => setCompactGrid(true)}>
+                  <Grid3X3 aria-hidden="true" />
+                </Button>
+                <Button type="button" variant="secondary" size="icon-lg" aria-label="Large grid" aria-pressed={!compactGrid} onClick={() => setCompactGrid(false)}>
+                  <Grid2X2 aria-hidden="true" />
+                </Button>
+              </div>
+            ) : null}
           </div>
-          <div className={styles.filterCell}>{filterControls}</div>
         </div>
 
         <Collapsible
@@ -495,63 +565,94 @@ export function LibraryBatchSelection({
         </Collapsible>
       </div>
 
-      {feedback ? (
-        <Alert variant={feedback.variant} className={styles.feedback} role="status">
-          <AlertDescription>{feedback.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      <section className={styles.gallery} aria-label="Library media grid">
+        {feedback ? (
+          <Alert variant={feedback.variant} className={styles.feedback} role="status">
+            <AlertDescription>{feedback.message}</AlertDescription>
+          </Alert>
+        ) : null}
 
-      <div className={styles.mediaHead} data-library-media-head="true">
-        <div className={styles.mediaContext}>
-          <span className={styles.mediaEyebrow}>{mediaContextLabel}</span>
-          <strong>{selectionMode ? `${selectedCount} of ${visibleItems.length} selected` : itemCountLabel(visibleItems.length)}</strong>
+        <div hidden={items.length === 0} className={styles.mediaHead} data-library-media-head="true">
+          <div className={styles.mediaContext}>
+            <span className={styles.mediaEyebrow}>{mediaContextLabel}</span>
+            <strong>{selectionMode ? `${selectedCount} of ${visibleItems.length} selected` : itemCountLabel(visibleItems.length)}</strong>
+          </div>
+          {dropHint ? <p className={styles.dropNote}>{dropHint}</p> : null}
         </div>
-        {dropHint ? <p className={styles.dropNote}>{dropHint}</p> : null}
-      </div>
 
-      <div className={styles.mediaGrid} data-library-media-grid="true">
-        {visibleItems.map((asset) => {
-          const title = assetTitle(asset);
-          const selected = selectedIds.has(asset.id);
-          return (
-            <div
-              key={asset.id}
-              className={styles.cardShell}
-              data-selected={selected ? "true" : "false"}
-              onPointerMove={updateCardPointer}
-              onPointerLeave={clearCardPointer}
-            >
-              <Link
-                href={`/library/${encodeURIComponent(asset.id)}`}
-                className={styles.cardLink}
+        <div className={styles.mediaGrid} data-library-media-grid="true" data-compact={compactGrid}>
+          {visibleItems.map((asset) => {
+            const title = assetTitle(asset);
+            const selected = selectedIds.has(asset.id);
+            return (
+              <div
+                key={asset.id}
+                className={styles.cardShell}
                 data-selected={selected ? "true" : "false"}
-                aria-label={`Open ${title}`}
+                data-inspected={inspected?.id === asset.id}
+                onPointerMove={updateCardPointer}
+                onPointerLeave={clearCardPointer}
               >
-                <div className={styles.mediaFrame} data-library-media-frame="true">
-                  <MediaPreview asset={asset} />
-                </div>
-                <div className={styles.mediaMeta} data-library-media-meta="true">
-                  <strong title={title}>{title}</strong>
-                  <span>{asset.kind}</span>
-                  <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
-                </div>
-              </Link>
+                <Link
+                  href={`/library/${encodeURIComponent(asset.id)}`}
+                  className={styles.cardLink}
+                  data-selected={selected ? "true" : "false"}
+                  aria-label={`Open ${title}`}
+                >
+                  <div className={styles.mediaFrame} data-library-media-frame="true">
+                    <MediaPreview asset={asset} />
+                  </div>
+                  <div className={styles.mediaMeta} data-library-media-meta="true">
+                    <strong title={title}>{title}</strong>
+                    <span>{asset.kind}</span>
+                    <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
+                  </div>
+                </Link>
 
-              {selectionMode ? (
-                <div className={styles.selectionCheckboxWrap}>
-                  <Checkbox
-                    className="kinetic-selection-checkbox size-11"
-                    aria-label={`Select ${title}`}
-                    checked={selected}
-                    disabled={busy}
-                    onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
-                  />
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </>
+                <Button asChild variant="secondary" size="icon-lg" className={styles.inspectAction}>
+                  <Link
+                    ref={inspected?.id === asset.id ? inspectTrigger : undefined}
+                    href={`${viewHref}${viewHref.includes("?") ? "&" : "?"}inspect=${encodeURIComponent(asset.id)}`}
+                    scroll={false}
+                    prefetch={false}
+                    aria-current={inspected?.id === asset.id ? "true" : undefined}
+                    aria-label={`Inspect ${title}`}
+                  >
+                    {inspected?.id === asset.id ? <Check aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                  </Link>
+                </Button>
+
+                {selectionMode ? (
+                  <div className={styles.selectionCheckboxWrap}>
+                    <Checkbox
+                      className="kinetic-selection-checkbox size-11"
+                      aria-label={`Select ${title}`}
+                      checked={selected}
+                      disabled={busy}
+                      onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        {children}
+      </section>
+
+      <aside className={styles.inspector} aria-label="Media inspector">
+        {inspected ? (
+          <LibraryInspector
+            key={inspected.id}
+            asset={inspected}
+            reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null}
+            onClose={() => dismissInspector()}
+            onDeleted={() => dismissInspector(inspected.id)}
+          />
+        ) : (
+          <p className={styles.inspectorEmpty}>Select media to inspect</p>
+        )}
+      </aside>
+    </div>
   );
 }
