@@ -11,7 +11,8 @@ const productionFontLoader = /(?:from\s*|import\s*)[\x27\x22](?:next\/font\/[^\x
 // Do not inject a stylesheet, force a font, or change geometry to make the
 // fixture pass. Read the styles and actual platform glyph fonts Chromium used.
 export async function inspectReviewFidelity(page: Page, state: string) {
-  const data = await page.evaluate(state => {
+  const data = await page.evaluate(({ state, productionFontLoader }) => {
+    const fontName = (stack: string) => stack.split(",")[0].trim().replace(/^["']|["']$/g, "");
     const root = document.documentElement, rootStyle = getComputedStyle(root);
     const tokens = Object.fromEntries([
       "--rl-canvas", "--rl-accent-primary", "--rl-on-accent", "--rl-surface-overlay",
@@ -21,8 +22,19 @@ export async function inspectReviewFidelity(page: Page, state: string) {
     const fail: string[] = [];
     for (const [name, value] of Object.entries(tokens)) if (!value) fail.push("Missing production token " + name);
     const font = rootStyle.fontFamily;
-    const expectedFont = font.split(",")[0].trim().replace(/^["']|["']$/g, "");
-    if (!expectedFont || !tokens["--rl-type-family"]?.includes(expectedFont)) fail.push("Root font stack does not match semantic typography");
+    const expectedFont = fontName(font);
+    const semanticFont = fontName(tokens["--rl-type-family"]);
+    if (productionFontLoader) {
+      // next/font gives the CSS family a generated name while the font file
+      // retains the family name Chromium reports for its rendered glyphs.
+      const sharedFont = fontName(rootStyle.getPropertyValue("--font-sans"));
+      if (!expectedFont || expectedFont !== sharedFont) fail.push("Root font stack does not use the shared font variable");
+      if (![...document.fonts].some(face => fontName(face.family) === sharedFont && face.status === "loaded")) {
+        fail.push("Shared font face is not loaded: " + sharedFont);
+      }
+    } else if (!expectedFont || !tokens["--rl-type-family"].includes(expectedFont)) {
+      fail.push("Root font stack does not match semantic typography");
+    }
     const box = (el: Element) => {
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
@@ -71,8 +83,8 @@ export async function inspectReviewFidelity(page: Page, state: string) {
       if (!primaryStyle || !filled(primaryStyle) || !["inline-flex", "flex"].includes(primaryStyle.display) || parseFloat(primaryStyle.minHeight) < 32) fail.push("Primary button missing production utility fill or sizing");
       if (!avatar || !avatar.complete || !avatar.naturalWidth || !avatarStyle || avatarStyle.objectFit !== "cover" || !parseFloat(avatarStyle.borderRadius) || !avatarBox || avatarBox.width < 20 || avatarBox.height < 20) fail.push("Real shell avatar styling or image missing");
     }
-    return { state, tokens, font, expectedFont, fontStatus: document.fonts.status, declaredFaces: [...document.fonts].map(face => ({ family: face.family, status: face.status })), documentSize, header: header ? box(header) : null, workspace: workspace ? box(workspace) : null, panels, material, primary: primaryStyle ? { background: primaryStyle.backgroundColor, image: primaryStyle.backgroundImage, minHeight: primaryStyle.minHeight, display: primaryStyle.display } : null, avatar: avatarBox, sheets: [...document.styleSheets].map(s => s.href), fail };
-  }, state);
+    return { state, tokens, font, expectedFont, semanticFont, fontStatus: document.fonts.status, declaredFaces: [...document.fonts].map(face => ({ family: face.family, status: face.status })), documentSize, header: header ? box(header) : null, workspace: workspace ? box(workspace) : null, panels, material, primary: primaryStyle ? { background: primaryStyle.backgroundColor, image: primaryStyle.backgroundImage, minHeight: primaryStyle.minHeight, display: primaryStyle.display } : null, avatar: avatarBox, sheets: [...document.styleSheets].map(s => s.href), fail };
+  }, { state, productionFontLoader });
   const session = await page.context().newCDPSession(page);
   let platformFonts: { familyName: string; isCustomFont: boolean; glyphCount: number }[] = [];
   try {
@@ -80,13 +92,20 @@ export async function inspectReviewFidelity(page: Page, state: string) {
     await session.send("CSS.enable");
     const { root } = await session.send("DOM.getDocument");
     const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId,
-      selector: state === "library" || state === "primitives" || state.startsWith("popover") ? "main h1" : ".create-preview-fields h2" });
+      selector: state === "library" ? "main h2" : state === "primitives" || state.startsWith("popover") ? "main h1" : ".create-preview-fields h2" });
     if (!nodeId) { if (productionFontLoader) data.fail.push("No real text node for font verification"); }
     else platformFonts = (await session.send("CSS.getPlatformFontsForNode", { nodeId })).fonts;
   } finally { await session.detach(); }
   const fontNote = productionFontLoader ? "Production layout declares a font loader; actual Inter glyphs required." : "INFORMATIONAL: production layout does not yet declare a font loader; observed platform fonts are recorded, not gated.";
-  if (productionFontLoader && (data.fontStatus !== "loaded" || !platformFonts.some(font => font.glyphCount > 0 && font.isCustomFont && font.familyName.toLowerCase().includes("inter")))) {
-    data.fail.push("Expected actual glyph font " + data.expectedFont + " not loaded; observed " + platformFonts.map(f => f.familyName).join(", "));
+  if (productionFontLoader) {
+    const interGlyphs = platformFonts.filter(font =>
+      font.glyphCount > 0 && font.isCustomFont && /^Inter(?: Variable)?$/i.test(font.familyName));
+    if (data.fontStatus !== "loaded" || interGlyphs.length === 0) {
+      data.fail.push("Expected actual Inter glyphs for " + data.expectedFont + "; observed " + platformFonts.map(f => f.familyName).join(", "));
+    }
+    if (!interGlyphs.some(font => font.familyName.toLowerCase() === data.semanticFont.toLowerCase())) {
+      data.fail.push("Rendered font does not match semantic typography: " + data.semanticFont);
+    }
   }
   return { ...data, platformFonts, productionFontLoader, fontNote };
 }

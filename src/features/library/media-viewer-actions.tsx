@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import { Check, Download, Pencil, Star, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -36,6 +36,11 @@ export function MediaViewerQuickActions({
 }) {
   const router = useRouter();
   const [favorite, setFavorite] = useState(isFavorite);
+  const [serverFavorite, setServerFavorite] = useState(isFavorite);
+  if (serverFavorite !== isFavorite) {
+    setServerFavorite(isFavorite);
+    setFavorite(isFavorite);
+  }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,14 +102,16 @@ export function MediaViewerManageActions({
   assetId,
   displayName,
   fallbackTitle,
-  collections,
-  collectionsAvailable,
+  collections = [],
+  collectionsAvailable = false,
+  onDeleted,
 }: {
   assetId: string;
   displayName: string | null;
   fallbackTitle: string;
-  collections: PublicMediaCollection[];
-  collectionsAvailable: boolean;
+  collections?: PublicMediaCollection[];
+  collectionsAvailable?: boolean;
+  onDeleted?: () => void;
 }) {
   const router = useRouter();
   const inputId = useId();
@@ -116,6 +123,7 @@ export function MediaViewerManageActions({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleted = useRef(false);
 
   function beginEditing() {
     setDraft(displayName ?? "");
@@ -170,9 +178,12 @@ export function MediaViewerManageActions({
         throw new Error(payload && !payload.ok ? payload.error.message : "Media could not be deleted.");
       }
 
+      deleted.current = true;
       setDeleteOpen(false);
-      router.push("/library");
-      router.refresh();
+      if (!onDeleted) {
+        router.push("/library");
+        router.refresh();
+      }
     } catch (deleteRequestError) {
       setDeleteError(deleteRequestError instanceof Error ? deleteRequestError.message : "Media could not be deleted.");
     } finally {
@@ -182,7 +193,7 @@ export function MediaViewerManageActions({
 
   return (
     <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-      <MediaViewerCollections assetId={assetId} collections={collections} available={collectionsAvailable} />
+      {!onDeleted ? <MediaViewerCollections assetId={assetId} collections={collections} available={collectionsAvailable} /> : null}
 
       <Button
         type="button"
@@ -249,7 +260,12 @@ export function MediaViewerManageActions({
             Delete
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={(event) => {
+          if (!onDeleted || !deleted.current) return;
+          event.preventDefault();
+          onDeleted();
+          router.refresh();
+        }}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete media?</AlertDialogTitle>
             <AlertDialogDescription>
