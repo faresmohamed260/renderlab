@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { emptyHistory, fixtureAsset, fixtureImage } from "../component-app/fixtures";
-import { largestLayoutShiftWindow, interactionDurations, median, type Shift, type Interaction } from "./performance-metrics";
+import { largestLayoutShiftWindow, interactionDurations, median, transferredJavaScript, type Shift, type Interaction } from "./performance-metrics";
 
 const origin = "http://127.0.0.1:4173";
 const profile = { latency: 150, downloadThroughput: 200000, uploadThroughput: 93750 };
@@ -18,7 +18,7 @@ type Metrics = {
 type Sample = {
   run: number; lcpMs: number | null; lcpTag: string | null; cls: number | null;
   interactionMs: number | null; interactions: number; observationMs: number | null;
-  navigationBytes: number | null; error?: string;
+  navigationBytes: number | null; jsTransferBytes: number | null; jsResources: number | null; error?: string;
 };
 
 async function installObservers(context: BrowserContext) {
@@ -119,7 +119,7 @@ for (const device of profiles) for (const route of ["/create", "/library"]) {
     } finally { await probe.context.close(); }
 
     for (let run = 1; run <= 5; run++) {
-      const sample: Sample = { run, lcpMs: null, lcpTag: null, cls: null, interactionMs: null, interactions: 0, observationMs: null, navigationBytes: null };
+      const sample: Sample = { run, lcpMs: null, lcpTag: null, cls: null, interactionMs: null, interactions: 0, observationMs: null, navigationBytes: null, jsTransferBytes: null, jsResources: null };
       const { context, page, unexpected, errors } = await fixtureContext(browser, device.width, device.height);
       try {
         await throttle(context, page, device.cpu);
@@ -139,6 +139,16 @@ for (const device of profiles) for (const route of ["/create", "/library"]) {
           const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
           return navigation?.transferSize ?? null;
         });
+        // Same cold, cache-disabled, pre-input window used for the LCP sample.
+        // ResourceTiming counts completed same-origin script transfers, including
+        // Next preload/prefetch JS within that window (not HTML or RSC payloads).
+        const resources = await page.evaluate(() => performance.getEntriesByType("resource").map(entry => {
+          const r = entry as PerformanceResourceTiming;
+          return { name: r.name, initiatorType: r.initiatorType, transferSize: r.transferSize };
+        }));
+        const js = transferredJavaScript(resources, origin);
+        sample.jsTransferBytes = js.bytes;
+        sample.jsResources = js.resources;
         if (route === "/create") {
           await page.getByRole("button", { name: "Text to Image", exact: true }).click();
           await expect(page.getByRole("button", { name: "Text to Image", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -162,19 +172,22 @@ for (const device of profiles) for (const route of ["/create", "/library"]) {
     }
     const lcp = median(results.map(row => row.lcpMs)), cls = median(results.map(row => row.cls));
     const interaction = median(results.map(row => row.interactionMs));
+    const jsTransferBytes = median(results.map(row => row.jsTransferBytes));
     console.log("SLOW4G MOUNTED BASELINE", device.name, route, "five fresh contexts; optimized fixture only; API mocks are instantaneous");
     console.table(results);
     console.table([
+      { metric: "Cold JavaScript transferred bytes (median, pre-input)", observed: jsTransferBytes, measured: results.filter(row => row.jsTransferBytes !== null).length, initialReference: null, productP75Goal: null },
       { metric: "Lab cold LCP ms (median)", observed: lcp, measured: results.filter(row => row.lcpMs !== null).length, initialReference: 4000, productP75Goal: 2500 },
       { metric: "Lab CLS (median; inspect each)", observed: cls, measured: results.filter(row => row.cls !== null).length, initialReference: 0.1, productP75Goal: 0.1 },
       { metric: "Lab selected interaction max per sample, median ms (not INP)", observed: interaction, measured: results.filter(row => row.interactionMs !== null).length, initialReference: 200, productP75Goal: 200 },
     ]);
     console.log("SLOW4G BASELINE JSON", JSON.stringify({ sourceSha: process.env.REVIEW_SOURCE_SHA ?? "local-unverified",
-      browser: browser.version(), device, route, profile, results, median: { lcp, cls, interaction },
+      browser: browser.version(), device, route, profile, results, median: { lcp, cls, interaction, jsTransferBytes },
       budgetDisposition: "Initial measurement only; owner ratchets after repeatability. No field INP/p75 claim." }));
     expect(results).toHaveLength(5);
     expect(results.filter(row => row.error), "Structural fixture/instrumentation failures").toEqual([]);
     expect(results.every(row => row.lcpMs !== null && row.cls !== null), "Missing LCP/CLS is incomplete evidence").toBe(true);
+    expect(results.every(row => row.jsTransferBytes !== null && row.jsTransferBytes > 0 && row.jsResources !== null && row.jsResources > 0), "No transferred script evidence; do not report zero as a measured bundle").toBe(true);
     // Missing Event Timing entries (including sub-16 ms interactions) are reported
     // as unavailable, not zero. Budget misses are informational, never failures.
   });
