@@ -1,0 +1,85 @@
+name: Phase 6 Landing Measurement (optional)
+
+on:
+  pull_request:
+    paths:
+      - "tests/measurement/**"
+      - "src/**"
+      - "public/landing/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/phase6-landing-measurement.yml"
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: "Exact 40-hex candidate SHA (blank uses selected ref)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-landing-measurement-${{ github.event.pull_request.number || inputs.head_sha || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  landing-measurement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      MEASUREMENT_SHA: ${{ github.event.pull_request.head.sha || inputs.head_sha || github.sha }}
+    steps:
+      - name: Validate exact SHA
+        run: '[[ "$MEASUREMENT_SHA" =~ ^[0-9a-f]{40}$ ]]'
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.MEASUREMENT_SHA }}
+          persist-credentials: false
+      - name: Verify checkout and measurement availability
+        id: scope
+        run: |
+          test "$(git rev-parse HEAD)" = "$MEASUREMENT_SHA"
+          if test -f tests/measurement/playwright.config.ts; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          elif test "$GITHUB_EVENT_NAME" = workflow_dispatch; then
+            echo "::error::Requested candidate does not contain the measurement config"
+            exit 1
+          else
+            echo "::notice::Measurement not installed in this candidate yet; no measurement evidence"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Set up Node
+        if: steps.scope.outputs.available == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        if: steps.scope.outputs.available == 'true'
+        run: npm ci --no-audit --no-fund
+      - name: Install Chromium
+        if: steps.scope.outputs.available == 'true'
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Adapt standalone config working directory (no tracked config edits)
+        if: steps.scope.outputs.available == 'true'
+        run: |
+          cat > tests/measurement/playwright.ci.config.ts <<'TS'
+          import { defineConfig } from "@playwright/test";
+          import standalone from "./playwright.config";
+          if (!standalone.webServer || Array.isArray(standalone.webServer)) throw Error("Expected single standalone web server");
+          export default defineConfig({ ...standalone, webServer: { ...standalone.webServer, cwd: process.cwd() } });
+          TS
+      - name: Encoded bytes, PSNR and geometry (loopback only)
+        if: steps.scope.outputs.available == 'true'
+        run: |
+          sudo unshare --net -- bash -c '
+            set -e
+            ip link set lo up
+            exec runuser -u "$1" -- env -i PATH="$2" HOME="$3" CI=true NEXT_TELEMETRY_DISABLED=1 node node_modules/@playwright/test/cli.js test --config tests/measurement/playwright.ci.config.ts
+          ' _ "$(id -un)" "$PATH" "$HOME"
+      - name: Remove disposable config adapter
+        if: always()
+        run: rm -f tests/measurement/playwright.ci.config.ts
