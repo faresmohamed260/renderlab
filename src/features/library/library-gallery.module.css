@@ -1082,3 +1082,303 @@
     font-weight: var(--rl-weight-label);
   }
 }
+
+/* Round 3 phone layout; desktop Gallery Rail remains unchanged. */
+@media (max-width: 1199px) {
+  .mediaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--rl-space-8);
+  }
+  .cardLink {
+    border-radius: var(--rl-radius-control);
+    border-color: var(--rl-border-subtle);
+    background: var(--rl-surface-base);
+  }
+  .mediaFrame {
+    aspect-ratio: 1;
+    border-radius: inherit;
+  }
+  .mediaMeta { display: none; }
+  .mediaFrame::after { content: none; }
+  .inspectAction[data-slot="button"] {
+    display: inline-flex;
+    position: absolute;
+    inset: var(--rl-space-4) var(--rl-space-4) auto auto;
+    background: var(--rl-surface-overlay);
+    color: var(--rl-text-primary);
+    z-index: 1;
+  }
+  .kindSwitch {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: 100%;
+    padding: var(--rl-space-4);
+    scroll-padding: var(--rl-space-4);
+    gap: var(--rl-space-4);
+  }
+  .kindSwitch :global([data-slot="button"]) {
+    min-height: var(--rl-control-large);
+    border-radius: var(--rl-radius-pill);
+    flex: none;
+  }
+  .phoneInspector {
+    max-height: 92dvh;
+    padding-bottom: max(var(--rl-space-16), env(safe-area-inset-bottom));
+    background: var(--rl-surface-overlay);
+  }
+  .phoneInspector .inspectorPreview {
+    display: grid;
+    flex: none;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    place-items: center;
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-base);
+  }
+  .phoneInspector .inspectorPreview > * {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: contain;
+  }
+  .phoneInspector .inspectorHeader {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rl-space-8);
+    overflow-wrap: anywhere;
+  }
+  .phoneInspector .inspectorPrompt, .phoneInspector .inspectorFacts {
+    margin: 0;
+    color: var(--rl-text-secondary);
+    overflow-wrap: anywhere;
+  }
+  .phoneInspector .inspectorFacts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--rl-space-4) var(--rl-space-8);
+  }
+  .phoneInspector .inspectorFacts dd { margin: 0; }
+  .phoneInspector .inspectorActions {
+    display: grid;
+    min-width: 0;
+    gap: var(--rl-space-8);
+  }
+  .phoneInspector .inspectorActions .createAction {
+    flex-wrap: wrap;
+    background: var(--rl-gradient-primary);
+    box-shadow: var(--rl-elevation-primary);
+  }
+  .phoneInspector :global([data-slot="button"]) {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 760px) {
+  .commandSurface[data-selection="on"] .selectionMode {
+    position: fixed;
+    inset: auto var(--rl-space-12) max(var(--rl-space-16), env(safe-area-inset-bottom));
+    z-index: 20;
+    max-height: 50dvh;
+    min-height: 0;
+    overflow: auto;
+    clip-path: none;
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-overlay);
+    box-shadow: var(--rl-elevation-overlay);
+  }
+  .commandSurface[data-selection="on"] { overflow: visible; }
+  .commandSurface[data-selection="on"] ~ .gallery { padding-bottom: var(--rl-space-64); }
+  .selectionActions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .selectionActions :global([data-slot="button"]) {
+    min-height: var(--rl-control-large);
+    white-space: normal;
+  }
+  .selectionSummary { display: flex; flex-wrap: wrap; }
+}
+
+@media (min-width: 75rem) {
+  /* The command wrapper is display:contents here; its decorative pseudo
+     otherwise extends the workspace by its negative 1.5rem right inset. */
+  .commandSurface::after { content: none; }
+}
+@media (max-width: 1199px) {
+  .phoneFilters {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+    gap: var(--rl-space-4);
+    overflow-x: auto;
+    padding: var(--rl-space-8);
+    scroll-padding-inline: var(--rl-space-8);
+  }
+  .phoneFilters .kindSwitch,
+  .phoneFilters .organizationCell {
+    display: flex;
+    flex: none;
+    width: max-content;
+    max-width: none;
+    flex-wrap: nowrap;
+    overflow: visible;
+    padding: 0;
+  }
+  .phoneFilters :global([data-slot="button"]) {
+    min-height: var(--rl-control-large);
+    border-radius: var(--rl-radius-pill);
+    flex: none;
+  }
+  .kindCell { grid-column: 1 / -1; min-width: 0; }
+  .phoneInspector .inspectorActions > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) {
+    justify-content: start;
+    width: 100%;
+    min-height: var(--rl-control-large);
+  }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) > span {
+    display: inline;
+  }
+}
+@media (max-width: 760px) {
+  .commandSurface[data-selection="on"] {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .commandSurface[data-selection="on"] .selectionMode {
+    padding: var(--rl-space-8);
+    transition: none;
+    transform: none;
+    backdrop-filter: var(--rl-material-overlay);
+    background: var(--rl-surface-overlay-layered);
+  }
+  .commandSurface[data-selection="on"] ~ .gallery {
+    padding-bottom: 50dvh;
+  }
+  .selectionSummary {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: 0;
+  }
+  .selectionSummary strong { color: var(--rl-text-primary); }
+  .selectionSummary small, .selectionEyebrow { color: var(--rl-text-secondary); }
+}
+
+@media (max-width: 1199px) {
+  .contextBlock .eyebrow, .contextBlock .support { display: none; }
+  .contextBlock { margin-block-end: var(--rl-space-8); }
+  .title { font-size: var(--rl-type-title); color: var(--rl-text-primary); }
+  .commandSurface, .commandSurface[data-selection="on"] {
+    display: block;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .commandSurface::after { content: none; }
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto auto;
+    gap: var(--rl-space-4) var(--rl-space-8);
+    min-height: 0;
+    padding: 0;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    transition: none;
+  }
+  .desktopContext {
+    display: flex;
+    grid-area: 1 / 1;
+    align-items: center;
+    min-width: 0;
+    color: var(--rl-text-secondary);
+    font-size: var(--rl-type-label);
+    overflow-wrap: anywhere;
+  }
+  .desktopContext h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .actionCell { grid-area: 1 / 2; flex-wrap: wrap; }
+  .sourceCell { grid-area: 2 / 1; }
+  .sortWrap { grid-area: 2 / 2; }
+  .sourceSwitch {
+    width: auto;
+    border: 0;
+    background: none;
+    padding: 0;
+  }
+  .sourceSwitch :global([data-slot="button"]) {
+    min-width: 0;
+    min-height: var(--rl-control-large);
+    padding-inline: var(--rl-space-8);
+    border-radius: var(--rl-radius-pill);
+  }
+  .searchCell { grid-area: 3 / 1 / 4 / -1; }
+  .searchCell[data-phone-search-open="false"] { display: none; }
+  .kindCell { grid-area: 4 / 1 / 5 / -1; }
+  .phoneFilters { padding: var(--rl-space-4) 0; }
+  .phoneFilters :global([data-slot="button"]) { background: var(--rl-surface-control); }
+  .phoneFilters :global([aria-current="page"]) { background: var(--rl-surface-selected); color: var(--rl-text-selected); }
+  .mediaHead { display: none; }
+  .selectionMode { display: none; }
+  .commandSurface[data-selection="on"] .selectionMode {
+    display: flex;
+    position: fixed;
+    inset: auto var(--rl-space-12) max(var(--rl-space-16), env(safe-area-inset-bottom));
+    z-index: 20;
+    max-height: 50dvh;
+    min-height: 0;
+    padding: var(--rl-space-8);
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-pill);
+    background: var(--rl-surface-overlay-layered);
+    box-shadow: var(--rl-elevation-overlay);
+    backdrop-filter: var(--rl-material-overlay);
+    overflow: auto;
+    transform: none;
+    clip-path: none;
+    transition: none;
+  }
+  .selectionMain { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--rl-space-4); }
+  .selectionSummary { display: flex; flex: 1 1 4rem; min-width: 0; padding: 0; border: 0; }
+  .selectionSummary small, .selectionEyebrow { display: none; }
+  .selectionSummary strong { font-size: var(--rl-type-label); color: var(--rl-text-primary); }
+  .selectionActions { display: flex; flex-wrap: wrap; gap: var(--rl-space-4); }
+  .selectionActions :global([data-slot="button"]) {
+    flex: none;
+    width: var(--rl-control-large);
+    min-height: var(--rl-control-large);
+    padding: 0;
+    border-radius: var(--rl-radius-pill);
+  }
+  .selectionLabel { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .commandSurface[data-selection="on"] ~ .gallery { padding-bottom: 50dvh; }
+  .phoneInspector { overflow-y: auto; overscroll-behavior: contain; }
+  .phoneInspector > * { flex-shrink: 0; }
+  .phoneInspector .inspectorPreview { max-height: 24dvh; }
+  .phoneInspector .phoneDone[data-slot="button"] {
+    width: auto; color: var(--rl-text-selected); background: transparent; box-shadow: none;
+    padding-inline: var(--rl-space-8);
+  }
+  .phoneInspector .inspectorActions .createAction { justify-content: center; }
+}
+@media (max-width: 24rem) {
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls { grid-template-columns: minmax(0, 1fr); }
+  .desktopContext { grid-area: 1 / 1; }
+  .actionCell { grid-area: 2 / 1; justify-content: start; }
+  .sourceCell { grid-area: 3 / 1; }
+  .sortWrap { grid-area: 4 / 1; justify-content: start; }
+  .searchCell { grid-area: 5 / 1; }
+  .kindCell { grid-area: 6 / 1; }
+}
