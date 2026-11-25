@@ -6,6 +6,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { flushSync } from "react-dom";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { nextResultIndex, useCreateShortcuts } from "./use-create-shortcuts";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import phoneStyles from "./create-phone-composer.module.css";
 import { springOptions } from "@/lib/ui/spring-roles";
@@ -1201,9 +1203,23 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     setSteps(4);
   }
 
+  const shortcutResults = historyGroups.flat();
+  const selectedResultIndex = result ? shortcutResults.findIndex(image => image === result || matchesImage(image, result)) : -1;
+  const shortcuts = useCreateShortcuts({
+    root: workspaceRoot,
+    overlay: advancedSheetOpen || toolbarPopover !== null || maskOpen,
+    canGenerate: canSubmit,
+    canStep: !busy && !continuationPending && shortcutResults.length > 1,
+    step: direction => {
+      const next = nextResultIndex(selectedResultIndex, direction, shortcutResults.length);
+      if (next >= 0) setHistorySelection({ image: shortcutResults[next] });
+    },
+  });
+
   return (
-    <section ref={workspaceRoot} tabIndex={-1} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
+    <section ref={workspaceRoot} tabIndex={-1} onKeyDown={shortcuts.onKeyDown} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
       <p className="sr-only" role="status" aria-live="polite">{maskAnnouncement}</p>
+      <p className="sr-only" role="status" aria-live="polite" data-create-shortcut-announcement>{selectedResultIndex >= 0 ? "Result " + (selectedResultIndex + 1) + " of " + shortcutResults.length : ""}</p>
       <div className="create-preview-toolbar">
         <div className="create-preview-tools">
           <Popover open={toolbarPopover === "queue"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "queue", open))}>
@@ -1231,7 +1247,14 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               <Button type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
             </PopoverTrigger>
             <PopoverContent aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover">
-              <p>Ctrl + Enter to generate when the form is ready.</p>
+              <p>/ to focus the prompt.</p>
+              <p>{shortcuts.modifierHint} + Enter to generate when the form is ready.</p>
+              <p>[ and ] to step through results.</p>
+              <p>Esc to dismiss the active overlay.</p>
+              <label className="flex flex-wrap items-center gap-2">
+                <Switch checked={shortcuts.enabled} onCheckedChange={shortcuts.changeEnabled} aria-label="Keyboard shortcuts" />
+                <span>Keyboard shortcuts {shortcuts.enabled ? "on" : "off"}</span>
+              </label>
             </PopoverContent>
           </Popover>
         </div>
@@ -1239,13 +1262,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
       {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
       <div className="create-preview-grid">
-        <form inert={continuationPending} className={"create-preview-controls " + phoneStyles.composer} noValidate onSubmit={submit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
-              event.preventDefault();
-              event.currentTarget.requestSubmit();
-            }
-          }}>
+        <form inert={continuationPending} className={"create-preview-controls " + phoneStyles.composer} noValidate onSubmit={submit}>
           <div className="create-preview-fields">
             <div className="create-preview-modes" role="group" aria-label="Workflow">
               <animated.span className="create-preview-mode-highlight" aria-hidden="true"
@@ -1361,7 +1378,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             </div>
             {richPrompt ? (
               <div ref={promptEditor} id="create-preview-prompt" className="create-preview-rich-prompt"
-                role="textbox" aria-labelledby="create-preview-main-prompt-label" aria-multiline="true"
+                role="textbox" aria-labelledby="create-preview-main-prompt-label" aria-multiline="true" aria-keyshortcuts={shortcuts.enabled ? "/" : undefined} title={shortcuts.enabled ? "Focus prompt: /" : undefined}
                 aria-disabled={promptDisabled} aria-placeholder={placeholder} data-empty={!promptDraft.trim()}
                 contentEditable={!promptDisabled} spellCheck autoCorrect="on"
                 onInput={readPromptEditor}
@@ -1371,7 +1388,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 }}
                 onDrop={(event) => event.preventDefault()} />
             ) : (
-              <Textarea id="create-preview-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
+              <Textarea id="create-preview-prompt" aria-keyshortcuts={shortcuts.enabled ? "/" : undefined} title={shortcuts.enabled ? "Focus prompt: /" : undefined} required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
                 maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
             )}
             <div ref={structuredSlot} style={{ display: "flow-root", minBlockSize: advancedSheetOpen ? advancedReserve.structured : undefined }}>
@@ -1413,8 +1430,9 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             <span id="create-preview-blocker" className="sr-only">{blocker}</span>
             <div className="create-preview-submit-actions">
               <Button type="submit" className="create-preview-generate" disabled={!canSubmit}
-                title={blocker || undefined} aria-describedby={blocker ? "create-preview-blocker" : undefined}>
-                <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
+                aria-keyshortcuts={shortcuts.enabled ? "Control+Enter Meta+Enter" : undefined}
+                title={blocker || (shortcuts.enabled ? shortcuts.modifierHint + " + Enter" : undefined)} aria-describedby={blocker ? "create-preview-blocker" : undefined}>
+                <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}{shortcuts.enabled && <kbd aria-hidden="true">{shortcuts.modifierHint} + Enter</kbd>}
               </Button>
               {busy && activeCancel && <Button type="button" variant="outline"
                 disabled={sendingCancel || activeCancel.pending} onClick={() => void cancelActiveRender()}
@@ -1512,7 +1530,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="create-preview-stage-sign-in">Sign in to upload</Link>}
         </section>
-        <aside className="create-preview-history" aria-labelledby="create-preview-history-title"
+        <aside className="create-preview-history" aria-labelledby="create-preview-history-title" aria-keyshortcuts={shortcuts.enabled ? "[ ]" : undefined} title={shortcuts.enabled ? "Previous result: [ · Next result: ]" : undefined}
           onKeyDown={(event) => {
             if (busy || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
             const direction = ["ArrowUp", "ArrowLeft"].includes(event.key) ? -1 : ["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : 0;
