@@ -30,7 +30,7 @@ for (const width of [195, 320, 390, 1440]) for (const reducedMotion of ["reduce"
 }
 
 for (const width of [390, 1440]) {
-  test("Create-mounted History retains lifecycle, paging and account isolation at " + width, async ({ page, context }) => {
+  test("Create-mounted History retains lifecycle, paging and account isolation at " + width, async ({ page, context, io }) => {
     await page.setViewportSize({ width, height: 844 });
     const calls: string[] = [];
     let release!: () => void;
@@ -86,6 +86,7 @@ for (const width of [390, 1440]) {
     await failed.getByRole("button", { name: "Reuse", exact: true }).click();
     await expect(page.locator("#create-preview-prompt")).toHaveValue("Fixture editable draft");
     expect(calls).toEqual(["cancel", "retry", "run-again"]);
+    expect(io).not.toContain("GET history");
     await page.goto("/create-history-mount?matrix=1&account=other");
     if (width === 390) await page.getByRole("button", { name: "Open History" }).click();
     await panel.getByRole("button", { name: "Jobs", exact: true }).click();
