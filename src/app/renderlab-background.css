@@ -1515,3 +1515,23 @@
   .create-preview-workspace .create-preview-history button { white-space: normal; overflow-wrap: anywhere; }
   .create-preview-workspace .create-preview-canvas-upload { white-space: normal; overflow-wrap: anywhere; }
 }
+
+/* P6-03c desktop shell only. Existing Landing header and narrow disclosure stay
+ * intact until the independently reviewed sidebar slice. The temporary Activity
+ * destination is intentional until History/Queue parity. */
+.p6-desktop-navigation { display: none; }
+@media (min-width: 701px) {
+  .preview-navigation-header[data-p6-desktop="true"] > .preview-section-disclosure { display: none; }
+  .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    padding-block: 13px;
+  }
+  .p6-desktop-brand { gap: var(--rl-space-8, 8px); padding-inline: var(--rl-space-12, 12px); color: var(--rl-text-primary, var(--color-text)); }
+  .p6-desktop-links { position: absolute; inset-inline-start: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: var(--rl-space-4, 4px); }
+  .p6-desktop-links .p6-desktop-link { min-block-size: var(--rl-hit-preferred, 44px); border-radius: var(--rl-radius-pill, 999px); color: var(--rl-text-secondary, var(--color-text-muted)); padding-inline: var(--rl-space-12, 12px); }
+  .p6-desktop-links .p6-desktop-link[aria-current="page"] { color: var(--rl-text-primary, var(--color-text)); background: var(--rl-surface-selected, var(--color-surface-3)); }
+  .p6-desktop-links .p6-desktop-link:hover { background: var(--rl-surface-hover, var(--color-surface-2)); color: var(--rl-text-primary, var(--color-text)); }
+  .p6-desktop-navigation :focus-visible { outline: var(--rl-focus-width, 2px) solid var(--rl-focus, var(--color-accent-bright)); outline-offset: var(--rl-focus-offset, 3px); }
+}
