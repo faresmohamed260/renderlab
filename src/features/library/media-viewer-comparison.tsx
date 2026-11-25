@@ -48,6 +48,7 @@ function ResultMedia({ asset, description }: { asset: PublicMediaAsset; descript
       <img
         src={asset.contentUrl}
         alt={description}
+        fetchPriority="high"
         className={`${styles.resultMedia} kinetic-viewer-media`}
       />
     );

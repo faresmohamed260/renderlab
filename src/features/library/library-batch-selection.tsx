@@ -60,6 +60,7 @@ function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
         src={asset.thumbnailUrl ?? asset.contentUrl}
         alt=""
         loading="lazy"
+        decoding="async"
         className="kinetic-media-preview size-full object-cover"
       />
     );
