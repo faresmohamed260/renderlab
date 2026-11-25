@@ -126,7 +126,7 @@
       "expectedVersion": "10.1.2",
       "licenseStatus": "lockfile-verified",
       "licenseSpdx": "MIT",
-      "notes": "Active in src/components/shell/preview-navigation-shell.tsx and src/features/create/create-preview-workspace.tsx; UI-083 governs application springs. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy.",
+      "notes": "Active in src/components/shell/preview-navigation-shell.tsx and src/features/create/create-preview-workspace.tsx; UI-083 governs application springs. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy. P6-03a merged the canonical named springRoles/springOptions owner at src/lib/ui/spring-roles.ts; unmigrated local motion remains legacy.",
       "searchLabel": null
     },
     {

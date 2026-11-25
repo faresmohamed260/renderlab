@@ -50,7 +50,7 @@ Use the surface-specific ambition levels from `VISUAL_NORTH_STAR.md` when a rede
 These are ceilings and ambition targets for redesign, not requirements to animate every element.
 
 ## Semantic Color Foundation
-Dark theme is the initial product theme. Values below are the initial approved baseline and may be tuned through visual implementation review without changing their semantic roles.
+P6-03a established the dark-only V2 semantic owner `src/app/semantic-tokens.css`, imported once by `src/app/globals.css`. Use its `--rl-*` roles for new/reworked approved surfaces; see [Design Language V2](DESIGN_LANGUAGE_V2.md) for exact values and [migration map](../audits/P6_03A_SEMANTIC_FOUNDATION_MIGRATION_2026-11-25.md) for the legacy boundary. The following initial baseline remains historical/legacy guidance for unmigrated surfaces, not a competing V2 palette.
 
 | Token | Initial value | Role |
 |---|---:|---|
@@ -69,6 +69,8 @@ Dark theme is the initial product theme. Values below are the initial approved b
 Accent/status colors are semantic, not decoration. Do not flood large surfaces with accent color or use multiple competing brand accents.
 
 ## Typography
+For V2 consumers, the semantic owner and Design Language V2 supersede the legacy typography, spacing, radius, control and elevation guidance below. The corrected action endpoints are #6d50d1 and #9841bd; opaque material fallbacks cover unsupported filters and reduced transparency/high contrast. Reduced motion sets feedback durations to zero. No nested backdrop filters.
+
 Initial UI typeface: **Inter** or its platform-appropriate bundled/web equivalent. Typography should be compact and functional rather than editorial/marketing-sized.
 
 - Display: 36px / semibold — rare, major empty/onboarding moments only
@@ -170,9 +172,14 @@ Current approved local primitives under `src/components/ui`:
 - `Label`
 - `NativeSelect`
 - `Popover` / trigger / portalled content
+- `Sheet` / trigger / close / content / title / description (Radix Dialog)
+- `Slider` (Radix Slider)
+- `Skeleton` (noninteractive, aria-hidden, reduced-motion static)
 - `Spinner`
+- `Switch` (Radix Switch)
 - `Textarea`
 - `Toggle` / `ToggleGroup` / `ToggleGroupItem`
+- `Tooltip` / provider / trigger / content (Radix Tooltip)
 
 The project is configured for shadcn **Radix Nova** through `components.json`. These files are RenderLab-owned wrappers/adaptations: shadcn/Radix supplies the maintained mechanics and accessibility model; RenderLab owns semantic tokens, variants, spacing, product-required semantic elements, and reviewed visual integration.
 
@@ -222,7 +229,7 @@ Add maintained primitives when the first real feature needs them; do not install
 Do not install every primitive up front. Add a primitive when the first real feature requires it, then normalize it into RenderLab tokens and record it.
 
 ## Motion
-Motion communicates continuity, hierarchy, direct manipulation, and state.
+Motion communicates continuity, hierarchy, direct manipulation, and state. For V2 application springs, `src/lib/ui/spring-roles.ts` owns snappy 400/40/1, smooth 256/30/1, gentle 144/24/1 and drag-release 324/30/1 (tension/friction/mass). `springOptions(role, reducedMotion)` selects immediate updates for reduced motion. V2 CSS color/opacity timing is 120/160/240ms; the older timing below applies to retained legacy surfaces.
 
 Timing guidance:
 - Micro feedback: **120–180ms**
@@ -379,7 +386,7 @@ Use visual effects in layers:
 Do not stack every layer at maximum intensity on the same element. Avoid broad neon halos behind body text, rainbow borders, constant cursor followers, continuous particle physics or multiple competing animated backgrounds.
 
 ### Motion implementation rules
-- Existing `motion/react` remains the default engine for discrete spring/shared-layout/presence behavior.
+- Historically `motion/react` was the default engine for discrete spring/shared-layout/presence behavior; V2 uses the shared React Spring role owner for new/reworked application springs under UI-083. Retained Motion surfaces remain until scoped migration.
 - Prefer transforms and opacity; avoid layout-thrashing animation of large surfaces.
 - Continuous ambience should prefer CSS keyframes/transforms and must not require a permanent high-frequency JavaScript pointer/physics loop.
 - Hover motion cannot be the only affordance. Touch/keyboard semantics remain complete.
