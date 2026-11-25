@@ -26,7 +26,7 @@ export function AccountProfileIdentity({
 
   return (
     <div className={styles.profileIdentity} data-large={large ? "true" : undefined}>
-      <div className={styles.profileAvatar} aria-label={avatarSrc ? "Current profile picture" : "Profile picture placeholder"}>
+      <div className={styles.profileAvatar} role="img" aria-label={avatarSrc ? "Current profile picture" : "Profile picture placeholder"}>
         {avatarSrc ? (
           <img className={styles.profileAvatarImage} src={avatarSrc} alt="" />
         ) : initials ? (

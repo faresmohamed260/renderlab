@@ -12,6 +12,7 @@ for (const width of [195, 320, 390, 1440]) {
       await page.setViewportSize({ width, height: width === 195 ? 422 : 900 });
       await page.goto("/settings-round3");
       const settings = page.locator('[data-account-state="signed-in"]');
+      await expect(settings.getByRole("img", { name: "Profile picture placeholder", exact: true })).toBeVisible();
       await expect(settings.getByRole("link", { name: "Edit profile" })).toHaveAttribute("href", "/settings/profile");
       await expect(settings.getByRole("link", { name: "Change email" })).toHaveAttribute("href", "/settings/email");
       await expect(settings.getByRole("link", { name: "Manage MFA" })).toHaveAttribute("href", "/settings/mfa");
