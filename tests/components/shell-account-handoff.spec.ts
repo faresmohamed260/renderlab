@@ -25,6 +25,9 @@ for (const variant of ["member", "owner", "signed-out"]) {
     await popover.press("Enter");
     await expect(page.getByText("Real shared popover", { exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
+    // Complete Radix's deferred close/focus restoration before the next interaction.
+    await expect(page.getByText("Real shared popover", { exact: true })).toBeHidden();
+    await expect(popover).toBeFocused();
     await account.press("Enter");
     await expect(account).toHaveAttribute("aria-expanded", "true");
     const settings = page.getByRole("link", { name: "Settings", exact: true });
