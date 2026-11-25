@@ -2,7 +2,8 @@
 
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -164,13 +165,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [continuationPending, setContinuationPending] = useState(!!initialContinuation);
   const [continuationError, setContinuationError] = useState(initialContinuationError);
   const [reducedMotion, setReducedMotion] = useState(true);
-  useEffect(() => {
-    const query = matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
   const modeSpring = useSpring({
     position: mode === "edit" ? 1 : 0,
     config: { mass: 1, tension: 220, friction: 22 },
@@ -214,29 +208,62 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [resultActions, setResultActions] = useState<HTMLDivElement | null>(null);
   const [desktop, setDesktop] = useState(false);
   const [advancedSheetOpen, setAdvancedSheetOpen] = useState(false);
+  const advancedTrigger = useRef<HTMLButtonElement>(null);
+  const structuredSlot = useRef<HTMLDivElement>(null);
+  const inlineSeed = useRef<HTMLDivElement>(null);
+  const inlineSteps = useRef<HTMLLabelElement>(null);
+  const [advancedReserve, setAdvancedReserve] = useState({ structured: 0, seed: 0, steps: 0 });
   const [advancedOffset, setAdvancedOffset] = useState(0);
   const advancedClosing = useRef(false);
   const [, advancedSpring] = useSpring(() => ({ offset: 0 }), []);
+  const finishAdvancedClose = useCallback(() => {
+    advancedClosing.current = false;
+    // Remove the portal and remount the inline fields in one commit.
+    // Flush Radix's focus trap cleanup and return focus in the same browser task.
+    flushSync(() => {
+      setAdvancedSheetOpen(false);
+      setAdvancedOffset(0);
+    });
+    const root = workspaceRoot.current;
+    const destination = matchMedia("(min-width: 701px)").matches
+      ? root?.querySelector<HTMLElement>("#create-preview-prompt")
+      : advancedTrigger.current;
+    destination?.focus({ preventScroll: true });
+    if (document.activeElement === document.body) root?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    const query = matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      setReducedMotion(query.matches);
+      if (query.matches && advancedClosing.current) finishAdvancedClose();
+    };
+    setReducedMotion(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, [finishAdvancedClose]);
+
   function changeAdvancedOpen(next: boolean) {
     if (next) {
+      // Preserve the actual inline footprint while the single draft controls
+      // are in the Sheet; no duplicate interactive elements or IDs.
+      setAdvancedReserve({
+        structured: structuredSlot.current?.getBoundingClientRect().height ?? 0,
+        seed: inlineSeed.current?.getBoundingClientRect().height ?? 0,
+        steps: inlineSteps.current?.getBoundingClientRect().height ?? 0,
+      });
       advancedClosing.current = false;
       advancedSpring.stop();
       setAdvancedOffset(reducedMotion ? 0 : 100);
       setAdvancedSheetOpen(true);
     } else if (reducedMotion) {
-      advancedSpring.stop();
-      advancedClosing.current = false;
-      setAdvancedOffset(0);
-      setAdvancedSheetOpen(false);
+      finishAdvancedClose();
     } else if (!advancedClosing.current) {
       advancedClosing.current = true;
       void advancedSpring.start({ to: { offset: 100 }, ...springOptions("smooth", false),
         onChange: result => setAdvancedOffset(result.value.offset),
         onRest: result => {
-          if (result.finished && advancedClosing.current) {
-            advancedClosing.current = false;
-            setAdvancedSheetOpen(false);
-          }
+          if (result.finished && advancedClosing.current) finishAdvancedClose();
         } });
     }
   }
@@ -248,10 +275,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       advancedSpring.stop();
       advancedSpring.set({ offset: 0 });
       setAdvancedOffset(0);
-      if (advancedClosing.current) {
-        advancedClosing.current = false;
-        setAdvancedSheetOpen(false);
-      }
       return;
     }
     void advancedSpring.start({ from: { offset: 100 }, to: { offset: 0 }, reset: true,
@@ -259,19 +282,16 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       onChange: result => setAdvancedOffset(result.value.offset),
       onRest: result => { if (result.finished && !advancedClosing.current) setAdvancedOffset(0); } });
     return () => { advancedSpring.stop(); };
-  }, [advancedSheetOpen, reducedMotion, advancedSpring]);
+  }, [advancedSheetOpen, reducedMotion, advancedSpring, finishAdvancedClose]);
   useEffect(() => {
+    if (!advancedSheetOpen) return;
     const query = matchMedia("(min-width: 701px)");
     const closeOnWide = () => {
-      if (!query.matches) return;
-      advancedSpring.stop();
-      advancedClosing.current = false;
-      setAdvancedOffset(0);
-      setAdvancedSheetOpen(false);
+      if (query.matches) finishAdvancedClose();
     };
     query.addEventListener("change", closeOnWide);
     return () => query.removeEventListener("change", closeOnWide);
-  }, [advancedSpring]);
+  }, [advancedSheetOpen, finishAdvancedClose]);
   useEffect(() => {
     const query = matchMedia("(min-width: 1025px)");
     const update = () => setDesktop(query.matches);
@@ -1154,7 +1174,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
               </details>
             </div>);
-  const seedField = (<div className="create-preview-render-field">
+  const seedField = (<div ref={advancedSheetOpen ? undefined : inlineSeed} className="create-preview-render-field">
                 <label htmlFor="create-preview-seed">Seed</label>
                 <div className="create-preview-seed">
                   <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
@@ -1166,7 +1186,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   </label>
                 </div>
               </div>);
-  const stepsField = (<label className="create-preview-steps" htmlFor="create-preview-steps">
+  const stepsField = (<label ref={advancedSheetOpen ? undefined : inlineSteps} className="create-preview-steps" htmlFor="create-preview-steps">
                 <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
                 <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
                   disabled={busy}
@@ -1354,41 +1374,40 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               <Textarea id="create-preview-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
                 maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
             )}
-            {!advancedSheetOpen && structuredFields}
+            <div ref={structuredSlot} style={{ display: "flow-root", minBlockSize: advancedSheetOpen ? advancedReserve.structured : undefined }}>
+              {!advancedSheetOpen && structuredFields}
+            </div>
           </div>
           <div className="create-preview-dock">
             <Sheet open={advancedSheetOpen} onOpenChange={changeAdvancedOpen}>
               <SheetTrigger asChild>
-                <Button type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
+                <Button ref={advancedTrigger} type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
               </SheetTrigger>
-              <SheetContent side="bottom" showCloseButton={false} className={phoneStyles.sheet}
-                style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
-                onCloseAutoFocus={event => {
-                  if (matchMedia("(min-width: 701px)").matches) {
-                    event.preventDefault();
-                    workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")?.focus();
-                  }
-                }}>
-                <div className={phoneStyles.heading}>
-                  <SheetTitle>Advanced</SheetTitle>
-                  <SheetClose asChild><Button type="button" variant="ghost" size="lg">Done</Button></SheetClose>
-                </div>
-                <SheetDescription>Settings for your next image. Mode, shape and references stay in the composer.</SheetDescription>
-                <div className={phoneStyles.settings}>
-                  {advancedSheetOpen && <>{seedField}{stepsField}{structuredFields}</>}
-                </div>
-                <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
-              </SheetContent>
+              {advancedSheetOpen && (
+                <SheetContent side="bottom" showCloseButton={false} className={phoneStyles.sheet}
+                  style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
+                  onCloseAutoFocus={event => event.preventDefault()}>
+                  <div className={phoneStyles.heading}>
+                    <SheetTitle>Advanced</SheetTitle>
+                    <SheetClose asChild><Button type="button" variant="ghost" size="lg">Done</Button></SheetClose>
+                  </div>
+                  <SheetDescription>Settings for your next image. Mode, shape and references stay in the composer.</SheetDescription>
+                  <div className={phoneStyles.settings}>
+                    {seedField}{stepsField}{structuredFields}
+                  </div>
+                  <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
+                </SheetContent>
+              )}
             </Sheet>
             <div className="create-preview-settings">
-              {!advancedSheetOpen && seedField}
+              {advancedSheetOpen ? <div aria-hidden="true" style={{ blockSize: advancedReserve.seed }} /> : seedField}
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
               <label className="create-preview-render-field" htmlFor="create-preview-count">Images
                 {multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
                   disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : <Input id="create-preview-count" type="number" value="1" disabled aria-describedby="create-preview-single-output" />}
                 {!multiOutputEnabled && <span id="create-preview-single-output" className="create-preview-caption">One image per render.</span>}
               </label>
-              {!advancedSheetOpen && stepsField}
+              {advancedSheetOpen ? <div aria-hidden="true" className="create-preview-steps" style={{ blockSize: advancedReserve.steps }} /> : stepsField}
             </div>
             <p className="create-preview-caption create-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
             <span id="create-preview-blocker" className="sr-only">{blocker}</span>
