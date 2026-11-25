@@ -64,3 +64,40 @@ test("collector samples painted one-CSS-pixel borders and focus rings in native 
     }
   }
 });
+
+test("placeholder capture waits for stable pixels, rejects persistent drift and never retries a low ratio", async () => {
+  const { captureStableTextFrame } = await import("../components/composited-contrast.ts");
+  const frame = (r,g,b) => ({data:Uint8Array.from([r,g,b,0,0,0]),info:{width:2,height:1,channels:3}});
+  const rect = [{x:0,y:0,width:1,height:1}];
+  let i=0;
+  const sequence=[frame(20,20,20),frame(40,40,40),frame(40,40,40)];
+  const settled=await captureStableTextFrame(async()=>sequence[i++],rect,async()=>{});
+  assert.equal(settled.attempts,3);
+  assert.equal(settled.stable,true);
+  assert.equal(settled.frame.data[0],40);
+  assert.equal(settled.deltas[0].changedPixels,1);
+  i=0;
+  const drifting=await captureStableTextFrame(async()=>frame(++i*10,0,0),rect,async()=>{},4);
+  assert.equal(drifting.stable,false);
+  assert.equal(drifting.attempts,4);
+  const low=measurePixels(frame(255,255,255).data,frame(200,200,200).data,frame(200,200,200).data,2,1,rect,[255,255,255,255]);
+  assert.ok(low.ratio<4.5);
+  assert.equal(low.unstable,false);
+});
+
+test("restored placeholder one-level raster rounding is bounded and both glyph measurements must pass", async () => {
+  const { measurePlaceholderFrames } = await import("../components/composited-contrast.ts");
+  const frame = (a,b) => ({data:Uint8Array.from([a,a,a,b,b,b]),info:{width:2,height:1,channels:3}});
+  const rect = [{x:0,y:0,width:2,height:1}];
+  const bg=frame(20,20), painted=frame(190,20), restored=frame(190,21);
+  const result=measurePlaceholderFrames(painted,bg,bg,restored,rect,[190,190,190,255]);
+  assert.equal(result.unstable,false);
+  assert.equal(result.pixels,1);
+  assert.ok(result.ratio>=4.5);
+  assert.equal(measurePlaceholderFrames(painted,bg,bg,frame(190,22),rect,[190,190,190,255]).unstable,true);
+  assert.equal(measurePlaceholderFrames(painted,bg,frame(20,21),restored,rect,[190,190,190,255]).unstable,true);
+  const low=measurePlaceholderFrames(frame(255,200),frame(200,200),frame(200,200),frame(254,200),rect,[255,255,255,255]);
+  assert.equal(low.unstable,false);
+  assert.ok(low.ratio<4.5);
+  assert.equal(measurePlaceholderFrames(bg,bg,bg,bg,rect,[190,190,190,255]).ratio,null);
+});

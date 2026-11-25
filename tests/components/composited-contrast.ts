@@ -49,8 +49,56 @@ export function measurePixels(before: Uint8Array, hidden: Uint8Array, repeat: Ui
   }
   return { ratio: pixels ? ratio : null, pixels, unstable };
 }
+type TextFrame = { data: Uint8Array; info: { width: number; height: number; channels: number } };
+
+// Exact RGB stability in the measured footprint; unrelated viewport animation is not sampled.
+function frameDelta(a: TextFrame, b: TextFrame, rects: Rect[]) {
+  const {width,height,channels} = a.info;
+  if (channels !== 3 || b.info.channels !== 3 || b.info.width !== width || b.info.height !== height || a.data.length !== width*height*3 || b.data.length !== a.data.length) return {changedPixels:-1,maxDelta:255,first:null};
+  let changedPixels=0,maxDelta=0,first: [number,number] | null=null;
+  const seen=new Set<number>();
+  for(const r of rects) for(let y=Math.max(0,Math.floor(r.y));y<Math.min(height,Math.ceil(r.y+r.height));y++) for(let x=Math.max(0,Math.floor(r.x));x<Math.min(width,Math.ceil(r.x+r.width));x++) {
+    const i=(y*width+x)*3;
+    if(seen.has(i))continue;seen.add(i);
+    const delta=Math.max(Math.abs(a.data[i]-b.data[i]),Math.abs(a.data[i+1]-b.data[i+1]),Math.abs(a.data[i+2]-b.data[i+2]));
+    if(delta){changedPixels++;maxDelta=Math.max(maxDelta,delta);first??=[x,y];}
+  }
+  return {changedPixels,maxDelta,first};
+}
+
+// Placeholder capture contract (test only): restoration may differ by at most
+// one 8-bit RGB level per channel. Consecutive visible, hidden and restored
+// frames must each be exactly identical in the sampled footprint. Measure
+// original visible versus hidden and restored visible versus hidden; retain
+// the lower ratio, with no retry of a low result. The unchanged 4.5:1 minimum
+// is enforced by the review, requiring a finite numeric ratio and real pixels.
+// A missing glyph footprint or larger drift remains MANUAL and fails the review.
+export function measurePlaceholderFrames(before:TextFrame, hidden:TextFrame, repeat:TextFrame, restored:TextFrame, rects:Rect[], fg:RGBA) {
+  const {width,height}=hidden.info;
+  const restoration=frameDelta(before,restored,rects);
+  if(restoration.maxDelta>1 || frameDelta(hidden,repeat,rects).changedPixels!==0 ||
+     [before,restored].some(frame=>frame.info.width!==width || frame.info.height!==height || frame.info.channels!==3 || frame.data.length!==width*height*3)) {
+    return {ratio:null,pixels:0,unstable:true};
+  }
+  const a=measurePixels(before.data,hidden.data,repeat.data,width,height,rects,fg);
+  const b=measurePixels(restored.data,hidden.data,repeat.data,width,height,rects,fg);
+  return {ratio:a.ratio===null||b.ratio===null?null:Math.min(a.ratio,b.ratio),pixels:Math.min(a.pixels,b.pixels),unstable:a.unstable||b.unstable};
+}
+
+export async function captureStableTextFrame<T extends TextFrame>(capture:()=>Promise<T>,rects:Rect[],settle:()=>Promise<void>,limit=8) {
+  let previous=await capture(), frame=previous;
+  const deltas: ReturnType<typeof frameDelta>[]=[];
+  for(let attempts=2;attempts<=limit;attempts++) {
+    await settle();frame=await capture();
+    const delta=frameDelta(previous,frame,rects);deltas.push(delta);
+    if(delta.changedPixels===0)return {stable:true,frame,previous,attempts,deltas};
+    previous=frame;
+  }
+  return {stable:false,frame,previous,attempts:limit,deltas};
+}
+
 const raw = async (page: Page) => {
-  const screenshot = await page.screenshot({ animations: "allow", scale: "css" });
+  const screenshot = await page.screenshot({ animations: "allow", scale: "css", caret: "hide" });
   return sharp(screenshot).removeAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
 };
 
@@ -97,7 +145,14 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
     return { minimum, reason: null, rects, fg: data as unknown as RGBA, originalStyle: element.getAttribute("style") };
   }, control);
   if (!info.fg) return manual(info.reason ?? "Unresolved foreground", info.minimum);
-  const before = await raw(page);
+  const settle = () => page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const visible = control === "placeholder" ? await captureStableTextFrame(() => raw(page), info.rects, settle) : null;
+  if (visible && !visible.stable) {
+    console.log("PLACEHOLDER PIXEL STABILITY", state, sample, JSON.stringify({phase:"visible", attempts:visible.attempts,deltas:visible.deltas}));
+    return manual("Visible placeholder pixels did not settle",info.minimum);
+  }
+  const before = visible?.frame ?? await raw(page);
+  let background: Awaited<ReturnType<typeof captureStableTextFrame<Awaited<ReturnType<typeof raw>>>>> | null = null;
   let hidden: Awaited<ReturnType<typeof raw>>, repeat: Awaited<ReturnType<typeof raw>>;
   let placeholderStyle: Awaited<ReturnType<Page["addStyleTag"]>> | undefined;
   try {
@@ -108,9 +163,15 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
       if (!(element instanceof HTMLElement)) throw Error("Expected HTML text target");
       element.style.setProperty("-webkit-text-fill-color", "transparent", "important");
     });
-    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    hidden = await raw(page);
-    repeat = await raw(page);
+    await settle();
+    if (control === "placeholder") {
+      background = await captureStableTextFrame(() => raw(page), info.rects, settle);
+      hidden = background.previous;
+      repeat = background.frame;
+    } else {
+      hidden = await raw(page);
+      repeat = await raw(page);
+    }
   } finally {
     if (placeholderStyle) await placeholderStyle.evaluate(node => {
       node.parentNode?.removeChild(node);
@@ -121,9 +182,26 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
       else element.setAttribute("style", original);
     }, info.originalStyle);
   }
+  let restoredFrame: Awaited<ReturnType<typeof raw>> | null = null;
+  if (control === "placeholder" && visible && background) {
+    // Restore the real glyphs and verify the original painted frame again.
+    // A moving backdrop must not masquerade as changed glyph pixels.
+    await settle();
+    const restored = await captureStableTextFrame(() => raw(page), info.rects, settle);
+    const restoration = frameDelta(before, restored.frame, info.rects);
+    console.log("PLACEHOLDER PIXEL STABILITY", state, sample, JSON.stringify({
+      visible:{attempts:visible.attempts,deltas:visible.deltas},
+      hidden:{attempts:background.attempts,deltas:background.deltas},
+      restored:{attempts:restored.attempts,deltas:restored.deltas},restoration
+    }));
+    if (!background.stable || !restored.stable || restoration.maxDelta > 1) return manual("Placeholder backdrop or restored paint did not settle", info.minimum);
+    restoredFrame = restored.frame;
+  }
   const { width, height, channels } = hidden.info;
   if (channels !== 3 || [before.info, repeat.info].some(image => image.width !== width || image.height !== height || image.channels !== 3)) return manual("Viewport or pixel format changed", info.minimum);
-  const measured = measurePixels(before.data, hidden.data, repeat.data, width, height, info.rects, info.fg);
+  const measured = restoredFrame
+    ? measurePlaceholderFrames(before,hidden,repeat,restoredFrame,info.rects,info.fg)
+    : measurePixels(before.data, hidden.data, repeat.data, width, height, info.rects, info.fg);
   if (measured.unstable || measured.ratio === null) return manual(measured.unstable ? "Backdrop changed between hidden captures" : "No changed glyph pixels", info.minimum);
   return { state, sample, minimum: info.minimum, ratio: measured.ratio, pixels: measured.pixels,
     status: measured.ratio >= info.minimum ? "PASS" : "FAIL", detail: "Minimum across changed glyph pixels over actual rendered background" };

@@ -80,7 +80,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
           const beforePlaceholder = await evidence();
           const placeholder = await collectTextContrast(page, field, "control-text", name + " placeholder", "placeholder");
           rows.push(placeholder);
-          if (placeholder.status === "MANUAL") {
+          if (placeholder.status !== "PASS") {
             console.log("PLACEHOLDER CAPTURE DIAGNOSTIC", key, name, JSON.stringify({ before: beforePlaceholder, after: await evidence(), row: placeholder }));
           }
           await field.fill(value);
@@ -154,6 +154,14 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         // Keep an explicit limit rather than claiming a sample covers every artwork.
         rows.push({state:"manual",sample:"Arbitrary future artwork",status:"MANUAL",minimum:4.5,ratio:null,pixels:0,detail:"Unbounded artwork; no universal pixel ratio. Representative rendered gradient / fallback heading measured separately."});
         expect(rows.filter(row => row.state === "control-text")).toHaveLength(4);
+        const placeholderRows = rows.filter(row => row.state === "control-text" && row.sample.endsWith(" placeholder"));
+        expect(placeholderRows).toHaveLength(2);
+        for (const row of placeholderRows) {
+          expect(row.status, row.sample).toBe("PASS");
+          expect(row.ratio, row.sample).not.toBeNull();
+          expect(Number.isFinite(row.ratio) && row.ratio! >= 4.5, row.sample).toBe(true);
+          expect(row.pixels, row.sample).toBeGreaterThan(0);
+        }
         expect(rows.filter(row => row.state === "control-boundary")).toHaveLength(4);
         expect(rows.filter(row => row.state === "create" || row.state === "fallback")).toHaveLength(2);
         // A diagnostic FAIL is real evidence; MANUAL or missing pixels are not.
