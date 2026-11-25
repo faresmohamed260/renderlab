@@ -214,11 +214,36 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [resultActions, setResultActions] = useState<HTMLDivElement | null>(null);
   const [desktop, setDesktop] = useState(false);
   const [advancedSheetOpen, setAdvancedSheetOpen] = useState(false);
+  const advancedTrigger = useRef<HTMLButtonElement>(null);
+  const structuredSlot = useRef<HTMLDivElement>(null);
+  const inlineSeed = useRef<HTMLDivElement>(null);
+  const inlineSteps = useRef<HTMLLabelElement>(null);
+  const advancedWasOpen = useRef(false);
+  const [advancedReserve, setAdvancedReserve] = useState({ structured: 0, seed: 0, steps: 0 });
+  // The portal removes the focused field at the closing commit. Return focus
+  // before the browser paints that commit, rather than waiting for Radix's
+  // asynchronous unmount autofocus (which can scroll the composer).
+  useLayoutEffect(() => {
+    if (advancedSheetOpen) { advancedWasOpen.current = true; return; }
+    if (!advancedWasOpen.current) return;
+    advancedWasOpen.current = false;
+    const destination = matchMedia("(min-width: 701px)").matches
+      ? workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")
+      : advancedTrigger.current;
+    destination?.focus({ preventScroll: true });
+  }, [advancedSheetOpen]);
   const [advancedOffset, setAdvancedOffset] = useState(0);
   const advancedClosing = useRef(false);
   const [, advancedSpring] = useSpring(() => ({ offset: 0 }), []);
   function changeAdvancedOpen(next: boolean) {
     if (next) {
+      // Preserve the actual inline footprint while the single draft controls
+      // are in the Sheet; no duplicate interactive elements or IDs.
+      setAdvancedReserve({
+        structured: structuredSlot.current?.getBoundingClientRect().height ?? 0,
+        seed: inlineSeed.current?.getBoundingClientRect().height ?? 0,
+        steps: inlineSteps.current?.getBoundingClientRect().height ?? 0,
+      });
       advancedClosing.current = false;
       advancedSpring.stop();
       setAdvancedOffset(reducedMotion ? 0 : 100);
@@ -1154,7 +1179,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
               </details>
             </div>);
-  const seedField = (<div className="create-preview-render-field">
+  const seedField = (<div ref={advancedSheetOpen ? undefined : inlineSeed} className="create-preview-render-field">
                 <label htmlFor="create-preview-seed">Seed</label>
                 <div className="create-preview-seed">
                   <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
@@ -1166,7 +1191,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   </label>
                 </div>
               </div>);
-  const stepsField = (<label className="create-preview-steps" htmlFor="create-preview-steps">
+  const stepsField = (<label ref={advancedSheetOpen ? undefined : inlineSteps} className="create-preview-steps" htmlFor="create-preview-steps">
                 <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
                 <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
                   disabled={busy}
@@ -1354,20 +1379,26 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               <Textarea id="create-preview-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
                 maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
             )}
-            {!advancedSheetOpen && structuredFields}
+            <div ref={structuredSlot} style={{ display: "flow-root", minBlockSize: advancedSheetOpen ? advancedReserve.structured : undefined }}>
+              {!advancedSheetOpen && structuredFields}
+            </div>
           </div>
           <div className="create-preview-dock">
             <Sheet open={advancedSheetOpen} onOpenChange={changeAdvancedOpen}>
               <SheetTrigger asChild>
-                <Button type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
+                <Button ref={advancedTrigger} type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
               </SheetTrigger>
               <SheetContent side="bottom" showCloseButton={false} className={phoneStyles.sheet}
                 style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
                 onCloseAutoFocus={event => {
-                  if (matchMedia("(min-width: 701px)").matches) {
-                    event.preventDefault();
-                    workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")?.focus();
-                  }
+                  event.preventDefault();
+                  // The layout effect restores focus at the closing commit.
+                  // Only recover if no element received focus in the meantime.
+                  if (document.activeElement !== document.body) return;
+                  const destination = matchMedia("(min-width: 701px)").matches
+                    ? workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")
+                    : advancedTrigger.current;
+                  destination?.focus({ preventScroll: true });
                 }}>
                 <div className={phoneStyles.heading}>
                   <SheetTitle>Advanced</SheetTitle>
@@ -1381,14 +1412,14 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               </SheetContent>
             </Sheet>
             <div className="create-preview-settings">
-              {!advancedSheetOpen && seedField}
+              {advancedSheetOpen ? <div aria-hidden="true" style={{ blockSize: advancedReserve.seed }} /> : seedField}
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
               <label className="create-preview-render-field" htmlFor="create-preview-count">Images
                 {multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
                   disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : <Input id="create-preview-count" type="number" value="1" disabled aria-describedby="create-preview-single-output" />}
                 {!multiOutputEnabled && <span id="create-preview-single-output" className="create-preview-caption">One image per render.</span>}
               </label>
-              {!advancedSheetOpen && stepsField}
+              {advancedSheetOpen ? <div aria-hidden="true" className="create-preview-steps" style={{ blockSize: advancedReserve.steps }} /> : stepsField}
             </div>
             <p className="create-preview-caption create-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
             <span id="create-preview-blocker" className="sr-only">{blocker}</span>
