@@ -42,7 +42,7 @@ function AdminIntro({ unavailable = false }: { unavailable?: boolean }) {
       <p className={styles.lede}>
         {unavailable
           ? "Admin operations are temporarily unavailable."
-          : "Manage RenderLab beta access, generation guardrails and sanitized product health."}
+          : "Authorized admins only. Read-only health first; new controls need approval."}
       </p>
     </header>
   );

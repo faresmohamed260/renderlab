@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -65,6 +66,7 @@ export function AdminOperations({
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AdminAccessRole>("member");
+  const [activeSection, setActiveSection] = useState<"observe" | "generation" | "access">("observe");
 
   const runMutation: MutationRunner = async (key, url, init, successMessage) => {
     setBusyKey(key);
@@ -124,134 +126,19 @@ export function AdminOperations({
         </Alert>
       ) : null}
 
+      <nav className={styles.observeTabs} aria-label="Admin sections">
+        {([["observe", "Observe"], ["generation", "Limits"], ["access", "Access"]] as const).map(([id, label]) => (
+          <Button key={id} asChild variant={activeSection === id ? "secondary" : "ghost"} className={styles.observeTab}>
+            <a href={`#admin-${id}`} aria-current={activeSection === id ? "location" : undefined} onClick={() => setActiveSection(id)}>{label}</a>
+          </Button>
+        ))}
+        <span className={styles.laterTab}>Control · later</span>
+      </nav>
+      <ObserveDashboard health={snapshot.health} />
       <div className={styles.register} data-admin-register="system-continuity">
         <span className={styles.signatureArc} aria-hidden="true" />
 
-        <AdminRegisterRow index="01" title="Access" rowKey="access">
-          <div className={styles.subsection}>
-            <SubsectionHeader
-              title="Invitation"
-              description="Invite only identities intended for RenderLab access."
-            />
-            <form className={styles.inviteGrid} onSubmit={submitInvitation}>
-              <Field>
-                <FieldLabel htmlFor="admin-invite-email">Invite email</FieldLabel>
-                <Input
-                  id="admin-invite-email"
-                  type="email"
-                  autoComplete="off"
-                  value={inviteEmail}
-                  onChange={(event) => setInviteEmail(event.target.value)}
-                  placeholder="person@example.com"
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="admin-invite-role">Role</FieldLabel>
-                <NativeSelect
-                  id="admin-invite-role"
-                  value={inviteRole}
-                  onChange={(event) => setInviteRole(event.target.value as AdminAccessRole)}
-                >
-                  <NativeSelectOption value="member">Member</NativeSelectOption>
-                  <NativeSelectOption value="admin">Admin</NativeSelectOption>
-                </NativeSelect>
-              </Field>
-              <Button type="submit" disabled={busyKey !== null || !inviteEmail.trim()}>
-                {busyKey === "invite" ? <Spinner aria-hidden="true" /> : null}
-                Create invitation
-              </Button>
-            </form>
-          </div>
-
-          <div className={styles.subsection}>
-            <SubsectionHeader
-              title="Pending invitations"
-              description="Open invitations recorded for RenderLab only."
-              meta={`${snapshot.invitations.length} pending`}
-            />
-            {snapshot.invitations.length ? (
-              <div className={styles.recordList} data-admin-list="invitations">
-                {snapshot.invitations.map((invitation) => (
-                  <div className={styles.pendingRow} key={invitation.id}>
-                    <div className={styles.identity}>
-                      <p className={styles.identityTitle}>{invitation.email}</p>
-                      <p className={styles.identityMeta}>
-                        {titleCase(invitation.role)} · expires {displayDate(invitation.expiresAt)}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={busyKey !== null}
-                      onClick={() => void runMutation(
-                        `revoke:${invitation.id}`,
-                        `/api/admin/invitations/${encodeURIComponent(invitation.id)}`,
-                        { method: "DELETE" },
-                        "Invitation revoked.",
-                      )}
-                    >
-                      {busyKey === `revoke:${invitation.id}` ? <Spinner aria-hidden="true" /> : null}
-                      Revoke
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className={styles.emptyState}>No pending RenderLab invitations.</p>
-            )}
-          </div>
-
-          <div className={styles.subsection}>
-            <SubsectionHeader
-              title="Admitted accounts"
-              description="Only identities already admitted to RenderLab appear here."
-              meta={`${snapshot.accounts.length} RenderLab accounts`}
-            />
-            <div className={styles.accountList} data-admin-list="accounts">
-              {snapshot.accounts.map((account) => (
-                <AccountAccessEditor
-                  key={`${account.userId}:${account.updatedAt}`}
-                  account={account}
-                  actorUserId={actorUserId}
-                  busyKey={busyKey}
-                  runMutation={runMutation}
-                />
-              ))}
-            </div>
-          </div>
-        </AdminRegisterRow>
-
-        <AdminRegisterRow index="02" title="Generation" rowKey="generation">
-          <div className={styles.subsection}>
-            <GlobalGenerationSettingsEditor
-              settings={snapshot.settings}
-              busyKey={busyKey}
-              runMutation={runMutation}
-            />
-          </div>
-
-          <div className={styles.subsection}>
-            <SubsectionHeader
-              title="Account overrides"
-              description="Default or blank means inherit the global value."
-              meta={`${snapshot.accounts.length} accounts`}
-            />
-            <div className={styles.overrideList} data-admin-list="generation-overrides">
-              {snapshot.accounts.map((account) => (
-                <GenerationOverrideEditor
-                  key={`${account.userId}:${account.updatedAt}:generation`}
-                  account={account}
-                  busyKey={busyKey}
-                  runMutation={runMutation}
-                />
-              ))}
-            </div>
-          </div>
-        </AdminRegisterRow>
-
-        <AdminRegisterRow index="03" title="Health" rowKey="health">
+        <AdminRegisterRow index="01" title="Health" rowKey="health">
           <div className={styles.subsection}>
             <SubsectionHeader
               title="Product health"
@@ -468,6 +355,131 @@ export function AdminOperations({
             </div>
           </div>
         </AdminRegisterRow>
+
+        <AdminRegisterRow index="02" title="Generation" rowKey="generation">
+          <div className={styles.subsection}>
+            <GlobalGenerationSettingsEditor
+              settings={snapshot.settings}
+              busyKey={busyKey}
+              runMutation={runMutation}
+            />
+          </div>
+
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Account overrides"
+              description="Default or blank means inherit the global value."
+              meta={`${snapshot.accounts.length} accounts`}
+            />
+            <div className={styles.overrideList} data-admin-list="generation-overrides">
+              {snapshot.accounts.map((account) => (
+                <GenerationOverrideEditor
+                  key={`${account.userId}:${account.updatedAt}:generation`}
+                  account={account}
+                  busyKey={busyKey}
+                  runMutation={runMutation}
+                />
+              ))}
+            </div>
+          </div>
+        </AdminRegisterRow>
+
+        <AdminRegisterRow index="03" title="Access" rowKey="access">
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Invitation"
+              description="Invite only identities intended for RenderLab access."
+            />
+            <form className={styles.inviteGrid} onSubmit={submitInvitation}>
+              <Field>
+                <FieldLabel htmlFor="admin-invite-email">Invite email</FieldLabel>
+                <Input
+                  id="admin-invite-email"
+                  type="email"
+                  autoComplete="off"
+                  value={inviteEmail}
+                  onChange={(event) => setInviteEmail(event.target.value)}
+                  placeholder="person@example.com"
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="admin-invite-role">Role</FieldLabel>
+                <NativeSelect
+                  id="admin-invite-role"
+                  value={inviteRole}
+                  onChange={(event) => setInviteRole(event.target.value as AdminAccessRole)}
+                >
+                  <NativeSelectOption value="member">Member</NativeSelectOption>
+                  <NativeSelectOption value="admin">Admin</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+              <Button type="submit" disabled={busyKey !== null || !inviteEmail.trim()}>
+                {busyKey === "invite" ? <Spinner aria-hidden="true" /> : null}
+                Create invitation
+              </Button>
+            </form>
+          </div>
+
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Pending invitations"
+              description="Open invitations recorded for RenderLab only."
+              meta={`${snapshot.invitations.length} pending`}
+            />
+            {snapshot.invitations.length ? (
+              <div className={styles.recordList} data-admin-list="invitations">
+                {snapshot.invitations.map((invitation) => (
+                  <div className={styles.pendingRow} key={invitation.id}>
+                    <div className={styles.identity}>
+                      <p className={styles.identityTitle}>{invitation.email}</p>
+                      <p className={styles.identityMeta}>
+                        {titleCase(invitation.role)} · expires {displayDate(invitation.expiresAt)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={busyKey !== null}
+                      onClick={() => void runMutation(
+                        `revoke:${invitation.id}`,
+                        `/api/admin/invitations/${encodeURIComponent(invitation.id)}`,
+                        { method: "DELETE" },
+                        "Invitation revoked.",
+                      )}
+                    >
+                      {busyKey === `revoke:${invitation.id}` ? <Spinner aria-hidden="true" /> : null}
+                      Revoke
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.emptyState}>No pending RenderLab invitations.</p>
+            )}
+          </div>
+
+          <div className={styles.subsection}>
+            <SubsectionHeader
+              title="Admitted accounts"
+              description="Only identities already admitted to RenderLab appear here."
+              meta={`${snapshot.accounts.length} RenderLab accounts`}
+            />
+            <div className={styles.accountList} data-admin-list="accounts">
+              {snapshot.accounts.map((account) => (
+                <AccountAccessEditor
+                  key={`${account.userId}:${account.updatedAt}`}
+                  account={account}
+                  actorUserId={actorUserId}
+                  busyKey={busyKey}
+                  runMutation={runMutation}
+                />
+              ))}
+            </div>
+          </div>
+        </AdminRegisterRow>
+
       </div>
     </div>
   );
@@ -485,7 +497,7 @@ function AdminRegisterRow({
   children: ReactNode;
 }) {
   return (
-    <section className={styles.row} data-admin-row={rowKey}>
+    <section id={`admin-${rowKey}`} className={styles.row} data-admin-row={rowKey}>
       <div className={styles.labelCell}>
         <span className={styles.index}>{index}</span>
         <h2 className={styles.sectionTitle}>{title}</h2>
@@ -812,6 +824,83 @@ function HealthMetric({ label, value }: { label: string; value: string }) {
 
 type Observability = AdminHealthSnapshot["generationObservability"];
 const minimumDispatchSamples = 10;
+
+function ObserveDashboard({ health }: { health: AdminHealthSnapshot }) {
+  const metrics = health.generationObservability;
+  const latency = metrics?.available ? metrics.dispatchLatency : null;
+  const held = metrics?.available ? metrics.terminalHeld : null;
+  const measured = latency !== null && latency.sampleSize >= minimumDispatchSamples;
+  const median = !latency ? "Unavailable" : latency.sampleSize === 0
+    ? latency.truncated ? "No timings in sample" : "No timings"
+    : !measured ? "Insufficient samples" : latency.p50Seconds === null ? "No timing data" : `${latency.p50Seconds} s`;
+  const totalHeld = held ? Object.values(held.unexpiredByStatus).reduce((sum, count) => sum + count, 0) : null;
+  const bounded = (count: number) => displayBoundedCount({ count, truncated: held?.truncated ?? false });
+  const statuses = ["succeeded", "failed", "cancelled"] as const;
+  const maxLatency = Math.max(latency?.p50Seconds ?? 0, latency?.p95Seconds ?? 0, 1);
+  const percentiles = measured && latency ? [["P50", latency.p50Seconds], ["P95", latency.p95Seconds]] as const : [];
+  return (
+    <section id="admin-observe" className={styles.observeDashboard} aria-label="Generation health overview">
+      <div className={styles.observeStats}>
+        <ObserveStat name="active" label="Active jobs" value={String(health.activeJobs)} note="Current active jobs" />
+        <ObserveStat name="latency" label="Dispatch latency (median)" value={median}
+          note={latency ? `${latency.sampleSize} measured · ${latency.windowMinutes} min${latency.truncated ? " · limited sample" : ""}` : "Dispatch timing unavailable"} />
+        <ObserveStat name="confirmation" label="Outbox confirmation" value={latency ? String(latency.sampleSize) : "Unavailable"}
+          note={latency ? `Confirmed timing samples · ${latency.windowMinutes} min${latency.truncated ? " · limited sample" : ""}` : "No confirmation telemetry"} />
+        <ObserveStat name="held" label="Terminal reservations" value={totalHeld === null ? "Unavailable" : bounded(totalHeld)}
+          note={held ? held.truncated ? "Unexpired held · lower bound" : "Unexpired held · complete sample" : "Reservation telemetry unavailable"} />
+      </div>
+      <div className={styles.observePanels}>
+        <figure className={styles.observePanel} aria-label="Confirmed dispatch percentiles">
+          <h2>Dispatch latency{latency ? `, last ${latency.windowMinutes} minutes` : ""}</h2>
+          {percentiles.length ? (
+            <div className={styles.observeChart}>
+              {percentiles.map(([label, value]) => (
+                <div key={label} className={styles.observeBarRow}>
+                  <span>{label}</span><span>{value === null ? "No timing data" : `${value} s`}</span>
+                  {value === null ? null : <div aria-hidden="true" className={styles.observeTrack}><div className={styles.observeBar} style={{ width: `${value / maxLatency * 100}%` }} /></div>}
+                </div>
+              ))}
+            </div>
+          ) : <p className={styles.observeNote}>{median}</p>}
+          <figcaption className={styles.observeNote}>Acceptance to confirmed dispatch in the outbox, not GPU start. No time-series buckets are available.{latency?.truncated ? " Limited sample." : ""}</figcaption>
+        </figure>
+        <section className={styles.observePanel} aria-label="Terminal reservation summary">
+          <h2>Terminal reservations</h2>
+          {held ? (
+            <>
+              <table aria-label="Terminal reservations by status" className={styles.observeTable}>
+                <thead><tr><th scope="col">Status</th><th scope="col">Unexpired</th><th scope="col">Expired</th></tr></thead>
+                <tbody>{statuses.map(status => <tr key={status}><th scope="row">{titleCase(status)}</th><td>{bounded(held.unexpiredByStatus[status])}</td><td>{bounded(held.expiredByStatus[status])}</td></tr>)}</tbody>
+              </table>
+              <p className={styles.observeNote}>{held.truncated ? "Counts are lower bounds (+). " : ""}{held.oldestUnexpiredHeldSeconds !== null
+                ? `${held.truncated ? "Oldest observed" : "Oldest known"} hold: ${held.oldestUnexpiredHeldSeconds} s.`
+                : held.truncated ? "No known age in sample." : held.unknownCompletionTime ? "Hold age unknown." : "No unexpired holds."}</p>
+              <p className={styles.observeNote}>Unknown completion time: {bounded(held.unknownCompletionTime)}. Individual job identities are not exposed.</p>
+            </>
+          ) : <p className={styles.observeNote}>Reservation telemetry is unavailable.</p>}
+        </section>
+      </div>
+      <section className={styles.observeLockedGrid} aria-label="Controls, not available yet">
+        {[
+          ["Pause generation", "Not available. Needs owner approval and an audit trail."],
+          ["Cancel stuck jobs", "Not available. Needs confirmation and a second factor."],
+          ["Adjust limits", "Not available here. Existing Limits controls are unchanged."],
+        ].map(([title, note]) => <article className={styles.observeLocked} key={title}>
+          <div className={styles.observeLockTitle}><h2>{title}</h2><Lock size={16} aria-hidden="true" /></div>
+          <p className={styles.observeNote}>{note}</p>
+        </article>)}
+      </section>
+    </section>
+  );
+}
+
+function ObserveStat({ name, label, value, note }: { name: string; label: string; value: string; note: string }) {
+  return <div className={styles.observeStat} data-observe-stat={name}>
+    <p className={styles.observeNote}>{label}</p>
+    <strong className={styles.observeValue}>{value}</strong>
+    <p className={styles.observeNote}>{note}</p>
+  </div>;
+}
 
 function GenerationObservability({ metrics }: { metrics?: Observability }) {
   if (!metrics?.available) {
