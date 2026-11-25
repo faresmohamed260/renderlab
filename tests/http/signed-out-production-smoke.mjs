@@ -3,10 +3,10 @@ import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import path from "node:path";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { get as httpGet } from "node:http";
 import { createHash } from "node:crypto";
-import { attributeSharedChunks } from "./shared-chunk-attribution.mjs";
+import { attributeSharedChunks, verifiedChunkAliases } from "./shared-chunk-attribution.mjs";
 
 const origin = "http://127.0.0.1:4184";
 
@@ -161,7 +161,8 @@ if (path.resolve(import.meta.dirname,"../..") === process.cwd()) {
   };
   // Build-integrated analysis, unlike standalone analyze, describes emitted assets.
   const before=attributeSharedChunks(emitted,[]).shared.map(asset=>({
-    path:asset.path, hash:createHash("sha256").update(readFileSync(path.resolve(".next",asset.path.slice("/_next/".length)))).digest("hex")
+    path:asset.path, code:readFileSync(path.resolve(".next",asset.path.slice("/_next/".length)),"utf8"),
+    hash:createHash("sha256").update(readFileSync(path.resolve(".next",asset.path.slice("/_next/".length)))).digest("hex")
   }));
   assert.equal(before.length,2,"Need two measured shared chunks before analyzed build");
   run(["build","--analyze"]);
@@ -176,7 +177,18 @@ if (path.resolve(import.meta.dirname,"../..") === process.cwd()) {
     assert.equal(rows[0]?.schema_version,1,"Analyzer export schema");
     assert.ok(rows.some(row=>row.type==="route"&&row.route===route),"Analyzer route data");
     console.log("ANALYZER_OUTPUT_PATHS "+JSON.stringify({route,paths:rows.filter(row=>row.type==="output").map(row=>row.filename)}));
-    records.push(...rows);
+    const outputs=[...new Set(rows.filter(row=>row.type==="output").map(row=>row.filename))]
+      .filter(filename=>/^\[client-fs\]\/_next\/static\/chunks\/[a-zA-Z0-9_.-]+\.js$/.test(filename))
+      .map(filename=>({filename,file:path.resolve(".next",filename.slice("[client-fs]/_next/".length))}));
+    const available=outputs.filter(output=>existsSync(output.file)).map(output=>({filename:output.filename,code:readFileSync(output.file,"utf8")}));
+    const aliases=verifiedChunkAliases(before,available);
+    console.log("ANALYZER_VERIFIED_ALIASES "+JSON.stringify({route,aliases:[...aliases],available:available.map(row=>row.filename),missing:outputs.filter(row=>!existsSync(row.file)).map(row=>row.filename)}));
+    // A renamed graph output is accepted only when its emitted executable code
+    // uniquely equals the original measured chunk; the original byte count stays.
+    records.push(...rows.map(row=>({ ...row,
+      ...(typeof row.filename==="string"?{filename:aliases.get(row.filename)??row.filename}:{}),
+      ...(Array.isArray(row.outputs)?{outputs:row.outputs.map(filename=>aliases.get(filename)??filename)}:{})
+    })));
   }
   const attribution=attributeSharedChunks(emitted,records);
   assert.equal(attribution.shared.length,2,"Need two common initial JS chunks");
