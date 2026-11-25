@@ -140,6 +140,7 @@ function PreviewAccountMenu({ accountId, hostedProfile, showAdmin, legacy }: { a
   const trigger = useRef<HTMLButtonElement>(null);
   const visibleName = useRef<HTMLSpanElement>(null);
   const pinned = useRef(false);
+  const tabbing = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -151,7 +152,7 @@ function PreviewAccountMenu({ accountId, hostedProfile, showAdmin, legacy }: { a
     }
     function escape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (card.current?.contains(document.activeElement)) trigger.current?.focus();
+      if (pinned.current || card.current?.contains(document.activeElement)) trigger.current?.focus();
       pinned.current = false;
       setOpen(false);
     }
@@ -169,8 +170,19 @@ function PreviewAccountMenu({ accountId, hostedProfile, showAdmin, legacy }: { a
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse" && !pinned.current && !event.currentTarget.contains(document.activeElement)) setOpen(false);
       }}
+      onKeyDownCapture={(event) => {
+        tabbing.current = event.key === "Tab";
+        if (tabbing.current) requestAnimationFrame(() => { tabbing.current = false; });
+      }}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
+        const leaving = !event.currentTarget.contains(event.relatedTarget);
+        const tabExit = tabbing.current;
+        tabbing.current = false;
+        // A deliberately opened nonmodal disclosure is dismissed by an
+        // explicit Tab exit, outside pointer or Escape. A closing sibling
+        // popover can restore focus asynchronously after Enter; that transient
+        // programmatic blur must not undo the new user activation.
+        if (leaving && (!pinned.current || tabExit)) {
           pinned.current = false;
           setOpen(false);
         }
@@ -243,6 +255,18 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile, sho
   const trigger = useRef<HTMLButtonElement>(null);
   const reduced = usePreviewReducedMotion();
   const reveal = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
+
+  useEffect(() => {
+    const node = disclosure.current;
+    if (!node) return;
+    const measure = () => {
+      if (node.offsetHeight > 0) node.style.setProperty("--preview-section-header-block", node.offsetHeight + "px");
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   function close() {
     pinnedPath.current = null;

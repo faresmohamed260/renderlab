@@ -1535,3 +1535,24 @@
   .p6-desktop-links .p6-desktop-link:hover { background: var(--rl-surface-hover, var(--color-surface-2)); color: var(--rl-text-primary, var(--color-text)); }
   .p6-desktop-navigation :focus-visible { outline: var(--rl-focus-width, 2px) solid var(--rl-focus, var(--color-accent-bright)); outline-offset: var(--rl-focus-offset, 3px); }
 }
+
+/* P6 shell contrast: retained legacy narrow disclosure only. Keep its existing
+ * silhouette and interaction; use the shared opaque overlay fallback behind
+ * text rather than a low-alpha wash over unpredictable content. */
+@media (max-width: 700px) {
+  .preview-section-panel {
+    /* Reserve the actual header footprint, including its visible focus ring.
+     * Fixed 73px padding left the first title under the enlarged trigger. */
+    padding-block-start: max(73px, calc(var(--preview-section-header-block, 89px) + var(--rl-space-4, 4px)));
+  }
+  .preview-section-panel > .preview-menu-glass { background: var(--rl-surface-overlay); }
+  .preview-section-panel .preview-section-title {
+    /* The animated mask does not cover every heading pixel at its shoulder.
+     * Give the text its own semantic opaque backing, independent of the mask. */
+    color: var(--rl-text-primary);
+    background: var(--rl-surface-overlay);
+    border-radius: var(--rl-radius-micro);
+    position: relative;
+  }
+  .preview-section-panel .preview-section-group a { color: var(--rl-text-primary); }
+}
