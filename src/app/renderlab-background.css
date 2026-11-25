@@ -1566,3 +1566,22 @@
     color: var(--rl-text-secondary);
   }
 }
+
+
+/* Header disclosures are above the route in the paint order. Reserve their
+ * measured overhang only while open, rather than leaving the Create tools
+ * underneath or raising the tools above the disclosure's own controls.
+ * Closed desktop alignment and baseline geometry remain unchanged. */
+.preview-navigation-shell:has(.create-preview-workspace) {
+  --create-open-section-clearance: 0px;
+  --create-open-account-clearance: 0px;
+}
+.preview-navigation-shell:has(> .preview-navigation-header .preview-section-panel[data-open="true"]) {
+  --create-open-section-clearance: var(--create-section-menu-clearance, 0px);
+}
+.preview-navigation-shell:has(> .preview-navigation-header .preview-account-menu[aria-hidden="false"]) {
+  --create-open-account-clearance: var(--create-account-menu-clearance, 0px);
+}
+.preview-navigation-shell:has(> .preview-navigation-header :is(.preview-section-panel[data-open="true"], .preview-account-menu[aria-hidden="false"])) .create-preview-toolbar {
+  margin-block-start: calc(max(var(--create-open-section-clearance), var(--create-open-account-clearance)) + var(--rl-space-8));
+}

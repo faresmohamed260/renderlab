@@ -251,6 +251,7 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile, sho
   const open = openPath === pathname;
   const pinnedPath = useRef<string | null>(null);
   const id = useId();
+  const shellRoot = useRef<HTMLDivElement>(null);
   const disclosure = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const reduced = usePreviewReducedMotion();
@@ -265,6 +266,29 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile, sho
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  // The Create toolbar is a separate route surface. Its desktop negative
+  // margin aligns it with the header, but an expanded header disclosure can
+  // paint over the controls on either viewport. Measure the actual footprint;
+  // CSS reserves clearance only while that disclosure is open.
+  useEffect(() => {
+    const root = shellRoot.current;
+    if (!root) return;
+    const header = root.querySelector<HTMLElement>(".preview-navigation-header");
+    const section = header?.querySelector<HTMLElement>(".preview-section-panel");
+    const account = header?.querySelector<HTMLElement>(".preview-account-menu");
+    if (!header || !section || !account) return;
+    const measure = () => {
+      root.style.setProperty("--create-section-menu-clearance", Math.max(0, section.offsetHeight - header.offsetHeight) + "px");
+      root.style.setProperty("--create-account-menu-clearance", Math.max(0, account.offsetHeight - header.offsetHeight) + "px");
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    observer.observe(section);
+    observer.observe(account);
     return () => observer.disconnect();
   }, []);
 
@@ -292,7 +316,7 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile, sho
   }, [open]);
 
   return (
-    <div className="preview-navigation-shell">
+    <div ref={shellRoot} className="preview-navigation-shell">
       <header className="preview-navigation-header" data-p6-desktop={legacy ? undefined : "true"}>
         {!legacy && <div className="p6-desktop-navigation">
           <Button asChild variant="ghost" size="lg" className="p6-desktop-brand"><Link href="/" aria-label="RenderLab home"><RenderLabMark className="size-6" /><span>RenderLab</span></Link></Button>
