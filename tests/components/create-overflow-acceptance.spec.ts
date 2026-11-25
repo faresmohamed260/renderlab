@@ -95,6 +95,50 @@ for (const viewport of viewports) {
       if (viewport.width === 195) expect(result.gridGutter, "The narrow scroll container must actually reserve scrollbar space").toBeGreaterThan(0);
       if (result.violations.length) actual[state] = result.violations;
       console.log("OVERFLOW_ACCEPTANCE " + viewport.width + " " + state + " " + JSON.stringify(result));
+      // A missing overflow entry must not mean that the corresponding UI vanished.
+      // Check the original addresses, not replacement selectors, in every 195px state.
+      if (viewport.width === 195) {
+        const selectors = [".create-preview-dock", ".create-preview-settings", ".create-preview-steps", "input#create-preview-steps"];
+        for (const selector of selectors) {
+          const locator = page.locator(selector);
+          await expect(locator, state + " " + selector).toHaveCount(1);
+          await expect(locator, state + " " + selector).toBeVisible();
+        }
+        const boxes = await page.evaluate((addresses) => addresses.map(selector => {
+          const el = document.querySelector<HTMLElement>(selector)!;
+          const rect = el.getBoundingClientRect();
+          return { selector, width: rect.width, height: rect.height, clientWidth: el.clientWidth,
+            scrollWidth: el.scrollWidth, eligible: el.clientWidth > 0 && el.getClientRects().length > 0 &&
+              !el.closest("[inert],[hidden],.sr-only,details:not([open]) > :not(summary)") &&
+              getComputedStyle(el).visibility === "visible" };
+        }), selectors);
+        for (const box of boxes) {
+          expect(box.eligible, state + " " + box.selector + " included in overflow measurement").toBe(true);
+          expect(box.width).toBeGreaterThan(0);
+          expect(box.height).toBeGreaterThan(0);
+        }
+        const range = page.locator("input#create-preview-steps");
+        await expect(range).toHaveAttribute("type", "range");
+        await expect(range).toBeEnabled();
+        await range.scrollIntoViewIfNeeded();
+        const hit = await range.evaluate(el => {
+          const r = el.getBoundingClientRect();
+          return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el;
+        });
+        expect(hit, state + " range has an unobscured pointer hit").toBe(true);
+        const before = Number(await range.inputValue());
+        const increment = before < Number(await range.getAttribute("max"));
+        await range.focus();
+        await expect(range).toBeFocused();
+        await range.press(increment ? "ArrowRight" : "ArrowLeft");
+        const after = before + (increment ? 1 : -1);
+        await expect(range).toHaveValue(String(after));
+        await expect(page.locator(".create-preview-steps output")).toHaveText(String(after));
+        await range.press(increment ? "ArrowLeft" : "ArrowRight");
+        await expect(range).toHaveValue(String(before));
+        await expect(page.locator(".create-preview-steps output")).toHaveText(String(before));
+        console.log("OVERFLOW_CONTROL_PROOF " + state + " " + JSON.stringify({ boxes, hit, before, after, restored: before }));
+      }
     };
     await page.setViewportSize(viewport);
     for (const variant of variants) {

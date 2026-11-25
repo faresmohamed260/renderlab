@@ -22,7 +22,7 @@ function ToggleGroup({
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
-      className={cn("flex w-fit items-center rounded-lg bg-surface-2 p-1", className)}
+      className={cn("flex w-fit items-center rounded-[var(--rl-radius-control)] bg-[var(--rl-surface-hover)] p-1", className)}
       {...props}
     >
       <ToggleGroupContext.Provider value={{ variant, size }}>{children}</ToggleGroupContext.Provider>
