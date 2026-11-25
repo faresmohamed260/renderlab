@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { contrastRatio, compositeForeground, measurePixels } from "../components/composited-contrast.ts";
+import { contrastRatio, compositeForeground, measurePixels, measureBoundarySamples } from "../components/composited-contrast.ts";
 
 test("contrast uses WCAG sRGB luminance and translucent foreground composition", () => {
   assert.equal(contrastRatio([255,255,255],[0,0,0]), 21);
@@ -22,4 +22,10 @@ test("composited collector detects worst actual background and unstable or missi
   assert.equal(measurePixels(before, hidden, shifted, 3, 1, rect, [255,255,255,255]).unstable, true);
   assert.equal(measurePixels(hidden, hidden, hidden, 3, 1, rect, [255,255,255,255]).ratio, null);
   assert.throws(() => measurePixels(before, hidden, shifted, 4, 1, rect, [255,255,255,255]));
+});
+
+test("boundary pixel comparisons use the weakest actual adjacent pair and flag clipped samples", () => {
+ const data=Uint8Array.from([255,255,255,0,0,0,200,200,200]);
+ assert.equal(measureBoundarySamples(data,3,1,[{a:[0,0],b:[1,0]},{a:[0,0],b:[2,0]}]).ratio,contrastRatio([255,255,255],[200,200,200]));
+ assert.equal(measureBoundarySamples(data,3,1,[{a:[0,0],b:[-1,0]}]).ratio,null);
 });

@@ -17,12 +17,12 @@ export default function ReviewPrimitives() {
     <h1 className={styles.heading}>Shared primitive review</h1>
     <Field>
       <FieldLabel htmlFor="review-input">Title</FieldLabel>
-      <Input id="review-input" defaultValue="Synthetic title" />
+      <Input id="review-input" defaultValue="Synthetic title" placeholder="Enter a title" />
       <FieldDescription>Fixture data only.</FieldDescription>
     </Field>
     <Field>
       <FieldLabel htmlFor="review-prompt">Prompt</FieldLabel>
-      <Textarea id="review-prompt" defaultValue="A violet studio illustration" />
+      <Textarea id="review-prompt" defaultValue="A violet studio illustration" placeholder="Describe an image" />
     </Field>
     <Field orientation="horizontal">
       <Checkbox id="review-checkbox" defaultChecked />
