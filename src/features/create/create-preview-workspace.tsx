@@ -1219,7 +1219,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       </div>
       {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
       {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
-      <div className={"create-preview-grid " + columns.grid}>
+      <div className="create-preview-grid">
         <form inert={continuationPending} className={"create-preview-controls " + phoneStyles.composer} noValidate onSubmit={submit}
           onKeyDown={(event) => {
             if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {

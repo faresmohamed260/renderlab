@@ -435,8 +435,15 @@
   .create-preview-history { grid-column: 1 / -1; }
 }
 @media (max-width: 700px) {
-  .create-preview-grid { grid-template-columns: minmax(0, 1fr); min-block-size: 0; }
-  .create-preview-canvas { order: -1; inline-size: min(80%, 336px); }
+  .create-preview-grid {
+    grid-template-columns: minmax(0, 1fr);
+    /* Keep the ratio-sized stage ahead of the composer and reserve the
+       scrollbar gutter while loading and after the workspace is ready. */
+    grid-template-rows: max-content auto auto;
+    min-block-size: 0;
+    scrollbar-gutter: stable;
+  }
+  .create-preview-grid > .create-preview-canvas { order: -1; align-self: start; inline-size: min(80%, 336px); }
   .create-preview-toolbar { flex-wrap: wrap; align-items: center; }
   .create-preview-tools { position: relative; inset: auto; }
 }
@@ -659,11 +666,14 @@
     margin-inline: calc(12px - var(--create-gutter));
     column-gap: 18px;
     grid-template-columns:
-      calc(clamp(300px, 26vw, 360px) - 12px)
+      calc(clamp(144px, 14vw, 214px) - 12px)
       minmax(0, 1fr)
-      calc(clamp(144px, 14vw, 214px) - 12px);
+      calc(clamp(300px, 26vw, 360px) - 12px);
   }
+  .create-preview-grid > .create-preview-history { grid-area: 1 / 1; }
+  .create-preview-grid > .create-preview-controls { grid-area: 1 / 3; }
   .create-preview-grid > .create-preview-canvas {
+    grid-area: 1 / 2;
     place-self: stretch;
     inline-size: auto;
     aspect-ratio: auto;
@@ -681,6 +691,7 @@
   container-type: size;
 }
 .create-preview-stage-frame {
+  --stage-media-ratio: .75;
   --stage-batch-space: 0px;
   --stage-action-space: 0px;
 }
@@ -1455,10 +1466,70 @@
 }
 .create-preview-prompt-chip[data-missing] { color: #ffd2d2; background: #471e26; }
 
-.create-preview-create-loading {
-  padding: 16px clamp(16px, 2.2vw, 40px);
-  font-size: 13px;
-  color: var(--color-text-muted);
+/* Keep the Create content in its ordinary slots while the server reads.
+   The real shell stays outside Suspense. Only data placeholders shimmer. */
+.create-preview-loading-toolbar { visibility: hidden; }
+.create-preview-loading-toolbar .create-preview-toolbar-trigger > span {
+  inline-size: var(--rl-space-16);
+}
+.create-preview-loading :is(.create-preview-controls, .create-preview-history) {
+  background: var(--rl-surface-panel-layered);
+  border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-panel);
+  box-shadow: var(--rl-elevation-panel);
+  backdrop-filter: var(--rl-material-panel);
+  gap: var(--rl-space-16);
+}
+.create-preview-loading-fields {
+  display: grid;
+  gap: var(--rl-space-16);
+  min-inline-size: 0;
+}
+.create-preview-loading-mode {
+  inline-size: var(--rl-space-64);
+  block-size: var(--rl-control-regular);
+  border-radius: var(--rl-radius-pill);
+}
+.create-preview-loading-prompt {
+  block-size: var(--rl-space-64);
+  border-radius: var(--rl-radius-field);
+}
+.create-preview-loading-references {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--rl-space-8);
+}
+.create-preview-loading-references > div {
+  aspect-ratio: 1;
+  border-radius: var(--rl-radius-control);
+}
+.create-preview-loading .create-preview-stage-surface {
+  background: var(--rl-surface-control);
+  border-radius: var(--rl-radius-panel);
+}
+.create-preview-loading-action {
+  border-radius: var(--rl-radius-control);
+  background: var(--rl-surface-disabled);
+  block-size: var(--rl-control-large);
+}
+.create-preview-loading-history-row {
+  display: grid;
+  grid-template-columns: minmax(0, var(--rl-space-48)) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--rl-space-8);
+}
+.create-preview-loading-thumbnail { aspect-ratio: 1; }
+.create-preview-loading-line { block-size: var(--rl-space-12); }
+.create-preview-history > .create-preview-loading-line { inline-size: 60%; }
+@media (min-width: 1025px) {
+  .create-preview-loading-prompt {
+    block-size: calc(var(--rl-space-64) + var(--rl-space-64));
+  }
+}
+@media (max-width: 700px) {
+  .create-preview-loading .create-preview-controls { border-radius: var(--rl-radius-sheet); }
+  .create-preview-loading .create-preview-controls .rl-skeleton::after { content: none; }
+  .create-preview-loading .create-preview-history { display: none; }
 }
 
 /* FQA-12: preserve the ordinary Create layout; reflow only when the available
@@ -1604,16 +1675,8 @@
 }
 
 
-/* Reserve the full ratio-sized canvas row before the composer. The stage's
- * absolute upload control otherwise extends into the following mode control.
- * Keep the other two tracks and their existing lazy-media behavior intact. */
+/* Keep the phone upload target inside the reserved canvas row. */
 @media (max-width: 700px) {
-  .create-preview-grid {
-    grid-template-rows: max-content auto auto;
-  }
-  .create-preview-grid > .create-preview-canvas {
-    align-self: start;
-  }
   .create-preview-stage-surface > .create-preview-canvas-upload {
     box-sizing: border-box;
     min-inline-size: 0;

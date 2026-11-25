@@ -3,13 +3,6 @@
  * composer, canvas, results, independent of visual grid placement. */
 .historySlot { display: none; }
 @media (min-width: 1025px) {
-  .grid:global(.create-preview-grid),
-  .grid:global(.create-preview-grid):has(:global(.create-preview-stage-frame)) {
-    grid-template-columns: calc(clamp(144px, 14vw, 214px) - 12px) minmax(0, 1fr) calc(clamp(300px, 26vw, 360px) - 12px);
-  }
-  .grid > :global(.create-preview-history) { grid-column: 1; grid-row: 1; }
-  .grid > :global(.create-preview-canvas) { grid-column: 2; grid-row: 1; }
-  .grid > :global(.create-preview-controls) { grid-column: 3; grid-row: 1; }
   .historySlot { display: block; flex: 0 0 auto; padding-block: var(--rl-space-12); margin-block-end: var(--rl-space-12); border-block-end: 1px solid var(--rl-border-subtle); color: var(--rl-text-secondary); overflow-wrap: anywhere; }
   .historySlot h3 { font-size: var(--rl-type-label); font-weight: var(--rl-weight-heading); }
   .historySlot p { margin-block-start: var(--rl-space-8); font-size: var(--rl-type-caption); line-height: var(--rl-leading-caption); color: var(--rl-text-quiet); }
@@ -17,7 +10,7 @@
 
 .stageRegion { display: contents; }
 @media (min-width: 1025px) {
-  .grid > .withMetadata:global(.create-preview-canvas) {
+  :global(.create-preview-grid) > .withMetadata:global(.create-preview-canvas) {
     grid-template-rows: minmax(0, 1fr) auto;
     align-items: stretch;
     justify-items: stretch;
