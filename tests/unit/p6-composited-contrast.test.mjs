@@ -101,3 +101,49 @@ test("restored placeholder one-level raster rounding is bounded and both glyph m
   assert.ok(low.ratio<4.5);
   assert.equal(measurePlaceholderFrames(bg,bg,bg,bg,rect,[190,190,190,255]).ratio,null);
 });
+
+
+test("placeholder paint transaction is atomic, fill-only and preserves original inline style", async () => {
+  const { setPlaceholderPaintHidden } = await import("../components/composited-contrast.ts");
+  let installed = null, evaluations = 0;
+  const attributes = new Map([["style", "color: var(--rl-text); background: currentColor"]]);
+  const doc = {
+    querySelector: selector => {
+      assert.equal(selector, "style[data-review-placeholder-style]");
+      return installed;
+    },
+    createElement: tag => {
+      assert.equal(tag, "style");
+      return {
+        textContent: "",
+        setAttribute: (name, value) => {
+          assert.equal(name, "data-review-placeholder-style");
+          assert.equal(value, "");
+        },
+        remove() { assert.equal(installed, this); installed = null; },
+      };
+    },
+    head: { appendChild: node => { assert.equal(installed, null); installed = node; return node; } },
+  };
+  const element = {
+    ownerDocument: doc,
+    hasAttribute: name => attributes.has(name),
+    setAttribute: (name, value) => { assert.equal(name, "data-review-hide-placeholder"); attributes.set(name, value); },
+    removeAttribute: name => { assert.equal(name, "data-review-hide-placeholder"); attributes.delete(name); },
+  };
+  const locator = { evaluate: async (fn, hidden) => { evaluations++; return fn(element, hidden); } };
+  const original = attributes.get("style");
+  await setPlaceholderPaintHidden(locator, true);
+  assert.equal(evaluations, 1, "one browser task for the complete hide mutation");
+  assert.equal(installed.textContent, "[data-review-hide-placeholder]::placeholder { -webkit-text-fill-color: transparent !important; }");
+  assert.equal(attributes.get("style"), original);
+  assert.equal(attributes.get("data-review-hide-placeholder"), "");
+  await setPlaceholderPaintHidden(locator, false);
+  assert.equal(evaluations, 2, "one browser task for the complete restore mutation");
+  assert.equal(installed, null);
+  assert.deepEqual([...attributes], [["style", original]]);
+  attributes.set("data-review-hide-placeholder", "foreign");
+  await assert.rejects(() => setPlaceholderPaintHidden(locator, true), /already present/);
+  assert.equal(installed, null, "collision must not mutate the existing document");
+  assert.equal(attributes.get("data-review-hide-placeholder"), "foreign");
+});
