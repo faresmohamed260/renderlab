@@ -2,8 +2,8 @@
   /* Local source plates remain unchanged. The existing Next image optimizer
      negotiates WebP with supporting browsers and caps resizing at the source.
      Keep high-resolution plates for tall scrolling cover surfaces. */
-  --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1920&q=75");
-  --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=1920&q=75");
+  --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1920&q=90");
+  --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=1920&q=90");
   min-height: 100dvh;
   overflow-x: clip;
   color: var(--color-text);
@@ -923,12 +923,12 @@
    the full-size candidate. Never modify crop, gradients or brand geometry. */
 @media (min-width: 901px) and (max-width: 1200px) and (max-height: 720px) and (max-resolution: 1dppx) {
   .page {
-    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1200&q=75");
+    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1200&q=90");
   }
 }
 @media (min-width: 1921px) {
   .page {
-    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=3840&q=75");
-    --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=3840&q=75");
+    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=3840&q=90");
+    --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=3840&q=90");
   }
 }

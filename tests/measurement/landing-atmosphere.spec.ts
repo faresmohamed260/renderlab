@@ -7,7 +7,7 @@ const plates = [
   { name: "resolve", widths: [1920, 3840] },
 ];
 const png = (name: string) => "/landing/" + name + "-atmosphere-v2.png";
-const optimized = (name: string, width: number) => "/_next/image?url=" + encodeURIComponent(png(name)) + "&w=" + width + "&q=75";
+const optimized = (name: string, width: number) => "/_next/image?url=" + encodeURIComponent(png(name)) + "&w=" + width + "&q=90";
 
 async function psnr(reference: Buffer, candidate: Buffer) {
   const a = await sharp(reference).toColourspace("srgb").removeAlpha().raw().toBuffer({ resolveWithObject: true });
