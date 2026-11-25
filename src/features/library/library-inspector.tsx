@@ -15,11 +15,13 @@ export function LibraryInspector({
   reuseRecipeJobId,
   onClose,
   onDeleted,
+  phone = false,
 }: {
   asset: PublicMediaAsset;
   reuseRecipeJobId: string | null;
   onClose: () => void;
   onDeleted: () => void;
+  phone?: boolean;
 }) {
   const title = asset.displayName || asset.originalFilename || `${asset.origin === "uploaded" ? "Uploaded" : "Generated"} ${asset.kind}`;
   const edit = continuationActionForMedia(asset.kind, "edit-image");
@@ -41,8 +43,8 @@ export function LibraryInspector({
       </animated.div>
       <div className={styles.inspectorHeader}>
         <h3>{title}</h3>
-        <Button type="button" variant="ghost" size="icon-lg" aria-label="Close inspector" onClick={onClose}>
-          <X aria-hidden="true" />
+        <Button type="button" variant="ghost" size={phone ? "lg" : "icon-lg"} aria-label="Close inspector" onClick={onClose}>
+          {phone ? "Done" : <X aria-hidden="true" />}
         </Button>
       </div>
       {asset.prompt ? <p className={styles.inspectorPrompt}>{asset.prompt}</p> : null}
