@@ -1,4 +1,6 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import path from "node:path";
 import { emptyHistory, fixtureAsset, fixtureImage } from "../component-app/fixtures";
 import { largestLayoutShiftWindow, interactionDurations, median, transferredJavaScript, type ResourceTransfer, type Shift, type Interaction } from "./performance-metrics";
 
@@ -16,7 +18,8 @@ type Metrics = {
   events: Interaction[];
   observedUntil: number;
   navigationBytes: number | null;
-  resources: ResourceTransfer[];
+  resources: (ResourceTransfer & { encodedBodySize: number; decodedBodySize: number; startTime: number; responseEnd: number })[];
+  shiftSources: {at:number;value:number;hadRecentInput:boolean;nodes:{tag:string;marker:string|null;previous:number[];current:number[]}[]}[];
 };
 type Sample = {
   run: number; lcpMs: number | null; lcpTag: string | null; cls: number | null;
@@ -29,6 +32,7 @@ async function installObservers(context: BrowserContext) {
     performance.setResourceTimingBufferSize(capacity);
     const supported = PerformanceObserver.supportedEntryTypes;
     const lcp: Metrics["lcp"] = [], shifts: Shift[] = [], events: Interaction[] = [];
+    const shiftSources: Metrics["shiftSources"] = [];
     const observers: { observer: PerformanceObserver; accept: (entries: PerformanceEntry[]) => void }[] = [];
     const start = (type: string, accept: (entries: PerformanceEntry[]) => void) => {
       if (!supported.includes(type)) return;
@@ -44,8 +48,10 @@ async function installObservers(context: BrowserContext) {
     });
     start("layout-shift", entries => {
       for (const entry of entries) {
-        const item = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
+        const item = entry as PerformanceEntry & { value: number; hadRecentInput: boolean; sources?: {node?: Node; previousRect:DOMRectReadOnly;currentRect:DOMRectReadOnly}[] };
         shifts.push({ startTime: item.startTime, value: item.value, hadRecentInput: item.hadRecentInput });
+        const rect=(r:DOMRectReadOnly)=>[r.x,r.y,r.width,r.height];
+        shiftSources.push({at:item.startTime,value:item.value,hadRecentInput:item.hadRecentInput,nodes:(item.sources??[]).map(source=>({tag:source.node instanceof Element?source.node.tagName:"unknown",marker:source.node instanceof Element?(source.node.getAttribute("data-slot")??source.node.getAttribute("data-landing-section")??source.node.getAttribute("class")?.slice(0,180)??null):null,previous:rect(source.previousRect),current:rect(source.currentRect)}))});
       }
     });
     start("event", entries => {
@@ -58,11 +64,11 @@ async function installObservers(context: BrowserContext) {
       for (const { observer, accept } of observers) accept(observer.takeRecords());
       const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
       const resources = (performance.getEntriesByType("resource") as PerformanceResourceTiming[]).map(
-        ({ name, initiatorType, transferSize }) => ({ name, initiatorType, transferSize }),
+        ({ name, initiatorType, transferSize, encodedBodySize, decodedBodySize, startTime, responseEnd }) => ({ name, initiatorType, transferSize, encodedBodySize, decodedBodySize, startTime, responseEnd }),
       );
       return {
         supported: [...supported], lcp: [...lcp], shifts: [...shifts], events: [...events],
-        observedUntil: performance.now(), navigationBytes: navigation?.transferSize ?? null, resources,
+        observedUntil: performance.now(), navigationBytes: navigation?.transferSize ?? null, resources, shiftSources:[...shiftSources],
       };
     };
   }, resourceTimingCapacity);
@@ -108,6 +114,52 @@ async function throttle(context: BrowserContext, page: Page, cpu: number) {
   await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
   await cdp.send("Network.emulateNetworkConditions", { offline: false, ...profile, connectionType: "cellular4g" });
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: cpu });
+}
+
+
+const buildRoot=path.resolve("tests/component-app/.next");
+const candidateMarkers=["Loading mask editor","Edit source mask","Manage collections","Collection name","Create with FIBO","Make it.","Creative image workspace","History","Reset to defaults","Invalid batch size."];
+function builtManifestReferences() {
+  const server=path.join(buildRoot,"server/app");
+  const refs=new Map<string,Set<string>>();
+  if (!existsSync(server)) return refs;
+  const walk=(directory:string)=>{
+    for(const entry of readdirSync(directory,{withFileTypes:true})) {
+      const full=path.join(directory,entry.name);
+      if(entry.isDirectory())walk(full);
+      else if(entry.name.endsWith("_client-reference-manifest.js")) {
+        const source=readFileSync(full,"utf8");
+        const start=source.indexOf('{"moduleLoading"');
+        if(start<0)continue;
+        try {
+          const manifest=JSON.parse(source.slice(start).trim().replace(/;$/,"")) as {clientModules?:Record<string,{chunks?:unknown[]}>};
+          for(const [module,info] of Object.entries(manifest.clientModules??{})) {
+            // Only fixture/source component identifiers; omit arbitrary generated source text.
+            const moduleName=module.split("[project]/").at(-1)??module;
+            if(!/src[\\/](features|components)[\\/]/.test(moduleName))continue;
+            for(const chunk of info.chunks??[])if(typeof chunk==="string"&&chunk.endsWith(".js")){
+              const key=path.basename(chunk), values=refs.get(key)??new Set<string>();
+              values.add(moduleName.slice(0,200));refs.set(key,values);
+            }
+          }
+        } catch { /* Unknown generated manifest format is disclosed by empty references, not guessed. */ }
+      }
+    }
+  };
+  walk(server);return refs;
+}
+const manifestRefs=builtManifestReferences();
+function reportColdResources(device:string,route:string,sample:number,before:Metrics,after:Metrics) {
+  const resources=before.resources.filter(entry=>new URL(entry.name).origin===origin).map(entry=>{
+    const pathname=new URL(entry.name).pathname;
+    const isScript=entry.initiatorType==="script"||/\\.(?:m?js)$/.test(pathname);
+    const file=pathname.startsWith("/_next/static/")?path.join(buildRoot,pathname.slice("/_next/".length)):null;
+    const source=isScript&&file&&existsSync(file)?readFileSync(file,"utf8"):null;
+    return {path:pathname,initiator:entry.initiatorType,transfer:entry.transferSize,encoded:entry.encodedBodySize,decoded:entry.decodedBodySize,start:entry.startTime,end:entry.responseEnd,
+      markers:source===null?[]:candidateMarkers.filter(marker=>source.includes(marker)),
+      moduleRefs:isScript?[...(manifestRefs.get(path.basename(pathname))??[])]:[]};
+  });
+  console.log("SLOW4G COLD RESOURCE DETAIL",JSON.stringify({sourceSha:process.env.REVIEW_SOURCE_SHA??"local-unverified",device,route,sample,manifestReferenceChunks:manifestRefs.size,resources,shiftSources:after.shiftSources}));
 }
 
 const metrics = (page: Page) => page.evaluate(() => (window as unknown as { fixturePerf: () => Metrics }).fixturePerf());
@@ -172,6 +224,7 @@ for (const device of profiles) for (const route of ["/create", "/library", "/"])
         }
         await page.waitForTimeout(650);
         const after = await metrics(page);
+        reportColdResources(device.name,route,run,before,after);
         sample.cls = after.supported.includes("layout-shift") ? largestLayoutShiftWindow(after.shifts) : null;
         const durations = interactionDurations(after.events);
         sample.interactions = route === "/" ? 0 : durations.length;
