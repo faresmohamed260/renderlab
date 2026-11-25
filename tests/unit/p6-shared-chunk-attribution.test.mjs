@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { attributeSharedChunks } from "../http/shared-chunk-attribution.mjs";
+import { attributeSharedChunks, verifiedChunkAliases } from "../http/shared-chunk-attribution.mjs";
 
 const assets = [
   {route:"/", resources:[{path:"/_next/static/chunks/a.js",bytes:71681,rawBytes:229052},{path:"/_next/static/chunks/b.js",bytes:44294,rawBytes:160168},{path:"/_next/static/chunks/only.js",bytes:50000,rawBytes:100000}]},
@@ -46,4 +46,15 @@ test("unsupported output coverage, missing root and nonmatching filename cannot 
   assert.deepEqual(result.chunks[0].modules,[]);
   assert.equal(result.chunks[1].coverage,"unmatched");
   assert.deepEqual(result.chunks[1].modules,[]);
+});
+
+test("analyzer aliases require unique executable-code identity, not a filename or size guess",()=>{
+  const original=[{path:"/_next/static/chunks/a.js",code:"(function(){return 1})()\n"}];
+  const outputs=[{filename:"[client-fs]/_next/static/chunks/renamed.js",code:"(function(){return 1})()\n//# sourceMappingURL=renamed.js.map\n"},
+    {filename:"[client-fs]/_next/static/chunks/other.js",code:"(function(){return 2})()\n"}];
+  assert.deepEqual([...verifiedChunkAliases(original,outputs)],[[outputs[0].filename,original[0].path]]);
+  assert.equal(verifiedChunkAliases(original,[...outputs,{...outputs[0],filename:"[client-fs]/_next/static/chunks/duplicate.js"}]).size,0);
+  assert.equal(verifiedChunkAliases(original,[outputs[1]]).size,0);
+  assert.equal(verifiedChunkAliases(original,[{...outputs[0],code:outputs[0].code+"alert(1)"}]).size,0);
+  assert.equal(verifiedChunkAliases(original,[{...outputs[0],code:"(function(){return 1})()\n\n"}]).size,0);
 });
