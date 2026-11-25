@@ -1227,7 +1227,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             <PopoverTrigger asChild>
               <Button ref={queue} type="button" variant="ghost" className="create-preview-toolbar-trigger"><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</Button>
             </PopoverTrigger>
-            <PopoverContent aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs">
+            <PopoverContent data-create-shortcut-overlay="" aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs">
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               <div className="create-preview-caption">Waiting requests keep their prompt and inputs in this preview until they start, are removed, or expire.</div>
               {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
@@ -1247,7 +1247,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             <PopoverTrigger asChild>
               <Button ref={shortcutsTrigger} type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
             </PopoverTrigger>
-            <PopoverContent aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover"
+            <PopoverContent data-create-shortcut-overlay="" aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover"
               onCloseAutoFocus={event => {
                 // Radix restores focus after portal teardown. Do not overwrite a
                 // newer explicit workspace focus (including the prompt shortcut).
@@ -1409,7 +1409,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 <Button ref={advancedTrigger} type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
               </SheetTrigger>
               {advancedSheetOpen && (
-                <SheetContent side="bottom" showCloseButton={false} className={phoneStyles.sheet}
+                <SheetContent data-create-shortcut-overlay="" side="bottom" showCloseButton={false} className={phoneStyles.sheet}
                   style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
                   onCloseAutoFocus={event => event.preventDefault()}>
                   <div className={phoneStyles.heading}>
