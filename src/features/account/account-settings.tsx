@@ -221,13 +221,19 @@ export function AccountSettings({
         : "/settings/mfa";
 
     return (
-      <div className={styles.surfaceWrap}>
-        <div className={styles.register} data-account-state="signed-in">
-          <span className={styles.signatureArc} aria-hidden="true" />
-
-          <RegisterRow index="01" title="Account">
-            <div className={styles.passwordStack}>
-              {access ? (
+      <div className={styles.round3}>
+        <nav className={styles.settingsSections} aria-label="Settings sections">
+          <a href="#settings-email">Account</a>
+          <a href="#settings-security">Security</a>
+          <a href="#settings-sessions">Sessions</a>
+          <a href="#settings-privacy">Data &amp; Privacy</a>
+          {access ? <a href="#settings-preferences">Create defaults</a> : null}
+          {showAdminLink ? <a href="#settings-admin">Admin operations</a> : null}
+        </nav>
+        <div className={styles.surfaceWrap}>
+        <div className={styles.settingsCards} data-account-state="signed-in">
+          {access ? <RegisterRow index="01" title="Profile" id="settings-profile">
+              {
                 profile ? (
                   <div className={styles.actionRow}>
                     <AccountProfileIdentity profile={profile} />
@@ -251,8 +257,10 @@ export function AccountSettings({
                     <p className={styles.helper}>Private profile information is temporarily unavailable.</p>
                   </div>
                 )
-              ) : null}
-              <div className={access ? styles.factorRow : styles.actionRow}>
+              }
+          </RegisterRow> : null}
+          <RegisterRow index="01" title="Account" id="settings-email">
+              <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Sign-in email</p>
                   <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
@@ -262,10 +270,9 @@ export function AccountSettings({
                   <Link href="/settings/email">Change email</Link>
                 </Button>
               </div>
-            </div>
           </RegisterRow>
 
-          <RegisterRow index="02" title="Access">
+          <RegisterRow index="02" title="Access" id="settings-access">
             <div className={styles.valueStack}>
               <div className={styles.valueHeader}>
                 <div>
@@ -278,7 +285,7 @@ export function AccountSettings({
             </div>
           </RegisterRow>
 
-          <RegisterRow index="03" title="Security">
+          <RegisterRow index="03" title="Security" id="settings-security">
             <div className={styles.passwordStack}>
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
@@ -303,7 +310,7 @@ export function AccountSettings({
             </div>
           </RegisterRow>
 
-          <RegisterRow index="04" title="Sessions">
+          <RegisterRow index="04" title="Sessions" id="settings-sessions">
             <div className={styles.sessionStack}>
               <div className={styles.valueStack}>
                 <p className={styles.valueLabel}>Active RenderLab sessions</p>
@@ -343,7 +350,7 @@ export function AccountSettings({
                   {busyAction === "signout-others" ? <Spinner aria-hidden="true" /> : null}
                   Sign out other devices
                 </Button>
-                <Button variant="destructive" size="lg" onClick={() => handleSignOut("global")} disabled={busyAction !== null}>
+                <Button className={styles.desktopSignOut} variant="destructive" size="lg" onClick={() => handleSignOut("global")} disabled={busyAction !== null}>
                   {busyAction === "signout-global" ? <Spinner aria-hidden="true" /> : null}
                   Sign out everywhere
                 </Button>
@@ -351,12 +358,12 @@ export function AccountSettings({
             </div>
           </RegisterRow>
 
-          <RegisterRow index="05" title="Data & Privacy">
+          <RegisterRow index="05" title="Data & Privacy" id="settings-privacy">
             <AccountDataPrivacy />
           </RegisterRow>
 
           {access ? (
-            <RegisterRow index="06" title="Preferences">
+            <RegisterRow index="06" title="Create" id="settings-preferences">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Create defaults</p>
@@ -372,7 +379,7 @@ export function AccountSettings({
           ) : null}
 
           {showAdminLink ? (
-            <RegisterRow index="07" title="Admin">
+            <RegisterRow index="07" title="Admin" id="settings-admin">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Admin operations</p>
@@ -388,6 +395,12 @@ export function AccountSettings({
               </div>
             </RegisterRow>
           ) : null}
+          <div className={styles.phoneSignOut}>
+            <Button variant="destructive" size="lg" onClick={() => handleSignOut("global")} disabled={busyAction !== null}>
+              {busyAction === "signout-global" ? <Spinner aria-hidden="true" /> : null}
+              Sign out everywhere
+            </Button>
+          </div>
         </div>
 
         {feedback ? (
@@ -395,6 +408,7 @@ export function AccountSettings({
             <AlertDescription>{feedback.message}</AlertDescription>
           </Alert>
         ) : null}
+        </div>
       </div>
     );
   }
@@ -450,9 +464,9 @@ export function AccountSettings({
   );
 }
 
-function RegisterRow({ index, title, children }: { index: string; title: string; children: ReactNode }) {
+function RegisterRow({ index, title, children, id }: { index: string; title: string; children: ReactNode; id?: string }) {
   return (
-    <section className={styles.row}>
+    <section className={styles.row} id={id}>
       <div className={styles.labelCell}>
         <span className={styles.index}>{index}</span>
         <h2 className={styles.sectionTitle}>{title}</h2>
