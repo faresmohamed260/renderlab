@@ -50,12 +50,12 @@ const raw = async (page: Page) => {
   return sharp(screenshot).removeAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
 };
 
-export async function collectTextContrast(page: Page, locator: Locator, state: string, sample: string): Promise<ContrastRow> {
+export async function collectTextContrast(page: Page, locator: Locator, state: string, sample: string, control?: "value" | "placeholder"): Promise<ContrastRow> {
   const manual = (detail: string, minimum = 4.5): ContrastRow => ({ state, sample, status: "MANUAL", minimum, ratio: null, pixels: 0, detail });
   if (await locator.count() !== 1 || !await locator.isVisible()) return manual("Missing, ambiguous or hidden target");
   await locator.scrollIntoViewIfNeeded();
-  const info = await locator.evaluate(element => {
-    const style = getComputedStyle(element);
+  const info = await locator.evaluate((element, control) => {
+    const style = getComputedStyle(element, control === "placeholder" ? "::placeholder" : null);
     const minimum = parseFloat(style.fontSize) >= 24 || (parseFloat(style.fontSize) >= 18.667 && Number(style.fontWeight) >= 700) ? 3 : 4.5;
     const unavailable = (reason: string) => ({ minimum, reason, rects: [], fg: null, originalStyle: element.getAttribute("style") });
     for (let ancestor: Element | null = element; ancestor; ancestor = ancestor.parentElement) {
@@ -64,7 +64,17 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
       if (Number(s.opacity) !== 1 || s.filter !== "none" || s.mixBlendMode !== "normal") return unavailable("Group opacity/filter/blend requires manual pixel review");
     }
     if (style.textShadow !== "none" || style.backgroundClip.includes("text") || parseFloat(style.webkitTextStrokeWidth) > 0) return unavailable("Complex glyph paint requires manual review");
-    const rects = [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())
+    const rects = control && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)
+      ? (() => {
+          if (control === "value" ? !element.value : element.value || !element.placeholder) return [];
+          const r = element.getBoundingClientRect(), box = getComputedStyle(element);
+          const left = parseFloat(box.borderLeftWidth) + parseFloat(box.paddingLeft);
+          const right = parseFloat(box.borderRightWidth) + parseFloat(box.paddingRight);
+          const top = parseFloat(box.borderTopWidth) + parseFloat(box.paddingTop);
+          const bottom = parseFloat(box.borderBottomWidth) + parseFloat(box.paddingBottom);
+          return [{ x: r.x + left, y: r.y + top, width: r.width - left - right, height: r.height - top - bottom }];
+        })()
+      : [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())
       .flatMap(node => {
         const range = document.createRange();
         range.selectNodeContents(node);
@@ -76,16 +86,21 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
     const ctx = canvas.getContext("2d");
     if (!ctx) return unavailable("No color-conversion context");
     ctx.fillStyle = style.webkitTextFillColor || style.color;
+    if (control === "placeholder") ctx.globalAlpha = Number(style.opacity);
     ctx.fillRect(0, 0, 1, 1);
     const data = [...ctx.getImageData(0, 0, 1, 1).data];
     if (!data[3]) return unavailable("Transparent foreground requires manual review");
     return { minimum, reason: null, rects, fg: data as unknown as RGBA, originalStyle: element.getAttribute("style") };
-  });
+  }, control);
   if (!info.fg) return manual(info.reason ?? "Unresolved foreground", info.minimum);
   const before = await raw(page);
   let hidden: Awaited<ReturnType<typeof raw>>, repeat: Awaited<ReturnType<typeof raw>>;
+  let placeholderStyle: Awaited<ReturnType<Page["addStyleTag"]>> | undefined;
   try {
-    await locator.evaluate(element => {
+    if (control === "placeholder") {
+      await locator.evaluate(element => element.setAttribute("data-review-hide-placeholder", ""));
+      placeholderStyle = await page.addStyleTag({ content: "[data-review-hide-placeholder]::placeholder { -webkit-text-fill-color: transparent !important; color: transparent !important; }" });
+    } else await locator.evaluate(element => {
       if (!(element instanceof HTMLElement)) throw Error("Expected HTML text target");
       element.style.setProperty("-webkit-text-fill-color", "transparent", "important");
     });
@@ -93,6 +108,10 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
     hidden = await raw(page);
     repeat = await raw(page);
   } finally {
+    if (placeholderStyle) await placeholderStyle.evaluate(node => {
+      node.parentNode?.removeChild(node);
+    });
+    if (control === "placeholder") await locator.evaluate(element => element.removeAttribute("data-review-hide-placeholder"));
     await locator.evaluate((element, original) => {
       if (original === null) element.removeAttribute("style");
       else element.setAttribute("style", original);
@@ -104,4 +123,38 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
   if (measured.unstable || measured.ratio === null) return manual(measured.unstable ? "Backdrop changed between hidden captures" : "No changed glyph pixels", info.minimum);
   return { state, sample, minimum: info.minimum, ratio: measured.ratio, pixels: measured.pixels,
     status: measured.ratio >= info.minimum ? "PASS" : "FAIL", detail: "Minimum across changed glyph pixels over actual rendered background" };
+}
+
+// Sample straight mid-edge pixels, avoiding rounded corners and antialiasing.
+// For a focus outline compare the painted ring against its adjacent exterior
+// and interior pixels. This is a finite representative sample, not a proof
+// for every point of a control perimeter or every possible artwork.
+export function measureBoundarySamples(data: Uint8Array, width: number, height: number, pairs: { a: [number, number]; b: [number, number] }[]) {
+  const rgb = ([x,y]: [number,number]): RGB | null => {
+    x = Math.floor(x); y = Math.floor(y);
+    if (x < 0 || y < 0 || x >= width || y >= height) return null;
+    const i = (y * width + x) * 3;
+    return [data[i],data[i+1],data[i+2]];
+  };
+  const ratios = pairs.map(({a,b}) => { const x=rgb(a),y=rgb(b); return x && y ? contrastRatio(x,y) : null; });
+  return { ratio: ratios.length && ratios.every(x => x !== null) ? Math.min(...ratios as number[]) : null, pixels: ratios.filter(x=>x!==null).length };
+}
+export async function collectControlBoundary(page: Page, locator: Locator, state: string, sample: string, focused: boolean): Promise<ContrastRow> {
+  await locator.scrollIntoViewIfNeeded();
+  const info = await locator.evaluate(el => {
+    const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+    return { x:r.x,y:r.y,w:r.width,h:r.height,outline:parseFloat(s.outlineWidth),offset:parseFloat(s.outlineOffset),style:s.outlineStyle,focus:el.matches(":focus-visible") };
+  });
+  const manual = (detail:string): ContrastRow => ({state,sample,status:"MANUAL",minimum:3,ratio:null,pixels:0,detail});
+  if (focused && (!info.focus || info.style === "none" || info.outline <= 0)) return {state,sample,status:"FAIL",minimum:3,ratio:1,pixels:0,detail:"No visible CSS focus outline"};
+  const {x,y,w,h}=info;
+  const edges: {x:number;y:number;dx:number;dy:number}[] = [{x:x+w/2,y,dx:0,dy:-1},{x:x+w/2,y:y+h,dx:0,dy:1},{x,y:y+h/2,dx:-1,dy:0},{x:x+w,y:y+h/2,dx:1,dy:0}];
+  const pairs = edges.flatMap(e => {
+    const at = (d:number):[number,number] => [e.x+e.dx*d,e.y+e.dy*d];
+    return focused ? [{a:at(info.offset+info.outline/2),b:at(info.offset+info.outline+2)},{a:at(info.offset+info.outline/2),b:at(info.offset-2)}] : [{a:at(-3),b:at(3)}];
+  });
+  const a=await raw(page), b=await raw(page);
+  const first=measureBoundarySamples(a.data,a.info.width,a.info.height,pairs), second=measureBoundarySamples(b.data,b.info.width,b.info.height,pairs);
+  if (first.ratio === null || second.ratio === null || Math.abs(first.ratio-second.ratio)>.05) return manual("Boundary outside viewport or unstable");
+  return {state,sample,minimum:3,ratio:Math.min(first.ratio,second.ratio),pixels:first.pixels,status:Math.min(first.ratio,second.ratio)>=3?"PASS":"FAIL",detail:"Actual straight mid-edge pixel pairs; representative control boundary / outline"};
 }

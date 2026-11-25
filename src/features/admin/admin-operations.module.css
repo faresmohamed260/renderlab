@@ -453,6 +453,50 @@
   line-height: 1.5;
 }
 
+.observeDiagnostic {
+  padding: var(--rl-space-16);
+  border-color: var(--rl-border-subtle);
+  background: var(--rl-surface-panel-layered);
+  overflow-wrap: anywhere;
+}
+
+.observeDiagnostic .diagnosticTitle {
+  color: var(--rl-text-primary);
+  font-family: var(--rl-type-family);
+  font-size: var(--rl-type-label);
+  font-weight: var(--rl-weight-heading);
+  letter-spacing: normal;
+  line-height: var(--rl-leading-label);
+  text-transform: none;
+}
+
+.observeDescription,
+.observeDiagnostic .diagnosticEntry {
+  color: var(--rl-text-quiet);
+  font-size: var(--rl-type-caption);
+  line-height: var(--rl-leading-caption);
+}
+
+.observeDescription {
+  margin: 0 0 var(--rl-space-12);
+}
+
+.observeDescription:last-child {
+  margin-bottom: 0;
+}
+
+.observeDiagnostic .diagnosticEntry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(48%);
+  gap: var(--rl-space-8);
+}
+
+.observeDiagnostic .diagnosticEntry dd {
+  min-width: 0;
+  color: var(--rl-text-primary);
+  text-align: end;
+}
+
 .healthDetailBlock {
   margin-top: 1.25rem;
 }

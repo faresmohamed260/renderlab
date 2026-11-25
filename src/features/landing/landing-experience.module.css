@@ -1,4 +1,9 @@
 .page {
+  /* Local source plates remain unchanged. The existing Next image optimizer
+     negotiates WebP with supporting browsers and caps resizing at the source.
+     Keep high-resolution plates for tall scrolling cover surfaces. */
+  --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1920&q=90");
+  --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=1920&q=90");
   min-height: 100dvh;
   overflow-x: clip;
   color: var(--color-text);
@@ -101,7 +106,7 @@
   min-height: 100svh;
   padding: 104px 54px 34px;
   overflow: hidden;
-  background-image: linear-gradient(90deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 38%) 41%, rgb(2 6 11 / 5%) 72%), url("/landing/hero-atmosphere-v2.png");
+  background-image: linear-gradient(90deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 38%) 41%, rgb(2 6 11 / 5%) 72%), var(--landing-hero-atmosphere);
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
@@ -392,7 +397,7 @@
 .thread {
   position: relative;
   min-height: 285vh;
-  background-image: linear-gradient(180deg, rgb(4 8 14 / 76%) 0%, rgb(5 10 17 / 56%) 56%, rgb(3 7 12 / 72%) 100%), url("/landing/hero-atmosphere-v2.png");
+  background-image: linear-gradient(180deg, rgb(4 8 14 / 76%) 0%, rgb(5 10 17 / 56%) 56%, rgb(3 7 12 / 72%) 100%), var(--landing-hero-atmosphere);
   background-position: center center;
   background-size: cover;
   background-attachment: fixed;
@@ -657,7 +662,7 @@
   inset: 0 calc((100vw - 100%) / -2);
   z-index: -1;
   content: "";
-  background-image: linear-gradient(180deg, rgb(3 8 14 / 86%) 0%, rgb(3 8 14 / 36%) 47%, rgb(3 7 12 / 54%) 100%), url("/landing/hero-atmosphere-v2.png");
+  background-image: linear-gradient(180deg, rgb(3 8 14 / 86%) 0%, rgb(3 8 14 / 36%) 47%, rgb(3 7 12 / 54%) 100%), var(--landing-hero-atmosphere);
   background-position: center 58%;
   background-size: cover;
   background-attachment: fixed;
@@ -733,7 +738,7 @@
   position: relative;
   min-height: 220vh;
   border-top: 1px solid rgb(255 255 255 / 5.5%);
-  background-image: linear-gradient(180deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 45%) 52%, rgb(2 6 11 / 64%) 100%), linear-gradient(90deg, rgb(2 6 11 / 98%) 0%, rgb(2 6 11 / 86%) 43%, rgb(2 6 11 / 52%) 78%), url("/landing/resolve-atmosphere-v2.png");
+  background-image: linear-gradient(180deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 45%) 52%, rgb(2 6 11 / 64%) 100%), linear-gradient(90deg, rgb(2 6 11 / 98%) 0%, rgb(2 6 11 / 86%) 43%, rgb(2 6 11 / 52%) 78%), var(--landing-resolve-atmosphere);
   background-position: center;
   background-size: cover;
 }
@@ -910,4 +915,20 @@
   .resolveCopy .dek { max-width: 560px; }
   .resolveCaption { font-size: 9px; }
   .siteFooter { width: min(100%, 1900px); font-size: 10px; }
+}
+
+/* The fixed desktop hero/thread/library plates cover the viewport rather
+   than each section's full scroll height. Smaller 1x desktop viewports can
+   request a smaller derivative; tall/scrolling/high-density surfaces retain
+   the full-size candidate. Never modify crop, gradients or brand geometry. */
+@media (min-width: 901px) and (max-width: 1200px) and (max-height: 720px) and (max-resolution: 1dppx) {
+  .page {
+    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1200&q=90");
+  }
+}
+@media (min-width: 1921px) {
+  .page {
+    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=3840&q=90");
+    --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=3840&q=90");
+  }
 }

@@ -14,6 +14,7 @@ import type {
   AdminAccountRecord,
   AdminDashboardSnapshot,
   AdminGenerationSettings,
+  AdminHealthSnapshot,
 } from "@/lib/api/admin-contract";
 import styles from "./admin-operations.module.css";
 
@@ -302,6 +303,7 @@ export function AdminOperations({
                 "Expired claims": snapshot.health.dispatchHealth.expiredClaims,
                 "Unresolved dispatches": snapshot.health.dispatchHealth.unresolved,
               }} />
+              <GenerationObservability metrics={snapshot.health.generationObservability} />
               <HealthCounts title="Operation counts" counts={snapshot.health.operationCounts} />
               <HealthCounts title="Sanitized error codes" counts={snapshot.health.errorCodeCounts} />
               <HealthCounts
@@ -808,11 +810,90 @@ function HealthMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HealthCounts({ title, counts }: { title: string; counts: Record<string, ReactNode> }) {
-  const entries = Object.entries(counts).sort(([left], [right]) => left.localeCompare(right));
+type Observability = AdminHealthSnapshot["generationObservability"];
+const minimumDispatchSamples = 10;
+
+function GenerationObservability({ metrics }: { metrics?: Observability }) {
+  if (!metrics?.available) {
+    return <HealthCounts title="Generation observability" description="Generation telemetry is unavailable." />;
+  }
+
   return (
-    <section className={styles.diagnostic}>
+    <>
+      <DispatchLatencyCounts latency={metrics.dispatchLatency} />
+      <TerminalHeldCounts held={metrics.terminalHeld} />
+    </>
+  );
+}
+
+function DispatchLatencyCounts({ latency }: { latency: Observability["dispatchLatency"] }) {
+  const title = "Confirmed dispatch latency";
+  if (!latency) return <HealthCounts title={title} description="Dispatch timing is unavailable." />;
+
+  const { windowMinutes, sampleSize, truncated, p50Seconds, p95Seconds } = latency;
+  const description = [`Time from acceptance to outbox confirmation over the last ${windowMinutes} minutes.`];
+  if (truncated) description.push("Limited sample.");
+  const counts: Record<string, ReactNode> = { Samples: sampleSize };
+  if (sampleSize === 0) {
+    description.push(truncated
+      ? "No confirmed dispatch timings in the limited sample."
+      : "No confirmed dispatch timings in this window.");
+  } else if (sampleSize < minimumDispatchSamples) {
+    description.push(`Percentiles require at least ${minimumDispatchSamples} samples.`);
+  } else {
+    counts.P50 = p50Seconds === null ? "No timing data" : `${p50Seconds} s`;
+    counts.P95 = p95Seconds === null ? "No timing data" : `${p95Seconds} s`;
+  }
+
+  return <HealthCounts title={title} counts={counts} description={description.join(" ")} />;
+}
+
+function TerminalHeldCounts({ held }: { held: Observability["terminalHeld"] }) {
+  if (!held) {
+    return <HealthCounts title="Terminal-held reservations" description="Reservation telemetry is unavailable." />;
+  }
+
+  const { unexpiredByStatus, expiredByStatus, oldestUnexpiredHeldSeconds, unknownCompletionTime, truncated } = held;
+  const formatCount = (count: number) => displayBoundedCount({ count, truncated });
+  const byStatus = (counts: typeof unexpiredByStatus) => Object.fromEntries(
+    Object.entries(counts).map(([status, count]) => [status, formatCount(count)]),
+  );
+  let oldestAge = "None";
+  if (oldestUnexpiredHeldSeconds !== null) oldestAge = `${oldestUnexpiredHeldSeconds} s`;
+  else if (truncated) oldestAge = "No known age in sample";
+  else if (unknownCompletionTime > 0) oldestAge = "Unknown";
+
+  const scope = truncated ? " Counts are lower bounds (+)." : "";
+  return (
+    <>
+      <HealthCounts
+        title="Unexpired terminal holds"
+        description={`Reservations still held after a job ended. Age is time since job completion.${scope}`}
+        counts={{
+          ...byStatus(unexpiredByStatus),
+          [truncated ? "Oldest observed age" : "Oldest known age"]: oldestAge,
+          "Unknown completion time": formatCount(unknownCompletionTime),
+        }}
+      />
+      <HealthCounts
+        title="Expired unreleased reservations"
+        description={`Reservations for terminal jobs that expired before release.${scope}`}
+        counts={byStatus(expiredByStatus)}
+      />
+    </>
+  );
+}
+
+function HealthCounts({ title, counts, description }: {
+  title: string;
+  counts?: Record<string, ReactNode>;
+  description?: string;
+}) {
+  const entries = Object.entries(counts ?? {}).sort(([left], [right]) => left.localeCompare(right));
+  return (
+    <section className={description ? `${styles.diagnostic} ${styles.observeDiagnostic}` : styles.diagnostic}>
       <h3 className={styles.diagnosticTitle}>{title}</h3>
+      {description ? <p className={styles.observeDescription}>{description}</p> : null}
       {entries.length ? (
         <dl className={styles.diagnosticList}>
           {entries.map(([label, count]) => (
@@ -822,9 +903,9 @@ function HealthCounts({ title, counts }: { title: string; counts: Record<string,
             </div>
           ))}
         </dl>
-      ) : (
+      ) : counts ? (
         <p className={styles.emptyDiagnostic}>No matching jobs in this window.</p>
-      )}
+      ) : null}
     </section>
   );
 }
