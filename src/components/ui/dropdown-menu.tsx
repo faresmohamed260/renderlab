@@ -56,7 +56,7 @@ function DropdownMenuLabel({
   );
 }
 
-const menuItemFocus = "focus:bg-[var(--rl-surface-selected)] focus:outline-solid focus:outline-[length:var(--rl-focus-width)] focus:-outline-offset-[var(--rl-focus-width)] focus:outline-[color:var(--rl-focus)]";
+const menuItemFocus = "focus:bg-[var(--rl-surface-selected)] focus:outline-solid focus:outline-[length:var(--rl-focus-width)] focus:[outline-offset:calc(-1*var(--rl-focus-width))] focus:outline-[color:var(--rl-focus)]";
 
 function DropdownMenuItem({
   className,
