@@ -1,0 +1,23 @@
+# P6-04 queued Cancel authority — decision note
+
+Status: proposed, not implementation authority. Main examined: `652a6b3db1085b131e218b741e1a6ada5f7b6e18`. #740 remains held; Activity stays in place.
+
+## Current gap
+
+`generation-activity.ts:42–45` requires a worker and provider job ID for Cancel. `cancel-generation.ts:305–329` separately supports queued/unbound jobs through the owner-scoped `renderlab_cancel_queued_generation_dispatch` RPC. The browser cannot infer which queued jobs have a cancellable dispatch attempt. An absent provider ID is neither proof of no execution nor proof of an eligible outbox row.
+
+The recovery migration `20261120022122_modal_dispatch_recovery.sql:191–219` updates an owner/job-matched pending/claimed/retry_wait/unresolved outbox only if execution has not started, then changes the queued job; begin-call at :52–64 requires a valid reservation, state, deadline and unstarted execution. Finish at :169–178 can attach a provider ID while the job is still queued. 0036 uses outbox → job → reservation lock order and closes unstarted attempts on terminalization; 0037 makes known backend calls attach-only. These constraints matter more than client presentation.
+
+## Options
+
+| Option | Authority and tradeoff | Specific proof |
+| --- | --- | --- |
+| A. Owner-scoped batched eligibility RPC alongside the existing bounded activity projection | Read only eligible job IDs/boolean for the page. Use one server-owned predicate for pre-dispatch eligibility and the locked mutation; retain existing native-provider cancellation for bound rows. Lowest migration/projection disruption, but two reads can see different snapshots; button is advisory and mutation must recheck. | Same predicate evaluated against pending/claimed/retry_wait/unresolved, absent attempt, started/attached/expired/terminal states, owner mismatch. Between read and click force begin/finish; stale eligibility must yield safe conflict or ordinary bound cancellation, not false cancellation. |
+| B. Single owner-scoped activity projection RPC (recommended if atomic snapshot is required) | Read the bounded job page and outbox eligibility in one SQL snapshot; return only canCancel, never outbox/provider metadata. Stronger snapshot consistency; larger projection and registry/SQL-grant change. Preserve output filtering, job ordering, paging and recipe checks. | All A tests, plus one-snapshot projection under concurrent attach/start, deleted/foreign media, bounded page and stable ordering, old Activity and History parity. |
+| C. Persist a derived cancel-eligibility column | Fast reads but duplicates authoritative outbox/job truth across claim, reserve, attach, begin, cancellation, recovery and rollback. Requires every writer to update transactionally; drift can expose a false affordance. Not recommended. | Every transition and mixed-version writer maintains invariant, crash/replay and rollback cannot leave stale true, mutation still rechecks. |
+
+Recommendation: A first if the owner accepts snapshot-level advisory eligibility, with server-side fail-closed handling. Choose B only if the extra snapshot guarantee is worth a larger projection migration. Do not merely add queued status or missing-provider-ID to the current TypeScript predicate. No decision on altering existing cancellation semantics is implied.
+
+## Race proof required for any chosen approach
+
+Use disposable Postgres, independent transactions synchronized at row-lock barriers (not timing sleeps), real RPCs and synthetic provider stubs. Cover cancel winning before reservation, between reservation and begin, and on unresolved unstarted sends; begin/attach/finish winning before cancel; stale claim/lease, duplicate cancel and repeated delivery; persisting/output already durable; foreign and nonexistent job indistinguishable; mixed-version begin-attempt and begin-call paths. Verify the winning transaction, final job and outbox states, no post-cancel execution or late output, no extra dispatch, admission released exactly when terminal, and no partial outbox mutation if job transition loses. Specifically audit the current queued RPC's outbox-first update followed by queued-only job update for the zero-job-update case; prove atomic rollback/no partial change, or repair before claiming authority. Exercise the existing 409 path and confirmation/pending UI in both mounted surfaces with unchanged #729 assertions. Existing sequential tests in `tests/sql/modal_dispatch_recovery.sql:74–82` are useful but do not establish concurrent serialization. No live generation, schema/API/auth change, route redirect, or release is authorized by this note.
