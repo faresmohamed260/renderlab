@@ -163,7 +163,7 @@ async function verifyShowcase(page, reducedMotion, viewport) {
   const measurements = await measure("initial");
   const hover = page.getByTestId("hover");
   await hover.hover();
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="hover"]')).backgroundColor === "rgb(113, 96, 208)");
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="hover"]')).backgroundColor === "rgb(118, 84, 216)");
   measurements.push(...await measure("hover", '[data-testid="hover"]'));
   await hover.focus();
   await page.keyboard.press("Tab");
@@ -180,6 +180,72 @@ async function verifyShowcase(page, reducedMotion, viewport) {
   measurements.push(...await measure("pressed", '[data-testid="press"]'));
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector('[data-testid="press"]')?.textContent === "Activated");
+
+  // Browser screenshot pixels, not computed alpha approximations: sample the
+  // painted gradient across several rows away from glyphs and rounded corners.
+  // Keep the existing computed-color, boundary and focus gates above/below.
+  const generate = page.getByTestId("generate-contrast");
+  const disabledGenerate = page.getByTestId("generate-disabled");
+  const pixelMeasure = async (target, state) => {
+    await target.scrollIntoViewIfNeeded();
+    const info = await target.evaluate(el => {
+      const s = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return { color: s.color, image: s.backgroundImage, rect: {x:r.x,y:r.y,w:r.width,h:r.height}, focused: el.matches(":focus-visible"), outline: s.outlineColor };
+    });
+    const shot = await page.screenshot({animations:"allow"});
+    const row = await page.evaluate(async ({bytes, info, state}) => {
+      const bitmap = await createImageBitmap(new Blob([Uint8Array.from(bytes)], {type:"image/png"}));
+      const canvas = document.createElement("canvas");
+      canvas.width=bitmap.width; canvas.height=bitmap.height;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(bitmap,0,0);
+      const pixel=(x,y)=>Array.from(ctx.getImageData(Math.round(x),Math.round(y),1,1).data).slice(0,3);
+      const lum=rgb=>rgb.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
+      const ratio=(a,b)=>(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05);
+      const fg=info.color.match(/[\d.]+/g).slice(0,3).map(Number);
+      const {x,y,w,h}=info.rect;
+      // Top and bottom strips avoid the centered text; inset x follows the rounded corners.
+      const samples=[];
+      for(const yy of [.18,.82]) for(let xx=.10;xx<=.901;xx+=.025) {
+        const bg=pixel(x+w*xx,y+h*yy);
+        samples.push({bg,ratio:ratio(fg,bg)});
+      }
+      const worst=samples.reduce((a,b)=>a.ratio<b.ratio?a:b);
+      let focus=null;
+      if(info.focused) {
+        const ring=pixel(x+w/2,y-4), adjacent=pixel(x+w/2,y-7);
+        focus={ring,adjacent,ratio:ratio(ring,adjacent)};
+      }
+      return {state,foreground:fg,worst,focus,samples:samples.length,backgroundImage:info.image};
+    },{bytes:Array.from(shot),info,state});
+    console.log("P6-02a Generate pixel contrast:",JSON.stringify({viewport,reducedMotion,...row}));
+    if(row.worst.ratio<4.5 || (state==="focus" && (!row.focus || row.focus.ratio<3))) throw new Error("Generate rendered contrast below threshold: "+JSON.stringify(row));
+    if(state!=="disabled" && !row.backgroundImage.startsWith("linear-gradient")) throw new Error("Generate gradient missing");
+    if(state==="disabled" && row.backgroundImage!=="none") throw new Error("Disabled gradient must be absent");
+  };
+  await generate.scrollIntoViewIfNeeded();
+  await page.mouse.move(0,0);
+  await pixelMeasure(generate,"normal");
+  await generate.hover();
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="generate-contrast"]')).backgroundColor === "rgb(118, 84, 216)");
+  await pixelMeasure(generate,"hover");
+  const generateBox=await generate.boundingBox();
+  await page.mouse.move(generateBox.x+generateBox.width/2,generateBox.y+generateBox.height/2);
+  await page.mouse.down();
+  await generate.locator("xpath=self::*[@data-pressed='true']").waitFor();
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="generate-contrast"]')).backgroundColor === "rgb(96, 68, 189)");
+  await pixelMeasure(generate,"pressed");
+  await page.mouse.up();
+  await page.mouse.move(0,0);
+  await generate.focus();
+  // Switch to keyboard modality and return to the same real button.
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await page.waitForFunction(() => document.querySelector('[data-testid="generate-contrast"]')?.matches(":focus-visible"));
+  await pixelMeasure(generate,"focus");
+  if(!await disabledGenerate.isDisabled()) throw new Error("Disabled Generate fixture enabled");
+  await pixelMeasure(disabledGenerate,"disabled");
   const checkbox = page.locator("#check-idle");
   await checkbox.focus();
   await page.keyboard.press("Space");
@@ -280,7 +346,7 @@ async function browserSmoke() {
           };
         });
         const roles = await page.locator("[data-p602a-isolated] li").allTextContents();
-        if (state.canvas !== "#0b0c10" || state.duration !== (reducedMotion === "reduce" ? "0ms" : "160ms")
+        if (state.canvas !== "#07060b" || state.duration !== (reducedMotion === "reduce" ? "0ms" : "160ms")
             || state.reduced !== (reducedMotion === "reduce") || state.scroll > state.width
             || roles.length !== 4 || !roles.includes("drag-release: 324 / 30 / 1")) {
           throw new Error("Foundation browser state mismatch.");

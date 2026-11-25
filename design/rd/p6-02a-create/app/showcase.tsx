@@ -22,6 +22,8 @@ export function Showcase() {
       <Specimen title="Primary" state="hover"><Button variant="primary" data-testid="hover">Hover me</Button></Specimen>
       <Specimen title="Secondary" state="focus"><Button data-testid="focus">Focus me</Button></Specimen>
       <Specimen title="Secondary" state="pressed"><Button data-testid="press" onClick={() => setPressed(!pressed)}>{pressed ? "Activated" : "Press me"}</Button></Specimen>
+      <Specimen title="Generate gradient" state="idle"><Button variant="primary" data-testid="generate-contrast">Generate</Button></Specimen>
+      <Specimen title="Generate gradient" state="disabled"><Button variant="primary" data-testid="generate-disabled" disabled>Generate</Button></Specimen>
       <Specimen title="Destructive" state="idle"><Button variant="destructive">Remove</Button></Specimen>
       <Specimen title="Icon" state="idle"><Button variant="icon" aria-label="Add sample">+</Button></Specimen>
       <Specimen title="Link" state="idle"><Button asChild><a href="#feedback">View feedback</a></Button></Specimen>
