@@ -18,13 +18,23 @@ for (const width of [195, 320, 390, 1440]) {
       }));
       expect(overflow.width, JSON.stringify(overflow)).toBeLessThanOrEqual(width);
       if (width !== 1440) {
+        const search = page.getByRole("button", { name: "Search the Library", exact: true });
+        await expect(search).toBeVisible();
+        await search.click();
+        await expect(page.getByRole("searchbox", { name: "Search Library" })).toBeFocused();
+        await search.click();
         const filters = page.getByRole("region", { name: "Library filters" });
         for (const name of ["All", "Images", "Videos", "Favorites"]) {
           await expect(filters.getByRole("link", { name, exact: true })).toBeVisible();
         }
         await expect(filters.getByRole("button", { name: "Collections", exact: true })).toBeVisible();
         const select = page.getByRole("button", { name: "Select", exact: true });
+        const before = await grid.boundingBox();
         await select.click();
+        const after = await grid.boundingBox();
+        expect(Math.abs(after!.y - before!.y)).toBeLessThanOrEqual(1);
+        const toolbar = page.locator("[data-library-selection-mode]");
+        if (width === 390) expect((await toolbar.boundingBox())!.height).toBeLessThanOrEqual(88);
         const checkbox = page.getByRole("checkbox", { name: "Select First image" });
         await checkbox.click();
         await expect(checkbox).toBeChecked();
@@ -56,6 +66,11 @@ for (const width of [195, 320, 390, 1440]) {
       console.log("LIBRARY_PHONE_CONTRAST " + JSON.stringify({ width, reducedMotion, ...row }));
       expect(row.status).toBe("PASS");
       if (width !== 1440) {
+        await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveText("Open in Create");
+        await expect(inspector.getByRole("button", { name: "Close inspector" })).toHaveText("Done");
+        const deleteAction = inspector.getByRole("button", { name: "Delete", exact: true });
+        await deleteAction.scrollIntoViewIfNeeded();
+        await expect(deleteAction).toBeInViewport();
         await page.keyboard.press("Escape");
         await expect(inspector).toHaveCount(0);
       } else {
