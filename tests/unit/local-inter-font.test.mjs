@@ -1,0 +1,26 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import test from "node:test";
+const read = path => readFile(new URL("../../" + path, import.meta.url));
+test("Inter is pinned locally, licensed, preloaded and shared by the root font variable", async () => {
+  const font = await read("src/app/fonts/inter-latin-wght-normal.woff2");
+  assert.equal(font.subarray(0,4).toString(), "wOF2");
+  assert.equal(font.length, 48256);
+  assert.equal(createHash("sha1").update("blob " + font.length + "\0").update(font).digest("hex"), "d15208de03cd1ad7c5199f0a0ce915fe841e4722");
+  const source = (await read("src/app/fonts.ts")).toString();
+  assert.match(source, /from "next\/font\/local"/);
+  assert.match(source, /weight: "100 900"/);
+  assert.match(source, /display: "swap"/);
+  assert.match(source, /preload: true/);
+  assert.match(source, /adjustFontFallback: "Arial"/);
+  assert.match(source, /variable: "--font-sans"/);
+  assert.doesNotMatch(source, /next\/font\/google|https?:\/\//);
+  const root = (await read("src/app/layout.tsx")).toString();
+  assert.match(root, /import \{ inter \} from "\.\/fonts"/);
+  assert.match(root, /<html lang="en" className=\{inter.variable\}/);
+  assert.match((await read("src/app/globals.css")).toString(), /font-family: var\(--font-sans,/);
+  const license = (await read("public/licenses/inter-OFL.txt")).toString();
+  assert.match(license, /Copyright 2016 The Inter Project Authors/);
+  assert.match(license, /SIL OPEN FONT LICENSE Version 1\.1/i);
+});
