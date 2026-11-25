@@ -66,7 +66,7 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "engineering",
-      "lastReviewed": "2026-11-24",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
@@ -268,7 +268,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-11-17",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 30,
       "supersedes": [
         "docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md"
@@ -281,7 +281,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-11-17",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 30,
       "supersedes": [],
       "supersededBy": []
@@ -292,7 +292,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-10-09",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 60,
       "supersedes": [],
       "supersededBy": []
