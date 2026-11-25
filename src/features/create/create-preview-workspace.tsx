@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import phoneStyles from "./create-phone-composer.module.css";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { nextCreateToolbarPopover, type CreateToolbarPopover } from "./create-toolbar-popover-state";
 import { Input } from "@/components/ui/input";
@@ -210,6 +212,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
   const [resultActions, setResultActions] = useState<HTMLDivElement | null>(null);
   const [desktop, setDesktop] = useState(false);
+  const [advancedSheetOpen, setAdvancedSheetOpen] = useState(false);
+  useEffect(() => {
+    const query = matchMedia("(min-width: 701px)");
+    const closeOnWide = () => { if (query.matches) setAdvancedSheetOpen(false); };
+    query.addEventListener("change", closeOnWide);
+    return () => query.removeEventListener("change", closeOnWide);
+  }, []);
   useEffect(() => {
     const query = matchMedia("(min-width: 1025px)");
     const update = () => setDesktop(query.matches);
@@ -1065,6 +1074,60 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       }} />
   );
 
+  // These controlled fields have a single draft owner. Move the existing fields
+  // into the modal while open; legacy inline access stays until the phone contract
+  // can replace the existing continuation/reflow acceptance paths.
+  const structuredFields = (<div className="create-preview-extra" key={mode}>
+              <details open={negativeOpen} onToggle={(event) => {
+                if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
+              }}>
+                <summary id="create-preview-negative-label">Negative prompt{!negativeConditioningEnabled && " · unavailable"}</summary>
+                {!negativeConditioningEnabled && <p id="create-preview-negative-unavailable" className="create-preview-caption">FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.</p>}
+                <Textarea aria-labelledby="create-preview-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
+                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy || !negativeConditioningEnabled}
+                  aria-describedby={!negativeConditioningEnabled ? "create-preview-negative-unavailable" : undefined}
+                  onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
+              </details>
+              <details open={vglOpen} onToggle={(event) => {
+                if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
+              }}>
+                <summary id="create-preview-vgl-label">{hosted ? "Manual VGL JSON" : "VGL JSON"}</summary>
+                {hosted && <p className="create-preview-caption">{generatedVglNotice}</p>}
+                <Textarea aria-labelledby="create-preview-vgl-label" className="create-preview-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
+                  placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
+                  title={!vglValid ? "Enter a non-empty JSON object." : undefined}
+                  aria-describedby={!vglValid ? "create-preview-vgl-invalid" : undefined}
+                  onChange={(event) => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
+                {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
+              </details>
+            </div>);
+  const seedField = (<div className="create-preview-render-field">
+                <label htmlFor="create-preview-seed">Seed</label>
+                <div className="create-preview-seed">
+                  <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
+                    required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
+                  <label className="create-preview-seed-dice" title="Randomize seed each time">
+                    <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
+                      onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />
+                    <Dice5 aria-hidden="true" />
+                  </label>
+                </div>
+              </div>);
+  const stepsField = (<label className="create-preview-steps" htmlFor="create-preview-steps">
+                <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
+                <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
+                  disabled={busy}
+                  title={variableSteps ? undefined : "The current worker renders at 4 steps"}
+                  onChange={(event) => setSteps(event.target.valueAsNumber)} />
+              </label>);
+  function resetAdvanced() {
+    if (busy) return;
+    updateDraft(mode, { seed: emptyDraft.seed, randomize: emptyDraft.randomize,
+      negativePrompt: emptyDraft.negativePrompt, negativeOpen: emptyDraft.negativeOpen,
+      vgl: emptyDraft.vgl, vglOpen: emptyDraft.vglOpen, generatedVgl: false });
+    setSteps(4);
+  }
+
   return (
     <section ref={workspaceRoot} tabIndex={-1} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
       <p className="sr-only" role="status" aria-live="polite">{maskAnnouncement}</p>
@@ -1103,7 +1166,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
       {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
       <div className="create-preview-grid">
-        <form inert={continuationPending} className="create-preview-controls" noValidate onSubmit={submit}
+        <form inert={continuationPending} className={"create-preview-controls " + phoneStyles.composer} noValidate onSubmit={submit}
           onKeyDown={(event) => {
             if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
               event.preventDefault();
@@ -1238,58 +1301,40 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               <Textarea id="create-preview-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
                 maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
             )}
-            <div className="create-preview-extra" key={mode}>
-              <details open={negativeOpen} onToggle={(event) => {
-                if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
-              }}>
-                <summary id="create-preview-negative-label">Negative prompt{!negativeConditioningEnabled && " · unavailable"}</summary>
-                {!negativeConditioningEnabled && <p id="create-preview-negative-unavailable" className="create-preview-caption">FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.</p>}
-                <Textarea aria-labelledby="create-preview-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
-                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy || !negativeConditioningEnabled}
-                  aria-describedby={!negativeConditioningEnabled ? "create-preview-negative-unavailable" : undefined}
-                  onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
-              </details>
-              <details open={vglOpen} onToggle={(event) => {
-                if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
-              }}>
-                <summary id="create-preview-vgl-label">{hosted ? "Manual VGL JSON" : "VGL JSON"}</summary>
-                {hosted && <p className="create-preview-caption">{generatedVglNotice}</p>}
-                <Textarea aria-labelledby="create-preview-vgl-label" className="create-preview-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
-                  placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
-                  title={!vglValid ? "Enter a non-empty JSON object." : undefined}
-                  aria-describedby={!vglValid ? "create-preview-vgl-invalid" : undefined}
-                  onChange={(event) => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
-                {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
-              </details>
-            </div>
+            {!advancedSheetOpen && structuredFields}
           </div>
           <div className="create-preview-dock">
-            <div className="create-preview-settings">
-              <div className="create-preview-render-field">
-                <label htmlFor="create-preview-seed">Seed</label>
-                <div className="create-preview-seed">
-                  <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
-                    required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
-                  <label className="create-preview-seed-dice" title="Randomize seed each time">
-                    <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
-                      onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />
-                    <Dice5 aria-hidden="true" />
-                  </label>
+            <Sheet open={advancedSheetOpen} onOpenChange={setAdvancedSheetOpen}>
+              <SheetTrigger asChild>
+                <Button type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" showCloseButton={false} className={phoneStyles.sheet}
+                onCloseAutoFocus={event => {
+                  if (matchMedia("(min-width: 701px)").matches) {
+                    event.preventDefault();
+                    workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")?.focus();
+                  }
+                }}>
+                <div className={phoneStyles.heading}>
+                  <SheetTitle>Advanced</SheetTitle>
+                  <SheetClose asChild><Button type="button" variant="ghost" size="lg">Done</Button></SheetClose>
                 </div>
-              </div>
+                <SheetDescription>Settings for your next image. Mode, shape and references stay in the composer.</SheetDescription>
+                <div className={phoneStyles.settings}>
+                  {advancedSheetOpen && <>{seedField}{stepsField}{structuredFields}</>}
+                </div>
+                <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
+              </SheetContent>
+            </Sheet>
+            <div className="create-preview-settings">
+              {!advancedSheetOpen && seedField}
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
               <label className="create-preview-render-field" htmlFor="create-preview-count">Images
                 {multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
                   disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : <Input id="create-preview-count" type="number" value="1" disabled aria-describedby="create-preview-single-output" />}
                 {!multiOutputEnabled && <span id="create-preview-single-output" className="create-preview-caption">One image per render.</span>}
               </label>
-              <label className="create-preview-steps" htmlFor="create-preview-steps">
-                <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
-                <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
-                  disabled={busy}
-                  title={variableSteps ? undefined : "The current worker renders at 4 steps"}
-                  onChange={(event) => setSteps(event.target.valueAsNumber)} />
-              </label>
+              {!advancedSheetOpen && stepsField}
             </div>
             <p className="create-preview-caption create-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
             <span id="create-preview-blocker" className="sr-only">{blocker}</span>
