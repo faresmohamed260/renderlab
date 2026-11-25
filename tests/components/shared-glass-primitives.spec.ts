@@ -1,7 +1,13 @@
+import type { Page } from "@playwright/test";
 import { test, expect } from "./isolated-io";
 
-test("Sheet contains keyboard focus, closes on Escape and restores trigger", async ({ page, io }) => {
+async function openPrimitives(page: Page) {
   await page.goto("/primitives");
+  await expect(page.locator('[data-primitives-ready="true"]')).toBeAttached();
+}
+
+test("Sheet contains keyboard focus, closes on Escape and restores trigger", async ({ page, io }) => {
+  await openPrimitives(page);
   const trigger = page.getByRole("button", { name: "Open sheet" });
   await trigger.focus();
   await trigger.press("Enter");
@@ -22,7 +28,7 @@ test("Sheet contains keyboard focus, closes on Escape and restores trigger", asy
 });
 
 test("Popover opens from keyboard and restores focus on Escape", async ({ page, io }) => {
-  await page.goto("/primitives");
+  await openPrimitives(page);
   const trigger = page.getByRole("button", { name: "Open popover" });
   await trigger.focus();
   await trigger.press("Enter");
@@ -34,7 +40,7 @@ test("Popover opens from keyboard and restores focus on Escape", async ({ page, 
 });
 
 test("Tooltip describes focused trigger and Escape dismisses it", async ({ page, io }) => {
-  await page.goto("/primitives");
+  await openPrimitives(page);
   const trigger = page.getByRole("button", { name: "Tooltip trigger" });
   await trigger.focus();
   await expect(page.getByRole("tooltip")).toHaveText("Helpful description");
@@ -46,7 +52,7 @@ test("Tooltip describes focused trigger and Escape dismisses it", async ({ page,
 });
 
 test("Slider handles arrows and Home/End with named focused thumb", async ({ page, io }) => {
-  await page.goto("/primitives");
+  await openPrimitives(page);
   const thumb = page.getByRole("slider", { name: "Strength" });
   await thumb.focus();
   await expect(thumb).toBeFocused();
@@ -61,7 +67,7 @@ test("Slider handles arrows and Home/End with named focused thumb", async ({ pag
 });
 
 test("Switch, checkbox and toggle preserve keyboard state and focus", async ({ page, io }) => {
-  await page.goto("/primitives");
+  await openPrimitives(page);
   const toggleSwitch = page.getByRole("switch", { name: "Enable setting" });
   await toggleSwitch.focus();
   await toggleSwitch.press("Space");
@@ -83,7 +89,7 @@ test("Switch, checkbox and toggle preserve keyboard state and focus", async ({ p
 });
 
 test("Confirmation and dropdown keep keyboard focus semantics", async ({ page, io }) => {
-  await page.goto("/primitives");
+  await openPrimitives(page);
   const confirm = page.getByRole("button", { name: "Confirm action" });
   await confirm.focus();
   await confirm.press("Enter");
@@ -102,7 +108,7 @@ test("Confirmation and dropdown keep keyboard focus semantics", async ({ page, i
 });
 
 test("Skeleton has no tab stop or reduced-motion animation", async ({ page, io }) => {
-  await page.goto("/primitives");
+  await openPrimitives(page);
   const before = page.getByRole("button", { name: "Before skeleton" });
   const skeleton = page.locator('[data-slot="skeleton"]');
   await expect(skeleton).toHaveAttribute("aria-hidden", "true");
@@ -115,7 +121,7 @@ test("Skeleton has no tab stop or reduced-motion animation", async ({ page, io }
 
 test("semantic glass controls remain keyboard-visible in high contrast", async ({ page, io }) => {
   await page.emulateMedia({ contrast: "more", reducedMotion: "reduce" });
-  await page.goto("/primitives");
+  await openPrimitives(page);
   const trigger = page.getByRole("button", { name: "Open sheet" });
   await trigger.focus();
   expect(await trigger.evaluate(el => getComputedStyle(el).outlineWidth)).toBe("2px");
