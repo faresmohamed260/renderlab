@@ -196,6 +196,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/architecture/ARCHITECTURE_DECISIONS.md` — durable non-UI cross-cutting architecture decision and supersession authority.
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
 - `docs/architecture/FRONTEND_TEST_STRATEGY.md` — proposed integration-first frontend testing/accessibility strategy; reference, not a release or required-check policy.
+- [History Jobs keyset cursor design note](architecture/HISTORY_JOBS_KEYSET_CURSOR_NOTE.md) — advisory design for pagination and legacy links after Activity successor parity.
 - `docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md` — two-page browser-to-provider backend context, lifecycle, trust boundaries and local verification entry point.
 - `docs/architecture/NATIVE_GENERATION_LIFECYCLE_SPLIT_PLAN.md` — planned staged native-generation extraction boundaries, compatibility exports, and safety gates; not a release.
 - `docs/architecture/OBSERVABILITY_METRICS_DESIGN.md` — proposed bounded FIBO job metrics, trace context, free-tier feasibility and incident-detection design; **not implemented**.
