@@ -304,6 +304,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   const [busy, setBusy] = useState(false);
   const queue = useRef<HTMLButtonElement>(null);
+  const shortcutsTrigger = useRef<HTMLButtonElement>(null);
   const [toolbarPopover, setToolbarPopover] = useState<CreateToolbarPopover>(null);
   const preparing = useRef<AbortController | null>(null);
   const [enqueueing, setEnqueueing] = useState(false);
@@ -1244,9 +1245,16 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           </Popover>
           <Popover open={toolbarPopover === "shortcuts"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "shortcuts", open))}>
             <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
+              <Button ref={shortcutsTrigger} type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
             </PopoverTrigger>
-            <PopoverContent aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover">
+            <PopoverContent aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover"
+              onCloseAutoFocus={event => {
+                // Radix restores focus after portal teardown. Do not overwrite a
+                // newer explicit workspace focus (including the prompt shortcut).
+                event.preventDefault();
+                const active = document.activeElement;
+                if (!workspaceRoot.current?.contains(active)) shortcutsTrigger.current?.focus({ preventScroll: true });
+              }}>
               <p>/ to focus the prompt.</p>
               <p>{shortcuts.modifierHint} + Enter to generate when the form is ready.</p>
               <p>[ and ] to step through results.</p>
