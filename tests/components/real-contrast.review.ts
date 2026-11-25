@@ -58,8 +58,15 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await collect("popover", "Real shared popover", page.getByText("Real shared popover", { exact: true }));
         await collect("popover", "Popover action", page.getByText("Popover action", { exact: true }));
         await page.keyboard.press("Escape");
+        // Radix restores focus when its exit animation unmounts. Do not send
+        // the next trusted key while that pending focus restoration can blur
+        // and dismiss the real shell disclosure.
+        await expect(page.getByText("Real shared popover", { exact: true })).toHaveCount(0);
+        await expect(popover).toBeFocused();
         const trigger = page.locator("header button[aria-expanded]:visible").first();
         await expect(trigger).toBeVisible();
+        await trigger.focus();
+        await expect(trigger).toBeFocused();
         if (await trigger.getAttribute("aria-expanded") !== "true") await trigger.press("Enter");
         await expect(trigger).toHaveAttribute("aria-expanded", "true");
         await page.waitForTimeout(800);
