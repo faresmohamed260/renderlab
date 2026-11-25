@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { emptyHistory, fixtureAsset, fixtureImage } from "../component-app/fixtures";
+import { firstAsset } from "../component-app/library-fixtures";
 
 const origin = "http://127.0.0.1:4173";
 const tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
@@ -19,6 +20,7 @@ async function scan(page: Page, label: string) {
   console.log("AXE INFORMATIONAL", label, JSON.stringify({ engine: report.testEngine.version,
     violations: report.violations.length, incomplete: report.incomplete.length, passes: report.passes.length }));
   console.table(rows);
+  console.log("AXE NODE DETAIL",JSON.stringify({label,rows}));
   return report;
 }
 
@@ -99,5 +101,108 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
     expect(scanned).toEqual(["create-shell", "shell-disclosure", "review", "review-popover", "primitives", "primitives-sheet"]);
     expect(unexpected, "No unknown provider, mutation or external network requests").toEqual([]);
     expect(errors, "No uncaught browser errors").toEqual([]);
+  });
+}
+
+for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
+  test("Round 3 integrated surface axe coverage "+viewport.width,async({browser})=>{
+    const scanned:string[]=[],unexpected:string[]=[],errors:string[]=[];
+    const openContext=async(variant:"owner"|"signed-out")=>{
+      const context=await browser.newContext({viewport,colorScheme:"dark",reducedMotion:"reduce",serviceWorkers:"block",extraHTTPHeaders:{"x-renderlab-fixture-shell":variant}});
+      await context.route("**/*",async route=>{
+        const request=route.request(),url=new URL(request.url());
+        if(variant==="signed-out"&&url.hostname==="images.unsplash.com"&&request.method()==="GET"&&request.resourceType()==="image")
+          return route.fulfill({contentType:"image/png",body:Buffer.from(fixtureImage.split(",")[1],"base64")});
+        if(url.origin!==origin||request.method()!=="GET"){
+          unexpected.push(request.method()+" "+url.origin+url.pathname);return route.abort();
+        }
+        if(url.pathname==="/api/account/profile")return route.fulfill({json:{profile:{displayName:"Synthetic Member"}}});
+        if(url.pathname==="/api/account/profile/avatar")return route.fulfill({contentType:"image/png",body:Buffer.from(fixtureImage.split(",")[1],"base64")});
+        if(url.pathname==="/api/account/data-export")return route.fulfill({json:{export:null}});
+        if(url.pathname==="/api/account/delete")return route.fulfill({json:{deletion:null}});
+        if(url.pathname==="/api/generation/jobs"&&!url.search)return route.fulfill({json:{available:true,fiboAvailable:true,fiboMaskAvailable:true}});
+        if(url.pathname==="/api/media/assets"&&url.searchParams.get("origin")==="generated")return route.fulfill({json:{...emptyHistory,items:[fixtureAsset]}});
+        if(url.pathname==="/api/media/assets/"+fixtureAsset.id+"/content"&&!url.search)return route.fulfill({contentType:"image/png",body:Buffer.from(fixtureImage.split(",")[1],"base64")});
+        if(url.pathname.startsWith("/api/")||url.pathname.startsWith("/create-preview/")){
+          unexpected.push(request.method()+" "+url.pathname);return route.abort();
+        }
+        return route.continue();
+      });
+      const page=await context.newPage();
+      page.on("pageerror",error=>errors.push(error.message));
+      page.on("console",message=>{if(message.type()==="error"&&/hydrat|server rendered|did not match/i.test(message.text()))errors.push(message.text());});
+      return {context,page};
+    };
+    const measure=async(page:Page,label:string)=>{
+      await page.evaluate(()=>document.fonts.ready.then(()=>undefined));
+      await scan(page,viewport.width+"/round3/"+label);
+      scanned.push(label);
+    };
+    const {context,page}=await openContext("owner");
+    let inspectorState:string;
+    try{
+      await page.goto(origin+"/round3-settings");
+      await expect(page.getByRole("heading",{name:"Settings",exact:true})).toBeVisible();
+      await expect(page.getByText("review@example.invalid",{exact:true}).first()).toBeVisible();
+      await measure(page,"settings");
+      if(viewport.width===390){
+        const nav=page.getByRole("button",{name:"Open navigation"});
+        await expect(nav).toBeVisible();
+        await nav.press("Enter");
+        const sidebar=page.getByRole("dialog",{name:"RenderLab navigation"});
+        await expect(sidebar).toBeVisible();
+        await expect(sidebar.getByRole("navigation",{name:"Workspace navigation"})).toBeVisible();
+        await measure(page,"sidebar");
+        await page.keyboard.press("Escape");
+        await expect(sidebar).toHaveCount(0);
+        await expect(nav).toBeFocused();
+      }else{
+        await expect(page.getByRole("navigation",{name:"Primary navigation"})).toBeVisible();
+      }
+      await page.goto(origin+"/admin");
+      await expect(page.getByRole("heading",{name:"Admin",exact:true})).toBeVisible();
+      await measure(page,"admin");
+      await page.goto(origin+"/round3-library");
+      await expect(page.getByRole("heading",{name:"Library",exact:true})).toBeVisible();
+      const tile=page.getByRole("link",{name:"Open First image",exact:true});
+      await expect(tile).toBeVisible();
+      await measure(page,"library-grid");
+      await page.getByRole("button",{name:"Select",exact:true}).press("Enter");
+      const checkbox=page.getByRole("checkbox",{name:"Select First image"});
+      await expect(checkbox).not.toBeChecked();
+      await measure(page,"library-selection-empty");
+      await checkbox.press("Space");
+      await expect(checkbox).toBeChecked();
+      await measure(page,"library-selection");
+      await page.goto(origin+"/round3-library");
+      if(viewport.width===1440){
+        await page.goto(origin+"/round3-library?inspect="+firstAsset.id);
+        const inspector=page.getByRole("complementary",{name:"Media inspector"});
+        await expect(inspector.getByRole("heading",{name:"First image",exact:true})).toBeVisible();
+        inspectorState="library-inspector";
+      }else if((await tile.getAttribute("href"))?.includes("inspect=")){
+        await page.goto(origin+"/round3-library?inspect="+firstAsset.id);
+        const sheet=page.getByRole("dialog",{name:"Media inspector"});
+        await expect(sheet.getByRole("heading",{name:"First image",exact:true})).toBeVisible();
+        inspectorState="library-phone-sheet";
+      }else{
+        await expect(tile).toHaveAttribute("href","/library/"+firstAsset.id);
+        await tile.press("Enter");
+        await expect(page.getByRole("heading",{name:"First image",exact:true})).toBeVisible();
+        inspectorState="library-phone-viewer-baseline";
+      }
+      await measure(page,inspectorState);
+    }finally{await context.close();}
+    const publicPage=await openContext("signed-out");
+    try{
+      await publicPage.page.goto(origin+"/?landing-review=1");
+      await expect(publicPage.page.locator("[data-landing-header]").getByRole("link",{name:"Sign in",exact:true})).toBeVisible();
+      await expect(publicPage.page.getByRole("heading",{level:1})).toBeVisible();
+      await measure(publicPage.page,"landing");
+    }finally{await publicPage.context.close();}
+    expect(scanned).toEqual(["settings",...(viewport.width===390?["sidebar"]:[]),"admin","library-grid","library-selection-empty","library-selection",inspectorState!,"landing"]);
+    console.log("AXE ROUND3 STATE COVERAGE",viewport.width,JSON.stringify(scanned));
+    expect(unexpected).toEqual([]);
+    expect(errors).toEqual([]);
   });
 }
