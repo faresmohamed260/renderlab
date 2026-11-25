@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { RouteLoading } from "@/components/shell/route-loading";
 import {
   MEDIA_ASSET_SEARCH_MAX_LENGTH,
   normalizeMediaAssetSearchQuery,
@@ -64,21 +66,50 @@ export default async function LibraryPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const [params, account] = await Promise.all([searchParams, getCurrentRenderLabAccount()]);
+  const supabaseConfigured = isSupabaseConfigured();
+  const available = supabaseConfigured && isR2Configured();
+  const uploadAvailable = Boolean(account) && isMediaUploadConfigured();
   const tab = parseTab(params.tab);
+  const props = { params, account, supabaseConfigured, available, uploadAvailable, tab };
+  if (!account || !available) return LibraryContent(props);
+
+  return (
+    <Suspense fallback={
+      <RouteLoading
+        surface="library"
+        showInspectorPreview={Boolean(firstParam(params.inspect)?.match(uuidPattern))}
+        showUpload={tab === "uploads" && uploadAvailable}
+      />
+    }>
+      <LibraryContent {...props} />
+    </Suspense>
+  );
+}
+
+async function LibraryContent({
+  params, account, supabaseConfigured, available, uploadAvailable, tab,
+}: {
+  params: Record<string, string | string[] | undefined>;
+  account: Awaited<ReturnType<typeof getCurrentRenderLabAccount>>;
+  supabaseConfigured: boolean;
+  available: boolean;
+  uploadAvailable: boolean;
+  tab: LibraryTab;
+}) {
   const kind = parseKind(params.kind);
   const sort = parseSort(params.sort);
   const searchQuery = parseSearch(params.q);
   const favoriteOnly = parseFavorite(params.favorite);
   const selectedCollectionId = parseCollection(params.collection);
   const offset = parseOffset(params.offset);
-  let available = isSupabaseConfigured() && isR2Configured();
-  let collectionsAvailable = Boolean(account) && isSupabaseConfigured();
+  let mediaAvailable = available;
+  let collectionsAvailable = Boolean(account) && supabaseConfigured;
   let items: PublicMediaAsset[] = [];
   let collections: PublicMediaCollection[] = [];
   let hasMore = false;
   let collectionMissing = false;
 
-  if (account && isSupabaseConfigured()) {
+  if (account && supabaseConfigured) {
     const assetsPromise = available
       ? (async () => {
         await settleOwnerGenerationWithinResponse(account.id, "library");
@@ -108,12 +139,12 @@ export default async function LibraryPage({
       );
     } else {
       collectionsAvailable = false;
-      available = false;
+      mediaAvailable = false;
     }
 
     if (assetsResult.status === "rejected") {
-      available = false;
-    } else if (assetsResult.value && available && !collectionMissing) {
+      mediaAvailable = false;
+    } else if (assetsResult.value && mediaAvailable && !collectionMissing) {
       items = assetsResult.value.items.map(publicMediaAsset);
       hasMore = assetsResult.value.page.hasMore;
     }
@@ -126,11 +157,12 @@ export default async function LibraryPage({
     ? await loadInitialGenerationRecipe(account.id, inspectedJobId).catch(() => null)
     : null;
 
+
   return (
     <LibraryView
       accountAvailable={Boolean(account)}
-      available={available}
-      uploadAvailable={Boolean(account) && isMediaUploadConfigured()}
+      available={mediaAvailable}
+      uploadAvailable={uploadAvailable}
       items={items}
       collections={collections}
       collectionsAvailable={collectionsAvailable}
