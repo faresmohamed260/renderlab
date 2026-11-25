@@ -481,13 +481,28 @@
     },
     {
       "path": "docs/ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md",
+      "kind": "historical-evidence",
+      "authority": "historical",
+      "lifecycle": "superseded",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-24",
+      "reviewIntervalDays": null,
+      "supersedes": [],
+      "supersededBy": [
+        "docs/ui/P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md"
+      ]
+    },
+    {
+      "path": "docs/ui/P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md",
       "kind": "implementation-contract",
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "product-design",
       "lastReviewed": "2026-11-24",
       "reviewIntervalDays": 90,
-      "supersedes": [],
+      "supersedes": [
+        "docs/ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md"
+      ],
       "supersededBy": []
     }
   ]
