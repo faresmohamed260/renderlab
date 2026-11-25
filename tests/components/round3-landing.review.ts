@@ -11,7 +11,7 @@ for (const viewport of [{width:195,height:422},{width:320,height:844},{width:390
     test("Round 3 Landing hero " + viewport.width + " " + reducedMotion, async ({browser}) => {
       const key = "landing-" + viewport.width + "-" + reducedMotion;
       await mkdir(output,{recursive:true});
-      const context = await browser.newContext({viewport,reducedMotion,colorScheme:"dark",deviceScaleFactor:1,serviceWorkers:"block"});
+      const context = await browser.newContext({viewport,reducedMotion,colorScheme:"dark",deviceScaleFactor:1,serviceWorkers:"block",extraHTTPHeaders:{"x-renderlab-fixture-shell":"signed-out"}});
       const placeholder = await sharp({create:{width:64,height:64,channels:3,background:"#25374b"}}).png().toBuffer();
       await context.route("**/*", async route => {
         const url = new URL(route.request().url());
@@ -24,11 +24,26 @@ for (const viewport of [{width:195,height:422},{width:320,height:844},{width:390
       page.on("pageerror",error=>errors.push(error.message));
       page.on("console",message=>{if(message.type()==="error" && /hydrat|server rendered|did not match/i.test(message.text())) errors.push(message.text());});
       try {
-        await page.goto(origin + "/landing");
+        await page.goto(origin + "/?landing-review=1");
         await page.evaluate(()=>document.fonts.ready);
         const hero = page.locator('[data-landing-section="hero"]');
         await expect(hero).toBeVisible();
         await page.screenshot({path:path.join(output,key+".png"),animations:"allow",fullPage:false});
+        const header = page.locator("[data-landing-header]");
+        await expect.soft(header.getByRole("link",{name:"Sign in",exact:true})).toBeVisible();
+        await expect.soft(header.getByRole("link",{name:"Sign in",exact:true})).toHaveAttribute("href","/settings");
+        await expect.soft(page.locator(".preview-navigation-header")).toHaveCount(0);
+        if (viewport.width === 1440) {
+          await expect.soft(header.getByRole("link",{name:"Open Create",exact:true})).toBeVisible();
+          await expect.soft(header.getByRole("link",{name:"Open Create",exact:true})).toHaveAttribute("href","/create");
+          const thumbnails = hero.locator("[data-landing-thumbnail]");
+          await expect.soft(thumbnails).toHaveCount(4);
+          for (const thumbnail of await thumbnails.all()) {
+            await expect.soft(thumbnail).toBeVisible();
+            await expect.soft(thumbnail.locator("linearGradient stop")).toHaveCount(3);
+            await expect.soft(thumbnail.locator("rect")).toHaveAttribute("fill",/^url\(#.+\)$/);
+          }
+        }
         await expect.soft(hero.getByRole("heading",{level:1})).toHaveText(/Make it\.\s*Shape it\.\s*Refine it\./);
         await expect.soft(hero.getByText("Invitation-only Closed Beta",{exact:true})).toBeVisible();
         await expect.soft(hero.getByRole("img",{name:"RenderLab Create preview"})).toBeVisible();
@@ -58,3 +73,14 @@ for (const viewport of [{width:195,height:422},{width:320,height:844},{width:390
     });
   }
 }
+
+test("Signed-in Landing retains the existing account affordance",async({browser})=>{
+  const context=await browser.newContext({viewport:{width:1440,height:900},extraHTTPHeaders:{"x-renderlab-fixture-shell":"member"},serviceWorkers:"block"});
+  try {
+    await context.route("**/*",route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+    const page=await context.newPage();
+    await page.goto(origin+"/?landing-review=1");
+    await expect(page.locator(".preview-navigation-header").getByRole("button",{name:/Account menu/})).toBeVisible();
+    await expect(page.locator("[data-landing-header]")).toBeHidden();
+  }finally{await context.close();}
+});
