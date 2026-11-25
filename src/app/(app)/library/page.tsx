@@ -9,6 +9,7 @@ import type { PublicMediaCollection } from "@/lib/api/media-collections-contract
 import { LibraryView, type LibraryTab } from "@/features/library/library-view";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/server/data/supabase-rest";
+import { loadInitialGenerationRecipe } from "@/server/generation/generation-recipe";
 import { listMediaAssets, publicMediaAsset } from "@/server/media/media-assets";
 import { listMediaCollections } from "@/server/media/media-collections";
 import { isMediaUploadConfigured } from "@/server/media/media-uploads";
@@ -118,6 +119,13 @@ export default async function LibraryPage({
     }
   }
 
+  const inspectId = firstParam(params.inspect);
+  const inspectedAsset = items.find((item) => item.id === inspectId);
+  const inspectedJobId = inspectedAsset?.generationJobId;
+  const reuseRecipe = account && inspectedJobId
+    ? await loadInitialGenerationRecipe(account.id, inspectedJobId).catch(() => null)
+    : null;
+
   return (
     <LibraryView
       accountAvailable={Boolean(account)}
@@ -136,6 +144,8 @@ export default async function LibraryPage({
       offset={offset}
       limit={pageSize}
       hasMore={hasMore}
+      inspectedAssetId={inspectedAsset?.id ?? null}
+      reuseRecipeJobId={reuseRecipe?.jobId ?? null}
     />
   );
 }

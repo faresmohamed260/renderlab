@@ -33,6 +33,7 @@ test("desktop Library inspects the current media without consuming its Viewer li
   await expect(inspector.getByRole("button", { name: "Favorited" })).toHaveAttribute("aria-pressed", "true");
   await gallery.getByRole("link", { name: "Inspect Second image" }).press("Enter");
   await expect(inspector.getByRole("heading", { name: "Second image" })).toBeVisible();
+  await expect(inspector.getByRole("link", { name: "Reuse settings" })).toHaveAttribute("href", "/create?recipe=" + secondAsset.generationJobId);
   await expect(inspector.getByRole("link", { name: "Download" })).toHaveAttribute("href", "/api/media/assets/" + secondAsset.id + "/download");
   await expect(inspector.getByRole("button", { name: "Favorite", exact: true })).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "Select", exact: true }).press("Enter");

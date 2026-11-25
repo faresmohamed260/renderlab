@@ -77,6 +77,8 @@ export function LibraryView({
   offset,
   limit,
   hasMore,
+  inspectedAssetId = null,
+  reuseRecipeJobId = null,
 }: {
   accountAvailable: boolean;
   available: boolean;
@@ -94,6 +96,8 @@ export function LibraryView({
   offset: number;
   limit: number;
   hasMore: boolean;
+  inspectedAssetId?: string | null;
+  reuseRecipeJobId?: string | null;
 }) {
   const selectedCollection = collections.find((collection) => collection.id === selectedCollectionId) ?? null;
   const selectedCollectionName = selectedCollection?.name ?? null;
@@ -185,7 +189,12 @@ export function LibraryView({
               href={libraryHref(section.value, kind, searchQuery, sort, favoriteOnly, selectedCollectionId)}
               aria-current={active ? "page" : undefined}
             >
-              {section.label}
+              {section.value === "creatives" ? (
+                <>
+                  <span className={styles.narrowOnly}>{section.label}</span>
+                  <span className={styles.desktopOnly}>All media</span>
+                </>
+              ) : section.label}
             </LibraryNavigationLink>
           </Button>
         );
@@ -227,26 +236,31 @@ export function LibraryView({
     </form>
   );
 
-  const filterControls = (
-    <div className={styles.filterRow} aria-label="Library filters">
-      <nav className={styles.kindSwitch} aria-label="Library media type">
-        {filters.map((filter) => {
-          const active = kind === filter.value;
-          return (
-            <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
-              <LibraryNavigationLink
-                href={libraryHref(tab, filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
-                aria-current={active ? "page" : undefined}
-              >
-                {filter.label}
-              </LibraryNavigationLink>
-            </Button>
-          );
-        })}
-      </nav>
-      <span className={styles.filterDivider} aria-hidden="true" />
-      <Button asChild variant={favoriteOnly ? "secondary" : "ghost"} size="sm" className="shrink-0">
-        <LibraryNavigationLink href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}>
+  const kindControls = (
+    <nav className={styles.kindSwitch} aria-label="Library media type">
+      {filters.map((filter) => {
+        const active = kind === filter.value;
+        return (
+          <Button key={filter.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
+            <LibraryNavigationLink
+              href={libraryHref(tab, filter.value, searchQuery, sort, favoriteOnly, selectedCollectionId)}
+              aria-current={active ? "page" : undefined}
+            >
+              {filter.label}
+            </LibraryNavigationLink>
+          </Button>
+        );
+      })}
+    </nav>
+  );
+
+  const organizationControls = (
+    <div className={styles.organizationCell}>
+      <Button asChild variant={favoriteOnly ? "secondary" : "ghost"} size="sm" className="min-h-11">
+        <LibraryNavigationLink
+          href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}
+          aria-current={favoriteOnly ? "page" : undefined}
+        >
           <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
           Favorites
         </LibraryNavigationLink>
@@ -259,37 +273,45 @@ export function LibraryView({
           collectionHrefs={collectionHrefs}
         />
       ) : null}
-      <div className={styles.sortWrap}>
-        <LibrarySortToggle
-          sort={sort}
-          newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
-          oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
-        />
-      </div>
+      {collectionsAvailable && collections.length > 0 ? (
+        <nav className={styles.collectionList} aria-label="Library collections">
+          {collections.map((collection) => (
+            <Button key={collection.id} asChild variant="ghost" size="sm">
+              <LibraryNavigationLink
+                href={collectionHrefs[collection.id]}
+                aria-current={selectedCollectionId === collection.id ? "page" : undefined}
+              >
+                <FolderOpen aria-hidden="true" data-icon="inline-start" />
+                <span className="truncate">{collection.name}</span>
+              </LibraryNavigationLink>
+            </Button>
+          ))}
+        </nav>
+      ) : null}
     </div>
+  );
+
+  const sortControl = (
+    <LibrarySortToggle
+      sort={sort}
+      newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
+      oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
+    />
   );
 
   const uploadAction = accountAvailable && uploadAvailable && tab === "uploads"
     ? <LibraryUploadButton />
     : null;
 
-  const staticCommandRail = (
-    <div className={styles.commandSurface} data-library-gallery-rail="true" data-selection="off">
-      <div className={styles.defaultControls}>
-        <div className={styles.sourceCell}>{sourceControls}</div>
-        <div className={styles.searchCell}>{searchControls}</div>
-        <div className={styles.actionCell}>{uploadAction}</div>
-        <div className={styles.filterCell}>{filterControls}</div>
-      </div>
-    </div>
-  );
-
   const mediaContextLabel = `${sectionTitle.toUpperCase()} / ${sort === "oldest" ? "OLDEST" : "NEWEST"}`;
+
+  const viewTitle = selectedCollectionName ?? (favoriteOnly ? "Favorites" : tab === "uploads" ? "Uploads" : "All media");
+  const viewHref = libraryHref(tab, kind, searchQuery, sort, favoriteOnly, selectedCollectionId, offset);
 
   return (
     <LibraryDropUploadSurface enabled={accountAvailable && uploadAvailable && tab === "uploads"}>
       <section className={`${styles.workspace} mx-auto w-full max-w-[1440px] px-4 pb-28 pt-6 sm:px-8 sm:pb-16 sm:pt-8 lg:px-12 lg:pt-9`}>
-        <div className={styles.contextBlock}>
+        <div className={styles.contextBlock} data-library-ready={accountAvailable}>
           <p className={styles.eyebrow}>LIBRARY / MEDIA INDEX</p>
           <h2 className={styles.title}>Library</h2>
           <p className={styles.support}>
@@ -313,9 +335,24 @@ export function LibraryView({
             </EmptyContent>
           </Empty>
         ) : (
-          <>
-            {!available || items.length === 0 ? staticCommandRail : null}
-
+          <LibraryBatchSelection
+            key={batchSelectionKey}
+            items={items}
+            collections={collections}
+            sourceControls={sourceControls}
+            searchControls={searchControls}
+            organizationControls={organizationControls}
+            kindControls={kindControls}
+            sortControl={sortControl}
+            uploadAction={uploadAction}
+            mediaContextLabel={mediaContextLabel}
+            viewTitle={viewTitle}
+            viewHref={viewHref}
+            showCount={available && !collectionMissing}
+            inspectedAssetId={inspectedAssetId}
+            reuseRecipeJobId={reuseRecipeJobId}
+            dropHint={tab === "uploads" ? "Drop files anywhere to upload" : null}
+          >
             {!available ? (
               <Alert className={styles.unavailableState} role="status">
                 <AlertDescription className="text-text-muted">
@@ -353,18 +390,6 @@ export function LibraryView({
               </Empty>
             ) : (
               <>
-                <LibraryBatchSelection
-                  key={batchSelectionKey}
-                  items={items}
-                  collections={collections}
-                  sourceControls={sourceControls}
-                  searchControls={searchControls}
-                  filterControls={filterControls}
-                  uploadAction={uploadAction}
-                  mediaContextLabel={mediaContextLabel}
-                  dropHint={tab === "uploads" ? "Drop files anywhere to upload" : null}
-                />
-
                 {(offset > 0 || hasMore) ? (
                   <nav className="mt-8 flex items-center justify-between gap-3" aria-label="Library pages">
                     <div>
@@ -389,7 +414,7 @@ export function LibraryView({
                 ) : null}
               </>
             )}
-          </>
+          </LibraryBatchSelection>
         )}
       </section>
     </LibraryDropUploadSurface>
