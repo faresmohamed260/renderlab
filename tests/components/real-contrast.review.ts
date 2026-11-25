@@ -32,6 +32,14 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       });
       const page = await context.newPage();
       page.on("pageerror", error => errors.push(error.message));
+      page.on("response", response => {
+        if (response.status() >= 400) {
+          const detail = "HTTP " + response.status() + " " + response.request().method() + " " + response.url() + " (" + response.request().resourceType() + ")";
+          errors.push(detail);
+          console.error("REVIEW HTTP ERROR", detail);
+        }
+      });
+
       const collect = async (state: string, sample: string, locator: ReturnType<typeof page.locator>) => {
         rows.push(await collectTextContrast(page, locator, state, sample));
       };
@@ -50,8 +58,15 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await collect("popover", "Real shared popover", page.getByText("Real shared popover", { exact: true }));
         await collect("popover", "Popover action", page.getByText("Popover action", { exact: true }));
         await page.keyboard.press("Escape");
+        // Radix restores focus when its exit animation unmounts. Do not send
+        // the next trusted key while that pending focus restoration can blur
+        // and dismiss the real shell disclosure.
+        await expect(page.getByText("Real shared popover", { exact: true })).toHaveCount(0);
+        await expect(popover).toBeFocused();
         const trigger = page.locator("header button[aria-expanded]:visible").first();
         await expect(trigger).toBeVisible();
+        await trigger.focus();
+        await expect(trigger).toBeFocused();
         if (await trigger.getAttribute("aria-expanded") !== "true") await trigger.press("Enter");
         await expect(trigger).toHaveAttribute("aria-expanded", "true");
         await page.waitForTimeout(800);

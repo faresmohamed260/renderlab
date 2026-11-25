@@ -1,150 +1,265 @@
 {
-  "195": {},
+  "195": {
+    "empty/edit": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "empty/generate": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "empty/recents": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "empty/advanced": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated/edit": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated/generate": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated/recents": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated/advanced": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated-auto-vgl/edit": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated-auto-vgl/generate": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated-auto-vgl/recents": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ],
+    "populated-auto-vgl/advanced": [
+      {
+        "selector": ".preview-navigation-shell",
+        "kind": "scroll",
+        "pixels": 36
+      },
+      {
+        "selector": "input#create-preview-steps",
+        "kind": "range-box",
+        "pixels": 1
+      }
+    ]
+  },
   "320": {},
   "390": {},
   "1440": {
     "empty/edit": [
       {
-        "selector": ".create-preview-canvas-upload",
+        "selector": "button[aria-label=\"Choose reference 2 image\"]",
         "kind": "scroll",
-        "pixels": 3
+        "pixels": 5
       },
       {
-        "selector": ".create-preview-stage-surface",
+        "selector": "button[aria-label=\"Choose reference 3 image\"]",
         "kind": "scroll",
-        "pixels": 3
+        "pixels": 5
+      },
+      {
+        "selector": "button[aria-label=\"Choose reference 4 image\"]",
+        "kind": "scroll",
+        "pixels": 5
       }
     ],
     "empty/generate": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "empty/recents": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "empty/advanced": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "populated/edit": [
       {
-        "selector": ".create-preview-canvas-upload",
+        "selector": "button[aria-label=\"Choose reference 2 image\"]",
         "kind": "scroll",
-        "pixels": 3
+        "pixels": 5
       },
       {
-        "selector": ".create-preview-stage-surface",
+        "selector": "button[aria-label=\"Choose reference 3 image\"]",
         "kind": "scroll",
-        "pixels": 3
+        "pixels": 5
+      },
+      {
+        "selector": "button[aria-label=\"Choose reference 4 image\"]",
+        "kind": "scroll",
+        "pixels": 5
       }
     ],
     "populated/generate": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "populated/recents": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "populated/advanced": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "populated-auto-vgl/edit": [
       {
-        "selector": ".create-preview-canvas-upload",
+        "selector": "button[aria-label=\"Choose reference 2 image\"]",
         "kind": "scroll",
-        "pixels": 3
+        "pixels": 5
       },
       {
-        "selector": ".create-preview-stage-surface",
+        "selector": "button[aria-label=\"Choose reference 3 image\"]",
         "kind": "scroll",
-        "pixels": 3
+        "pixels": 5
+      },
+      {
+        "selector": "button[aria-label=\"Choose reference 4 image\"]",
+        "kind": "scroll",
+        "pixels": 5
       }
     ],
     "populated-auto-vgl/generate": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "populated-auto-vgl/recents": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ],
     "populated-auto-vgl/advanced": [
       {
-        "selector": ".create-preview-stage-surface",
-        "kind": "scroll",
-        "pixels": 38
-      },
-      {
         "selector": "button[aria-label=\"Inspiration unavailable\"]",
         "kind": "scroll",
-        "pixels": 2
+        "pixels": 7
       }
     ]
   }

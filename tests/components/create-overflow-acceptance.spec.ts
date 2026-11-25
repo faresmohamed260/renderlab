@@ -80,6 +80,11 @@ for (const viewport of viewports) {
           id: "12345678-1234-4234-8234-123456789ab" + i, generationJobId: "23456789-1234-4234-8234-123456789ab" + i }));
         await route.fulfill({ json: { ...emptyHistory, items } }); return;
       }
+      // Only the exact synthetic IDs returned by this state's fixture list.
+      const contentPaths = Array.from({ length: count }, (_, i) => "/api/media/assets/12345678-1234-4234-8234-123456789ab" + i + "/content");
+      if (request.method() === "GET" && !url.search && contentPaths.includes(url.pathname)) {
+        await route.fulfill({ contentType: "image/png", body: Buffer.from(fixtureImage.split(",")[1], "base64") }); return;
+      }
       if (request.method() === "GET" && url.pathname === "/api/account/profile") { await route.fulfill({ json: { profile: { displayName: "Synthetic Member" } } }); return; }
       if (request.method() === "GET" && url.pathname === "/api/account/profile/avatar") { await route.fulfill({ contentType: "image/png", body: Buffer.from(fixtureImage.split(",")[1], "base64") }); return; }
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/create-preview/") || request.method() !== "GET") {

@@ -55,12 +55,17 @@ jobs:
         run: node --test tests/unit/phase6-review-index.test.mjs tests/unit/p6-composited-contrast.test.mjs
       - name: Install Chromium
         run: node node_modules/@playwright/test/cli.js install --with-deps chromium
-      - name: Capture real mounted components (loopback network namespace)
+      - name: Stage real production static assets in nested fixture
+        run: |
+          mkdir -p tests/component-app/public
+          cp -a public/. tests/component-app/public/
+          cp src/app/icon.svg tests/component-app/app/icon.svg
+      - name: Build optimized fixture and capture real mounted components (loopback network namespace)
         run: |
           sudo unshare --net -- bash -c '
             set -e
             ip link set lo up
-            exec runuser -u "$1" -- env -i PATH="$2" HOME="$3" CI=true NEXT_TELEMETRY_DISABLED=1 REVIEW_SOURCE_SHA="$4" node node_modules/@playwright/test/cli.js test --config tests/components/playwright.review.config.ts
+            exec runuser -u "$1" -- env -i PATH="$2" HOME="$3" CI=true NEXT_TELEMETRY_DISABLED=1 REVIEW_SOURCE_SHA="$4" bash -c "node node_modules/next/dist/bin/next build tests/component-app && node node_modules/@playwright/test/cli.js test --config tests/components/playwright.review.config.ts"
           ' _ "$(id -un)" "$PATH" "$HOME" "$REVIEW_SOURCE_SHA"
       - name: Assemble and verify review bundle
         if: always()
