@@ -3,6 +3,7 @@ import mountedConfig from "./playwright.config";
 
 export default defineConfig({
   ...mountedConfig,
+  projects: undefined, // Keep the diagnostic repeats exclusive to the mounted lane.
   testMatch: ["real-component.review.ts", "real-contrast.review.ts", "round3-landing.review.ts"],
   timeout: 90_000,
   workers: 1,

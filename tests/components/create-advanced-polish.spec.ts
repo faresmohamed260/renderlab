@@ -1,5 +1,9 @@
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 for (const motion of ["reduce", "no-preference"] as const) {
   for (const width of [195, 320, 390]) {

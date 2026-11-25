@@ -2,6 +2,10 @@ import { test, expect, type BrowserContext, type Route, type Page } from "@playw
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { activityIds } from "../component-app/activity-fixtures";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 const origin = "http://127.0.0.1:4173";
 type Action = "cancel" | "retry" | "run-again";

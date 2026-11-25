@@ -1,5 +1,9 @@
 import { test, expect } from "./library-io";
 import { firstAsset, secondAsset } from "../component-app/library-fixtures";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 test("desktop Library inspects the current media without consuming its Viewer link or changing batch state", async ({ page, io }) => {
   await page.goto("/library");

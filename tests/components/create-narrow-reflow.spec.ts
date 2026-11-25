@@ -1,6 +1,10 @@
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 import type { Page } from "@playwright/test";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 // Inspect all rendered layout boxes, not merely root overflow. Inline text
 // and SVG geometry have no CSS clientWidth; native single-line text controls

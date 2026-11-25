@@ -3,6 +3,7 @@ import mounted from "./playwright.config";
 
 export default defineConfig({
   ...mounted,
+  projects: undefined, // Keep the diagnostic repeats exclusive to the mounted lane.
   testMatch: "slow4g.performance.ts",
   timeout: 480_000,
   retries: 0,

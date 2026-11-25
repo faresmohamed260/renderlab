@@ -1,5 +1,9 @@
 import { test, expect } from "./isolated-io";
 import { fixtureAsset, fixtureImage, emptyHistory } from "../component-app/fixtures";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 for (const width of [195, 320, 390, 1440]) {
   for (const reducedMotion of ["reduce", "no-preference"] as const) {

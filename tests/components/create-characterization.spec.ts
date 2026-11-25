@@ -1,5 +1,9 @@
 import { test, expect } from "./isolated-io";
 import { fixtureAssetId, fixtureJobId } from "../component-app/fixtures";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 test("Viewer exposes owner-scoped continuation destinations without invoking generation", async ({ page, io }) => {
   await page.goto("/viewer");

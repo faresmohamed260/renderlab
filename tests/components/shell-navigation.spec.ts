@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 for (const variant of ["signed-out", "member", "owner"] as const) {
   test("desktop shell exposes only real destinations: " + variant, async ({ page, context }) => {

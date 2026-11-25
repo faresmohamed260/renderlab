@@ -3,6 +3,10 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: ".",
   testMatch: "*.spec.ts",
+  projects: [
+    {name:"mounted-original"},
+    {name:"readiness-cold-repeat",testMatch:["create-advanced-polish.spec.ts","create-characterization.spec.ts","create-keyboard-shortcuts.spec.ts","create-narrow-reflow.spec.ts","library-inspector.spec.ts","library-actions.spec.ts","shell-navigation.spec.ts","activity-characterization.spec.ts"],repeatEach:2},
+  ],
   workers: 1,
   retries: 0,
   timeout: 30_000,

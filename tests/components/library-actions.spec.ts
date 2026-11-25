@@ -1,5 +1,9 @@
 import { test, expect } from "./library-io";
 import { firstAsset, secondAsset, collection } from "../component-app/library-fixtures";
+import { attachReadinessDiagnostic, reportReadinessDiagnostic } from "./readiness-diagnostic";
+
+test.beforeEach(async ({page}) => { await attachReadinessDiagnostic(page); });
+test.afterEach(async ({page},info) => { reportReadinessDiagnostic(page,info); });
 
 test("Library thumbnails keep lazy requests and decode asynchronously", async ({ page, io }) => {
   await page.goto("/library");
