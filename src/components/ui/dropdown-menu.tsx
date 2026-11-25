@@ -5,6 +5,7 @@ import { CheckIcon, CircleIcon } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
+import styles from "./dropdown-menu.module.css";
 
 // Keep generic menu mechanics here; product-specific navigation/data contracts stay feature-owned.
 function DropdownMenu(props: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
@@ -56,7 +57,7 @@ function DropdownMenuLabel({
   );
 }
 
-const menuItemFocus = "focus:bg-[var(--rl-surface-selected)] focus:outline-solid focus:outline-[length:var(--rl-focus-width)] focus:[outline-offset:calc(-1*var(--rl-focus-width))] focus:outline-[color:var(--rl-focus)]";
+const menuItemFocus = styles.itemFocus;
 
 function DropdownMenuItem({
   className,

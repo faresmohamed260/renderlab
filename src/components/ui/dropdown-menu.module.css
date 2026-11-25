@@ -1,0 +1,8 @@
+/* Unlayered on purpose: the legacy global :focus-visible rule otherwise
+   overrides Tailwind's layered outline utilities. Keep the ring inside the
+   clipping menu surface, including forced-colors mode. */
+.itemFocus:focus {
+  background-color: var(--rl-surface-selected);
+  outline: var(--rl-focus-width) solid var(--rl-focus);
+  outline-offset: calc(-1 * var(--rl-focus-width));
+}
