@@ -242,6 +242,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/production/current.json` — canonical machine-readable current-production application/deployment record.
 - `docs/STATUS.md` — concise current status/deployment summary validated against the production manifest; detailed domain authorities still govern their own non-production facts.
 - `docs/audits/**` — evidence and assessments. A current authority must explicitly identify an audit/assessment if its finding is meant to represent current accepted state.
+- [Create comp fidelity audit, 2026-11-25](audits/2026-11-25-create-comp-fidelity-gaps.md) — historical static comparison with PR coverage and History wiring dependencies.
 - `docs/archive/**` — historical journal/snapshot evidence only, including the pre-Checkpoint-6 Project/UI snapshots listed in `docs/archive/README.md`.
 - `docs/history/contracts/**` — relocated closed architecture/UI execution contracts; historical evidence only.
 - `docs/history/ui/**` — historical UI decision provenance/evidence, including pre-separation snapshots; never a competing current decision authority.
