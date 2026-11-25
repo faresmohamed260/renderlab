@@ -143,18 +143,23 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
         await trigger.focus();
         await expect(trigger).toBeFocused();
         if (await trigger.getAttribute("aria-expanded") !== "true") await trigger.press("Enter");
-        await expect(trigger).toHaveAttribute("aria-expanded", "true");
         if (phone) {
           await expect(dialog).toBeVisible();
+          // Radix intentionally removes the logo from the accessibility tree
+          // while the modal is open. Retain the DOM assertion without treating
+          // the hidden background trigger as an accessible control.
+          await expect(trigger).toHaveCount(0);
+          await expect(header.locator('button[aria-label="Open navigation"]')).toHaveAttribute("aria-expanded", "true");
           await expect(dialog.getByRole("button", { name: "Close navigation", exact: true })).toBeFocused();
           await expect(dialog.getByRole("link", { name: "Account settings: Synthetic Member", exact: true })).toBeVisible();
         } else {
+          await expect(trigger).toHaveAttribute("aria-expanded", "true");
           await expect(desktopSettings).toBeVisible();
         }
         await capture("shell-open");
         await page.keyboard.press("Escape");
-        await expect(trigger).toHaveAttribute("aria-expanded", "false");
         await expect(phone ? dialog : desktopSettings).toHaveCount(0);
+        await expect(trigger).toHaveAttribute("aria-expanded", "false");
         await expect(trigger).toBeFocused();
         await capture("shell-settled");
       });
