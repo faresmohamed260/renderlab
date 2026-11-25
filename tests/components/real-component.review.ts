@@ -22,6 +22,7 @@ async function settle(page: Page) {
 
 for (const viewport of viewports) for (const reducedMotion of preferences) {
   const key = viewport.width + "x" + viewport.height + "-" + reducedMotion;
+  const phone = viewport.width <= 700;
   test("real components and shell " + key, async ({ browser }) => {
     await mkdir(bundle, { recursive: true });
     // Review-only synthetic artwork: recognizable even in a small history tile.
@@ -47,7 +48,7 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
     const context = await browser.newContext({
       viewport, deviceScaleFactor: 1, reducedMotion, colorScheme: "dark",
       locale: "en-US", timezoneId: "UTC", serviceWorkers: "block",
-      extraHTTPHeaders: { "x-renderlab-fixture-shell": "create" },
+      extraHTTPHeaders: { "x-renderlab-fixture-shell": "review" },
       recordVideo: { dir: path.resolve("test-results/review-video"), size: viewport },
     });
     const page = await context.newPage();
@@ -129,17 +130,32 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
         await page.goto("/create");
         await expect(page.getByRole("region", { name: "Create with FIBO" })).toBeVisible();
         await expect(page.locator("[data-create-history-image]")).toHaveCount(1);
-        await expect(page.locator("header").first()).toBeVisible();
+        const header = page.locator(".preview-navigation-header");
+        await expect(header).toBeVisible();
         await capture("create");
-        // Real disclosure trigger: current shell uses section/account buttons;
-        // successor shell may use logo sidebar or account disclosure.
-        const trigger = page.locator("header button[aria-expanded]:visible").first();
+        const trigger = header.getByRole("button", {
+          name: phone ? "Open navigation" : "Account menu: Synthetic Member",
+          exact: true,
+        });
+        const dialog = page.getByRole("dialog", { name: "RenderLab navigation", exact: true });
+        const desktopSettings = header.getByRole("link", { name: "Settings", exact: true });
         await expect(trigger).toBeVisible();
+        await trigger.focus();
+        await expect(trigger).toBeFocused();
         if (await trigger.getAttribute("aria-expanded") !== "true") await trigger.press("Enter");
         await expect(trigger).toHaveAttribute("aria-expanded", "true");
+        if (phone) {
+          await expect(dialog).toBeVisible();
+          await expect(dialog.getByRole("button", { name: "Close navigation", exact: true })).toBeFocused();
+          await expect(dialog.getByRole("link", { name: "Account settings: Synthetic Member", exact: true })).toBeVisible();
+        } else {
+          await expect(desktopSettings).toBeVisible();
+        }
         await capture("shell-open");
         await page.keyboard.press("Escape");
         await expect(trigger).toHaveAttribute("aria-expanded", "false");
+        await expect(phone ? dialog : desktopSettings).toHaveCount(0);
+        await expect(trigger).toBeFocused();
         await capture("shell-settled");
       });
       await attempt("library", async () => {
