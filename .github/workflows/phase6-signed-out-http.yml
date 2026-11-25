@@ -1,0 +1,79 @@
+name: Phase 6 Signed-out Production HTTP (optional)
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "proxy.ts"
+      - "next.config.ts"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tests/http/signed-out-production-smoke.mjs"
+      - ".github/workflows/phase6-signed-out-http.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-signed-out-http-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  signed-out-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      REVIEW_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      MAIN_BASE_SHA: ${{ github.event.pull_request.base.sha || github.sha }}
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.REVIEW_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Checkout exact PR main base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.MAIN_BASE_SHA }}
+          path: signed-out-main-base
+          persist-credentials: false
+      - name: Verify both revisions and separate worktrees
+        run: |
+          test "$(git rev-parse HEAD)" = "$REVIEW_SOURCE_SHA"
+          test "$(git -C signed-out-main-base rev-parse HEAD)" = "$MAIN_BASE_SHA"
+          mv signed-out-main-base "$RUNNER_TEMP/renderlab-signed-out-main"
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install both locked trees
+        run: |
+          npm ci --no-audit --no-fund
+          npm ci --prefix "$RUNNER_TEMP/renderlab-signed-out-main" --no-audit --no-fund
+      - name: Build and exercise real main and candidate HTTP (loopback only)
+        run: |
+          set +e
+          for target in main candidate; do
+            root="$PWD"
+            if test "$target" = main; then root="$RUNNER_TEMP/renderlab-signed-out-main"; fi
+            echo "=== SIGNED-OUT $target ==="
+            sudo unshare --net -- bash -c '
+              set -e
+              ip link set lo up
+              cd "$4"
+              exec runuser -u "$1" -- env -i PATH="$2" HOME="$3" CI=true NEXT_TELEMETRY_DISABLED=1 bash -c '"'"'node node_modules/next/dist/bin/next build && node "$1"'"'"' _ "$5"
+            ' _ "$(id -un)" "$PATH" "$HOME" "$root" "$PWD/tests/http/signed-out-production-smoke.mjs" 2>&1 | tee "$RUNNER_TEMP/signed-out-$target.log"
+            code=${PIPESTATUS[0]}
+            echo "$code" > "$RUNNER_TEMP/signed-out-$target.exit"
+            grep '^SIGNED_OUT_HTTP ' "$RUNNER_TEMP/signed-out-$target.log" > "$RUNNER_TEMP/signed-out-$target.rows"
+          done
+          set -e
+          test "$(cat "$RUNNER_TEMP/signed-out-main.exit")" = 0
+          test "$(cat "$RUNNER_TEMP/signed-out-candidate.exit")" = 0
+          test "$(wc -l < "$RUNNER_TEMP/signed-out-main.rows")" = 4
+          test "$(wc -l < "$RUNNER_TEMP/signed-out-candidate.rows")" = 4
+          diff -u "$RUNNER_TEMP/signed-out-main.rows" "$RUNNER_TEMP/signed-out-candidate.rows"
