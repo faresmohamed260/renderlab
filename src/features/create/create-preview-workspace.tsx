@@ -2,7 +2,8 @@
 
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -164,13 +165,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [continuationPending, setContinuationPending] = useState(!!initialContinuation);
   const [continuationError, setContinuationError] = useState(initialContinuationError);
   const [reducedMotion, setReducedMotion] = useState(true);
-  useEffect(() => {
-    const query = matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
   const modeSpring = useSpring({
     position: mode === "edit" ? 1 : 0,
     config: { mass: 1, tension: 220, friction: 22 },
@@ -218,23 +212,37 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const structuredSlot = useRef<HTMLDivElement>(null);
   const inlineSeed = useRef<HTMLDivElement>(null);
   const inlineSteps = useRef<HTMLLabelElement>(null);
-  const advancedWasOpen = useRef(false);
   const [advancedReserve, setAdvancedReserve] = useState({ structured: 0, seed: 0, steps: 0 });
-  // The portal removes the focused field at the closing commit. Return focus
-  // before the browser paints that commit, rather than waiting for Radix's
-  // asynchronous unmount autofocus (which can scroll the composer).
-  useLayoutEffect(() => {
-    if (advancedSheetOpen) { advancedWasOpen.current = true; return; }
-    if (!advancedWasOpen.current) return;
-    advancedWasOpen.current = false;
-    const destination = matchMedia("(min-width: 701px)").matches
-      ? workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")
-      : advancedTrigger.current;
-    destination?.focus({ preventScroll: true });
-  }, [advancedSheetOpen]);
   const [advancedOffset, setAdvancedOffset] = useState(0);
   const advancedClosing = useRef(false);
   const [, advancedSpring] = useSpring(() => ({ offset: 0 }), []);
+  const finishAdvancedClose = useCallback(() => {
+    advancedClosing.current = false;
+    // Remove the portal and remount the inline fields in one commit.
+    // Flush Radix's focus trap cleanup and return focus in the same browser task.
+    flushSync(() => {
+      setAdvancedSheetOpen(false);
+      setAdvancedOffset(0);
+    });
+    const root = workspaceRoot.current;
+    const destination = matchMedia("(min-width: 701px)").matches
+      ? root?.querySelector<HTMLElement>("#create-preview-prompt")
+      : advancedTrigger.current;
+    destination?.focus({ preventScroll: true });
+    if (document.activeElement === document.body) root?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    const query = matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      setReducedMotion(query.matches);
+      if (query.matches && advancedClosing.current) finishAdvancedClose();
+    };
+    setReducedMotion(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, [finishAdvancedClose]);
+
   function changeAdvancedOpen(next: boolean) {
     if (next) {
       // Preserve the actual inline footprint while the single draft controls
@@ -249,19 +257,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       setAdvancedOffset(reducedMotion ? 0 : 100);
       setAdvancedSheetOpen(true);
     } else if (reducedMotion) {
-      advancedSpring.stop();
-      advancedClosing.current = false;
-      setAdvancedOffset(0);
-      setAdvancedSheetOpen(false);
+      finishAdvancedClose();
     } else if (!advancedClosing.current) {
       advancedClosing.current = true;
       void advancedSpring.start({ to: { offset: 100 }, ...springOptions("smooth", false),
         onChange: result => setAdvancedOffset(result.value.offset),
         onRest: result => {
-          if (result.finished && advancedClosing.current) {
-            advancedClosing.current = false;
-            setAdvancedSheetOpen(false);
-          }
+          if (result.finished && advancedClosing.current) finishAdvancedClose();
         } });
     }
   }
@@ -273,10 +275,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       advancedSpring.stop();
       advancedSpring.set({ offset: 0 });
       setAdvancedOffset(0);
-      if (advancedClosing.current) {
-        advancedClosing.current = false;
-        setAdvancedSheetOpen(false);
-      }
       return;
     }
     void advancedSpring.start({ from: { offset: 100 }, to: { offset: 0 }, reset: true,
@@ -284,19 +282,16 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       onChange: result => setAdvancedOffset(result.value.offset),
       onRest: result => { if (result.finished && !advancedClosing.current) setAdvancedOffset(0); } });
     return () => { advancedSpring.stop(); };
-  }, [advancedSheetOpen, reducedMotion, advancedSpring]);
+  }, [advancedSheetOpen, reducedMotion, advancedSpring, finishAdvancedClose]);
   useEffect(() => {
+    if (!advancedSheetOpen) return;
     const query = matchMedia("(min-width: 701px)");
     const closeOnWide = () => {
-      if (!query.matches) return;
-      advancedSpring.stop();
-      advancedClosing.current = false;
-      setAdvancedOffset(0);
-      setAdvancedSheetOpen(false);
+      if (query.matches) finishAdvancedClose();
     };
     query.addEventListener("change", closeOnWide);
     return () => query.removeEventListener("change", closeOnWide);
-  }, [advancedSpring]);
+  }, [advancedSheetOpen, finishAdvancedClose]);
   useEffect(() => {
     const query = matchMedia("(min-width: 1025px)");
     const update = () => setDesktop(query.matches);
@@ -1388,28 +1383,21 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               <SheetTrigger asChild>
                 <Button ref={advancedTrigger} type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
               </SheetTrigger>
-              <SheetContent side="bottom" showCloseButton={false} className={phoneStyles.sheet}
-                style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
-                onCloseAutoFocus={event => {
-                  event.preventDefault();
-                  // The layout effect restores focus at the closing commit.
-                  // Only recover if no element received focus in the meantime.
-                  if (document.activeElement !== document.body) return;
-                  const destination = matchMedia("(min-width: 701px)").matches
-                    ? workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")
-                    : advancedTrigger.current;
-                  destination?.focus({ preventScroll: true });
-                }}>
-                <div className={phoneStyles.heading}>
-                  <SheetTitle>Advanced</SheetTitle>
-                  <SheetClose asChild><Button type="button" variant="ghost" size="lg">Done</Button></SheetClose>
-                </div>
-                <SheetDescription>Settings for your next image. Mode, shape and references stay in the composer.</SheetDescription>
-                <div className={phoneStyles.settings}>
-                  {advancedSheetOpen && <>{seedField}{stepsField}{structuredFields}</>}
-                </div>
-                <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
-              </SheetContent>
+              {advancedSheetOpen && (
+                <SheetContent side="bottom" showCloseButton={false} className={phoneStyles.sheet}
+                  style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
+                  onCloseAutoFocus={event => event.preventDefault()}>
+                  <div className={phoneStyles.heading}>
+                    <SheetTitle>Advanced</SheetTitle>
+                    <SheetClose asChild><Button type="button" variant="ghost" size="lg">Done</Button></SheetClose>
+                  </div>
+                  <SheetDescription>Settings for your next image. Mode, shape and references stay in the composer.</SheetDescription>
+                  <div className={phoneStyles.settings}>
+                    {seedField}{stepsField}{structuredFields}
+                  </div>
+                  <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
+                </SheetContent>
+              )}
             </Sheet>
             <div className="create-preview-settings">
               {advancedSheetOpen ? <div aria-hidden="true" style={{ blockSize: advancedReserve.seed }} /> : seedField}
