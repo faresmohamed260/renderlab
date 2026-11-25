@@ -388,7 +388,7 @@ export function LibraryBatchSelection({
           <aside className={styles.discovery} aria-label="Library discovery">
             <div className={styles.searchCell}>{searchControls}</div>
             <div className={styles.sourceCell}>{sourceControls}</div>
-            {organizationControls}
+            {!narrow ? organizationControls : null}
           </aside>
 
           <div className={styles.centerToolbar}>
@@ -416,7 +416,9 @@ export function LibraryBatchSelection({
                 </Button>
               ) : null}
             </div>
-            <div className={styles.kindCell}>{kindControls}</div>
+            <div className={styles.kindCell}>
+              {narrow ? <section className={styles.phoneFilters} aria-label="Library filters">{kindControls}{organizationControls}</section> : kindControls}
+            </div>
             <div className={styles.sortWrap}>{sortControl}</div>
             {visibleItems.length > 0 ? (
               <div className={styles.density} role="group" aria-label="Grid size">
@@ -457,6 +459,9 @@ export function LibraryBatchSelection({
                 <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
                 {allSelected ? "Clear page" : `Select page (${visibleItems.length})`}
               </Button>
+              {narrow ? <Button type="button" variant="ghost" size="sm" disabled={selectedCount === 0 || busy} onClick={() => void setSelectedFavorite(true)}>
+                <Star aria-hidden="true" data-icon="inline-start" /> Favorite
+              </Button> : null}
               <CollapsibleTrigger asChild>
                 <Button type="button" variant={organizeOpen ? "secondary" : "ghost"} size="sm" disabled={selectedCount === 0 || busy}>
                   <FolderOpen aria-hidden="true" data-icon="inline-start" />
