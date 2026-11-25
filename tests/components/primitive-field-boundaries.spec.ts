@@ -2,8 +2,10 @@ import sharp from "sharp";
 import { test, expect } from "./isolated-io";
 import { contrastRatio } from "./composited-contrast";
 
+for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
 for (const contrast of ["no-preference", "more"] as const) {
-  test("Input and Textarea boundaries are visible on the shared panel at contrast " + contrast, async ({ page, io }) => {
+  test("Input and Textarea boundaries are visible on the shared panel at contrast " + contrast + " at " + viewport.width, async ({ page, io }) => {
+    await page.setViewportSize(viewport);
     await page.emulateMedia({ contrast });
     await page.goto("/review");
     for (const id of ["#review-input", "#review-prompt"]) {
@@ -28,4 +30,6 @@ for (const contrast of ["no-preference", "more"] as const) {
     }
     expect(io).toEqual([]);
   });
+}
+
 }

@@ -33,6 +33,30 @@ for (const { name, contrast, forcedColors } of modes) {
         await page.keyboard.press("ArrowDown"); // Checked option
       }
       await expect(item).toBeFocused();
+      const cascade = await item.evaluate(el => {
+        const matches: { selector: string; layers: string[]; value: string; priority: string }[] = [];
+        function walk(rules: CSSRuleList, layers: string[]) {
+          for (const rule of rules) {
+            if (rule instanceof CSSStyleRule) {
+              try {
+                if (el.matches(rule.selectorText) && rule.style.getPropertyValue("outline-offset"))
+                  matches.push({ selector: rule.selectorText, layers, value: rule.style.getPropertyValue("outline-offset"), priority: rule.style.getPropertyPriority("outline-offset") });
+              } catch { /* CSS nesting or unsupported selector */ }
+            }
+            if (rule instanceof CSSMediaRule && !matchMedia(rule.conditionText).matches) continue;
+            if ("cssRules" in rule) {
+              const nested = rule as CSSGroupingRule;
+              const name = rule.constructor.name === "CSSLayerBlockRule" ? (rule as CSSLayerBlockRule).name : "";
+              walk(nested.cssRules, name ? [...layers, name] : layers);
+            }
+          }
+        }
+        for (const sheet of document.styleSheets) {
+          try { walk(sheet.cssRules, []); } catch { /* inaccessible stylesheet */ }
+        }
+        return { computed: getComputedStyle(el).outlineOffset, className: el.className, matches };
+      });
+      console.log("PRIMITIVE_MENU_CASCADE " + JSON.stringify({ mode: name, item: await item.textContent(), ...cascade }));
       await expect(item).toHaveCSS("outline-style", "solid");
       await expect(item).toHaveCSS("outline-width", "2px");
       await expect(item).toHaveCSS("outline-offset", "-2px");
