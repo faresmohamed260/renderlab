@@ -1,7 +1,7 @@
 import { envFlag, envString } from "../lib/config/runtime-env.ts";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
+import { PreviewNavigationBoundary } from "@/components/shell/preview-navigation-boundary";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
 import { getRenderLabAccountProfile } from "@/server/account/account-profile";
 import { getRenderLabProfileRequestOwner } from "@/server/account/account-profile-request";
@@ -52,7 +52,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {preview && <div className="renderlab-reference-atmosphere" aria-hidden="true">
           <div className="renderlab-reference-wash" />
         </div>}
-        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} showAdmin={showAdmin} profile={profile} hostedProfile={envString("NODE_ENV") === "development" && envFlag("RENDERLAB_HOSTED_CREATE")}>{children}</PreviewNavigationShell> : children}
+        {preview ? <PreviewNavigationBoundary accountId={account?.id ?? null} showAdmin={showAdmin} profile={profile} hostedProfile={envString("NODE_ENV") === "development" && envFlag("RENDERLAB_HOSTED_CREATE")}>{children}</PreviewNavigationBoundary> : children}
       </body>
     </html>
   );

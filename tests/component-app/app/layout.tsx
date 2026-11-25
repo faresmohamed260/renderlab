@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
-import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
+import { PreviewNavigationBoundary } from "@/components/shell/preview-navigation-boundary";
 import { inter } from "@/app/fonts";
 import "../../../src/app/globals.css";
 import "../../../src/app/renderlab-background.css";
@@ -21,6 +21,6 @@ export default async function FixtureLayout({ children }: { children: ReactNode 
   const shell = variant === "create" || variant === "review" || variant === "signed-out" || variant === "member" || variant === "owner";
   return <html lang="en" className={inter.variable}><body className={shell ? "renderlab-gradient" : undefined}>
     {shell && <div className="renderlab-reference-atmosphere" aria-hidden="true"><div className="renderlab-reference-wash" /></div>}
-    {shell ? <PreviewNavigationShell accountId={variant === "signed-out" ? null : "synthetic-component-fixture"} profile={profile} showAdmin={variant === "owner"}><main>{children}</main></PreviewNavigationShell> : <main>{children}</main>}
+    {shell ? <PreviewNavigationBoundary accountId={variant === "signed-out" ? null : "synthetic-component-fixture"} profile={profile} showAdmin={variant === "owner"}><main>{children}</main></PreviewNavigationBoundary> : <main>{children}</main>}
   </body></html>;
 }
