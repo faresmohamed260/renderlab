@@ -1586,3 +1586,19 @@
 .preview-navigation-shell:has(> .preview-navigation-header :is(.preview-section-panel[data-open="true"], .preview-account-menu[aria-hidden="false"])) .create-preview-toolbar {
   margin-block-start: calc(max(var(--create-open-section-clearance), var(--create-open-account-clearance)) + var(--rl-space-8));
 }
+/* P6 axe phone targets: the visual outline must not cut into the usable hit
+ * area. Keep desktop geometry unchanged and preserve the narrow two-column reflow. */
+@media (max-width: 700px) {
+  .create-preview-workspace .create-preview-modes button {
+    flex: 0 0 var(--rl-hit-preferred);
+    inline-size: var(--rl-hit-preferred);
+    block-size: var(--rl-hit-preferred);
+    min-block-size: var(--rl-hit-preferred);
+    border-radius: var(--rl-radius-micro);
+  }
+  .create-preview-mode-highlight { inline-size: var(--rl-hit-preferred); border-radius: var(--rl-radius-micro); }
+  .create-preview-workspace .create-preview-tile > button:first-child {
+    min-block-size: var(--rl-hit-preferred);
+    border-radius: var(--rl-radius-micro);
+  }
+}
