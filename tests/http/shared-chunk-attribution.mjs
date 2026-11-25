@@ -54,3 +54,17 @@ export function attributeSharedChunks(assets, records) {
   });
   return {shared,routes};
 }
+
+// Only a terminal source-map directive may be removed. All executable bytes,
+// whitespace, internal comments, and literal strings must remain identical.
+function executableCode(code) {
+  return code.replace(/(^|\n)\/\/# sourceMappingURL=[^\r\n]+\r?\n?$/, "$1");
+}
+export function verifiedChunkAliases(original,outputs) {
+  const aliases=new Map();
+  for(const asset of original){
+    const matching=outputs.filter(output=>executableCode(output.code)===executableCode(asset.code));
+    if(matching.length===1 && !aliases.has(matching[0].filename)) aliases.set(matching[0].filename,asset.path);
+  }
+  return aliases;
+}
