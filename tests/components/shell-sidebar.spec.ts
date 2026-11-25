@@ -17,7 +17,7 @@ for (const width of [390, 320, 195]) {
       });
       await page.goto("/library");
       const header = page.locator(".preview-navigation-header");
-      const logo = header.getByRole("button", { name: "Open navigation" });
+      const logo = header.getByRole("button", { name: "RenderLab — Open navigation" });
       await expect(logo).toBeVisible();
       await expect(header.getByRole("navigation", { name: "Primary navigation" })).toHaveCount(0);
       await logo.press("Enter");
@@ -28,7 +28,7 @@ for (const width of [390, 320, 195]) {
       await expect(sidebar.getByRole("link", { name: "Create", exact: true })).toBeVisible();
       await expect(sidebar.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
       await expect(sidebar.getByRole("link", { name: "Activity", exact: true })).toBeVisible();
-      const profile = sidebar.getByRole("link", { name: /account settings/i });
+      const profile = sidebar.getByRole("link", { name: /Settings$/i });
       await expect(profile).toBeVisible();
       await expect(profile).toHaveAttribute("href", "/settings");
       const admin = sidebar.getByRole("link", { name: "Admin", exact: true });
