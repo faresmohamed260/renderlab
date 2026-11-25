@@ -651,10 +651,11 @@
   backdrop-filter: none;
 }
 @media (min-width: 1025px) {
-  /* Match the live Studio preview's viewport-relative side rails and 18px
-     insets. The centered workspace cap otherwise clips wide results. */
-  .create-preview-workspace:has(.create-preview-stage-frame) { max-inline-size: none; }
-  .create-preview-grid:has(.create-preview-stage-frame) {
+  /* Reserve the final desktop grid on the server-rendered workspace, before
+     bookmark restoration mounts the stage. Never change rail widths or gutters
+     solely because the stage's async content becomes available. */
+  .create-preview-workspace { max-inline-size: none; }
+  .create-preview-grid {
     margin-inline: calc(12px - var(--create-gutter));
     column-gap: 18px;
     grid-template-columns:
@@ -662,7 +663,7 @@
       minmax(0, 1fr)
       calc(clamp(144px, 14vw, 214px) - 12px);
   }
-  .create-preview-grid > .create-preview-canvas:has(.create-preview-stage-frame) {
+  .create-preview-grid > .create-preview-canvas {
     place-self: stretch;
     inline-size: auto;
     aspect-ratio: auto;
