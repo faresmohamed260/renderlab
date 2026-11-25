@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { CreatePreviewMaskEditor } from "./create-preview-mask-editor";
+import { DeferredMaskEditor as CreatePreviewMaskEditor } from "./create-preview-deferred-mask-editor";
 import { clearSavedEdits, readSavedEdits, saveEdits } from "./create-preview-saved-edits";
 import { CreatePreviewStage, type StageTurn } from "./create-preview-stage";
 import { previewImageSizes } from "./create-preview-sizes";
