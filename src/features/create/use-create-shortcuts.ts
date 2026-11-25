@@ -51,12 +51,18 @@ export function useCreateShortcuts({ root, overlay, canGenerate, canStep, step }
   // The first event is never consumed: existing confirmation/cancel holds remain authoritative.
   useEffect(() => {
     const down = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const region = root.current;
+      if (!region?.isConnected) return;
+      const target = event.target;
+      const ownedPortal = target instanceof Element && !!target.closest('[data-create-shortcut-overlay]');
+      const inside = target instanceof Node && region.contains(target);
+      if (!inside && !ownedPortal) { escapeHeld.current = false; return; }
       if (event.repeat) {
         if (escapeHeld.current) { event.preventDefault(); event.stopImmediatePropagation(); }
         return;
       }
-      escapeHeld.current = !!root.current && (root.current.contains(document.activeElement) || overlay || !!root.current.querySelector("dialog[open]"));
+      escapeHeld.current = overlay || !!region.querySelector("dialog[open]");
     };
     const up = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") escapeHeld.current = false; };
     const blur = () => { escapeHeld.current = false; };
