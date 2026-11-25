@@ -224,12 +224,13 @@ test("F4: non-FIBO public request with an intent key is a sanitized 400", async 
 });
 
 test("N4 keyed admission leaves 420 seconds plus 30 seconds before job cutoff",async t=>{
-  const now=Date.now();
+  const now = Date.parse(created);
+  t.mock.timers.enable({ apis: ["Date"], now });
   const f=fixture(t);
   assert.equal((await submit()).status,202);
   const accept=f.calls.find(c=>c.path.endsWith("/rpc/renderlab_accept_generation_dispatch_idempotent"));
   const delta=Date.parse(accept.body.p_admission_deadline)-now;
-  assert.ok(delta>=750000 && delta<=751000, "13-minute admission budget must leave render and settlement margin");
+  assert.equal(delta, 750_000, "Admission deadline must leave 420 seconds for rendering and 30 seconds for settlement");
 });
 
 test("N6 headerless POST gets a new opaque server key and single atomic accept",async t=>{
