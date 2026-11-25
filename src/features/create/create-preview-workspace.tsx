@@ -1361,7 +1361,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           <div className="create-preview-fields">
             <div className="create-preview-modes" role="group" aria-label="Workflow">
               <animated.span className="create-preview-mode-highlight" aria-hidden="true"
-                style={{ transform: modeSpring.position.to((position) => "translateX(" + (position * 44) + "px)") }} />
+                style={{ transform: modeSpring.position.to((position) => "translateX(calc(" + (position * 100) + "% + " + (position * 4) + "px))") }} />
               <Button type="button" variant="ghost" aria-label="Text to Image" title="Text to Image"
                 aria-pressed={mode === "generate"} disabled={busy}
                 onClick={() => { setMaskEditor(undefined); setMode("generate"); }}>
