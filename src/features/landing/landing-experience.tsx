@@ -320,7 +320,7 @@ export function LandingExperience() {
                 "--yield-x": active ? "0px" : `${side * 22}px`,
                 "--yield-y": active ? "-8px" : `${(index % 2 === 0 ? 1 : -1) * 8}px`,
                 "--yield-scale": active ? "1.035" : "0.94",
-              } as CSSProperties;
+              } as CSSProperties & Record<`--${string}`, string>;
               return (
                 <Button
                   key={item.title}
