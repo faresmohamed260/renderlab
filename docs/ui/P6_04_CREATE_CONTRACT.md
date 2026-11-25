@@ -40,6 +40,11 @@ Server remains authoritative for access, job projection, media ownership, recons
 
 Fresh account/admission gates and direct Admin authorization remain unchanged. Signed-out, suspended, missing/foreign/expired IDs, invalid input, source deletion, MFA and unavailable states fail closed. No raw provider data, internal job transport, private storage URLs or operator identifiers in History. Account switch/logout aborts reads, clears session/draft/history state according to existing privacy rules and prevents late responses from crossing users. No browser direct worker call. Preserve same-owner media access and non-destructive history semantics; no extra generation on rendering/reloading/opening/reusing. Existing cancellation/admission invariants and claim/reconciliation policy are mandatory; do not change provider or Supabase configuration.
 
+## Open risks — owner-reviewed 2026-11-25
+
+- **SEC-02 — accepted availability risk.** History Jobs uses the existing owner-scoped chronological offset projection (20 results per page). Large admitted offsets can impose database scan and bounded settlement cost. Do not add an arbitrary offset ceiling, change the existing guards, or restrict historical access in P6-04. After the Activity successor is verified, scope a separate keyset-cursor follow-up with owner isolation, stable chronological order, query-plan evidence and compatible navigation. Acceptance of this risk does not authorize Activity replacement or deployment.
+- **SEC-01 — correction accepted, verification still required.** History Server Actions enforce the explicit same-origin/Fetch Metadata boundary before private IO, in addition to framework protections. Production Create binding, actual origin/account-switch/logout behavior, mounted desktop and phone parity, unchanged #729 characterization on both surfaces, and authoritative pre-dispatch cancellation race proof remain gates. #740 stays held; no route redirect or Activity removal is authorized.
+
 ## Validation matrix and evidence
 
 | Area | Acceptance |

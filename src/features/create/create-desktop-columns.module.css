@@ -43,3 +43,7 @@
   .promptUsed h2 { font-size: var(--rl-type-label); font-weight: var(--rl-weight-heading); }
   .promptUsed p { font-size: var(--rl-type-caption); line-height: var(--rl-leading-caption); white-space: pre-wrap; }
 }
+
+@media (min-width: 1025px) {
+  .historySlot:has([data-activity-system="history"]) { max-block-size: 56dvh; min-block-size: 0; overflow: auto; }
+}

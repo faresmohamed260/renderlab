@@ -26,6 +26,10 @@ import { previewImageSizes } from "./create-preview-sizes";
 import { loadCreateResultSource } from "./create-result-source";
 import { fetchHostedCreateCapabilities, rejectUnavailableInspirationDrop, type HostedCreateCapabilities } from "./create-hosted-capabilities";
 import { loadContinuationFiles, type CreateContinuationPlan } from "./create-continuation";
+import { CreateHistoryPanel, CreateHistorySheet } from "./history/create-history-panel";
+import { createHistoryTransport, type HistoryReadActions } from "./history/history-transport";
+import type { HistoryTransport } from "./history/history-contract";
+import { useCreateHistory } from "./history/use-create-history";
 
 import { fiboImageAspectRatios, type AspectRatio, type PresetAspectRatio, type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
 import { isMediaUploadMimeType } from "@/lib/api/media-upload-contract";
@@ -33,6 +37,11 @@ import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import { uploadFiboMaskFile } from "@/lib/browser/fibo-mask-upload-client";
 import { normalizeFiboVgl, resolveFiboVglReferences } from "@/lib/capabilities/fibo-vgl";
 import { uploadPersistentImageFile } from "@/lib/browser/media-upload-client";
+
+const unavailableHistory: HistoryTransport = {
+  readJobs: async () => ({ state: "private" }), readPrompts: async () => ({ items: [], nextCursor: null }),
+  mutate: async () => ({ ok: false, message: "History is unavailable." }), reuse: async () => ({ ok: false, reason: "unavailable" }),
+};
 
 const hostedJobId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const hostedRatios = fiboImageAspectRatios;
@@ -140,7 +149,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null }: { initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null, historyActions }: { historyActions?: HistoryReadActions; initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const hosted = hostedOnly || !!hostedModel;
   const [hostedCapabilities, setHostedCapabilities] = useState<HostedCreateCapabilities>();
   const [capabilityReadFailed, setCapabilityReadFailed] = useState(false);
@@ -316,6 +325,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [waitingReady, setWaitingReady] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
   const queueCount = Number(busy) + waiting.length;
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [historySelection, setHistorySelection] = useState<{ image: Result }>();
   const [historyRail, setHistoryRail] = useState<HTMLDivElement | null>(null);
   const [result, setResult] = useState<Result>();
@@ -329,6 +339,23 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [savedEdits, setSavedEdits] = useState<Result[]>([]);
   const [savingEdits, setSavingEdits] = useState(false);
   const [savedStatus, setSavedStatus] = useState("");
+  const historyRead = useCreateHistory({
+    accountKey: historyActions && admitted ? hostedAccountKey ?? null : null,
+    visible: !!historyActions && (desktop || historyOpen),
+    transport: historyActions ? createHistoryTransport(historyActions) : unavailableHistory,
+    onReuseDraft: async (draft, signal) => {
+      if (!admitted || busy || continuationPending || maskEditor) throw new Error("Create is busy.");
+      const loaded = await readContinuationFiles(draft, signal);
+      signal?.throwIfAborted();
+      if (active.current || preparing.current) throw new Error("Create is busy.");
+      applyContinuation(draft, loaded);
+      setHistoryOpen(false);
+    },
+    onPrompt: (value) => { if (!busy && !continuationPending) { setPrompt(value); setHistoryOpen(false); } },
+    onSessionResult: (entry) => { void selectHistoryResult(entry.id); },
+  });
+  const historySelectionRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => historySelectionRequest.current?.abort(), [hostedAccountKey, admitted]);
   const matchesImage = (image: Result, item: Result) => image.batchId === item.batchId && image.filename === item.filename;
   const history = [...sessionHistory.map((image) => image.run ? image : savedEdits.find((item) => matchesImage(image, item)) ?? image),
     ...savedEdits.filter((item) => !sessionHistory.some((image) => matchesImage(image, item)))];
@@ -390,7 +417,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }, [admitted, savedEditsAccount, stageReady]);
 
   useEffect(() => {
-    if (!hostedModel) return;
+    if (!hostedModel || historyActions) return;
     const controller = new AbortController();
     void hostedRequest<{ items: PublicMediaAsset[] }>("/api/media/assets?kind=image&origin=generated&limit=48", { signal: controller.signal })
       .then(({ items }) => {
@@ -400,7 +427,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       })
       .catch(() => { if (!controller.signal.aborted) setSavedStatus("Hosted History could not be loaded."); });
     return () => controller.abort();
-  }, [hostedModel]);
+  }, [hostedModel, historyActions]);
 
   async function saveEdit(image?: Result) {
     if (!admitted || !savedEditsAccount || savingEdits || image && image.run?.mode !== "edit") return;
@@ -455,12 +482,9 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     return () => urls.forEach((url) => { if (url) URL.revokeObjectURL(url); });
   }, [files]);
 
-  // Explicit navigation waits for any bookmarked in-flight render to settle.
-  // Do not let a restored result overwrite the requested draft or re-upload owned files.
-  useEffect(() => {
-    if (!initialContinuation || !continuationPending || !stageReady || busy) return;
-    const controller = new AbortController();
-    void loadContinuationFiles(initialContinuation, controller.signal, async (reference, signal) => {
+  function readContinuationFiles(draft: CreateContinuationPlan, signal?: AbortSignal) {
+    const requestSignal = signal ?? new AbortController().signal;
+    return loadContinuationFiles(draft, requestSignal, async (reference, signal) => {
       if (reference.source.type === "media-asset") {
         return loadCreateResultSource({ assetId: reference.source.id, image_data: "", filename: reference.label }, signal, isMediaUploadMimeType);
       }
@@ -469,22 +493,52 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       const blob = await response.blob();
       if (!blob.size || !isMediaUploadMimeType(blob.type)) throw new Error("Invalid reference image.");
       return new File([blob], reference.label, { type: blob.type });
-    }).then((loaded) => {
+    });
+  }
+
+  function applyContinuation(draft: CreateContinuationPlan, loaded: Awaited<ReturnType<typeof readContinuationFiles>>) {
+    for (const { source, file } of loaded) sourceAssets.current.set(file, source);
+    setFiles(loaded.map(({ file }) => file));
+    setResult(undefined);
+    setSelection(undefined);
+    setMaskEditor(undefined);
+    setMode(draft.mode);
+    setEditAspectRatio(draft.mode === "edit" ? draft.aspectRatio : "original");
+    if (draft.aspectRatio !== "original") setSizeIndex(Math.max(0, hostedRatios.indexOf(draft.aspectRatio)));
+    setSteps(draft.steps);
+    updateDraft(draft.mode, {
+      prompt: draft.prompt, seed: draft.seed, randomize: draft.randomize,
+      negativePrompt: draft.negativePrompt, negativeOpen: !!draft.negativePrompt,
+      vgl: draft.vgl, vglOpen: !!draft.vgl, generatedVgl: false, imageCount: "1",
+    });
+    setStatus(draft.references.length ? "Source image attached." : "Saved settings loaded.");
+  }
+
+  async function selectHistoryResult(id: string) {
+    if (!admitted || busy || !hostedJobId.test(id)) return;
+    historySelectionRequest.current?.abort();
+    const controller = new AbortController();
+    historySelectionRequest.current = controller;
+    try {
+      const { asset } = await hostedRequest<{ asset: PublicMediaAsset }>("/api/media/assets/" + encodeURIComponent(id), { signal: controller.signal });
+      if (controller.signal.aborted || active.current || preparing.current || asset.id !== id || asset.kind !== "image") return;
+      setMaskEditor(undefined);
+      setHistorySelection({ image: hostedResult(asset) });
+      setHistoryOpen(false);
+    } catch {
+      if (!controller.signal.aborted) setStatus("This result is no longer available.");
+    } finally {
+      if (historySelectionRequest.current === controller) historySelectionRequest.current = null;
+    }
+  }
+
+  // Existing explicit continuation waits for a bookmarked render to settle.
+  useEffect(() => {
+    if (!initialContinuation || !continuationPending || !stageReady || busy) return;
+    const controller = new AbortController();
+    void readContinuationFiles(initialContinuation, controller.signal).then((loaded) => {
       if (controller.signal.aborted) return;
-      for (const { source, file } of loaded) sourceAssets.current.set(file, source);
-      setFiles(loaded.map(({ file }) => file));
-      setResult(undefined);
-      setSelection(undefined);
-      setMode(initialContinuation.mode);
-      setEditAspectRatio(initialContinuation.mode === "edit" ? initialContinuation.aspectRatio : "original");
-      if (initialContinuation.aspectRatio !== "original") setSizeIndex(Math.max(0, hostedRatios.indexOf(initialContinuation.aspectRatio)));
-      setSteps(initialContinuation.steps);
-      updateDraft(initialContinuation.mode, {
-        prompt: initialContinuation.prompt, seed: initialContinuation.seed, randomize: initialContinuation.randomize,
-        negativePrompt: initialContinuation.negativePrompt, negativeOpen: !!initialContinuation.negativePrompt,
-        vgl: initialContinuation.vgl, vglOpen: !!initialContinuation.vgl, generatedVgl: false, imageCount: "1",
-      });
-      setStatus(initialContinuation.references.length ? "Source image attached." : "Saved settings loaded.");
+      applyContinuation(initialContinuation, loaded);
       setContinuationPending(false);
     }).catch(() => {
       if (controller.signal.aborted) return;
@@ -736,6 +790,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               return true;
             });
           });
+          if (!restoring) for (const image of images) {
+            if (image.assetId) historyRead.recordResult({ id: image.assetId, label: run?.prompt?.trim() || image.filename || "Generated result", createdAt: new Date().toISOString() });
+          }
+          historyRead.refresh();
           setStatus(update.error ?? (images.length === 1 ? "Render complete." : images.length + " images ready in History."));
           if (restoring) setStageReady(true);
           return { images, error: update.error };
@@ -1232,6 +1290,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       <p className="sr-only" role="status" aria-live="polite" data-create-shortcut-announcement>{selectedResultIndex >= 0 ? "Result " + (selectedResultIndex + 1) + " of " + shortcutResults.length : ""}</p>
       <div className="create-preview-toolbar">
         <div className="create-preview-tools">
+          {historyActions && !desktop && <CreateHistorySheet state={historyRead} open={historyOpen} onOpenChange={setHistoryOpen}
+            trigger={<Button type="button" variant="ghost" className="create-preview-toolbar-trigger" aria-label="Open History"><Clock size={16} aria-hidden="true" /> History</Button>} />}
           <Popover open={toolbarPopover === "queue"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "queue", open))}>
             <PopoverTrigger asChild>
               <Button ref={queue} type="button" variant="ghost" className="create-preview-toolbar-trigger"><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</Button>
@@ -1561,8 +1621,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           }}>
           <h2 id="create-preview-history-title">History</h2>
           <div className={columns.historySlot}>
-            <h3>Prompt and job history</h3>
-            <p>Not available here yet. Activity remains available.</p>
+            {historyActions && desktop ? <CreateHistoryPanel state={historyRead} showHeading={false} /> : <>
+              <h3>Prompt and job history</h3>
+              <p>Not available here yet. Activity remains available.</p>
+            </>}
           </div>
           {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
