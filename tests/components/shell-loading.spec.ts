@@ -19,9 +19,18 @@ for (const outcome of ["loaded", "empty", "error"] as const) {
     await page.goto("/loading-review/activity?outcome=" + outcome, { waitUntil: "commit" });
     const header = page.locator(".preview-navigation-header");
     await expect(header).toBeVisible();
-    const before = await header.boundingBox();
+    // A committed streaming document can expose visible, unstyled HTML.
+    // Wait for the real shell stylesheet and global reset, not a box size.
+    await expect(header).toHaveCSS("position", "sticky");
+    await expect(header).toHaveCSS("display", "flex");
+    await expect(page.locator("body")).toHaveCSS("margin", "0px");
     const fallback = page.locator('[data-route-loading="activity"]');
     await expect(fallback).toBeVisible();
+    const before = await header.boundingBox();
+    console.log("SHELL_LOADING_STYLED_HEADER " + JSON.stringify({ outcome, before,
+      style: await header.evaluate(el => ({ position: getComputedStyle(el).position,
+        display: getComputedStyle(el).display, bodyMargin: getComputedStyle(document.body).margin })),
+    }));
     await expect(fallback.getByRole("status")).toHaveText("Loading content…");
     await expect(fallback.getByRole("progressbar")).toHaveCount(0);
     await expect(fallback.locator("button, input, a, [tabindex]")).toHaveCount(0);
