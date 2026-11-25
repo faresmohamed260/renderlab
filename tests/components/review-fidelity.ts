@@ -92,7 +92,7 @@ export async function inspectReviewFidelity(page: Page, state: string) {
     await session.send("CSS.enable");
     const { root } = await session.send("DOM.getDocument");
     const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId,
-      selector: state === "library" || state === "primitives" || state.startsWith("popover") ? "main h1" : ".create-preview-fields h2" });
+      selector: state === "library" ? "main h2" : state === "primitives" || state.startsWith("popover") ? "main h1" : ".create-preview-fields h2" });
     if (!nodeId) { if (productionFontLoader) data.fail.push("No real text node for font verification"); }
     else platformFonts = (await session.send("CSS.getPlatformFontsForNode", { nodeId })).fonts;
   } finally { await session.detach(); }
