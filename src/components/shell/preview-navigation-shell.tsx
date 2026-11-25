@@ -128,6 +128,7 @@ function PreviewAccountMenu({ accountId, profile, showAdmin, legacy }: { account
   const trigger = useRef<HTMLButtonElement>(null);
   const visibleName = useRef<HTMLSpanElement>(null);
   const pinned = useRef(false);
+  const tabbing = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -139,7 +140,7 @@ function PreviewAccountMenu({ accountId, profile, showAdmin, legacy }: { account
     }
     function escape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (card.current?.contains(document.activeElement)) trigger.current?.focus();
+      if (pinned.current || card.current?.contains(document.activeElement)) trigger.current?.focus();
       pinned.current = false;
       setOpen(false);
     }
@@ -157,8 +158,19 @@ function PreviewAccountMenu({ accountId, profile, showAdmin, legacy }: { account
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse" && !pinned.current && !event.currentTarget.contains(document.activeElement)) setOpen(false);
       }}
+      onKeyDownCapture={(event) => {
+        tabbing.current = event.key === "Tab";
+        if (tabbing.current) requestAnimationFrame(() => { tabbing.current = false; });
+      }}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
+        const leaving = !event.currentTarget.contains(event.relatedTarget);
+        const tabExit = tabbing.current;
+        tabbing.current = false;
+        // A deliberately opened nonmodal disclosure is dismissed by an
+        // explicit Tab exit, outside pointer or Escape. A closing sibling
+        // popover can restore focus asynchronously after Enter; that transient
+        // programmatic blur must not undo the new user activation.
+        if (leaving && (!pinned.current || tabExit)) {
           pinned.current = false;
           setOpen(false);
         }
@@ -328,10 +340,46 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
   const open = openPath === pathname;
   const pinnedPath = useRef<string | null>(null);
   const id = useId();
+  const shellRoot = useRef<HTMLDivElement>(null);
   const disclosure = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const reduced = usePreviewReducedMotion();
   const reveal = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
+
+  useEffect(() => {
+    const node = disclosure.current;
+    if (!node) return;
+    const measure = () => {
+      if (node.offsetHeight > 0) node.style.setProperty("--preview-section-header-block", node.offsetHeight + "px");
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  // The Create toolbar is a separate route surface. Its desktop negative
+  // margin aligns it with the header, but an expanded header disclosure can
+  // paint over the controls on either viewport. Measure the actual footprint;
+  // CSS reserves clearance only while that disclosure is open.
+  useEffect(() => {
+    const root = shellRoot.current;
+    if (!root) return;
+    const header = root.querySelector<HTMLElement>(".preview-navigation-header");
+    const section = header?.querySelector<HTMLElement>(".preview-section-panel");
+    const account = header?.querySelector<HTMLElement>(".preview-account-menu");
+    if (!header) return;
+    const measure = () => {
+      root.style.setProperty("--create-section-menu-clearance", Math.max(0, (section?.offsetHeight ?? 0) - header.offsetHeight) + "px");
+      root.style.setProperty("--create-account-menu-clearance", Math.max(0, (account?.offsetHeight ?? 0) - header.offsetHeight) + "px");
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    if (section) observer.observe(section);
+    if (account) observer.observe(account);
+    return () => observer.disconnect();
+  }, [pathname]);
 
   function close() {
     pinnedPath.current = null;
@@ -361,7 +409,7 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
   if (legacy && !accountId) return <>{children}</>;
 
   return (
-    <div className="preview-navigation-shell">
+    <div ref={shellRoot} className="preview-navigation-shell">
       <header className={"preview-navigation-header" + (legacy ? "" : " " + styles.applicationHeader)} data-p6-desktop={legacy ? undefined : "true"}>
         {!legacy && <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} />}
         {!legacy && <div className="p6-desktop-navigation">
