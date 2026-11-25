@@ -105,9 +105,27 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
         await collect("create", "Create workspace heading (Image setup)", heading);
         // Sample the actual production contrast/reduced-transparency fallback,
         // not an injected stylesheet. Arbitrary future generated art is unbounded.
+        const mediaEvidence = () => page.evaluate(() => {
+          const style = getComputedStyle(document.documentElement);
+          const token = (name: string) => style.getPropertyValue(name).trim();
+          return {
+            contrastMore: matchMedia("(prefers-contrast: more)").matches,
+            reducedTransparency: matchMedia("(prefers-reduced-transparency: reduce)").matches,
+            material: token("--rl-material-panel"),
+            atmosphere: token("--rl-atmosphere-scene"),
+            panel: token("--rl-surface-panel"),
+            layered: token("--rl-surface-panel-layered"),
+          };
+        });
+        const normalMedia = await mediaEvidence();
+        expect(normalMedia.contrastMore).toBe(false);
+        expect(normalMedia.atmosphere).not.toBe("none");
         const cdp = await context.newCDPSession(page);
         try {
           await cdp.send("Emulation.setEmulatedMedia", { features: [{name:"prefers-contrast",value:"more"},{name:"prefers-reduced-transparency",value:"reduce"},{name:"prefers-reduced-motion",value:reducedMotion}] });
+          await expect.poll(mediaEvidence).toMatchObject({ contrastMore: true, material: "none", atmosphere: "none", layered: normalMedia.panel });
+          const fallbackMedia = await mediaEvidence();
+          console.log("CONTRAST FALLBACK MEDIA", key, JSON.stringify({ normal: normalMedia, fallback: fallbackMedia }));
           await page.waitForTimeout(300);
           await collect("fallback", "Create heading, high contrast / reduced transparency", heading);
         } finally { await cdp.detach(); }
