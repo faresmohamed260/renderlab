@@ -589,6 +589,15 @@
       "ownerEvidence": "server-internal-secret-or-verified-worker"
     },
     {
+      "id": "src/server/generation/history/prompt-history.ts:13:12",
+      "tableOrRpc": "generation_jobs",
+      "classification": "owner-scoped",
+      "family": "jobs",
+      "negativeHarness": "O1/O3",
+      "principalDerivation": "Fresh admitted account from getCurrentRenderLabAccount inside listPromptHistory; owner_id rebound from account.id immediately before GET; no client owner argument",
+      "ownerEvidence": "owner-filter-URLSearchParams"
+    },
+    {
       "id": "src/server/generation/native-generation-job-store.ts:9:22",
       "tableOrRpc": "generation_jobs",
       "classification": "owner-scoped",

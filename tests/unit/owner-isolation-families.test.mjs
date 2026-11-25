@@ -8,11 +8,13 @@ const ownerA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerB = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const foreignId = "bbbbbbbb-0000-4000-8000-bbbbbbbbbbbb";
 const state = { storageCalls: 0 };
+const promptAuth = globalThis[Symbol.for("renderlab.prompt-history.owner")] = { account: { id: ownerA }, reads: 0 };
 function stub(source) {
   return { url: "data:text/javascript," + encodeURIComponent(source), shortCircuit: true };
 }
 registerHooks({
   resolve(specifier, context, nextResolve) {
+    if (specifier === "@/lib/supabase/server") return stub('export async function getCurrentRenderLabAccount(){const s=globalThis[Symbol.for("renderlab.prompt-history.owner")];s.reads++;return s.account;}');
     if (specifier === "server-only") return stub("export {};");
     if (specifier === "next/server") return stub("export const NextResponse=Response;export function after(fn){return fn();}");
     if (specifier === "@/server/storage/r2") return stub(
@@ -50,6 +52,7 @@ Object.assign(process.env, {
 
 const jobs = await import("../../src/server/generation/generation-recipe.ts");
 const activity = await import("../../src/server/generation/generation-activity.ts");
+const promptHistory = await import("../../src/server/generation/history/prompt-history.ts");
 const admission = await import("../../src/server/generation/generation-admission.ts");
 const asset = await import("../../src/server/media/media-assets.ts");
 const collection = await import("../../src/server/media/media-collections.ts");
@@ -186,4 +189,33 @@ test("O7: account deletion RPC binds verified user_id, never caller-supplied B",
  assert.equal(rpc.body.p_user_id,ownerA);
  assert.equal(rpc.authorized,true);
  denied(rpc.body);
+});
+
+test("O1/O3: prompt history derives its GET owner filter from the admitted session, not query data", async (t) => {
+  const calls = fakeDB(t, "jobs", foreignId);
+  promptAuth.account = { id: ownerA };
+  promptAuth.reads = 0;
+  try {
+    const malicious = { ownerId: ownerB, owner_id: ownerB, search: "x&owner_id=eq." + ownerB };
+    const first = await promptHistory.listPromptHistory(malicious);
+    const max = await promptHistory.listPromptHistory({ ...malicious, limit: 999, cursor: { createdAt: "2026-11-25T01:02:03Z", id: foreignId } });
+    denied(first); denied(max);
+    assert.equal(promptAuth.reads, 2);
+    assert.equal(calls.length, 2);
+    for (const [index, call] of calls.entries()) {
+      const params = new URLSearchParams(call.search);
+      assert.equal(call.method, "GET");
+      assert.equal(call.path, "/rest/v1/generation_jobs");
+      assert.equal(call.body, null);
+      assert.equal(call.authorized, true);
+      assert.deepEqual(params.getAll("owner_id"), ["eq." + ownerA]);
+      assert.equal(params.get("limit"), index === 0 ? "21" : "41");
+      assert.equal(params.get("prompt"), "ilike.%x&owner\\_id=eq." + ownerB + "%");
+    }
+    await assert.rejects(() => promptHistory.listPromptHistory({ cursor: { createdAt: "x),owner_id.eq." + ownerB, id: foreignId } }), /Invalid history cursor/);
+    assert.equal(calls.length, 2);
+    promptAuth.account = null; // denied by the existing fresh session/MFA/admission gate
+    assert.equal(await promptHistory.listPromptHistory(malicious), null);
+    assert.equal(calls.length, 2, "denied account must not reach service-role DB");
+  } finally { promptAuth.account = { id: ownerA }; }
 });
