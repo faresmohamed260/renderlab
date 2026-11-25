@@ -408,7 +408,23 @@ function HeroPreview() {
   return (
     <div className={styles.heroPreview} role="img" aria-label="RenderLab Create preview">
       <div className={styles.previewDots} aria-hidden="true"><i /><i /><i /></div>
-      <div className={styles.previewThumbnails} aria-hidden="true"><i /><i /><i /><i /></div>
+      <div className={styles.previewThumbnails} aria-hidden="true">
+        {[
+          ["#6f8196", "#d9a98a", "#c07f5d"],
+          ["#2c3e63", "#7a6cc2", "#d98fb0"],
+          ["#17332e", "#3f8f7b", "#c4e2b4"],
+          ["#3b1f2b", "#a8445a", "#f0a98a"],
+        ].map(([start, middle, end], index) => (
+          <svg key={index} data-landing-thumbnail="" viewBox="0 0 150 100" preserveAspectRatio="none" focusable="false">
+            <defs>
+              <linearGradient id={`landing-thumbnail-${index}`} x1="0" y1="0" x2=".38" y2="1">
+                <stop offset="0" stopColor={start} /><stop offset=".6" stopColor={middle} /><stop offset="1" stopColor={end} />
+              </linearGradient>
+            </defs>
+            <rect width="150" height="100" fill={`url(#landing-thumbnail-${index})`} />
+          </svg>
+        ))}
+      </div>
       <div className={styles.previewArtwork} aria-hidden="true">
         <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" focusable="false">
           <defs>

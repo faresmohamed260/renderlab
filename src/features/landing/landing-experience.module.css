@@ -984,10 +984,7 @@
 .previewDots { grid-column: 1/-1; display: flex; align-items: center; gap: var(--rl-space-8); min-height: var(--rl-space-24); }
 .previewDots i { width: var(--rl-space-8); height: var(--rl-space-8); border-radius: var(--rl-radius-pill); background: var(--rl-border-boundary); }
 .previewThumbnails { grid-column: 1; grid-row: 2/4; min-width: 0; display: grid; align-content: start; gap: var(--rl-space-8); }
-.previewThumbnails i { aspect-ratio: 1.5; border-radius: var(--rl-radius-control); background: var(--rl-surface-selected); }
-.previewThumbnails i:nth-child(2) { background: var(--rl-gradient-primary); }
-.previewThumbnails i:nth-child(3) { background: var(--rl-surface-high); }
-.previewThumbnails i:nth-child(4) { background: var(--rl-gradient-pressed); }
+.previewThumbnails svg { display: block; width: 100%; height: auto; aspect-ratio: 1.5; border-radius: var(--rl-radius-control); overflow: hidden; }
 .previewArtwork { grid-column: 2; grid-row: 2; min-width: 0; min-height: 0; overflow: hidden; border-radius: var(--rl-radius-panel); }
 .previewArtwork svg { display: block; width: 100%; height: 100%; }
 .previewComposer {
