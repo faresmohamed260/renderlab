@@ -356,6 +356,10 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
     };
   }, [open]);
 
+  // The public Landing owns its approved brand and sign-in header. Keep the
+  // existing account menu for signed-in visitors and all workspace routes.
+  if (legacy && !accountId) return <>{children}</>;
+
   return (
     <div className="preview-navigation-shell">
       <header className={"preview-navigation-header" + (legacy ? "" : " " + styles.applicationHeader)} data-p6-desktop={legacy ? undefined : "true"}>
