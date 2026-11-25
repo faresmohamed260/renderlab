@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./semantic-tokens.css";
 
 @theme {
   --color-canvas: #06070a;

@@ -1,0 +1,128 @@
+/* P6-03a production semantic roles. Opt-in consumers only; existing feature styles
+ * keep their legacy appearance until reviewed migration. Layered material is
+ * safe only over controlled canvas; use surface-overlay over arbitrary artwork. */
+:root {
+  --rl-canvas: #07060b;
+  --rl-surface-base: #191620;
+  --rl-surface-raised: #252134;
+  --rl-surface-high: #312a40;
+  --rl-surface-panel: #201b30;
+  --rl-surface-panel-layered: var(--rl-surface-panel);
+  --rl-surface-control: rgb(255 255 255 / 7%);
+  --rl-surface-hover: rgb(255 255 255 / 10%);
+  --rl-surface-field-focus: #352a63;
+  --rl-surface-selected: #403657;
+  --rl-surface-overlay: #201a30;
+  --rl-surface-overlay-layered: var(--rl-surface-overlay);
+  --rl-text-primary: #f5f5f7;
+  --rl-text-secondary: #d5d1e1;
+  --rl-text-quiet: #beb9cc;
+  --rl-text-placeholder: var(--rl-text-quiet);
+  --rl-text-disabled: #beb9cc;
+  --rl-text-selected: var(--rl-text-primary);
+  --rl-accent-primary: #6d50d1;
+  --rl-accent-hover: #7654d8;
+  --rl-on-accent: #ffffff;
+  --rl-focus: #e6ddff;
+  --rl-focus-width: 2px;
+  --rl-focus-offset: 3px;
+  --rl-panel-highlight: rgb(255 255 255 / 12%);
+  --rl-border-subtle: rgb(255 255 255 / 9%);
+  --rl-border-boundary: #a9a0bd;
+  --rl-border-action-selection: #e6ddff;
+  --rl-success: #76dbb3;
+  --rl-warning: #f0c878;
+  --rl-danger: #ff9ba5;
+  --rl-atmosphere-creative: rgb(117 94 210 / 38%);
+  --rl-material-none: none;
+  --rl-material-panel: none;
+  --rl-material-overlay: none;
+  --rl-material-shell: var(--rl-material-panel);
+  --rl-elevation-flat: none;
+  --rl-elevation-panel: inset 0 1px 0 rgb(255 255 255 / 12%), 0 30px 90px rgb(0 0 0 / 45%);
+  --rl-elevation-overlay: 0 8px 24px rgb(0 0 0 / 45%);
+  --rl-elevation-primary: 0 8px 32px rgb(124 108 242 / 25%);
+  --rl-elevation-focus: none;
+  --rl-radius-micro: 8px;
+  --rl-radius-control: 18px;
+  --rl-radius-field: 20px;
+  --rl-radius-panel: 28px;
+  --rl-radius-pill: 999px;
+  --rl-radius-sheet: 36px;
+  --rl-surface-pressed: rgb(255 255 255 / 13%);
+  --rl-surface-disabled: var(--rl-surface-raised);
+  --rl-modal-scrim: rgb(7 6 11 / 76%);
+  --rl-accent-primary-end: #9841bd;
+  --rl-accent-hover-end: #a045c4;
+  --rl-accent-pressed: #6044bd;
+  --rl-accent-pressed-end: #8535aa;
+  --rl-accent-decorative-start: #7c6cf2;
+  --rl-accent-decorative-end: #b05cf0;
+  --rl-atmosphere-pink: rgb(217 100 160 / 20%);
+  --rl-atmosphere-indigo: rgb(70 90 220 / 18%);
+  --rl-atmosphere-scene: radial-gradient(45% 45% at 78% 6%, var(--rl-atmosphere-creative), transparent 70%), radial-gradient(40% 45% at 8% 96%, var(--rl-atmosphere-pink), transparent 70%), radial-gradient(40% 30% at 50% 100%, var(--rl-atmosphere-indigo), transparent 70%);
+  --rl-gradient-primary: linear-gradient(110deg, var(--rl-accent-primary), var(--rl-accent-primary-end));
+  --rl-gradient-hover: linear-gradient(110deg, var(--rl-accent-hover), var(--rl-accent-hover-end));
+  --rl-gradient-pressed: linear-gradient(110deg, var(--rl-accent-pressed), var(--rl-accent-pressed-end));
+  --rl-space-4: 4px;
+  --rl-space-8: 8px;
+  --rl-space-12: 12px;
+  --rl-space-16: 16px;
+  --rl-space-24: 24px;
+  --rl-space-32: 32px;
+  --rl-space-48: 48px;
+  --rl-space-64: 64px;
+  --rl-type-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --rl-type-mono: ui-monospace, monospace;
+  --rl-type-body: 1rem;
+  --rl-type-label: 0.875rem;
+  --rl-type-caption: 0.75rem;
+  --rl-type-section: 1.25rem;
+  --rl-type-page: 1.75rem;
+  --rl-type-display: 2.25rem;
+  --rl-leading-body: 1.5;
+  --rl-leading-label: 1.4;
+  --rl-leading-caption: 1.4;
+  --rl-weight-body: 400;
+  --rl-weight-label: 500;
+  --rl-weight-caption: 400;
+  --rl-weight-heading: 600;
+  --rl-control-compact: 32px;
+  --rl-control-regular: 40px;
+  --rl-control-large: 44px;
+  --rl-hit-preferred: 44px;
+  --rl-hit-minimum: 24px;
+  --rl-duration-micro: 120ms;
+  --rl-duration-normal: 160ms;
+  --rl-duration-contextual: 240ms;
+  --rl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  :root {
+    --rl-surface-panel-layered: rgb(255 255 255 / 5.5%);
+    --rl-surface-overlay-layered: rgb(32 26 48 / 96%);
+    --rl-material-panel: blur(30px) saturate(150%);
+    --rl-material-overlay: blur(30px) saturate(150%);
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
+  :root {
+    --rl-surface-panel-layered: var(--rl-surface-panel);
+    --rl-surface-overlay-layered: var(--rl-surface-overlay);
+    --rl-material-panel: none;
+    --rl-material-overlay: none;
+    --rl-surface-control: var(--rl-surface-raised);
+    --rl-surface-hover: var(--rl-surface-high);
+    --rl-surface-pressed: var(--rl-surface-selected);
+    --rl-border-subtle: var(--rl-border-boundary);
+    --rl-atmosphere-scene: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rl-duration-micro: 0ms;
+    --rl-duration-normal: 0ms;
+    --rl-duration-contextual: 0ms;
+  }
+}
