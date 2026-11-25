@@ -13,9 +13,11 @@ function displayInitials(displayName: string | null) {
 export function AccountProfileIdentity({
   profile,
   large = false,
+  overviewEmail,
 }: {
   profile: RenderLabAccountProfile;
   large?: boolean;
+  overviewEmail?: string;
 }) {
   const initials = displayInitials(profile.displayName);
   const avatarSrc = profile.avatarUrl
@@ -34,9 +36,9 @@ export function AccountProfileIdentity({
         )}
       </div>
       <div className={styles.valueStack}>
-        <p className={styles.valueLabel}>Profile</p>
+        {overviewEmail === undefined ? <p className={styles.valueLabel}>Profile</p> : null}
         <p className={styles.profileName}>{profile.displayName ?? "No display name"}</p>
-        <p className={styles.helper}>Display identity only. It does not change sign-in, access, role or ownership.</p>
+        {overviewEmail !== undefined ? <p className={styles.helper}>{overviewEmail}</p> : <p className={styles.helper}>Display identity only. It does not change sign-in, access, role or ownership.</p>}
       </div>
     </div>
   );
