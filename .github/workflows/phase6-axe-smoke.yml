@@ -1,0 +1,60 @@
+name: Phase 6 Axe Smoke (optional)
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/component-app/**"
+      - "tests/components/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/phase6-axe-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-phase6-axe-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  axe-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      REVIEW_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.REVIEW_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Verify checkout
+        run: test "$(git rev-parse HEAD)" = "$REVIEW_SOURCE_SHA"
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify dev-only pins and registry integrity
+        run: node tests/components/verify-axe-boundary.mjs registry
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Informational mounted axe scans (loopback only)
+        run: |
+          sudo unshare --net -- bash -c '
+            set -e
+            ip link set lo up
+            exec runuser -u "$1" -- env -i PATH="$2" HOME="$3" CI=true NEXT_TELEMETRY_DISABLED=1 node node_modules/@playwright/test/cli.js test --config tests/components/playwright.axe.config.ts
+          ' _ "$(id -un)" "$PATH" "$HOME"
+      - name: Offline production build and scanner exclusion
+        run: |
+          sudo unshare --net -- bash -c '
+            set -e
+            ip link set lo up
+            exec runuser -u "$1" -- env -i PATH="$2" HOME="$3" CI=true NEXT_TELEMETRY_DISABLED=1 bash -c "npm run build && node tests/components/verify-axe-boundary.mjs build"
+          ' _ "$(id -un)" "$PATH" "$HOME"
