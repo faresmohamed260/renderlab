@@ -259,3 +259,41 @@ for (const device of profiles) for (const route of ["/create", "/library", "/"])
     // as unavailable, not zero. Budget misses are informational, never failures.
   });
 }
+
+
+// Behavioral and real built-chunk boundary, not a byte-budget ratchet.
+for (const device of profiles) {
+  test("collection manager code is requested on demand " + device.name, async ({ browser }) => {
+    const { context, page, unexpected, errors } = await fixtureContext(browser, device.width, device.height);
+    const marker = "Create, rename, or remove collections. Media stays in Library.";
+    const markerScripts = async () => (await metrics(page)).resources.filter(entry => {
+      const url = new URL(entry.name);
+      if (url.origin !== origin || !url.pathname.startsWith("/_next/static/") || !url.pathname.endsWith(".js")) return false;
+      const file = path.join(buildRoot, url.pathname.slice("/_next/".length));
+      return existsSync(file) && readFileSync(file, "utf8").includes(marker);
+    }).map(entry => ({url: entry.name, bytes: entry.transferSize}));
+    try {
+      await throttle(context, page, device.cpu);
+      await page.goto(origin + "/library", {waitUntil: "load", timeout: 60_000});
+      await expect(page.getByRole("heading", {name: "Library", exact: true})).toBeVisible();
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      await page.waitForTimeout(1800);
+      expect(await markerScripts(), "Collection manager must not be in initial transferred JS").toEqual([]);
+      const trigger = page.getByRole("button", {name: "Collections", exact: true});
+      await trigger.press("Enter");
+      const option = page.getByRole("menuitem", {name: "Manage collections"});
+      await option.focus();
+      await option.press("Enter");
+      const manager = page.getByRole("region", {name: "Manage collections"});
+      await expect(manager).toBeVisible();
+      await expect(manager.getByRole("textbox", {name: "New collection"})).toBeVisible();
+      await expect.poll(async () => (await markerScripts()).length).toBeGreaterThan(0);
+      console.log("COLLECTION MANAGER ON DEMAND", device.name, JSON.stringify(await markerScripts()));
+      await manager.getByRole("button", {name: "Close collection manager"}).press("Enter");
+      await expect(manager).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+      expect(unexpected).toEqual([]);
+      expect(errors).toEqual([]);
+    } finally { await context.close(); }
+  });
+}
