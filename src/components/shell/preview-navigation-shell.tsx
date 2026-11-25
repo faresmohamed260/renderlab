@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
+import { Activity, CircleHelp, House, Images, Menu, Settings, Shield, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { RenderLabMark } from "@/components/brand/renderlab-brand";
 
@@ -111,8 +111,12 @@ async function loadProfileName(hostedProfile: boolean, signal: AbortSignal): Pro
   return typeof profile?.displayName === "string" ? profile.displayName.trim() : null;
 }
 
-function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | null; hostedProfile: boolean }) {
+function PreviewAccountMenu({ accountId, hostedProfile, showAdmin, legacy }: { accountId: string | null; hostedProfile: boolean; showAdmin: boolean; legacy: boolean }) {
   const pathname = usePathname();
+  const options = legacy ? accountOptions : [
+    { label: "Settings", icon: Settings, href: settingsPath, separated: false },
+    ...(showAdmin && accountId ? [{ label: "Admin", icon: Shield, href: "/admin", separated: false }] : []),
+  ];
   const [open, setOpen] = useState(false);
   const reduced = usePreviewReducedMotion();
   const panel = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
@@ -188,11 +192,11 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>{name}</animated.span>
         <animated.ul aria-label="Account options" className="preview-account-options"
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>
-          {accountOptions.map(({ label, icon: Icon, href, separated }) => (
+          {options.map(({ label, icon: Icon, href, separated }) => (
             <li key={label} className={separated ? "preview-account-row-separated" : undefined}>
               {href ? (
                 <Link href={href} className="preview-account-row preview-account-settings"
-                  aria-current={isSettingsRoute(pathname) ? "page" : undefined}
+                  aria-current={(href === settingsPath ? isSettingsRoute(pathname) : pathname === href || pathname.startsWith(href + "/")) ? "page" : undefined}
                   onNavigate={() => {
                     trigger.current?.focus({ preventScroll: true });
                     pinned.current = false;
@@ -226,9 +230,10 @@ const navigationGroups = [
   { title: "Media & history", destinations: destinations.slice(2, 4) },
 ];
 
-export function PreviewNavigationShell({ children, accountId, hostedProfile }: { children: ReactNode; accountId: string | null; hostedProfile: boolean }) {
+export function PreviewNavigationShell({ children, accountId, hostedProfile, showAdmin = false }: { children: ReactNode; accountId: string | null; hostedProfile: boolean; showAdmin?: boolean }) {
   const pathname = usePathname();
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
+  const legacy = pathname === "/";
   const sectionLabel = isSettingsRoute(pathname) ? "Settings" : current?.label ?? "RenderLab";
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
@@ -264,7 +269,13 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
 
   return (
     <div className="preview-navigation-shell">
-      <header className="preview-navigation-header">
+      <header className="preview-navigation-header" data-p6-desktop={legacy ? undefined : "true"}>
+        {!legacy && <div className="p6-desktop-navigation">
+          <Button asChild variant="ghost" size="lg" className="p6-desktop-brand"><Link href="/" aria-label="RenderLab home"><RenderLabMark className="size-6" /><span>RenderLab</span></Link></Button>
+          <nav aria-label="Primary navigation" className="p6-desktop-links">
+            {destinations.slice(1).map(({ href, label }) => <Button asChild key={href} variant="ghost" size="lg" className="p6-desktop-link"><Link href={href} aria-current={current?.href === href ? "page" : undefined}>{label}</Link></Button>)}
+          </nav>
+        </div>}
         <div ref={disclosure} className="preview-section-disclosure"
           onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpenPath(pathname); }}
           onPointerLeave={(event) => {
@@ -314,7 +325,7 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
             ))}
           </animated.nav>
         </div>
-        <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} hostedProfile={hostedProfile} />
+        <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} hostedProfile={hostedProfile} showAdmin={showAdmin} legacy={legacy} />
       </header>
       <div className="preview-navigation-content">{children}</div>
     </div>

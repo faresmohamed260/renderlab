@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PreviewNavigationShell } from "@/components/shell/preview-navigation-shell";
 import { getCurrentRenderLabIdentity } from "@/lib/supabase/server";
+import { getCurrentRenderLabAdminAuthorization } from "@/server/admin/admin-auth";
 import { isCreatePreview } from "@/server/create-preview-mode";
 
 import "./globals.css";
@@ -32,13 +33,17 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const preview = envString("NODE_ENV") === "production" || await isCreatePreview();
   const account = preview ? await getCurrentRenderLabIdentity().catch(() => null) : null;
+  // Navigation is not authorization. Reuse the existing fresh MFA/admin guard,
+  // fail closed, and match the verified identity; never infer role from client profile data.
+  const admin = account ? await getCurrentRenderLabAdminAuthorization().catch(() => null) : null;
+  const showAdmin = admin?.status === "authorized" && admin.admin.identity.id === account?.id;
   return (
     <html lang="en">
       <body className={preview ? "renderlab-gradient" : undefined}>
         {preview && <div className="renderlab-reference-atmosphere" aria-hidden="true">
           <div className="renderlab-reference-wash" />
         </div>}
-        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} hostedProfile={envString("NODE_ENV") === "development" && envFlag("RENDERLAB_HOSTED_CREATE")}>{children}</PreviewNavigationShell> : children}
+        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} showAdmin={showAdmin} hostedProfile={envString("NODE_ENV") === "development" && envFlag("RENDERLAB_HOSTED_CREATE")}>{children}</PreviewNavigationShell> : children}
       </body>
     </html>
   );
