@@ -1,5 +1,7 @@
 # P6-02a — Shared-primitives foundation and Create design prototype
 
+> **Superseded 2026-11-25:** #706 flat-boxed prototype rejected; this is historical design-checkpoint evidence, not active execution authority. See [P6-03](P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md) after acceptance. No prototype approval or production change implied.
+
 **Proposed contract for owner review — 2026-11-24. Execution not authorized by this PR.** P6-01 [#687](https://github.com/faresmohamed260/renderlab/pull/687) is merged as `262078421f0bd78ca18295ab6a00e9f528d19a4c`; its corrected palette and [#686](https://github.com/faresmohamed260/renderlab/pull/686) audit are the design inputs. This expands only the immediate shared-primitives/Create design checkpoint; later steps remain roadmap-level. No production or prototype code, dependency, credential, provider, database or release action. Worker 1 merges only after Batch F's queue; this docs-only contract can wait. The owner must review and accept it before any prototype code, and the contract must merge before execution.
 
 ## 1. Goal, starting state, boundaries
