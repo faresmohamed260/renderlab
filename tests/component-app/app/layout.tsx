@@ -5,6 +5,8 @@ import "../../../src/app/globals.css";
 import "../../../src/app/renderlab-background.css";
 import "../../../src/app/create-clear-composer.css";
 
+export const metadata = { title: "RenderLab mounted component fixture" };
+
 export default async function FixtureLayout({ children }: { children: ReactNode }) {
   // Only the isolated acceptance suite requests this fixture layout. Mirror the
   // production root/body and app-main composition, without server auth or I/O.
