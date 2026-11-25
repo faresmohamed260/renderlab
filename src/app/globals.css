@@ -2073,3 +2073,19 @@ a {
     word-spacing: 7px;
   }
 }
+
+/* Data-loading placeholder only; no shimmer in Reduce Motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .rl-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--rl-panel-highlight), transparent);
+    transform: translateX(-100%);
+    animation: rl-skeleton-shimmer 1.4s var(--rl-ease-out) 3;
+    pointer-events: none;
+  }
+}
+@keyframes rl-skeleton-shimmer {
+  to { transform: translateX(100%); }
+}

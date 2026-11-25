@@ -84,7 +84,7 @@ Before copying/installing an external component:
 **Status:** APPROVED
 **Source:** `src/components/ui/*`, configured by `components.json` with shadcn `radix-nova`  
 **Origin:** shadcn/ui + `radix-ui`, normalized to RenderLab semantic tokens and reviewed product semantics  
-**Current primitives:** Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Popover, Spinner, Textarea, Toggle, ToggleGroup.
+**Current primitives:** Alert, AlertDialog, Button, Checkbox, Collapsible, DropdownMenu, Empty, Field, Input, Label, NativeSelect, Popover, Sheet, Slider, Skeleton, Spinner, Switch, Textarea, Toggle, ToggleGroup, Tooltip.
 **Used by:** application shell, Create, Create Advanced, Library search/filter/sort/upload/Favorites/Collections/selection/empty state, Media Viewer and Viewer Favorite/Collections/Rename/Download/Delete actions.
 **Reuse rules:** Conventional visible controls in feature/shell code must compose this layer. Extend variants/semantics here when the requirement is genuinely shared instead of re-hand-styling each feature. Native file/hidden inputs may remain browser/form plumbing.  
 **Do not:** Reintroduce raw visible `<button>`, `<select>`, `<textarea>` or ordinary visible `<input>` controls into `src/features` or `src/components/shell`; force maintained Radix semantics back into an older DOM shape just to satisfy stale tests; create a competing primitive for a solved conventional control.  
@@ -156,6 +156,12 @@ Before copying/installing an external component:
 **Used by:** Create Advanced  
 **Reuse rules:** Reuse for ordinary disclosure; keep feature state/copy outside the primitive.  
 **Notes:** Adopted through PR #6 and normalized into the maintained primitive foundation through PR #13.
+
+### P6-03b shared glass additions
+
+**Origin:** locally composed wrappers of the existing locked radix-ui 1.6.7 package (MIT metadata): Dialog 1.1.23 (Sheet), Tooltip 1.2.16, Slider 1.4.7, Switch 1.3.7; existing Popover 1.1.23 is retained. No new dependencies or copied upstream source. Skeleton is a noninteractive CSS placeholder using shared semantic roles; there is no Radix Skeleton primitive. Shared wrappers consume the P6-03a production token owner, preserving maintained DOM/keyboard semantics. Existing feature-specific overrides remain until scoped migration. Overlay material defaults to opaque over arbitrary artwork; no nested filter. Shared primary buttons use the corrected solid action start colors; the full Generate gradient is provided as a semantic role for its later scoped feature migration. New sheet/popover motion choreography and visual contrast/zoom acceptance require actual render review; this entry records adoption, not approval.
+
+**Files:** `sheet.tsx`, `tooltip.tsx`, `slider.tsx`, `switch.tsx`, `skeleton.tsx` under `src/components/ui/`. Sheet uses Dialog focus containment, explicit close and Escape; Tooltip describes a named trigger; Slider and Switch use Radix keyboard and form semantics; Skeleton has no tab stop, is aria-hidden and static in reduced motion. Consumer owns real status.
 
 ### Popover
 **Status:** APPROVED foundation composition; rendered feature acceptance pending.  

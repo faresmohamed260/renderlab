@@ -20,18 +20,18 @@ function EmptyMedia({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="empty-media"
-      className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-text-muted [&_svg]:size-5", className)}
+      className={cn("flex size-11 shrink-0 items-center justify-center rounded-[var(--rl-radius-control)] bg-[var(--rl-surface-hover)] text-[color:var(--rl-text-quiet)] [&_svg]:size-5", className)}
       {...props}
     />
   );
 }
 
 function EmptyTitle({ className, ...props }: React.ComponentProps<"h3">) {
-  return <h3 data-slot="empty-title" className={cn("mt-4 text-base font-semibold text-text", className)} {...props} />;
+  return <h3 data-slot="empty-title" className={cn("mt-4 text-base font-semibold text-[color:var(--rl-text-primary)]", className)} {...props} />;
 }
 
 function EmptyDescription({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="empty-description" className={cn("mt-1 max-w-sm text-sm leading-6 text-text-muted", className)} {...props} />;
+  return <div data-slot="empty-description" className={cn("mt-1 max-w-sm text-sm leading-6 text-[color:var(--rl-text-quiet)]", className)} {...props} />;
 }
 
 function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
