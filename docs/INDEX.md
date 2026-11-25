@@ -226,6 +226,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/ui/UI_SYSTEM.md` — normative UI-system rules; existing runtime baseline until reviewed V2 implementation.
 - [Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — Phase 6 approved visual direction, candidate glass tokens/springs and high-level roadmap; no runtime authorization.
 - [P6-04 Create contract](ui/P6_04_CREATE_CONTRACT.md) — accepted next-phase execution contract; sequencing and P6-03 composition gates apply.
+- [P6-05 Library contract](ui/P6_05_LIBRARY_CONTRACT.md) — desktop Library and inspector execution contract with a proposed phone layout.
 - [P6-06 Admin Observe contract](ui/P6_06_ADMIN_OBSERVE_CONTRACT.md) — read-only Health aggregate presentation; operational controls remain roadmap items.
 - [P6-02a shared-primitives and Create prototype contract](ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) — superseded historical isolated design checkpoint; prototype #706 rejected.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
