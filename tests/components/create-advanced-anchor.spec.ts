@@ -1,8 +1,15 @@
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 
-for (const width of [195, 390]) {
-  test("Advanced has an actual viewport anchor at " + width, async ({ page }) => {
+// Keep the two original cases and run their identical cold body in 30
+// independent 390px contexts, in the same mounted job. No io fixture,
+// source readiness wait, retry, or extended timeout in the reproducer.
+const cases = [
+  ...[195, 390].map(width => ({ width, suffix: "" })),
+  ...Array.from({ length: 30 }, (_, i) => ({ width: 390, suffix: " cold reproduction " + (i + 1) + "/30" })),
+];
+for (const { width, suffix } of cases) {
+  test("Advanced has an actual viewport anchor at " + width + suffix, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: width === 195 ? 422 : 844 });
     // Install before navigation: do not insert a hydration wait, a retry or a
