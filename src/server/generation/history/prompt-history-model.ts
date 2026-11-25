@@ -12,7 +12,13 @@ type Read = (params: URLSearchParams, init: { method: "GET" }) => Promise<Row[]>
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const timestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
 function validTimestamp(value: string) {
-  return timestamp.test(value) && Number.isFinite(Date.parse(value));
+  if (!timestamp.test(value) || !Number.isFinite(Date.parse(value))) return false;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1];
 }
 function limitFor(limit: number | undefined) {
   if (limit === undefined) return 20;
@@ -34,8 +40,10 @@ export function promptHistoryQuery(ownerId: string, query: PromptHistoryQuery) {
     order: "created_at.desc,id.desc",
     limit: String(limitFor(query.limit) + 1),
   });
-  // PostgREST treats '*' as a '%' alias for LIKE. Escape it too, so a
-  // user's punctuation is literal rather than an accidental wildcard.
+  // PostgREST's LIKE parser translates '*' to '%' even when preceded by a
+  // backslash. Escaping both makes '*' an alias for a literal percent, NOT
+  // a wildcard or literal asterisk search. Keep the bounded LIKE contract;
+  // true asterisk matching would need a separately qualified search operator.
   p.set("prompt", search ? "ilike.%" + search.replace(/[\\%_*]/g, "\\$&") + "%" : "neq.");
   if (query.cursor) {
     const { createdAt, id } = query.cursor;
