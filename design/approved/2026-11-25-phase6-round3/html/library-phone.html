@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library — phone</title>
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+.root{position:relative;width:390px;height:844px;overflow:hidden;background:#07060b;color:#f5f5f7;font-family:-apple-system,'SF Pro Display','Inter',system-ui,sans-serif;letter-spacing:-0.01em}
+.atm{position:absolute;inset:0;background:radial-gradient(70% 32% at 80% 6%,rgba(117,94,210,.42),rgba(117,94,210,0) 70%),radial-gradient(60% 30% at 6% 86%,rgba(217,100,160,.20),rgba(217,100,160,0) 70%)}
+.glass{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(28px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.chip{flex:none;display:inline-flex;align-items:center;height:44px;padding:0 18px;border-radius:22px;border:0;background:rgba(255,255,255,.09);color:rgba(245,245,247,.86);font:600 14px/1 inherit;cursor:pointer}
+.chip[aria-pressed="true"]{background:rgba(255,255,255,.2);color:#fff}
+.tile{position:relative;display:block;aspect-ratio:1/1;border-radius:22px;border:0;padding:0;cursor:pointer;overflow:hidden}
+.tile .ck{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.85);background:rgba(20,16,14,.35)}
+.tile .ck.on{background:#7c6cf2;border-color:#fff}
+.tile .hrt{position:absolute;left:8px;bottom:8px;width:26px;height:26px;border-radius:50%;background:rgba(20,16,14,.45);display:flex;align-items:center;justify-content:center}
+h1{margin:0}
+</style>
+</helmet>
+<div class="root">
+<div class="atm" aria-hidden="true"></div>
+<button type="button" aria-label="Open navigation menu" class="glass" style="position:absolute;left:12px;top:8px;height:44px;display:flex;align-items:center;gap:10px;padding:0 16px 0 8px;border-radius:22px;color:#f5f5f7;font:600 16px/1 inherit;cursor:pointer"><span aria-hidden="true" style="width:28px;height:28px;border-radius:10px;background:linear-gradient(135deg,#a89bff,#6251c7)"></span>RenderLab</button>
+<button type="button" aria-label="Search the Library" class="glass" style="position:absolute;right:12px;top:8px;width:44px;height:44px;border-radius:50%;color:#f5f5f7;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg></button>
+
+<main style="position:absolute;left:12px;right:12px;top:64px;bottom:0">
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin:4px 6px 12px"><h1 style="font-size:30px;font-weight:700">Library</h1><span style="font-size:13px;color:rgba(245,245,247,.72)">48 items</span></div>
+<div role="group" aria-label="Filter" style="display:flex;gap:8px;overflow:hidden;margin-bottom:14px">
+<button type="button" class="chip" aria-pressed="true">All</button><button type="button" class="chip" aria-pressed="false">Images</button><button type="button" class="chip" aria-pressed="false">Videos</button><button type="button" class="chip" aria-pressed="false">Favorites</button><button type="button" class="chip" aria-pressed="false">Collections</button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+<button type="button" class="tile" aria-label="Sandstone arch, selected" style="background:linear-gradient(160deg,#6f8196,#d9a98a 60%,#c07f5d)"><span class="ck on" aria-hidden="true"></span></button>
+<button type="button" class="tile" aria-label="Twilight skyline" style="background:linear-gradient(160deg,#2c3e63,#7a6cc2 60%,#d98fb0)"><span class="ck" aria-hidden="true"></span></button>
+<button type="button" class="tile" aria-label="Misty pine forest, selected" style="background:linear-gradient(160deg,#17332e,#3f8f7b 60%,#c4e2b4)"><span class="ck on" aria-hidden="true"></span></button>
+<button type="button" class="tile" aria-label="Studio portrait" style="background:linear-gradient(160deg,#3b1f2b,#a8445a 60%,#f0a98a)"><span class="ck" aria-hidden="true"></span></button>
+<button type="button" class="tile" aria-label="Harbor at dusk" style="background:linear-gradient(160deg,#1c2a4a,#4f6fb0 60%,#f2c48f)"><span class="ck" aria-hidden="true"></span></button>
+<button type="button" class="tile" aria-label="Desert road" style="background:linear-gradient(160deg,#5a3b2a,#c78458 60%,#f4d9a6)"><span class="ck" aria-hidden="true"></span></button>
+</div>
+</main>
+
+<div role="toolbar" aria-label="2 selected" class="glass" style="position:absolute;left:12px;right:12px;bottom:18px;height:64px;border-radius:32px;display:flex;align-items:center;gap:6px;padding:0 10px 0 20px;box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.18)">
+<span style="font-size:15px;font-weight:600;white-space:nowrap;margin-right:auto">2 selected</span>
+<button type="button" aria-label="Favorite" style="width:48px;height:48px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+<button type="button" aria-label="Download" style="width:48px;height:48px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
+<button type="button" aria-label="Delete" style="width:48px;height:48px;border-radius:50%;border:0;background:rgba(240,128,128,.18);color:#ffb4b4;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>
+</div>
+</div>
+</x-dc>
+
+</body>
+</html>
