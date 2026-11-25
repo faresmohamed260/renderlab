@@ -97,6 +97,35 @@ export async function captureStableTextFrame<T extends TextFrame>(capture:()=>Pr
   return {stable:false,frame,previous,attempts:limit,deltas};
 }
 
+// Hide only glyph fill, not the computed placeholder color or inline style.
+// Apply and remove the two temporary DOM nodes/attributes in one browser task
+// each, so no intermediate style state can be rendered between round trips.
+export async function setPlaceholderPaintHidden(locator: Locator, hidden: boolean) {
+  await locator.evaluate((element, hide) => {
+    const document = element.ownerDocument;
+    const marker = "data-review-hide-placeholder";
+    const existing = document.querySelector("style[data-review-placeholder-style]");
+    if (hide) {
+      if (existing || element.hasAttribute(marker)) throw Error("Placeholder paint transaction already present");
+      const style = document.createElement("style");
+      style.setAttribute("data-review-placeholder-style", "");
+      style.textContent = "[data-review-hide-placeholder]::placeholder { -webkit-text-fill-color: transparent !important; }";
+      element.setAttribute(marker, "");
+      try {
+        document.head.appendChild(style);
+      } catch (error) {
+        element.removeAttribute(marker);
+        style.remove();
+        throw error;
+      }
+    } else {
+      if (!existing || !element.hasAttribute(marker)) throw Error("Placeholder paint transaction missing");
+      existing.remove();
+      element.removeAttribute(marker);
+    }
+  }, hidden);
+}
+
 const raw = async (page: Page) => {
   const screenshot = await page.screenshot({ animations: "allow", scale: "css", caret: "hide" });
   return sharp(screenshot).removeAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
@@ -154,11 +183,11 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
   const before = visible?.frame ?? await raw(page);
   let background: Awaited<ReturnType<typeof captureStableTextFrame<Awaited<ReturnType<typeof raw>>>>> | null = null;
   let hidden: Awaited<ReturnType<typeof raw>>, repeat: Awaited<ReturnType<typeof raw>>;
-  let placeholderStyle: Awaited<ReturnType<Page["addStyleTag"]>> | undefined;
+  let placeholderHidden = false;
   try {
     if (control === "placeholder") {
-      await locator.evaluate(element => element.setAttribute("data-review-hide-placeholder", ""));
-      placeholderStyle = await page.addStyleTag({ content: "[data-review-hide-placeholder]::placeholder { -webkit-text-fill-color: transparent !important; color: transparent !important; }" });
+      await setPlaceholderPaintHidden(locator, true);
+      placeholderHidden = true;
     } else await locator.evaluate(element => {
       if (!(element instanceof HTMLElement)) throw Error("Expected HTML text target");
       element.style.setProperty("-webkit-text-fill-color", "transparent", "important");
@@ -173,11 +202,9 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
       repeat = await raw(page);
     }
   } finally {
-    if (placeholderStyle) await placeholderStyle.evaluate(node => {
-      node.parentNode?.removeChild(node);
-    });
-    if (control === "placeholder") await locator.evaluate(element => element.removeAttribute("data-review-hide-placeholder"));
-    await locator.evaluate((element, original) => {
+    if (control === "placeholder") {
+      if (placeholderHidden) await setPlaceholderPaintHidden(locator, false);
+    } else await locator.evaluate((element, original) => {
       if (original === null) element.removeAttribute("style");
       else element.setAttribute("style", original);
     }, info.originalStyle);
@@ -192,7 +219,13 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
     console.log("PLACEHOLDER PIXEL STABILITY", state, sample, JSON.stringify({
       visible:{attempts:visible.attempts,deltas:visible.deltas},
       hidden:{attempts:background.attempts,deltas:background.deltas},
-      restored:{attempts:restored.attempts,deltas:restored.deltas},restoration
+      restored:{attempts:restored.attempts,deltas:restored.deltas},restoration,
+      mismatch: restoration.first ? (() => {
+        const [x, y] = restoration.first;
+        const i = (y * before.info.width + x) * 3;
+        return { x, y, visible: [...before.data.slice(i, i + 3)], hidden: [...hidden.data.slice(i, i + 3)],
+          hiddenRepeat: [...repeat.data.slice(i, i + 3)], restored: [...restored.frame.data.slice(i, i + 3)] };
+      })() : null
     }));
     if (!background.stable || !restored.stable || restoration.maxDelta > 1) return manual("Placeholder backdrop or restored paint did not settle", info.minimum);
     restoredFrame = restored.frame;
