@@ -25,8 +25,8 @@ test("read includes failed and succeeded attempts even without assets; no sensit
     { id: "12345678-1234-4234-8234-123456789ab3", prompt: "older", status: "cancelled", operation: "create-video", created_at: timestamp },
   ];
   let calls = 0;
-  const page = await readPromptHistory(owner, { limit: 2 }, async (path, init) => {
-    calls++; assert.equal(init.method, "GET"); assert.match(path, /^generation_jobs\?/); return rows;
+  const page = await readPromptHistory(owner, { limit: 2 }, async (params, init) => {
+    calls++; assert.equal(init.method, "GET"); assert.deepEqual(params.getAll("owner_id"), ["eq." + owner]); return rows;
   });
   assert.equal(calls, 1);
   assert.deepEqual(page.items.map(x => x.status), ["failed", "succeeded"]);
