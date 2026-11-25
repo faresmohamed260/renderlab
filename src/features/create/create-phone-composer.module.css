@@ -1,0 +1,57 @@
+/* Phone-only composer card; keep normal flow at small heights and with the
+ * software keyboard. Do not overlay the result, mask editor or focus targets. */
+.composer .advancedTrigger { display: none; }
+@media (max-width: 700px) {
+  .composer:global(.create-preview-controls) {
+    border-radius: var(--rl-radius-sheet);
+    border: 1px solid var(--rl-border-subtle);
+    background: var(--rl-surface-panel-layered);
+    box-shadow: var(--rl-elevation-panel);
+    backdrop-filter: var(--rl-material-panel);
+    padding-block-end: max(var(--rl-space-16), env(safe-area-inset-bottom));
+  }
+  .composer .advancedTrigger {
+    display: flex;
+    inline-size: 100%;
+    min-block-size: var(--rl-hit-preferred);
+    margin-block-end: var(--rl-space-8);
+  }
+}
+.sheet:global([data-slot="sheet-content"]) {
+  /* The portalled surface owns its anchor. Do not rely on utility generation
+   * or static positioning inside the scrolled composer. */
+  position: fixed;
+  inset: auto 0 0;
+  margin: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overscroll-behavior: contain;
+  max-block-size: 85dvh;
+  padding-block-end: max(var(--rl-space-16), env(safe-area-inset-bottom));
+}
+.heading { display: flex; align-items: center; justify-content: space-between; gap: var(--rl-space-8); min-inline-size: 0; }
+.heading > * { min-inline-size: 0; }
+.heading > button { min-block-size: var(--rl-hit-preferred); flex-shrink: 0; }
+.sheet > * { flex-shrink: 0; min-inline-size: 0; max-inline-size: 100%; overflow-wrap: anywhere; }
+.settings { display: grid; min-inline-size: 0; grid-template-columns: minmax(0, 1fr); gap: var(--rl-space-16); }
+.settings :global(.create-preview-seed) { display: flex; gap: var(--rl-space-8); min-inline-size: 0; align-items: center; }
+.settings :global(.create-preview-seed) input[type="text"] { min-inline-size: 0; flex: 1; }
+.settings :global(.create-preview-seed-dice) { flex: 0 0 auto; min-inline-size: var(--rl-hit-preferred); min-block-size: var(--rl-hit-preferred); }
+.settings :global(.create-preview-steps) input { inline-size: 100%; min-block-size: var(--rl-hit-preferred); }
+.settings :global(.create-preview-extra) summary { min-block-size: var(--rl-hit-preferred); padding-block: var(--rl-space-12); cursor: pointer; overflow-wrap: anywhere; }
+.settings textarea { inline-size: 100%; max-inline-size: 100%; min-inline-size: 0; resize: vertical; }
+.settings :global(.create-preview-caption) { color: var(--rl-text-secondary); overflow-wrap: anywhere; }
+
+/* Portal controls cannot inherit the composer's sized button treatment. */
+.sheet:global([data-slot="sheet-content"]) > button,
+.sheet:global([data-slot="sheet-content"]) .heading > button {
+  min-block-size: var(--rl-hit-preferred, 44px);
+  flex-shrink: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

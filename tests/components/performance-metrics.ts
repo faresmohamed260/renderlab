@@ -29,3 +29,16 @@ export function median(numbers: (number | null)[]): number | null {
   const middle = Math.floor(valid.length / 2);
   return valid.length % 2 ? valid[middle] : (valid[middle - 1] + valid[middle]) / 2;
 }
+
+export type ResourceTransfer = { name: string; initiatorType: string; transferSize: number };
+
+// Completed same-origin JS resource transfers, including script preloads and
+// prefetched chunks. transferSize includes HTTP headers, not decoded JS size.
+// Repeated transfers count separately; zero-byte cache hits add no bytes.
+export function transferredJavaScript(entries: ResourceTransfer[], origin: string) {
+  const scripts = entries.filter(entry => {
+    const url = new URL(entry.name);
+    return url.origin === origin && (entry.initiatorType === "script" || /\.(?:m?js)$/.test(url.pathname));
+  });
+  return { bytes: scripts.reduce((sum, entry) => sum + entry.transferSize, 0), resources: scripts.length };
+}
