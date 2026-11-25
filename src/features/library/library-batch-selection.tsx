@@ -140,7 +140,7 @@ export function LibraryBatchSelection({
   const [searchOpen, setSearchOpen] = useState(false);
   const searchContainer = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (searchOpen && narrow) searchContainer.current?.querySelector("input[type=search]")?.focus({ preventScroll: true });
+    if (searchOpen && narrow) searchContainer.current?.querySelector<HTMLInputElement>("input[type=search]")?.focus({ preventScroll: true });
   }, [searchOpen, narrow]);
   useEffect(() => {
     const query = matchMedia("(max-width: 1199px)");
