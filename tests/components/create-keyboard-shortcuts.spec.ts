@@ -115,3 +115,33 @@ for (const width of [195, 320, 390, 1440]) {
     });
   }
 }
+
+for (const name of ["Shortcuts", "Queue"]) {
+  test("Create " + name + " leaves newer external focus in place during teardown", async ({ page, io }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const workspace = page.getByRole("region", { name: "Create with FIBO" });
+    const trigger = workspace.getByRole("button", { name, exact: true });
+    await trigger.press("Enter");
+    const panel = page.getByRole("dialog", { name, exact: true });
+    await expect(panel).toBeVisible();
+    await panel.evaluate(node => {
+      const external = document.createElement("button");
+      external.textContent = "Outside Create";
+      document.body.append(external);
+      // Move focus during Radix's deferred teardown, before its restore callback.
+      // This exercises the race without depending on browser input/task timing.
+      node.addEventListener("focusScope.autoFocusOnUnmount", () => {
+        external.focus();
+        queueMicrotask(() => { external.dataset.teardownComplete = "true"; });
+      }, { once: true });
+    });
+    await page.keyboard.press("Escape");
+    await expect(panel).toHaveCount(0);
+    const external = page.getByRole("button", { name: "Outside Create" });
+    await expect(external).toHaveAttribute("data-teardown-complete", "true");
+    await expect(external).toBeFocused();
+    expect(io.every(call => ["GET capabilities", "GET history"].includes(call))).toBe(true);
+  });
+}

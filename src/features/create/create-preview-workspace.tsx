@@ -304,7 +304,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   const [busy, setBusy] = useState(false);
   const queue = useRef<HTMLButtonElement>(null);
-  const shortcutsTrigger = useRef<HTMLButtonElement>(null);
   const [toolbarPopover, setToolbarPopover] = useState<CreateToolbarPopover>(null);
   const preparing = useRef<AbortController | null>(null);
   const [enqueueing, setEnqueueing] = useState(false);
@@ -1217,6 +1216,15 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     },
   });
 
+  function preserveToolbarFocus(event: Event) {
+    // Radix returns focus after portal teardown. Preserve any newer focus and
+    // otherwise let Radix decide whether this dismissal should focus the trigger.
+    const { activeElement, body, documentElement } = document;
+    if (activeElement?.isConnected && activeElement !== body && activeElement !== documentElement) {
+      event.preventDefault();
+    }
+  }
+
   return (
     <section ref={workspaceRoot} tabIndex={-1} onKeyDown={shortcuts.onKeyDown} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
       <p className="sr-only" role="status" aria-live="polite">{maskAnnouncement}</p>
@@ -1227,7 +1235,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             <PopoverTrigger asChild>
               <Button ref={queue} type="button" variant="ghost" className="create-preview-toolbar-trigger"><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</Button>
             </PopoverTrigger>
-            <PopoverContent data-create-shortcut-overlay="" aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs">
+            <PopoverContent data-create-shortcut-overlay="" aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs"
+              onCloseAutoFocus={preserveToolbarFocus}>
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               <div className="create-preview-caption">Waiting requests keep their prompt and inputs in this preview until they start, are removed, or expire.</div>
               {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
@@ -1245,16 +1254,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           </Popover>
           <Popover open={toolbarPopover === "shortcuts"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "shortcuts", open))}>
             <PopoverTrigger asChild>
-              <Button ref={shortcutsTrigger} type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
+              <Button type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
             </PopoverTrigger>
             <PopoverContent data-create-shortcut-overlay="" aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover"
-              onCloseAutoFocus={event => {
-                // Radix restores focus after portal teardown. Do not overwrite a
-                // newer explicit workspace focus (including the prompt shortcut).
-                event.preventDefault();
-                const active = document.activeElement;
-                if (!workspaceRoot.current?.contains(active)) shortcutsTrigger.current?.focus({ preventScroll: true });
-              }}>
+              onCloseAutoFocus={preserveToolbarFocus}>
               <p>/ to focus the prompt.</p>
               <p>{shortcuts.modifierHint} + Enter to generate when the form is ready.</p>
               <p>[ and ] to step through results.</p>
