@@ -1200,3 +1200,73 @@
   }
   .selectionSummary { display: flex; flex-wrap: wrap; }
 }
+
+@media (min-width: 75rem) {
+  /* The command wrapper is display:contents here; its decorative pseudo
+     otherwise extends the workspace by its negative 1.5rem right inset. */
+  .commandSurface::after { content: none; }
+}
+@media (max-width: 1199px) {
+  .phoneFilters {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+    gap: var(--rl-space-4);
+    overflow-x: auto;
+    padding: var(--rl-space-8);
+    scroll-padding-inline: var(--rl-space-8);
+  }
+  .phoneFilters .kindSwitch,
+  .phoneFilters .organizationCell {
+    display: flex;
+    flex: none;
+    width: max-content;
+    max-width: none;
+    flex-wrap: nowrap;
+    overflow: visible;
+    padding: 0;
+  }
+  .phoneFilters :global([data-slot="button"]) {
+    min-height: var(--rl-control-large);
+    border-radius: var(--rl-radius-pill);
+    flex: none;
+  }
+  .kindCell { grid-column: 1 / -1; min-width: 0; }
+  .phoneInspector .inspectorActions > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) {
+    justify-content: start;
+    width: 100%;
+    min-height: var(--rl-control-large);
+  }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) > span {
+    display: inline;
+  }
+}
+@media (max-width: 760px) {
+  .commandSurface[data-selection="on"] {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .commandSurface[data-selection="on"] .selectionMode {
+    padding: var(--rl-space-8);
+    transition: none;
+    transform: none;
+    backdrop-filter: var(--rl-material-overlay);
+    background: var(--rl-surface-overlay-layered);
+  }
+  .commandSurface[data-selection="on"] ~ .gallery {
+    padding-bottom: 50dvh;
+  }
+  .selectionSummary {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: 0;
+  }
+  .selectionSummary strong { color: var(--rl-text-primary); }
+  .selectionSummary small, .selectionEyebrow { color: var(--rl-text-secondary); }
+}
