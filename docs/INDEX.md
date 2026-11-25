@@ -229,6 +229,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - [P6-04 Create contract](ui/P6_04_CREATE_CONTRACT.md) — current Create composition and History parity contract, including the gate for Activity retirement.
 - [P6-05 Library contract](ui/P6_05_LIBRARY_CONTRACT.md) — desktop Library and inspector execution contract with a proposed phone layout.
 - [P6-06 Admin Observe contract](ui/P6_06_ADMIN_OBSERVE_CONTRACT.md) — merged contract and read-only desktop Health slice; rendered acceptance remains open.
+- [P6-06B Admin Control proposal](ui/P6_06B_ADMIN_CONTROL_PROPOSAL.md) — advisory roadmap for owner review. Implementation requires separate authorization.
 - [Phase 6 validation lanes](ui/UI_MIGRATION.md#phase-6-validation-lanes) — implemented review, axe, Slow 4G and signed-out HTTP workflow coverage and acceptance boundaries.
 - [P6-02a shared-primitives and Create prototype contract](ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) — superseded historical isolated design checkpoint; prototype #706 rejected.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
