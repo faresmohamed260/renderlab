@@ -165,7 +165,7 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
       await measure(page,"admin");
       await page.goto(origin+"/round3-library");
       await expect(page.getByRole("heading",{name:"Library",exact:true})).toBeVisible();
-      const tile=page.getByRole("link",{name:"Open First image",exact:true});
+      const tile=page.getByRole("link",{name:"Open First image image Nov 24",exact:true});
       await expect(tile).toBeVisible();
       await measure(page,"library-grid");
       await page.getByRole("button",{name:"Select",exact:true}).press("Enter");
