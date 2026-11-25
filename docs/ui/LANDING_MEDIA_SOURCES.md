@@ -43,3 +43,7 @@ The local visual-elevation candidate adds two raster atmosphere plates generated
 | Resolve-to-Create atmosphere | `public/landing/resolve-atmosphere-v2.png` | Dark reflective floor with sweeping blue, violet and warm amber light trails, copy-safe darkness on the left, luminous creative energy on the right, no interface or text. |
 
 These generated plates are repository-owned project assets. Replacing them later must preserve copy contrast, media hierarchy, reduced-motion behavior and the approved continuous section atmosphere.
+
+## Responsive atmosphere delivery experiment — 2026-11-25
+
+The two immutable PNG source plates remain repository-owned originals (hero 1,575,960 bytes; resolve 1,627,682 bytes; total 3,203,642 bytes, about 3.06 MiB). The Landing CSS requests them through the existing same-origin Next image optimizer with width candidates 1200/1920/3840 and default quality 75; browsers negotiate WebP when supported. The smaller candidate is restricted to compact 1x fixed desktop viewports. Tall scrolling and dense surfaces use the conservative larger candidate. All background positions, sizes, attachments, gradients, geometry and canonical quarter-arc remain unchanged. This experiment is not a claim of pixel equivalence or actual transfer savings: inspect negotiated response content type/encoded bytes and before/after captures at the approved viewport/scroll states before accepting it. No production requests or deployment are authorized.
