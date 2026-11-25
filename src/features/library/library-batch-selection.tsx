@@ -398,7 +398,7 @@ export function LibraryBatchSelection({
 
           <div className={styles.centerToolbar}>
             <div className={styles.desktopContext}>
-              <h3 ref={galleryHeading} tabIndex={-1}>{narrow ? "Library" : viewTitle}</h3>
+              <h3 ref={galleryHeading} tabIndex={-1}>{viewTitle}</h3>
               {showCount ? <span>{itemCountLabel(visibleItems.length)} on this page</span> : null}
             </div>
             <div className={styles.actionCell}>
@@ -671,7 +671,7 @@ export function LibraryBatchSelection({
           event.preventDefault();
           const target = phoneInspectorTrigger.current ?? inspectTrigger.current;
           if (target?.isConnected) target.focus({ preventScroll: true });
-          else galleryHeading.current?.focus({ preventScroll: true });
+          else (selectTrigger.current ?? galleryHeading.current)?.focus({ preventScroll: true });
         }}>
           <SheetTitle>Media inspector</SheetTitle>
           <SheetDescription className="sr-only">Details and actions for selected Library media.</SheetDescription>
