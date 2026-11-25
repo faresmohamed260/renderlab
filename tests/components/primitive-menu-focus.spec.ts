@@ -47,8 +47,10 @@ for (const { name, contrast, forcedColors } of modes) {
         const i = ((edge.y + dy) * info.width + edge.x) * info.channels;
         return [data[i]!, data[i + 1]!, data[i + 2]!];
       };
-      expect(contrastRatio(pixel(0), pixel(-2)), "outline against adjacent menu").toBeGreaterThanOrEqual(3);
-      expect(contrastRatio(pixel(0), pixel(3)), "outline against focused fill").toBeGreaterThanOrEqual(3);
+      const adjacent = contrastRatio(pixel(0), pixel(-2)), fill = contrastRatio(pixel(0), pixel(3));
+      console.log("PRIMITIVE_MENU_OUTLINE " + JSON.stringify({ mode: name, item: await item.textContent(), viewport: page.viewportSize(), edge, outline: pixel(0), adjacent: pixel(-2), fill: pixel(3), adjacentRatio: adjacent, fillRatio: fill }));
+      expect(adjacent, "outline against adjacent menu").toBeGreaterThanOrEqual(3);
+      expect(fill, "outline against focused fill").toBeGreaterThanOrEqual(3);
     }
     expect(io).toEqual([]);
   });

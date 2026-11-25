@@ -21,8 +21,10 @@ for (const contrast of ["no-preference", "more"] as const) {
         return [data[i]!, data[i + 1]!, data[i + 2]!];
       };
       await expect(field).toHaveCSS("border-left-color", "rgb(169, 160, 189)");
-      expect(contrastRatio(pixel(0), pixel(-2)), id + " border against adjacent panel").toBeGreaterThanOrEqual(3);
-      expect(contrastRatio(pixel(0), pixel(3)), id + " border against field fill").toBeGreaterThanOrEqual(3);
+      const adjacent = contrastRatio(pixel(0), pixel(-2)), fill = contrastRatio(pixel(0), pixel(3));
+      console.log("PRIMITIVE_FIELD_BOUNDARY " + JSON.stringify({ mode: contrast, field: id, viewport: page.viewportSize(), edge, border: pixel(0), adjacent: pixel(-2), fill: pixel(3), adjacentRatio: adjacent, fillRatio: fill }));
+      expect(adjacent, id + " border against adjacent panel").toBeGreaterThanOrEqual(3);
+      expect(fill, id + " border against field fill").toBeGreaterThanOrEqual(3);
     }
     expect(io).toEqual([]);
   });
