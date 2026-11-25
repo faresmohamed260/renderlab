@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { RouteLoading } from "@/components/shell/route-loading";
 import { ActivityView } from "@/features/activity/activity-view";
 import type { PublicGenerationActivity } from "@/lib/api/generation-activity-contract";
 import { getCurrentRenderLabAccount } from "@/lib/supabase/server";
@@ -27,21 +29,29 @@ export default async function ActivityPage({
   const params = await searchParams;
   const account = await getCurrentRenderLabAccount();
   const offset = parseOffset(params.offset);
-  let available = isSupabaseConfigured();
+  const available = isSupabaseConfigured();
+  // Preserve the existing signed-out/unavailable response without streaming a fallback.
+  if (!account || !available) return <ActivityView accountAvailable={Boolean(account)} available={available}
+    items={[]} offset={offset} limit={pageSize} hasMore={false} hasActive={false} />;
+  return <Suspense fallback={<RouteLoading surface="activity" />}>
+    <AdmittedActivity account={account} offset={offset} />
+  </Suspense>;
+}
+
+async function AdmittedActivity({ account, offset }: { account: NonNullable<Awaited<ReturnType<typeof getCurrentRenderLabAccount>>>; offset: number }) {
+  let available = true;
   let items: PublicGenerationActivity[] = [];
   let hasMore = false;
   let hasActive = false;
 
-  if (account && available) {
-    await settleOwnerGenerationWithinResponse(account.id, "activity");
-    try {
-      const result = await listGenerationActivity({ ownerId: account.id, limit: pageSize, offset });
-      items = result.items;
-      hasMore = result.page.hasMore;
-      hasActive = result.hasActive;
-    } catch {
-      available = false;
-    }
+  await settleOwnerGenerationWithinResponse(account.id, "activity");
+  try {
+    const result = await listGenerationActivity({ ownerId: account.id, limit: pageSize, offset });
+    items = result.items;
+    hasMore = result.page.hasMore;
+    hasActive = result.hasActive;
+  } catch {
+    available = false;
   }
 
   return (
