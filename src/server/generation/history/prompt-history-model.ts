@@ -7,7 +7,7 @@ export type PromptHistoryItem = {
 };
 export type PromptHistoryPage = { items: PromptHistoryItem[]; nextCursor: PromptHistoryCursor | null };
 type Row = { id: string; prompt: string; status: GenerationJobStatus; operation: PromptGenerationOperation; created_at: string };
-type Read = (path: string, init: { method: "GET" }) => Promise<Row[]>;
+type Read = (params: URLSearchParams, init: { method: "GET" }) => Promise<Row[]>;
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const timestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -47,7 +47,7 @@ export function promptHistoryQuery(ownerId: string, query: PromptHistoryQuery) {
 
 export async function readPromptHistory(ownerId: string, query: PromptHistoryQuery, read: Read): Promise<PromptHistoryPage> {
   const limit = limitFor(query.limit);
-  const rows = await read("generation_jobs?" + promptHistoryQuery(ownerId, query).toString(), { method: "GET" });
+  const rows = await read(promptHistoryQuery(ownerId, query), { method: "GET" });
   const items = rows.slice(0, limit).map(row => ({
     id: row.id, prompt: row.prompt, status: row.status, operation: row.operation, createdAt: row.created_at,
   }));
