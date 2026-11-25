@@ -1,0 +1,35 @@
+import { test, expect } from "./isolated-io";
+import { fixtureJobId } from "../component-app/fixtures";
+
+test("desktop Create orders History, Canvas and controls without replacing the composer", async ({ page, io }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/create");
+  const create = page.getByRole("region", { name: "Create with FIBO" });
+  const history = create.locator(".create-preview-history");
+  const stage = create.getByRole("region", { name: "Canvas" });
+  const form = create.locator(".create-preview-controls");
+  await expect(create.getByText("Prompt and job history", { exact: true })).toBeVisible();
+  await expect(create.getByText("Not available here yet. Activity remains available.", { exact: true })).toBeVisible();
+  await expect(history).toBeVisible();
+  await expect(stage).toBeVisible();
+  await expect(form).toBeVisible();
+  const a = await history.boundingBox(), b = await stage.boundingBox(), c = await form.boundingBox();
+  expect(a && b && c).toBeTruthy();
+  expect(a!.x + a!.width).toBeLessThanOrEqual(b!.x);
+  expect(b!.x + b!.width).toBeLessThanOrEqual(c!.x);
+  const generate = form.getByRole("button", { name: "Text to Image", exact: true });
+  await generate.click();
+  const prompt = form.getByRole("textbox", { name: "Prompt", exact: true });
+  await prompt.fill("A synthetic composition");
+  await expect(form.getByRole("button", { name: "Generate", exact: true })).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(prompt).toHaveValue("A synthetic composition");
+  await expect(create.getByText("Prompt and job history", { exact: true })).not.toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(generate).toHaveAttribute("aria-pressed", "true");
+  await expect(prompt).toHaveText("A synthetic composition");
+  await page.goto("/create?recipe=" + fixtureJobId);
+  await expect(form.getByRole("button", { name: "Remove source image" })).toBeVisible();
+  await expect(form.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
+  expect(io.every(call => ["GET capabilities", "GET history", "GET continuation source"].includes(call))).toBe(true);
+});
