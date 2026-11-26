@@ -1408,8 +1408,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     </div>
                   ))}
                 </div>
-                <div className="create-preview-size" inert={mode !== "generate"}>
-                  {inspirationEnabled ? <div className="create-preview-tile" {...uploadDropTarget(4)}>
+                <div className="create-preview-size" data-inspiration-available={inspirationEnabled} inert={mode !== "generate"}>
+                  {inspirationEnabled && <div className="create-preview-tile" {...uploadDropTarget(4)}>
                     <Button type="button" variant="outline" disabled={!admitted || busy}
                       aria-label="Choose reference image" onClick={() => chooseImage(4)}>
                       {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
@@ -1417,7 +1417,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     </Button>
                     {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="create-preview-remove"
                       aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
-                  </div> : <div className="create-preview-tile" {...uploadDropTarget(4)}><Button type="button" variant="outline" disabled aria-label="Inspiration unavailable" aria-describedby="create-preview-inspiration-unavailable"><span>Inspiration</span></Button></div>}
+                  </div>}
                   <label className="create-preview-aspect">Aspect ratio
                     <span className="create-preview-aspect-preview" aria-hidden="true"><span style={{ "--create-aspect": size.width / size.height } as CSSProperties} /></span>
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
@@ -1511,14 +1511,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 </SheetContent>
               )}
             </Sheet>
-            <div className="create-preview-settings">
+            <div className="create-preview-settings" data-multi-output-available={multiOutputEnabled}>
               {advancedSheetOpen ? <div aria-hidden="true" style={{ blockSize: advancedReserve.seed }} /> : seedField}
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
-              <label className="create-preview-render-field" htmlFor="create-preview-count">Images
-                {multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
-                  disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : <Input id="create-preview-count" type="number" value="1" disabled aria-describedby="create-preview-single-output" />}
-                {!multiOutputEnabled && <span id="create-preview-single-output" className="create-preview-caption">One image per render.</span>}
-              </label>
+              {multiOutputEnabled && <label className="create-preview-render-field" htmlFor="create-preview-count">Images
+                <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
+                  disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} />
+              </label>}
               {advancedSheetOpen ? <div aria-hidden="true" className="create-preview-steps" style={{ blockSize: advancedReserve.steps }} /> : stepsField}
             </div>
             <p className="create-preview-caption create-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
