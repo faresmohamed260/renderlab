@@ -15,7 +15,7 @@ type Metrics = {
   supported: string[];
   lcp: { startTime: number; tag: string | null }[];
   shifts: Shift[];
-  events: Interaction[];
+  events: (Interaction & { startTime: number })[];
   observedUntil: number;
   navigationBytes: number | null;
   resources: (ResourceTransfer & { encodedBodySize: number; decodedBodySize: number; startTime: number; responseEnd: number })[];
@@ -31,7 +31,7 @@ async function installObservers(context: BrowserContext) {
   await context.addInitScript(capacity => {
     performance.setResourceTimingBufferSize(capacity);
     const supported = PerformanceObserver.supportedEntryTypes;
-    const lcp: Metrics["lcp"] = [], shifts: Shift[] = [], events: Interaction[] = [];
+    const lcp: Metrics["lcp"] = [], shifts: Shift[] = [], events: Metrics["events"] = [];
     const shiftSources: Metrics["shiftSources"] = [];
     const observers: { observer: PerformanceObserver; accept: (entries: PerformanceEntry[]) => void }[] = [];
     const start = (type: string, accept: (entries: PerformanceEntry[]) => void) => {
@@ -57,7 +57,7 @@ async function installObservers(context: BrowserContext) {
     start("event", entries => {
       for (const entry of entries) {
         const item = entry as PerformanceEntry & { interactionId?: number };
-        events.push({ interactionId: item.interactionId ?? 0, duration: item.duration });
+        events.push({ interactionId: item.interactionId ?? 0, duration: item.duration, startTime: item.startTime });
       }
     });
     (window as unknown as { fixturePerf: () => Metrics }).fixturePerf = () => {
@@ -257,5 +257,54 @@ for (const device of profiles) for (const route of ["/create", "/library", "/"])
     expect(results.every(row => row.jsTransferBytes !== null && row.jsTransferBytes > 0 && row.jsResources !== null && row.jsResources > 0), "No transferred script evidence; do not report zero as a measured bundle").toBe(true);
     // Missing Event Timing entries (including sub-16 ms interactions) are reported
     // as unavailable, not zero. Budget misses are informational, never failures.
+  });
+}
+
+
+// Independent selected interaction benchmark: preserve the original Landing
+// pre-input LCP/JS and observation window. Never count the hero click as a
+// meaningful application interaction, nor label this lab sample field INP.
+for (const device of profiles) {
+  test("Landing selected keyboard interaction " + device.name, async ({ browser }) => {
+    const samples: {run:number;interactionMs:number|null;events:number;error?:string}[] = [];
+    for(let run=1;run<=5;run++){
+      const {context,page,unexpected,errors}=await fixtureContext(browser,device.width,device.height,true);
+      const sample:{run:number;interactionMs:number|null;events:number;error?:string}={run,interactionMs:null,events:0};
+      try{
+        await throttle(context,page,device.cpu);
+        await page.goto(origin+"/?landing-review=1",{waitUntil:"load",timeout:60_000});
+        await expect(page.locator("[data-landing-header]").getByRole("link",{name:"Sign in",exact:true})).toBeVisible();
+        await page.evaluate(()=>document.fonts.ready.then(()=>undefined));
+        await page.waitForTimeout(1800);
+        await page.locator("[data-landing-section=hero]").getByRole("heading",{level:1}).click();
+        await page.waitForTimeout(650);
+        const first=page.locator("button[data-library-card='0']");
+        const second=page.locator("button[data-library-card='1']");
+        await first.scrollIntoViewIfNeeded();
+        await first.focus();
+        await expect(first).toBeFocused();
+        await expect(first).toHaveAttribute("aria-pressed","true");
+        await expect(second).toHaveAttribute("aria-pressed","false");
+        // Let setup focus/scroll effects settle before the selected input.
+        await page.waitForTimeout(650);
+        const cutoff=await page.evaluate(()=>performance.now());
+        await page.keyboard.press("Tab");
+        await expect(second).toBeFocused();
+        await expect(second).toHaveAttribute("aria-pressed","true");
+        await expect(first).toHaveAttribute("aria-pressed","false");
+        await expect(page.getByRole("complementary",{name:"Selected media context"}).getByRole("heading",{name:"Glass reference",exact:true})).toBeVisible();
+        await page.waitForTimeout(650);
+        const after=await metrics(page);
+        const durations=interactionDurations(after.events.filter(event=>event.startTime>=cutoff));
+        sample.events=durations.length;
+        sample.interactionMs=durations.length?Math.max(...durations):null;
+        expect(unexpected).toEqual([]);
+        expect(errors).toEqual([]);
+      }catch(error){sample.error=String(error);}
+      finally{await context.close();samples.push(sample);}
+    }
+    console.log("LANDING SELECTED INTERACTION JSON",JSON.stringify({sourceSha:process.env.REVIEW_SOURCE_SHA??"local-unverified",device,route:"/",action:"trusted Tab from first to second collage button; selection and focus verified",samples,median:median(samples.map(s=>s.interactionMs)),budgetDisposition:"Initial measurement only; owner ratchets after repeatability. Missing Event Timing is unavailable, never zero."}));
+    expect(samples).toHaveLength(5);
+    expect(samples.filter(s=>s.error)).toEqual([]);
   });
 }

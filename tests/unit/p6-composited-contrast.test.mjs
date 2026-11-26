@@ -101,3 +101,90 @@ test("restored placeholder one-level raster rounding is bounded and both glyph m
   assert.ok(low.ratio<4.5);
   assert.equal(measurePlaceholderFrames(bg,bg,bg,bg,rect,[190,190,190,255]).ratio,null);
 });
+
+
+test("placeholder paint transaction is atomic, fill-only and preserves original inline style", async () => {
+  const { installPlaceholderPaintStyle, setPlaceholderPaintHidden } = await import("../components/composited-contrast.ts");
+  const marker = "data-review-hide-placeholder";
+  const rule = "[data-review-hide-placeholder]::placeholder { -webkit-text-fill-color: transparent !important; }";
+  let installed = null, evaluations = 0, appends = 0, removals = 0, foreignMarker = false;
+  const mutations = [];
+  const attributes = new Map([["style", "color: var(--rl-text); background: currentColor"]]);
+  const doc = {
+    querySelectorAll: selector => {
+      assert.equal(selector, "[data-review-placeholder-style]");
+      return installed ? [installed] : [];
+    },
+    querySelector: selector => {
+      if (selector === "style[data-review-placeholder-style]") return installed;
+      assert.equal(selector, "[data-review-hide-placeholder]");
+      return attributes.has(marker) || foreignMarker ? {} : null;
+    },
+    createElement: tag => {
+      assert.equal(tag, "style");
+      return {
+        tagName: "STYLE", textContent: "",
+        setAttribute: (name, value) => {
+          assert.equal(name, "data-review-placeholder-style");
+          assert.equal(value, "");
+        },
+        remove() { assert.equal(installed, this); installed = null; removals++; },
+      };
+    },
+    head: { appendChild: node => { assert.equal(installed, null); installed = node; appends++; return node; } },
+  };
+  const element = {
+    ownerDocument: doc,
+    hasAttribute: name => attributes.has(name),
+    getAttribute: name => attributes.get(name) ?? null,
+    setAttribute: (name, value) => { assert.equal(name, marker); mutations.push(["set",name,value]); attributes.set(name, value); },
+    removeAttribute: name => { assert.equal(name, marker); mutations.push(["remove",name]); attributes.delete(name); },
+  };
+  const locator = { evaluate: async (fn, arg) => { evaluations++; return fn(element, arg); } };
+  const original = attributes.get("style");
+  await assert.rejects(() => setPlaceholderPaintHidden(locator, true), /missing/);
+  assert.equal(installed, null);
+  assert.deepEqual(mutations, []);
+  await installPlaceholderPaintStyle(locator);
+  const persistent = installed;
+  assert.equal(persistent.textContent, rule);
+  await installPlaceholderPaintStyle(locator);
+  assert.equal(installed, persistent);
+  assert.equal(appends, 1, "one stylesheet install per page");
+  assert.deepEqual(mutations, [], "installation must not touch the target");
+  evaluations = 0;
+  await setPlaceholderPaintHidden(locator, true);
+  assert.equal(evaluations, 1, "one browser task for the complete hide mutation");
+  assert.equal(installed.textContent, rule);
+  assert.equal(attributes.get("style"), original);
+  assert.equal(attributes.get(marker), "");
+  await setPlaceholderPaintHidden(locator, false);
+  assert.equal(evaluations, 2, "one browser task for the complete restore mutation");
+  // The prior per-transaction removal assertion migrates to lifetime identity:
+  // inserting/removing a stylesheet can re-rasterize non-glyph background pixels.
+  assert.equal(installed, persistent);
+  assert.equal(appends, 1);
+  assert.equal(removals, 0);
+  assert.deepEqual(mutations, [["set",marker,""],["remove",marker]]);
+  assert.deepEqual([...attributes], [["style", original]]);
+  attributes.set(marker, "foreign");
+  await assert.rejects(() => setPlaceholderPaintHidden(locator, true), /already present/);
+  await assert.rejects(() => setPlaceholderPaintHidden(locator, false), /collision/);
+  await assert.rejects(() => installPlaceholderPaintStyle(locator), /collision/);
+  assert.equal(installed, persistent, "collision must not mutate the existing document");
+  assert.equal(attributes.get(marker), "foreign");
+  attributes.delete(marker);
+  foreignMarker = true;
+  await assert.rejects(() => setPlaceholderPaintHidden(locator, true), /already present/);
+  foreignMarker = false;
+  await assert.rejects(() => setPlaceholderPaintHidden(locator, false), /missing/);
+  persistent.textContent = "foreign rule";
+  await assert.rejects(() => installPlaceholderPaintStyle(locator), /collision/);
+  await assert.rejects(() => setPlaceholderPaintHidden(locator, true), /collision/);
+  assert.equal(installed, persistent);
+  assert.equal(persistent.textContent, "foreign rule");
+  assert.equal(appends, 1);
+  assert.equal(removals, 0);
+  assert.deepEqual(mutations, [["set",marker,""],["remove",marker]]);
+  assert.deepEqual([...attributes], [["style", original]]);
+});

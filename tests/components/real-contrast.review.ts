@@ -83,6 +83,18 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
           if (placeholder.status !== "PASS") {
             console.log("PLACEHOLDER CAPTURE DIAGNOSTIC", key, name, JSON.stringify({ before: beforePlaceholder, after: await evidence(), row: placeholder }));
           }
+          // Independent consecutive measurements, not retry-until-green:
+          // each additional cycle must satisfy the same unchanged pixel gate.
+          if (viewport.width === 390 && reducedMotion === "reduce" && name === "Textarea") {
+            for (let cycle = 1; cycle <= 3; cycle++) {
+              const repeated = await collectTextContrast(page, field, "placeholder-repeat", name + " independent repeat " + cycle, "placeholder");
+              rows.push(repeated);
+              expect(repeated.status, repeated.sample).toBe("PASS");
+              expect(repeated.ratio, repeated.sample).not.toBeNull();
+              expect(Number.isFinite(repeated.ratio) && repeated.ratio! >= 4.5, repeated.sample).toBe(true);
+              expect(repeated.pixels, repeated.sample).toBeGreaterThan(0);
+            }
+          }
           await field.fill(value);
           await field.blur();
           await page.waitForTimeout(250);
