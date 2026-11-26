@@ -6,7 +6,7 @@ import { collectTextContrast, type ContrastRow } from "./composited-contrast";
 
 const output = path.resolve("artifacts/phase6-component-review");
 const origin = "http://127.0.0.1:4173";
-for (const viewport of [{width:195,height:422},{width:320,height:844},{width:390,height:844},{width:1440,height:900}]) {
+for (const viewport of [{width:195,height:422},{width:320,height:844},{width:390,height:844},{width:768,height:1024},{width:1440,height:900}]) {
   for (const reducedMotion of ["no-preference","reduce"] as const) {
     test("Round 3 Landing hero " + viewport.width + " " + reducedMotion, async ({browser}) => {
       const key = "landing-" + viewport.width + "-" + reducedMotion;
@@ -49,6 +49,60 @@ for (const viewport of [{width:195,height:422},{width:320,height:844},{width:390
         await expect.soft(hero.getByRole("img",{name:"RenderLab Create preview"})).toBeVisible();
         await expect.soft(hero.getByRole("link",{name:"Open Create"})).toHaveAttribute("href","/create");
         await expect.soft(hero.getByRole("list",{name:"What you can do"}).getByRole("listitem")).toHaveCount(4);
+        // The approved capability chips and preview are illustrative, not touch controls.
+        const chips = hero.getByRole("list",{name:"What you can do"}).getByRole("listitem");
+        await expect(chips).toHaveText(["Create image","Edit image","Use references","Save to Library"]);
+        const preview = hero.getByRole("img",{name:"RenderLab Create preview"});
+        const cta = hero.getByRole("link",{name:"Open Create",exact:true});
+        const heading = hero.getByRole("heading",{level:1});
+        const bounds = await hero.boundingBox();
+        expect(bounds,"hero has rendered geometry").not.toBeNull();
+        if (!bounds) throw new Error("Missing hero geometry");
+        for (const item of [heading,cta,preview,...await chips.all()]) {
+          await expect(item).toBeVisible();
+          const rect = await item.boundingBox();
+          expect(rect,"hero item has rendered geometry").not.toBeNull();
+          if (!rect) throw new Error("Missing hero item geometry");
+          expect.soft(rect.width).toBeGreaterThan(0);
+          expect.soft(rect.height).toBeGreaterThan(0);
+          expect.soft(rect.x).toBeGreaterThanOrEqual(Math.max(0,bounds.x)-1);
+          expect.soft(rect.x+rect.width).toBeLessThanOrEqual(Math.min(viewport.width,bounds.x+bounds.width)+1);
+          expect.soft(rect.y).toBeGreaterThanOrEqual(bounds.y-1);
+          expect.soft(rect.y+rect.height).toBeLessThanOrEqual(bounds.y+bounds.height+1);
+          const overflow = await item.evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth}));
+          expect.soft(overflow.scroll,"hero item horizontal overflow").toBeLessThanOrEqual(overflow.client+1);
+        }
+        await expect(preview.getByRole("button")).toHaveCount(0);
+        await expect(preview.getByRole("link")).toHaveCount(0);
+        await expect(hero.getByRole("list",{name:"What you can do"}).getByRole("button")).toHaveCount(0);
+        await expect(hero.getByRole("list",{name:"What you can do"}).getByRole("link")).toHaveCount(0);
+        const target = await cta.boundingBox();
+        expect(target,"CTA target geometry").not.toBeNull();
+        if (!target) throw new Error("Missing CTA target geometry");
+        expect.soft(target.width,"CTA width").toBeGreaterThanOrEqual(44);
+        expect.soft(target.height,"CTA height").toBeGreaterThanOrEqual(44);
+        await cta.scrollIntoViewIfNeeded();
+        const hit = await cta.evaluate(el=>{
+          const r=el.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2;
+          return [-21,0,21].every(dx=>[-21,0,21].every(dy=>{
+            const top=document.elementFromPoint(x+dx,y+dy);
+            return top!==null && el.contains(top);
+          }));
+        });
+        expect.soft(hit,"unobstructed central 44px CTA target").toBe(true);
+        if (reducedMotion === "reduce") {
+          expect(await page.evaluate(()=>matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
+          for (const item of [hero,heading,cta,preview,...await chips.all()]) {
+            const motion = await item.evaluate(el=>{
+              const style=getComputedStyle(el);
+              return {animation:style.animationName,transitionMs:style.transitionDuration.split(",").map(v=>parseFloat(v)*(v.trim().endsWith("ms")?1:1000))};
+            });
+            expect.soft(motion.animation).toBe("none");
+            expect.soft(Math.max(...motion.transitionMs)).toBeLessThanOrEqual(0.001);
+          }
+        }
+        // Restore the initial scroll position before existing contrast measurements.
+        await page.evaluate(()=>window.scrollTo({top:0,behavior:"instant"}));
         await expect.soft(page.locator('[data-landing-section="thread"]')).toBeAttached();
         await expect.soft(page.locator('[data-landing-section="library"]')).toBeAttached();
         const geometry = await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth}));
