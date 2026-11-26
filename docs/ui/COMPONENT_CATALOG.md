@@ -453,3 +453,7 @@ Historical UI-062 record (subsequently superseded by UI-074 geometry; actual pro
 ## Account data privacy feature surface
 
 `src/features/account/account-data-privacy.tsx` is the feature-local composition for #219 Settings Data & Privacy. It owns lifecycle-specific presentation/state while continuing to use approved shared UI primitives for buttons, fields, dialogs/status treatment, focus behavior, and responsive layout. It is not a new global primitive and should not be duplicated into a parallel component family.
+
+### cmdk Command palette (ui-rebuild)
+
+Owner-preapproved `cmdk@1.1.1` (MIT declaration in lockfile), composed following shadcn Command with Radix Dialog. Owned implementation: `src/components/shell/command-palette.tsx`. Live command availability comes from `src/lib/create-commands.ts`; owner navigation uses the existing shell owner gate.

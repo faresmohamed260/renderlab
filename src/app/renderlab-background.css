@@ -1645,12 +1645,6 @@
  * it. On desktop the Create tools step aside, left of the account menu, instead
  * of being covered; no space is reserved and nothing below the header shifts. */
 @media (min-width: 1025px) {
-  .preview-navigation-shell:has(> .preview-navigation-header .preview-account-menu[aria-hidden="false"]) .create-preview-tools {
-    transform: translateX(calc(-1 * (236px + var(--rl-space-12, 12px))));
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .create-preview-tools { transition: transform var(--rl-duration-contextual, 240ms) var(--rl-ease-out, ease-out); }
-  }
 }
 /* P6 axe phone targets: the visual outline must not cut into the usable hit
  * area. Keep desktop geometry unchanged and preserve the narrow two-column reflow. */
@@ -1756,3 +1750,47 @@
   .create-preview-loading .create-preview-grid > .create-preview-canvas { grid-column: 2; grid-row: 1; }
   .create-preview-loading .create-preview-grid > .create-preview-controls { grid-column: 3; grid-row: 1; }
 }
+
+/* UI Lead: measured shell chrome. Feature layout is owned by its feature role. */
+.rebuild-header-actions { display:none; }
+.rebuild-phone-action { display:none; }
+.rebuild-utility-sidebar { display:none; }
+.rebuild-profile-avatar { display:grid; place-items:center; flex:none; overflow:hidden; border-radius:50%; background:var(--rl-gradient-primary); color:var(--rl-on-accent); }
+.rebuild-profile-avatar img { width:100%; height:100%; object-fit:cover; }
+@media (min-width:701px) {
+  .preview-navigation-header[data-p6-desktop="true"] { height:68px; align-items:center; --preview-header-gutter:28px; padding-inline:28px; pointer-events:auto; }
+  .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation { display:flex; align-items:center; padding:0; }
+  .p6-desktop-brand { display:flex; align-items:center; gap:10px; min-block-size:26px; padding:0; color:var(--rl-text-primary); font:600 17px/1 var(--rl-type-family); letter-spacing:-.16px; }
+  .p6-desktop-brand [data-renderlab-mark] { width:26px; height:26px; }
+  .p6-desktop-links { top:22px; gap:34px; }
+  .p6-desktop-links .p6-desktop-link { display:flex; align-items:flex-start; position:relative; min-block-size:27px; padding:0; border-radius:0; font:400 15px/20px var(--rl-type-family); color:rgb(245 245 247 / 68%); }
+  .p6-desktop-links .p6-desktop-link[aria-current="page"] { color:var(--rl-text-primary); background:none; font-weight:500; }
+  .p6-desktop-link[aria-current="page"]::after { content:""; position:absolute; left:50%; bottom:0; width:5px; height:5px; border-radius:50%; transform:translateX(-50%); background:var(--rl-brand-start); }
+  .rebuild-header-actions { display:flex; align-items:center; gap:10px; margin-left:auto; }
+  .rebuild-queue-pill { width:76px; height:40px; border:0; border-radius:20px; background:var(--rl-surface-control); color:var(--rl-text-primary); font:500 14px/1 var(--rl-type-family); }
+  .rebuild-header-actions .preview-account-card { padding:0; }
+  .preview-navigation-header .rebuild-header-actions .preview-navigation-profile { width:40px; height:40px; min-height:40px; padding:0; border-radius:50%; background:var(--rl-surface-control); }
+  .preview-navigation-header .rebuild-header-actions .preview-navigation-profile[aria-expanded="true"] { background:transparent; }
+  .preview-navigation-header .rebuild-header-actions .preview-navigation-profile > svg { width:20px; height:20px; }
+  .preview-navigation-header .rebuild-header-actions .preview-account-menu { z-index:3; }
+  .preview-navigation-header .rebuild-header-actions .preview-account-card[data-open="true"] .preview-navigation-profile { z-index:4; }
+  .preview-navigation-shell:is([data-shell-surface="settings"],[data-shell-surface="admin"]) { display:grid; grid-template-columns:248px minmax(0,1fr); align-items:start; gap:24px; padding:16px 32px 16px 16px; min-height:100dvh; }
+  .preview-navigation-shell:is([data-shell-surface="settings"],[data-shell-surface="admin"]) > .preview-navigation-header { display:none; }
+  .rebuild-utility-sidebar { position:sticky; top:16px; display:flex; flex-direction:column; width:248px; height:calc(100dvh - 32px); min-height:320px; padding:22px 14px 18px; border:1px solid rgb(255 255 255 / 12%); border-radius:30px; background:var(--rl-surface-control); box-shadow:inset 0 1px rgb(255 255 255 / 14%); overflow:auto; }
+  .rebuild-utility-brand { display:flex; align-items:center; gap:10px; padding:0 8px; font:700 17px/20px var(--rl-type-family); color:var(--rl-text-primary); }
+  .rebuild-utility-brand svg { width:30px; height:30px; }
+  .rebuild-utility-sidebar nav { display:flex; flex-direction:column; gap:4px; margin-top:22px; }
+  .rebuild-utility-sidebar nav a { display:flex; align-items:center; gap:12px; height:48px; padding:0 14px; border-radius:16px; color:var(--rl-text-primary); font:500 15px/1 var(--rl-type-family); }
+  .rebuild-utility-sidebar nav a[aria-current="page"] { background:rgb(255 255 255 / 12%); }
+  .rebuild-utility-profile { display:flex; align-items:center; gap:12px; margin-top:auto; min-height:60px; padding:10px 12px; border:1px solid var(--rl-border-subtle); border-radius:20px; background:var(--rl-surface-control); color:var(--rl-text-primary); }
+  .rebuild-utility-profile > span:last-child { display:flex; flex-direction:column; min-width:0; gap:2px; }
+  .rebuild-utility-profile strong { font:600 14px/17px var(--rl-type-family); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rebuild-utility-profile small { color:var(--rl-text-secondary); font:400 12px/15px var(--rl-type-family); }
+  @supports (backdrop-filter:blur(1px)) { .rebuild-utility-sidebar { backdrop-filter:blur(28px) saturate(1.5); } }
+}
+@media (min-width:701px) and (max-width:1050px) { .p6-desktop-links { position:static; transform:none; margin-left:16px; gap:16px; } .preview-navigation-header[data-p6-desktop="true"] { padding-inline:12px; } }
+@media (max-width:700px) {
+  .preview-navigation-header[data-p6-desktop="true"] { height:60px; padding-inline:12px; align-items:center; pointer-events:auto; }
+  .rebuild-phone-action { display:grid; place-items:center; width:44px; height:44px; border-radius:50%; border:1px solid rgb(255 255 255 / 14%); background:rgb(255 255 255 / 8%); color:var(--rl-text-primary); }
+}
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active) { .rebuild-utility-sidebar { backdrop-filter:none; background:var(--rl-surface-overlay); } }
