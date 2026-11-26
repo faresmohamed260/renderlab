@@ -53,8 +53,15 @@ async function hostedRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+function formatResultDimensions(width: number, height: number) {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) return "";
+  let a = width, b = height;
+  while (b) { const remainder = a % b; a = b; b = remainder; }
+  return (width / a) + ":" + (height / a) + " · " + width + " × " + height;
+}
+
 function hostedResult(asset: PublicMediaAsset): Result {
-  return { image_data: "/api/media/assets/" + asset.id + "/content", assetId: asset.id, promptUsed: asset.prompt ?? undefined,
+  return { image_data: "/api/media/assets/" + asset.id + "/content", assetId: asset.id, isFavorite: asset.isFavorite, width: asset.width ?? undefined, height: asset.height ?? undefined, promptUsed: asset.prompt ?? undefined,
     filename: asset.originalFilename ?? "result.png", seed: 0, batchId: asset.generationJobId ?? asset.id,
     aspect: asset.width && asset.height ? asset.width / asset.height : undefined };
 }
@@ -63,7 +70,7 @@ const api = "/create-preview/";
 const slotMarker = (index: number) => "\uE000" + index + "\uE001";
 const slotMarkers = /\uE000([0-3])\uE001/g;
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { promptUsed?: string; assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
+type Result = { promptUsed?: string; assetId?: string; isFavorite?: boolean; width?: number; height?: number; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
@@ -1554,6 +1561,11 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               historySelection={historySelection}
               resultPosition={selectedResultIndex >= 0 ? { index: selectedResultIndex, count: shortcutResults.length } : undefined}
               desktopArrows={desktop && !maskEditor}
+              desktopActions={desktop && !maskEditor && !busy}
+              onFavoriteChange={(id, favorite) => {
+                setHistory(items => items.map(image => image.assetId === id ? { ...image, isFavorite: favorite } : image));
+                setResult(image => image?.assetId === id ? { ...image, isFavorite: favorite } : image);
+              }}
               dropTarget={desktop && !maskEditor ? uploadDropTarget("canvas") : undefined}
               onRestore={restoreRun}
               onSaveEdit={savedEditsAccount ? (image) => void saveEdit(image) : undefined}
@@ -1627,6 +1639,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             {desktop && result && !busy && <section aria-label="Prompt used" className={columns.promptUsed}>
               <h2>Prompt used</h2>
               <p>{result.run?.prompt ?? result.promptUsed ?? "Prompt not available for this result."}</p>
+              {result.width && result.height && <p>{formatResultDimensions(result.width, result.height)}</p>}
+              {!result.assetId && result.run && <p>Seed {result.seed} · {result.run.steps} steps</p>}
             </section>}
             {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="create-preview-stage-sign-in">Sign in to upload</Link>}
@@ -1664,7 +1678,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             {historyGroups.length ? historyGroups.map((group, index) => {
               const image = group[0];
               return <Button key={image.batchId ?? image.filename ?? index} data-create-history-image type="button" variant="ghost"
-                className="create-preview-history-cover" disabled={busy} aria-current={!!result && group.includes(result)}
+                className="create-preview-history-cover" disabled={busy} aria-current={!!result && group.some(item => item === result || (!!item.assetId && item.assetId === result.assetId))}
                 aria-label={"Open render " + (historyGroups.length - index) + ", seed " + image.seed + ", " + group.length + (group.length === 1 ? " image" : " images")}
                 onClick={() => { setMaskEditor(undefined); setHistorySelection({ image }); }}>
                 <img src={image.image_data} alt="" draggable={false} loading="lazy" />

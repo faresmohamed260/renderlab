@@ -47,3 +47,16 @@
 @media (min-width: 1025px) {
   .historySlot:has([data-activity-system="history"]) { max-block-size: 56dvh; min-block-size: 0; overflow: auto; }
 }
+
+@media (min-width: 1025px) {
+  /* Budget the below-media row before calculating image dimensions. */
+  .stageRegion :global(.create-preview-stage-frame):has(:global(.create-preview-result-actions)) {
+    --stage-action-space: calc(var(--rl-hit-preferred) + 2 * var(--rl-space-8) + 36px);
+  }
+  .stageRegion :global(.create-preview-stage-frame):has(:global(.create-preview-result-actions)):has(:global(.create-preview-stage-run-actions)) {
+    --stage-action-space: calc(var(--rl-hit-preferred) + 2 * var(--rl-space-8) + 70px);
+  }
+  .stageRegion :global(.create-preview-result-actions) { display: flex; flex-wrap: wrap; align-items: center; gap: var(--rl-space-8); padding-block: var(--rl-space-8); min-inline-size: 0; }
+  .stageRegion :global(.create-preview-result-actions) > :is(button, a) { min-block-size: var(--rl-hit-preferred); min-inline-size: var(--rl-hit-preferred); }
+  .stageRegion :global(.create-preview-result-actions) > a { display: inline-flex; justify-content: center; align-items: center; border-radius: var(--rl-radius-control); background: var(--rl-surface-raised); color: var(--rl-text-primary); }
+}
