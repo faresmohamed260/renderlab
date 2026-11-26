@@ -773,3 +773,32 @@
   .observeTabs { gap: 0; }
   .observeTab { padding-inline: var(--rl-space-8); }
 }
+
+/* Observe: measured layout only. The production telemetry and all existing
+   controls are deliberately unchanged; the three later controls stay locked. */
+@media (min-width: 1025px) {
+  .workspace:has(.observeDashboard) { width: 100%; max-width: none; padding: 28px 0 24px; }
+  .workspace:has(.observeDashboard)::before, .workspace:has(.observeDashboard) .intro::after { content: none; }
+  .workspace:has(.observeDashboard) .intro { margin-bottom: 18px; padding: 0; max-width: none; }
+  .workspace:has(.observeDashboard) .eyebrow { display: none; }
+  .workspace:has(.observeDashboard) .title { font-size: 32px; line-height: 38px; font-weight: 700; }
+  .workspace:has(.observeDashboard) .lede { font-size: 15px; line-height: 22px; margin-top: 6px; max-width: none; }
+  .surfaceWrap:has(.observeDashboard) { gap: 18px; }
+  .observeTabs { gap: 6px; }
+  .observeTabs .observeTab { min-height: 40px; height: 40px; padding-inline: 18px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+  .laterTab { padding: 0 18px; display: inline-flex; align-items: center; min-height: 40px; }
+  .observeDashboard { gap: 18px; }
+  .observeStats, .observePanels, .observeLockedGrid { gap: 16px; }
+  .observeStat, .observePanel, .observeLocked { border-radius: 24px; }
+  .observeStat { min-height: 119px; padding: 18px 20px; gap: 6px; }
+  .observeValue { font-size: 32px; line-height: 1.15; letter-spacing: -.02em; font-weight: 700; }
+  .observePanel { min-height: 260px; padding: 20px 22px; gap: 14px; }
+  .observePanel h2 { font-size: 17px; line-height: 22px; font-weight: 600; }
+  .observeChart { min-height: 150px; align-content: center; padding-block: 0; }
+  .observeTable :is(th,td) { padding: 9px 8px; font-size: 13px; }
+  .observeTable thead th { padding-block: 6px; font-size: 12px; }
+  .observeLocked { min-height: 108px; padding: 20px 22px; gap: 14px; border-style: dashed; }
+  .observeLocked h2 { font-size: 16px; font-weight: 600; line-height: 20px; }
+  .observeLocked .observeNote { font-size: 13px; line-height: 18px; }
+  .observeLockTitle svg { width: 18px; height: 18px; }
+}
