@@ -1,4 +1,5 @@
 import { test, expect } from "./library-io";
+import { firstAsset } from "../component-app/library-fixtures";
 import { contrastRatio } from "./composited-contrast";
 
 for (const width of [390, 1440]) {
@@ -8,6 +9,7 @@ for (const width of [390, 1440]) {
       await page.emulateMedia({ reducedMotion });
       await page.goto("/library");
       const select = page.getByRole("button", { name: "Select", exact: true });
+      if (width === 390) await expect(page.getByRole("link", { name: /^Open First image / })).toHaveAttribute("href", "/library?inspect=" + firstAsset.id);
       await select.click();
       const checkbox = page.getByRole("checkbox", { name: "Select First image", exact: true });
       const card = checkbox.locator("xpath=../..");
