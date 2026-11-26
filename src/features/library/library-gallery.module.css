@@ -1382,3 +1382,13 @@
   .searchCell { grid-area: 5 / 1; }
   .kindCell { grid-area: 6 / 1; }
 }
+
+/* Approved phone inspector: the asset header precedes the preview. The
+   visually-hidden SheetTitle still supplies the dialog's accessible name. */
+@media (max-width: 1199px) {
+  .phoneInspector .inspectorHeader { order: -1; }
+  .phoneInspector .inspectorPreview { max-height: none; }
+}
+@media (max-width: 24rem) {
+  .phoneInspector .inspectorPreview { max-height: 32dvh; }
+}
