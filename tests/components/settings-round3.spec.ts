@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "./isolated-io";
 import { collectTextContrast } from "./composited-contrast";
 
@@ -15,7 +16,14 @@ for (const width of [195, 320, 390, 1440]) {
       await expect(settings.getByRole("img", { name: "Profile picture placeholder", exact: true })).toBeVisible();
       await expect(settings.getByRole("link", { name: "Edit profile" })).toHaveAttribute("href", "/settings/profile");
       await expect(settings.getByRole("link", { name: "Change email" })).toHaveAttribute("href", "/settings/email");
-      await expect(settings.getByRole("link", { name: "Manage MFA" })).toHaveAttribute("href", "/settings/mfa");
+      const manageMfa = settings.getByRole("link", { name: "Manage MFA" });
+      await expect(manageMfa).toHaveAttribute("href", "/settings/mfa");
+      await expect(manageMfa).toBeVisible();
+      await expect(manageMfa).toHaveAccessibleName("Manage MFA Enabled");
+      if (width === 390 || width === 1440) {
+        const labelReport = await new AxeBuilder({ page }).include('a[href="/settings/mfa"]').withRules(["label-content-name-mismatch"]).analyze();
+        expect(labelReport.violations, "MFA link name must contain its visible action and status").toEqual([]);
+      }
       await expect(settings.getByRole("link", { name: "Change password" })).toHaveAttribute("href", "/settings/password");
       await expect(settings.getByRole("link", { name: "Manage preferences" })).toHaveAttribute("href", "/settings/preferences");
       await expect(settings.getByRole("link", { name: "Open Admin" })).toHaveAttribute("href", "/admin");
