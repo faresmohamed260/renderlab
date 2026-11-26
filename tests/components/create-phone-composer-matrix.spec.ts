@@ -12,12 +12,13 @@ for (const motion of ["reduce", "no-preference"] as const) {
       await expect(form.getByRole("button", { name: "Remove source image" })).toBeVisible();
       const advanced = form.getByRole("button", { name: "Advanced", exact: true });
       const inlineSeed = form.getByRole("textbox", { name: "Seed", exact: true });
-      await expect(inlineSeed).toHaveValue("1234");
       if (width === 1440) {
+        await expect(inlineSeed).toHaveValue("1234");
         await expect(advanced).toBeHidden();
         await expect(inlineSeed).toBeVisible();
         await expect(page.getByRole("dialog", { name: "Advanced" })).toHaveCount(0);
       } else {
+        await expect(inlineSeed).toHaveCount(0);
         await advanced.click();
         const sheet = page.getByRole("dialog", { name: "Advanced" });
         await expect(sheet).toBeVisible();
@@ -38,7 +39,13 @@ for (const motion of ["reduce", "no-preference"] as const) {
         await page.keyboard.press("Escape");
         await expect(sheet).toHaveCount(0);
         await expect(advanced).toBeFocused();
-        await expect(inlineSeed).toHaveValue("6789");
+        await expect(inlineSeed).toHaveCount(0);
+        await advanced.press("Enter");
+        await expect(sheet).toBeVisible();
+        await expect(seed).toHaveValue("6789");
+        await page.keyboard.press("Escape");
+        await expect(sheet).toHaveCount(0);
+        await expect(advanced).toBeFocused();
       }
       await expect(form.getByRole("button", { name: "Remove source image" })).toBeVisible();
       await expect(workspace.locator(".create-preview-controls")).toHaveCount(1);

@@ -99,7 +99,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
           await expect(sheet).toHaveCount(0);
           stage = "focus";
           await expect(opener).toBeFocused();
-          await expect(workspace.getByRole("textbox", { name: "Seed", exact: true })).toHaveValue(value);
+          await expect(workspace.getByRole("textbox", { name: "Seed", exact: true })).toHaveCount(0);
           stage = "reopen";
           await opener.click({ timeout: 10_000 });
           await expect(sheet).toBeVisible();
