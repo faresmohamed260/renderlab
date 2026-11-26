@@ -14,21 +14,21 @@ export function CreateLoading() {
           <div className={styles.sessions}>
             {[0,1,2].map(index => <div key={index} className={styles.session}>
               <Placeholder width={56} height={56} radius={14} />
-              <div className={styles.sessionText}><Placeholder height={14} radius={7} /><Placeholder width="60%" height={11} radius={6} /></div>
+              <div className={styles.sessionText}><Placeholder height={13} radius={7} /><Placeholder width="60%" height={11} radius={6} /></div>
             </div>)}
           </div>
           <div className={styles.search}>
             <Placeholder width={130} height={16} radius={8} />
             <Placeholder height={42} radius={21} />
             <div className={styles.prompts}>
-              {[0,1].map(index => <div key={index}><Placeholder height={14} radius={7} /><Placeholder width="78%" height={14} radius={7} /></div>)}
+              {[0,1].map(index => <div key={index}><Placeholder height={14} radius={7} /><Placeholder width={index === 0 ? "80%" : "70%"} height={14} radius={7} /></div>)}
             </div>
           </div>
         </div>
         <div className={styles.center}>
           <Placeholder className={styles.stage} />
           <div className={styles.actions}>{[104,140,132,44,44].map((width,index) => <Placeholder key={index} width={width} height={44} radius={22} />)}</div>
-          <div className={styles.promptCard + " rl-glass-panel"}><Placeholder width={124} height={14} radius={7} /><Placeholder height={14} radius={7} /><Placeholder width="78%" height={14} radius={7} /></div>
+          <div className={styles.promptCard + " rl-glass-panel"}><Placeholder width={150} height={12} radius={6} /><Placeholder height={15} radius={7} /><Placeholder width="75%" height={15} radius={7} /></div>
         </div>
         <div className={styles.composer + " rl-glass-panel"}>
           <Placeholder height={48} radius={24} />
@@ -43,7 +43,7 @@ export function CreateLoading() {
         <Placeholder className={styles.phoneStage} />
         <div className={styles.dots}>{[18,6,6].map((width,index) => <Placeholder key={index} width={width} height={6} radius={3} />)}</div>
         <div className={styles.phoneComposer}>
-          <div className={styles.staticPrompt} />
+          <div className={styles.staticPrompt}>Describe your image…</div>
           <div className={styles.phoneControls}>
             {[44,76,56,44].map((width,index) => <div className={styles.staticPill} key={index} style={{width}} />)}
             <div className={styles.phoneGenerate}><ArrowUp size={22} /></div>

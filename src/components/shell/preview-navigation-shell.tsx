@@ -292,7 +292,7 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
   return <div className={styles.mobileNavigation}>
     <Sheet open={open} onOpenChange={changeOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="lg" className={styles.logo + (pathname.startsWith("/create") ? " " + styles.createLogo : "")} aria-label="RenderLab — Open navigation">
+        <Button variant="ghost" size="lg" className={styles.logo + (pathname.startsWith("/create") ? " " + styles.createLogo : "")} aria-label="Open navigation menu">
           <RenderLabMark className="size-7" /><span>RenderLab</span>
         </Button>
       </SheetTrigger>
@@ -306,7 +306,7 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
         }}>
         <div className={styles.heading}>
           <SheetTitle className={styles.title}><RenderLabMark className="size-[30px]" /><span>RenderLab</span></SheetTitle>
-          <SheetClose asChild><Button variant="secondary" size="icon-lg" className={styles.close} aria-label="Close navigation"><X aria-hidden="true" /></Button></SheetClose>
+          <SheetClose asChild><Button variant="secondary" size="icon-lg" className={styles.close} aria-label="Close menu"><X aria-hidden="true" /></Button></SheetClose>
         </div>
         <SheetDescription className={styles.description}>Choose a workspace or open account settings.</SheetDescription>
         <nav aria-label="Workspace navigation" className={styles.links}>
@@ -493,7 +493,7 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
             <RegistryHeaderAction id="open-queue" />
             <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={false} />
           </div>
-          {surface === "create" && <RegistryHeaderAction id="open-history" phone />}
+          {surface === "create" && <><RegistryHeaderAction id="open-history" phone /><span className="rebuild-loading-history" aria-hidden="true" /></>}
           {surface === "library" && <RegistryHeaderAction id="library-search" phone />}
         </>}
       </header>
