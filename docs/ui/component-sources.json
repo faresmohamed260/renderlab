@@ -34,6 +34,22 @@
       "searchLabel": "shadcn/ui + Radix"
     },
     {
+      "id": "cmdk",
+      "name": "cmdk",
+      "catalogHeading": "shadcn/ui + Radix",
+      "tier": "foundation",
+      "policyStatus": "approved",
+      "searchOrder": 3,
+      "adoptionMode": "package-dependency",
+      "activeUse": true,
+      "packageName": "cmdk",
+      "expectedVersion": "1.1.1",
+      "licenseStatus": "lockfile-verified",
+      "licenseSpdx": "MIT",
+      "notes": "Owner pre-approved Command palette adoption for ui-rebuild. npm-generated lock entry; SPDX declaration, not a full license review. Maintained cmdk primitive composed with Radix Dialog.",
+      "searchLabel": "shadcn/ui + Radix"
+    },
+    {
       "id": "motion",
       "name": "Motion for React",
       "catalogHeading": "Motion for React",

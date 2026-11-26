@@ -1,0 +1,14 @@
+.trigger { display:flex; align-items:center; justify-content:space-between; gap:10px; width:177px; height:40px; padding:0 10px 0 14px; border:0; border-radius:20px; background:var(--rl-surface-control); color:var(--rl-text-primary); font:500 14px/1 var(--rl-type-family); white-space:nowrap; }
+.trigger kbd,.command kbd { display:inline-flex; align-items:center; justify-content:center; min-width:44px; height:19px; padding:0 6px; border-radius:7px; background:var(--rl-surface-hover); color:var(--rl-text-secondary); font:500 11px/1 var(--rl-type-family); }
+.scrim { position:fixed; inset:0; z-index:110; background:var(--rl-modal-scrim); }
+.dialog { position:fixed; z-index:111; top:min(18vh,160px); left:50%; transform:translateX(-50%); width:min(560px,calc(100% - 24px)); max-height:calc(100dvh - min(18vh,160px) - 16px); overflow:hidden; border:1px solid var(--rl-border-subtle); border-radius:var(--rl-radius-panel); background:var(--rl-surface-overlay-layered); backdrop-filter:var(--rl-material-overlay); box-shadow:var(--rl-elevation-overlay); color:var(--rl-text-primary); }
+.command { display:flex; flex-direction:column; max-height:inherit; padding:12px; gap:8px; }
+.input { width:100%; min-height:48px; padding:0 14px; background:var(--rl-surface-control); border:0; border-radius:var(--rl-radius-control); color:inherit; font:400 15px/1.4 var(--rl-type-family); }
+.input::placeholder { color:var(--rl-text-quiet); }
+.list { overflow-y:auto; min-height:0; }
+.list [cmdk-group-heading] { padding:10px 12px 4px; color:var(--rl-text-quiet); font-size:12px; }
+.list [cmdk-item] { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding:8px 12px; border-radius:var(--rl-radius-control); font-size:14px; cursor:pointer; }
+.list [cmdk-item][data-selected="true"] { background:var(--rl-surface-selected); color:var(--rl-text-selected); }
+.empty { padding:24px 12px; color:var(--rl-text-quiet); text-align:center; }
+.trigger:focus-visible,.input:focus-visible { outline:var(--rl-focus-width) solid var(--rl-focus); outline-offset:var(--rl-focus-offset); }
+@media (hover:hover) and (pointer:fine) { .trigger:hover { background:var(--rl-surface-hover); } }
