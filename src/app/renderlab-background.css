@@ -1806,3 +1806,15 @@
   .preview-navigation-shell:has([data-route-loading="create"]) .rebuild-phone-action { display:none; }
 }
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active) { .renderlab-gradient:has([data-route-loading="create"]) { --rl-current-atmosphere:none; } }
+
+/* Static loading chrome: match the three measured desktop slots, with no
+   interactive fake controls; navigation and Ctrl/Cmd+K remain available. */
+.rebuild-loading-desktop-actions { display:none; }
+@media (min-width:701px) {
+  .preview-navigation-shell:has([data-route-loading="create"]) .rebuild-header-actions > :not(.rebuild-loading-desktop-actions) { display:none; }
+  .preview-navigation-shell:has([data-route-loading="create"]) .rebuild-loading-desktop-actions { display:flex; gap:10px; align-items:center; }
+  .rebuild-loading-desktop-actions span { display:block; height:40px; border-radius:20px; background:linear-gradient(90deg,rgb(255 255 255 / 5.5%),rgb(255 255 255 / 12%) 50%,rgb(255 255 255 / 5.5%)); }
+  .rebuild-loading-desktop-actions span:first-child { width:160px; }
+  .rebuild-loading-desktop-actions span:nth-child(2) { width:74px; }
+  .rebuild-loading-desktop-actions span:last-child { width:40px; }
+}

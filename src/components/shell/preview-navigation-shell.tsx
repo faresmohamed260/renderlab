@@ -492,6 +492,7 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
             <CommandPalette showAdmin={Boolean(showAdmin && accountId)} />
             <RegistryHeaderAction id="open-queue" />
             <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={false} />
+            <div className="rebuild-loading-desktop-actions" aria-hidden="true"><span /><span /><span /></div>
           </div>
           {surface === "create" && <><RegistryHeaderAction id="open-history" phone /><span className="rebuild-loading-history" aria-hidden="true" /></>}
           {surface === "library" && <RegistryHeaderAction id="library-search" phone />}
