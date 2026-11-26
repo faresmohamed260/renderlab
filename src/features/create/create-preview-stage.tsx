@@ -2,15 +2,19 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type PointerEvent, type HTMLAttributes } from "react";
 import { createPortal } from "react-dom";
-import { Download, Star, Undo2, X } from "lucide-react";
+import { Download, Heart, Undo2, X, Columns2, RefreshCw, Ellipsis } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { registerCreateCommand } from "@/lib/create-commands";
+import { previewImageSizes } from "./create-preview-sizes";
+import stageStyles from "./create-stage-rebuild.module.css";
 import { Button } from "@/components/ui/button";
 import { buildImageBatchZip } from "./create-preview-batch-zip";
 import pagerStyles from "./create-result-pager.module.css";
 
-type StageResult = { assetId?: string; isFavorite?: boolean; image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
+type StageResult = { assetId?: string; isFavorite?: boolean; image_data: string; aspect?: number; seed: number; filename?: string; source?: File; promptUsed?: string; width?: number; height?: number; run?: { mode: "edit" | "generate"; prompt?: string; steps?: number; sizeIndex?: number; editAspectRatio?: string } };
 export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
 
-function ResultFavorite({ assetId, favorite, onChange }: { assetId: string; favorite: boolean; onChange: (id: string, favorite: boolean) => void }) {
+function ResultFavorite({ assetId, favorite, onChange, iconOnly = false }: { assetId: string; favorite: boolean; onChange: (id: string, favorite: boolean) => void; iconOnly?: boolean }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const pending = useRef(false);
@@ -33,8 +37,8 @@ function ResultFavorite({ assetId, favorite, onChange }: { assetId: string; favo
   }
   return <>
     <Button type="button" variant="secondary" size="sm" disabled={saving} aria-pressed={favorite}
-      aria-label={favorite ? "Favorited" : "Favorite"} onClick={() => void toggle()}>
-      <Star aria-hidden="true" fill={favorite ? "currentColor" : "none"} />{favorite ? "Favorited" : "Favorite"}
+      aria-label={favorite ? "Favorited" : "Favorite"} data-stage-favorite="" className={iconOnly ? stageStyles.iconAction : undefined} onClick={() => void toggle()}>
+      <Heart aria-hidden="true" fill={favorite ? "currentColor" : "none"} />{!iconOnly && (favorite ? "Favorited" : "Favorite")}
     </Button>
     {error && <span role="alert">{error}</span>}
   </>;
@@ -129,7 +133,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function CreatePreviewStage<T extends StageResult>({ historySelection, resultPosition, desktopArrows, dropTarget, desktopResultActions, desktopActions, onFavoriteChange, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, browseUnavailableReason, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function CreatePreviewStage<T extends StageResult>({ historySelection, resultPosition, desktopArrows, dropTarget, desktopResultActions, onFavoriteChange, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, browseUnavailableReason, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -198,7 +202,8 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
-  const inThread = phone && turns.length > 0 && (busy || !result || turns.some((turn) => turn.images?.includes(result)));
+  const [threadOpen, setThreadOpen] = useState(false);
+  const inThread = phone && threadOpen && turns.length > 0;
   useEffect(() => {
     const row = thread.current;
     if (row) row.scrollTop = row.scrollHeight;
@@ -465,6 +470,58 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
     );
   }
 
+  const canReuseResult = !!result?.run && !busy && !reviewing;
+  const canActOnResult = !!result && !busy && !reviewing && !inlineMask;
+  const canFavorite = canActOnResult && !!result?.assetId && typeof result.isFavorite === "boolean" && !!onFavoriteChange;
+  useEffect(() => {
+    const act = (selector: string) => { frame.current?.querySelector<HTMLElement>(selector)?.click(); };
+    const cleanup = [
+      registerCreateCommand({id:"reuse-settings",label:"Reuse settings",keywords:["result","prompt"],group:"Create",enabled:canReuseResult,run:()=>{if(result)onRestore(result,false);}}),
+      registerCreateCommand({id:"edit-this-image",label:"Edit this image",keywords:["source","reference"],group:"Create",enabled:canActOnResult,run:()=>{if(result)onUseSource(result);}}),
+      registerCreateCommand({id:"favorite",label:result?.isFavorite ? "Remove favorite" : "Favorite",keywords:["heart","library"],group:"Create",enabled:canFavorite,run:()=>act("[data-stage-favorite]")}),
+      registerCreateCommand({id:"download",label:"Download",keywords:["save","image"],group:"Create",enabled:canActOnResult,run:()=>{if(result){const link=document.createElement("a");link.href=result.image_data;link.download=result.filename ?? "result.png";link.click();}}}),
+    ];
+    return () => cleanup.forEach(fn=>fn());
+  }, [result, canActOnResult, canReuseResult, canFavorite, onRestore, onUseSource]);
+  function rebuiltActions() {
+    if (!result || !canActOnResult || viewerOpen) return null;
+    const favorite = canFavorite && result.assetId && typeof result.isFavorite === "boolean" && onFavoriteChange
+      ? <ResultFavorite key={result.assetId} assetId={result.assetId} favorite={result.isFavorite} onChange={onFavoriteChange} iconOnly /> : null;
+    const edit = () => onUseSource(result);
+    const reuse = () => onRestore(result, false);
+    const download = <Button asChild variant="ghost" className={stageStyles.iconAction}><a href={result.image_data} download={result.filename ?? "result.png"} aria-keyshortcuts="D" aria-label="Download image" title="Download image"><Download size={20} /></a></Button>;
+    if (phone) return <div className={stageStyles.phoneActions} role="group" aria-label="Result actions">
+      {canCompare && <Button type="button" variant="ghost" className={stageStyles.iconAction} aria-label="Compare with source" aria-keyshortcuts="C" aria-pressed={compare} onClick={()=>setCompared(compare?undefined:result)}><Columns2 size={19}/></Button>}
+      {canReuseResult && <Button type="button" variant="ghost" className={stageStyles.iconAction} aria-label="Reuse settings" onClick={reuse}><RefreshCw size={19}/></Button>}
+      {favorite}
+      <Popover><PopoverTrigger asChild><Button type="button" variant="ghost" className={stageStyles.iconAction} aria-label="More actions"><Ellipsis size={19}/></Button></PopoverTrigger><PopoverContent className={stageStyles.more} aria-label="More result actions">
+        <Button type="button" variant="ghost" aria-keyshortcuts="U" onClick={edit}>Edit this image</Button>
+        <Button asChild variant="ghost"><a href={result.image_data} download={result.filename ?? "result.png"}>Download</a></Button>
+        <Button type="button" variant="ghost" onClick={()=>openViewer()}>Open image viewer</Button>
+        {turns.length > 0 && <Button type="button" variant="ghost" onClick={()=>setThreadOpen(true)}>Render conversation</Button>}
+        {result.run?.mode === "edit" && <Button type="button" variant="ghost" onClick={()=>onRestore(result,true)}>Reopen edit</Button>}
+        {result.run?.mode === "edit" && onSaveEdit && <Button type="button" variant="ghost" disabled={savingEdit} onClick={()=>onSaveEdit(result)}>Save on this device</Button>}
+        {batch.length>1 && <Button type="button" variant="ghost" onClick={downloadBatch}>Download batch</Button>}
+      </PopoverContent></Popover>
+    </div>;
+    return <div className={stageStyles.desktopActions} role="group" aria-label="Result actions">
+      {canCompare && <Button type="button" variant="ghost" aria-keyshortcuts="C" aria-pressed={compare} onClick={()=>setCompared(compare?undefined:result)}>Compare</Button>}
+      {canReuseResult && <Button type="button" variant="ghost" onClick={reuse}>Reuse settings</Button>}
+      <Button type="button" variant="ghost" aria-keyshortcuts="U" onClick={edit}>Edit this image</Button>
+      {favorite}{download}
+      {resultPosition && <span className={stageStyles.desktopCount}>{resultPosition.index+1} of {resultPosition.count}</span>}
+    </div>;
+  }
+  function resultMetadata() {
+    if (!result || !canActOnResult || phone || viewerOpen) return null;
+    const run = result.run;
+    const preset = run?.sizeIndex === undefined ? undefined : previewImageSizes[run.sizeIndex]?.label.split(" · ")[0];
+    const shape = run?.mode === "edit" && run.editAspectRatio ? run.editAspectRatio === "original" ? undefined : run.editAspectRatio : preset;
+    const actualShape = result.width && result.height ? (()=>{let a=result.width,b=result.height;while(b){const c=a%b;a=b;b=c;}return result.width/a+":"+result.height/a;})() : undefined;
+    const chips = [run?.mode === "edit" ? "Edit image" : run?.mode === "generate" ? "Text to image" : undefined,shape ?? actualShape,run?.steps !== undefined ? run.steps+" steps" : undefined,run && Number.isFinite(result.seed) ? "Seed "+result.seed : undefined].filter(Boolean);
+    return <section className={stageStyles.promptCard} aria-label="Prompt used for this result"><h2>Prompt for this result</h2><p>{run?.prompt ?? result.promptUsed ?? "Prompt not available for this result."}</p>{chips.length>0 && <div className={stageStyles.chips}>{chips.map((chip,index)=><span key={index}>{chip}</span>)}</div>}</section>;
+  }
+
   function returnToProgress() {
     selection.current++;
     pendingImage.current = undefined;
@@ -564,11 +621,11 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
   // This is the workspace's ordered result scope, not the batch carousel.
   // The existing live announcement is the accessible equivalent.
   function resultPager(threadLayout = false) {
-    if (!resultPosition || !displayedResult || busy || viewerOpen || inlineMask) return null;
+    if (!phone || !resultPosition || !displayedResult || busy || viewerOpen || inlineMask) return null;
     const { index, count } = resultPosition;
     return <div data-create-result-pager="" aria-hidden="true"
       className={pagerStyles.pager + (threadLayout ? " " + pagerStyles.thread : "")}>
-      <span className={pagerStyles.count}>Result {index + 1} of {count}</span>
+      <span className={pagerStyles.count}>{index + 1} of {count}</span>
       <span className={pagerStyles.dots}>
         {Array.from({ length: count }, (_, i) => <span key={i} className={pagerStyles.dot}
           data-create-result-dot="" data-selected={i === index} />)}
@@ -578,8 +635,8 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
 
   function stageDocument() {
     return (
-        <div className={"create-preview-stage-document " + pagerStyles.document}>
-        <div className="create-preview-stage-surface" {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
+        <div className={"create-preview-stage-document " + pagerStyles.document + " " + stageStyles.document}>
+        <div className={"create-preview-stage-surface " + stageStyles.surface} {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
           aria-label={label} aria-busy={busy || inputPending} data-portrait={ratio < 1}
           onClick={(event) => {
             if (event.target === event.currentTarget || event.target instanceof HTMLImageElement) {
@@ -594,9 +651,10 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
           </>
             : shown ? <>
               {!viewerOpen && media()}
-              {!viewerOpen && (!desktopActions || !result || reviewing) && tools()}
+              {!viewerOpen && (!canActOnResult || reviewing) && tools()}
               <Button ref={opener} type="button" className="create-preview-stage-open" variant="ghost" size="icon-sm"
                 aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => openViewer()} />
+              {phone && rebuiltActions()}
             </> : browseUnavailableReason ? <p className="create-preview-caption mx-auto max-w-[24rem] px-4 text-center">{browseUnavailableReason}</p> : <Button type="button" variant="ghost" className="create-preview-canvas-upload"
               disabled={browseDisabled || inputPending} title={browseDisabled ? "Sign in to upload an image" : "Add " + inputLabel.toLowerCase()} onClick={onBrowse}>
               <svg className="create-preview-stage-empty-icon" width="25" height="25" viewBox="0 0 24 24" fill="none"
@@ -606,22 +664,25 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
               <span>Drop an image or click to upload</span>
             </Button>)}
         </div>
-        {!viewerOpen && desktopActions && result && !reviewing && tools(true)}
+        {!phone && rebuiltActions()}
         {!inThread && resultPager()}
         {!viewerOpen && carousel()}
-        {!viewerOpen && !desktopResultActions && runActions()}
+        {resultMetadata()}
+        {!phone && !viewerOpen && canReuseResult && result?.run?.mode === "edit" && <div className={stageStyles.extraActions}><Button type="button" variant="ghost" onClick={()=>onRestore(result,true)}>Reopen edit</Button>{onSaveEdit && <Button type="button" variant="ghost" disabled={savingEdit} onClick={()=>onSaveEdit(result)}>Save on this device</Button>}</div>}
+        {!phone && !viewerOpen && batch.length>1 && <Button type="button" variant="ghost" onClick={downloadBatch}>Download batch</Button>}
         </div>
     );
   }
 
   return (
     <>
-      <div ref={frame} className="create-preview-stage-frame" onKeyDown={stageKeys} data-batch={showBatch} data-pull-ready={phone && !busy && !viewerOpen}
+      <div ref={frame} className={"create-preview-stage-frame " + stageStyles.frame} onKeyDown={stageKeys} data-batch={showBatch} data-pull-ready={phone && !busy && !viewerOpen}
         style={{ "--stage-media-ratio": ratio } as CSSProperties}>
         {pull >= 12 && <div className="create-preview-stage-pull" style={{ translate: "0 " + Math.min(32, (pull - 12) / 2) + "px" }}>
           {pull >= 76 ? "Release to refresh" : "Pull to refresh"}
         </div>}
         {inThread ? <div ref={thread} className="create-preview-thread" aria-label="Render conversation" tabIndex={0}>
+          <Button type="button" variant="ghost" onClick={()=>setThreadOpen(false)}>Back to result</Button>
           {turns.map((turn, index) => (
             <article className="create-preview-thread-turn" key={turn.id}>
               <div className="create-preview-thread-sent">

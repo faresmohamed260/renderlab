@@ -1,56 +1,9 @@
-/* Use the actual result scope. Reserve space for the visual index without
- * competing with batch thumbnails or existing action rows. */
-.document { position: relative; }
-:global(.create-preview-stage-frame):has(> .document > .pager) {
-  --stage-action-space: 36px;
-}
-:global(.create-preview-stage-frame):has(> .document > .pager):has(:global(.create-preview-stage-run-actions)) {
-  --stage-action-space: 70px;
-}
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--rl-space-8);
-  min-inline-size: 0;
-  min-block-size: 28px;
-  margin-block-start: var(--rl-space-4);
-  color: var(--rl-text-secondary);
-  font-size: var(--rl-type-caption);
-  line-height: var(--rl-leading-caption);
-  pointer-events: none;
-}
-.count { overflow-wrap: anywhere; min-inline-size: 0; }
-.dots { display: none; }
-@media (max-width: 700px) {
-  .pager { justify-content: center; }
-  .pager:not(.thread) .count {
-    position: absolute;
-    z-index: 2;
-    inset-block-start: var(--rl-space-8);
-    inset-inline-end: var(--rl-space-8);
-    max-inline-size: calc(100% - 2 * var(--rl-space-8));
-    padding: var(--rl-space-4) var(--rl-space-8);
-    border-radius: var(--rl-radius-pill);
-    background: var(--rl-surface-overlay);
-    color: var(--rl-text-primary);
-  }
-  .dots {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 2px;
-    flex: 1 1 auto;
-    min-inline-size: 0;
-    max-inline-size: 100%;
-  }
-  .dot {
-    flex: 0 1 6px;
-    min-inline-size: 0;
-    block-size: 6px;
-    border-radius: var(--rl-radius-pill);
-    background: var(--rl-text-quiet);
-  }
-  .dot[data-selected="true"] { background: var(--rl-accent-primary); }
-  .thread { flex: none; }
-}
+.document{position:relative}
+.pager{display:flex;align-items:center;justify-content:center;min-width:0;margin-top:12px;pointer-events:none}
+.count{position:absolute;z-index:3;top:14px;left:14px;padding:7px 12px;border-radius:16px;background:rgb(20 16 14 / 40%);border:1px solid rgb(255 255 255 / 18%);backdrop-filter:blur(24px) saturate(1.6);color:white;font-size:13px;font-weight:500;line-height:16px}
+.dots{display:flex;justify-content:center;align-items:center;gap:6px;min-width:0;max-width:100%}
+.dot{flex:0 1 6px;width:6px;height:6px;border-radius:3px;background:rgb(255 255 255 / 30%)}
+.dot[data-selected=true]{width:18px;flex-basis:18px;background:white}
+.thread .count{position:static}
+.thread{flex:none}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){.count{background:var(--rl-surface-overlay);backdrop-filter:none}}
