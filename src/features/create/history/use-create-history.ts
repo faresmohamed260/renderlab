@@ -12,7 +12,7 @@ const pageSize = 20;
 const refreshMs = 5_000;
 
 export function useCreateHistory(options: HistoryOptions) {
-  const { accountKey, visible, onPrompt } = options;
+  const { accountKey, visible, onPrompt, combined } = options;
   const [tab, setTab] = useState<HistoryTab>(options.initialTab ?? "session");
   const [offset, setOffset] = useState(options.initialOffset ?? 0);
   const [search, setSearch] = useState("");
@@ -52,7 +52,7 @@ export function useCreateHistory(options: HistoryOptions) {
   const jobsValue = jobs?.key === jobsKey ? jobs.value : undefined;
   const promptsValue = prompts?.key === promptsKey ? prompts.value : undefined;
   useEffect(() => {
-    if (!accountKey || !visible || tab !== "jobs") return;
+    if (!accountKey || !visible || !combined && tab !== "jobs") return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     async function read() {
@@ -72,9 +72,9 @@ export function useCreateHistory(options: HistoryOptions) {
     }
     void read();
     return () => { controller.abort(); if (timer !== undefined) clearTimeout(timer); };
-  }, [accountKey, visible, tab, offset, jobsKey, revision]);
+  }, [accountKey, visible, combined, tab, offset, jobsKey, revision]);
   useEffect(() => {
-    if (!accountKey || !visible || tab !== "prompts") return;
+    if (!accountKey || !visible || !combined && tab !== "prompts") return;
     const controller = new AbortController();
     setPrompts(old => ({ key: promptsKey, value: old?.key === promptsKey ? old.value : undefined, pending: true }));
     void callbacks.current.transport.readPrompts({ search, limit: pageSize, cursor }, controller.signal).then(result => {
@@ -83,7 +83,7 @@ export function useCreateHistory(options: HistoryOptions) {
       if (!controller.signal.aborted) setPrompts({ key: promptsKey, pending: false, error: readError });
     });
     return () => controller.abort();
-  }, [accountKey, visible, tab, promptsKey, search, cursor, revision]);
+  }, [accountKey, visible, combined, tab, promptsKey, search, cursor, revision]);
   useEffect(() => () => { activeAction.current?.abort(); activeAction.current = null; }, []);
 
   const runAction = useCallback(async (job: HistoryJob, kind: HistoryAction) => {
