@@ -996,7 +996,7 @@
 .settingsCards .profileName { font-size: 17px; }
 .settingsCards .profileAvatar { width: 64px; height: 64px; }
 @media (min-width: 1025px) {
-  .workspace:has(.round3) { width: 100%; max-width: none; padding: 28px 0 24px; }
+  .workspace:has(.round3) { width: 100%; max-width: none; padding: 12px 0 24px; }
   .workspace:has(.round3)::before, .workspace:has(.round3) .intro::after { content: none; }
   .workspace:has(.round3) .intro { margin-bottom: 20px; padding: 0; }
   .workspace:has(.round3) .eyebrow { display: none; }
