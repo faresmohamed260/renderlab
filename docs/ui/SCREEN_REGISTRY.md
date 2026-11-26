@@ -19,9 +19,9 @@ When an entry needs both maturity and lifecycle truth, prefer separate fields su
 ## Phase 6 current development surfaces
 
 - **Landing:** Round 3 hero implementation merged; lower sections retained. Bounded visual acceptance does not qualify a release; exact candidate accessibility and delivery/performance evidence remain open.
-- **Create:** desktop three-column composition, phone composer and Advanced Sheet, shortcuts and History mount merged. The measured phone target geometry and truthful result pager are merged; complete zoom, remaining phone accessibility and loading acceptance are open. Activity remains a transitional destination until its separately reviewed 307 redirect lands.
-- **Library:** desktop gallery/inspector and Round 3 phone grid, selection and inspector merged. Loading skeleton and accessible-name corrections remain open; durable Viewer and owner-scoped actions remain binding.
-- **Settings:** Round 3 desktop and phone layouts merged, existing account/MFA/session semantics retained. Avatar accessibility correction remains open.
+- **Create:** desktop three-column composition, phone composer and Advanced Sheet, shortcuts and History mount merged. The measured phone target geometry and truthful result pager are merged; auth-safe content loading and the mounted zero-overflow ratchet are merged; phone visible names, compact Advanced, media-first stage, result actions and truthful capability visibility are merged; five-width mounted acceptance (both motion modes) and Generate target/contrast CSS correction are merged. True browser zoom and exact integrated visual acceptance remain open. Activity remains a transitional destination until its separately reviewed 307 redirect lands.
+- **Library:** desktop gallery/inspector and Round 3 phone grid, selection and inspector merged. Auth-safe loading skeleton and visible-label accessible-name corrections are merged; phone/desktop header, selection, toolbar, inspector and Viewer action fidelity corrections are merged; exact integrated review remains open; durable Viewer and owner-scoped actions remain binding.
+- **Settings:** Round 3 desktop and phone layouts merged, existing account/MFA/session semantics retained. Avatar and MFA visible-label accessible-name corrections are merged; exact release acceptance remains open.
 - **Admin:** read-only Observe merged with approved truthful-data deviation; no Admin controls authorized. See UI-091.
 
 All above describe repository source, not a change to the recorded Batch G deployment.
