@@ -520,7 +520,7 @@ export function LibraryBatchSelection({
                   // Full success leaves selection mode, hiding the original trigger.
                   event.preventDefault();
                   returnToSelect.current = false;
-                  selectTrigger.current?.focus({ preventScroll: true });
+                  (narrow ? galleryHeading.current : selectTrigger.current)?.focus({ preventScroll: true });
                 }}>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
