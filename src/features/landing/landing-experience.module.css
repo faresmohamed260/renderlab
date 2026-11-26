@@ -1054,3 +1054,69 @@
   .heroPreview { min-height: 128px; }
   .previewComposer { inset-inline: var(--rl-space-4); padding: var(--rl-space-4); }
 }
+
+/* Approved Landing desktop and phone hero. The illustration is the approved
+   static preview, not an actual generation job or a submit button. */
+.heroBrandMark { width: 32px; height: 32px; }
+.heroBrandText { font-size: 18px; font-weight: 700; }
+.phoneChip { display: none; }
+.hero { background-image: var(--rl-atmosphere-scene); background-color: var(--rl-canvas); background-attachment: scroll; }
+.hero::before { content: none; }
+.hero .eyebrow { color: var(--rl-text-selected); font-weight: 600; }
+.hero .heroPrimary { border-radius: 28px; font-size: 17px; gap: 10px; }
+.hero .heroPrimary svg { width: 20px; height: 20px; }
+.heroPreview { grid-template-columns: minmax(0,120px) minmax(0,1fr); grid-template-rows: 20px minmax(0,1fr) 70px; column-gap: 14px; row-gap: 16px; padding: 18px; }
+.previewDots { gap: 10px; min-height: 10px; align-self: start; }
+.previewDots i { width: 10px; height: 10px; }
+.previewThumbnails { gap: 10px; }
+.previewThumbnails svg { aspect-ratio: 120 / 78; border-radius: 16px; }
+.previewArtwork { border-radius: 26px; }
+.previewComposer { border-radius: 24px; padding: 0 20px; gap: 14px; font-size: 15px; }
+.previewComposer i svg { width: 20px; height: 20px; }
+.heroFoot li { min-height: 38px; padding: 0 16px; font-size: 13px; font-weight: 600; }
+@media (min-width: 901px) {
+  .nav { height: 102px; background: transparent; border: 0; backdrop-filter: none; }
+  .navActions { gap: 10px; }
+  .nav .signInButton, .nav .openButton { height: 46px; min-height: 46px; font-size: 14px; padding-inline: 18px; }
+  .hero { align-content: start; padding: 96px 48px 52px; min-height: 100svh; gap: 0; }
+  .heroGrid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 0; align-items: start; }
+  .heroCopy { margin-inline-start: 48px; margin-top: clamp(40px,6.53vw,94px); max-width: 560px; }
+  .hero h1 { font-size: clamp(46px,5.28vw,76px); margin-top: 18px; line-height: 1.02; }
+  .hero .dek { margin-top: 26px; max-width: 500px; font-size: 20px; line-height: 30px; }
+  .heroActions { margin-top: 36px; gap: 18px; }
+  .hero .heroPrimary { padding-inline: 30px; }
+  .heroPreview { aspect-ratio: 674 / 622; }
+  .heroFoot { margin-top: max(32px,calc(100svh - 96px - (min(100vw,1936px) - 96px) * 622 / 1348 - 90px)); padding-inline: 48px; }
+}
+@media (max-width: 900px) {
+  .nav { height: 70px; background: transparent; border: 0; backdrop-filter: none; padding: 0 16px; }
+  .nav .brandLink { height: 46px; padding: 0 16px 0 8px; }
+  .heroBrandMark { width: 28px; height: 28px; }
+  .heroBrandText { font-size: 16px; font-weight: 600; }
+  .nav .signInButton { height: 46px; min-height: 46px; padding-inline: 18px; }
+  .hero { padding: 92px 24px 36px; gap: 18px; min-height: 100svh; }
+  .heroGrid { gap: 64px; }
+  .hero h1 { font-size: clamp(32px,11.795vw,46px); margin-top: 12px; line-height: 1.04; }
+  .hero .eyebrow { font-size: 12px; line-height: 15px; }
+  .hero .dek { font-size: 16px; line-height: 24px; margin-top: 16px; }
+  .heroActions { margin-top: 22px; gap: 10px; }
+  .heroActions .truth { font-size: 14px; line-height: 16px; }
+  .heroPreview { aspect-ratio: 342 / 236; border-radius: 30px; }
+  .previewArtwork { border-radius: 0; }
+  .previewComposer { height: 54px; padding: 0 8px 0 18px; gap: 10px; border-radius: 20px; font-size: 13px; }
+  .previewComposer i svg { width: 18px; height: 18px; }
+  .heroFoot { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0; width: calc(100% + 24px); }
+  .heroFoot li { flex: none; min-height: 36px; padding: 0 14px; font-size: 12px; white-space: nowrap; }
+  .desktopChip { display: none; }
+  .phoneChip { display: inline; }
+}
+@media (max-width: 280px) {
+  .hero { padding-inline: 12px; }
+  .hero h1 { font-size: 32px; }
+  .heroGrid { gap: 24px; }
+  .heroFoot { width: calc(100% + 12px); }
+  .nav { padding-inline: 4px; }
+  .nav .brandLink,.nav .signInButton { padding-inline: 4px; }
+  .heroBrandMark { width: 16px; height: 16px; }
+  .heroBrandText { font-size: 12px; }
+}
