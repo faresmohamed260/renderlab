@@ -46,17 +46,20 @@
 .heading { min-height:44px; }
 .title { padding-left:6px; gap:10px; font:700 18px/1 var(--rl-type-family); }
 .title svg { width:30px; height:30px; }
-.close { width:44px; height:44px; background:rgb(255 255 255 / 7%); border:0; }
+.close { width:44px; height:44px; background:rgb(255 255 255 / 9%); border:0; }
+.close svg { width:18px; height:18px; }
 .links { gap:4px; }
-.link { height:52px; min-height:52px; gap:12px; padding:0 16px; border-radius:18px; color:var(--rl-text-primary); font:500 17px/1 var(--rl-type-family); }
-.link[aria-current="page"] { background:rgb(255 255 255 / 12%); box-shadow:none; }
-.admin { border:0; margin:12px 0 0; padding:0; gap:4px; }
-.adminLabel { padding:0 16px; font-size:12px; }
-.profile { min-height:72px; height:72px; padding:12px; gap:12px; border-radius:24px; border:1px solid var(--rl-border-subtle); background:var(--rl-surface-control); }
+.link { height:52px; min-height:52px; gap:14px; padding:0 16px; border-radius:18px; color:rgb(245 245 247 / 86%); font:500 17px/1 var(--rl-type-family); }
+.link svg { width:22px; height:22px; }
+.link[aria-current="page"] { background:rgb(255 255 255 / 12%); color:#fff; font-weight:600; box-shadow:none; }
+.admin { border:0; margin:12px 0 0; padding:0; gap:6px; }
+.admin::before { content:""; display:block; height:1px; margin:0 16px 10px; background:rgb(255 255 255 / 10%); }
+.adminLabel { padding:0; font:600 12px/19px var(--rl-type-family); color:rgb(245 245 247 / 58%); text-transform:uppercase; letter-spacing:.48px; }
+.profile { min-height:72px; height:72px; padding:12px; gap:12px; border-radius:24px; border:1px solid rgb(255 255 255 / 10%); background:var(--rl-surface-control); }
 .profileText { font-size:15px; font-weight:600; }
 .profileText > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .profileMeta { font-size:13px; font-weight:400; }
-.settingsIcon { width:44px; height:44px; display:grid; place-items:center; border-radius:50%; background:var(--rl-surface-control); }
+.settingsIcon { width:44px; height:44px; display:grid; place-items:center; border-radius:50%; background:rgb(255 255 255 / 9%); }
 :global([data-slot="sheet-overlay"]):has(+ .sidebar) { background:rgb(7 6 11 / 62%); }
 @supports (backdrop-filter:blur(1px)) { .sidebar { background:rgb(26 21 46 / 88%); backdrop-filter:blur(40px) saturate(1.5); } .logo { backdrop-filter:blur(28px) saturate(1.6); } }
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active) { .sidebar { background:var(--rl-surface-overlay); backdrop-filter:none; } .logo { backdrop-filter:none; background:var(--rl-surface-raised); } }
