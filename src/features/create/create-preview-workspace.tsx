@@ -5,10 +5,11 @@ import { CreateStageSkeleton } from "./create-rail-stage-skeleton";
 
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { flushSync } from "react-dom";
-import { Clock, Dice5, ImagePlus, Pencil, Plus, Sparkles, X } from "lucide-react";
+import { ArrowUp, ChevronDown, RefreshCw, Plus, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { registerCreateCommand } from "@/lib/create-commands";
 import { nextResultIndex, useCreateShortcuts } from "./use-create-shortcuts";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -17,7 +18,7 @@ import { springOptions } from "@/lib/ui/spring-roles";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { nextCreateToolbarPopover, type CreateToolbarPopover } from "./create-toolbar-popover-state";
 import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DeferredMaskEditor as CreatePreviewMaskEditor } from "./create-preview-deferred-mask-editor";
@@ -202,7 +203,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     return imageTag(index);
   });
   // Legacy workers can return VGL, but cannot accept it back as a manual instruction.
-  const manualVgl = (hosted || !advancedPrompt) && generatedVgl ? "" : vgl.trim();
+  const manualVgl = !vglOpen || ((hosted || !advancedPrompt) && generatedVgl) ? "" : vgl.trim();
 
   function updateDraft(workflow: Workflow, patch: Partial<PromptDraft>) {
     setDrafts((previous) => ({ ...previous, [workflow]: { ...previous[workflow], ...patch } }));
@@ -222,6 +223,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [desktop, setDesktop] = useState(false);
   const [phone, setPhone] = useState(false);
   const [advancedSheetOpen, setAdvancedSheetOpen] = useState(false);
+  const [composerPopover, setComposerPopover] = useState<"references" | "mode" | "shape" | null>(null);
+  const [desktopAdvancedOpen, setDesktopAdvancedOpen] = useState(true);
   const advancedTrigger = useRef<HTMLButtonElement>(null);
   const [advancedOffset, setAdvancedOffset] = useState(0);
   const advancedClosing = useRef(false);
@@ -439,7 +442,25 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [sizeIndex, setSizeIndex] = useState(() => Math.max(0, hostedRatios.indexOf(initialAspectRatio)));
   const [inspiration, setInspiration] = useState<File>();
   const [inspirationPreview, setInspirationPreview] = useState<string>();
-  const size = previewImageSizes[sizeIndex] ?? previewImageSizes[0];
+  const selectedShape = mode === "edit" ? editAspectRatio : hostedRatios[sizeIndex];
+  const effectiveSizeIndex = selectedShape === "original" ? sizeIndex : hostedRatios.indexOf(selectedShape);
+  const size = previewImageSizes[effectiveSizeIndex] ?? previewImageSizes[0];
+  const shapeLabel = selectedShape === "original" ? "Original" : selectedShape;
+  const shapeOptions: readonly AspectRatio[] = mode === "edit"
+    ? ["original", "1:1", "4:3", "16:9", "3:4", "9:16"]
+    : ["1:1", "4:3", "16:9", "3:4", "9:16"];
+
+  function selectShape(value: string) {
+    if (busy || !value) return;
+    if (value === "original" && mode === "edit") {
+      setEditAspectRatio("original");
+      return;
+    }
+    const index = hostedRatios.indexOf(value as PresetAspectRatio);
+    if (index < 0) return;
+    if (mode === "edit") setEditAspectRatio(hostedRatios[index]);
+    else setSizeIndex(index);
+  }
   const needsUpgrade = mode === "generate" && !extendedSetup && (sizeIndex !== 0 || (!!inspiration && !manualVgl));
   useEffect(() => {
     if (!inspiration) { setInspirationPreview(undefined); return; }
@@ -688,7 +709,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       }
       const run: RunSettings = {
         mask,
-        mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex, editAspectRatio,
+        mode, prompt: prompt.trim(), negativePrompt: negativePrompt.trim(), vgl: manualVgl, steps, imageCount, sizeIndex: effectiveSizeIndex, editAspectRatio,
         inputs: mode === "edit" ? editInputs : [],
       };
       if (!hostedModel) await request("local/" + mode, { method: "POST", signal, headers: { "content-type": "application/json" },
@@ -711,7 +732,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       finishTurn(images, error);
       const image = images[0];
       if (!hosted && typeof image.json_instruction === "string" && image.json_instruction.trim()) {
-        updateDraft(mode, { vgl: image.json_instruction, generatedVgl: true });
+        const generated = image.json_instruction;
+        setDrafts(previous => previous[mode].vgl && !previous[mode].generatedVgl ? previous : ({
+          ...previous, [mode]: { ...previous[mode], vgl: generated, generatedVgl: true },
+        }));
       }
       if (prompt.trim()) setRecent((items) => [prompt.trim(), ...items.filter((item) => item !== prompt.trim())].slice(0, 5));
     } catch (cause) {
@@ -955,7 +979,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     setEditAspectRatio(run.editAspectRatio ?? "original");
     setSteps(run.steps);
     updateDraft(run.mode, {
-      prompt: run.prompt, negativePrompt: run.negativePrompt, vgl: run.vgl,
+      prompt: run.prompt, negativePrompt: run.negativePrompt, vgl: run.vgl, vglOpen: !!run.vgl,
       generatedVgl: false, seed: String(image.seed), randomize: false, imageCount: run.imageCount,
     });
     requestAnimationFrame(() => document.getElementById("create-preview-prompt")?.focus({ preventScroll: true }));
@@ -1064,16 +1088,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       editorValue.current = limited;
     }
   }
-  const recentMenu = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    if (!desktop) return;
-    const closeOutside = (event: PointerEvent) => {
-      const menu = recentMenu.current;
-      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
-    };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [desktop]);
   const tileDragType = "application/x-renderlab-image-slot";
 
   function imageTag(index: number) {
@@ -1154,7 +1168,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   const seedValid = randomize || (/^\d+$/.test(seed) && Number(seed) <= 2147483647);
   const vglValid = (() => {
-    if (!manualVgl) return true;
+    if (!vglOpen) return true;
+    if (!manualVgl) return false;
     try {
       const value: unknown = JSON.parse(manualVgl);
       return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
@@ -1199,8 +1214,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       const candidates = [
         ...root.querySelectorAll<HTMLElement>("[data-create-mask-trigger]"),
         root.querySelector<HTMLElement>("#create-preview-prompt"),
-        root.querySelector<HTMLElement>('[aria-label="Image Editing"]'),
-        root.querySelector<HTMLElement>('[aria-label="Text to Image"]'),
+        root.querySelector<HTMLElement>('[aria-label="Edit image"]'),
+        root.querySelector<HTMLElement>('[aria-label="Text to image"]'),
       ];
       const target = candidates.find((node) => node?.isConnected && node.getClientRects().length
         && getComputedStyle(node).visibility === "visible"
@@ -1220,41 +1235,42 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   // These controlled fields have a single draft owner. On phones they are
   // rendered only in Advanced; wider layouts keep their existing inline access.
-  const structuredFields = (<div className="create-preview-extra" key={mode}>
-              <details open={vglOpen} onToggle={(event) => {
-                if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
-              }}>
-                <summary id="create-preview-vgl-label">{hosted ? "Manual VGL JSON" : "VGL JSON"}</summary>
-                {hosted && <p className="create-preview-caption">{generatedVglNotice}</p>}
-                <Textarea aria-labelledby="create-preview-vgl-label" className="create-preview-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
-                  placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
-                  title={!vglValid ? "Enter a non-empty JSON object." : undefined}
-                  aria-describedby={!vglValid ? "create-preview-vgl-invalid" : undefined}
-                  onChange={(event) => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
-                {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
-              </details>
-            </div>);
-  const imageCountField = multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
-    disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : null;
-  const seedField = (<div className={"create-preview-render-field" + (!advancedSheetOpen ? " " + phoneStyles.inlineAdvanced : "")}>
-                <label htmlFor="create-preview-seed">Seed</label>
-                <div className="create-preview-seed">
-                  <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
-                    required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
-                  <label className="create-preview-seed-dice" title="Randomize seed each time">
-                    <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
-                      onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />
-                    <Dice5 aria-hidden="true" />
-                  </label>
-                </div>
-              </div>);
-  const stepsField = (<label className={"create-preview-steps" + (!advancedSheetOpen ? " " + phoneStyles.inlineAdvanced : "")} htmlFor="create-preview-steps">
-                <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
-                <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
-                  disabled={busy}
-                  title={variableSteps ? undefined : "The current worker renders at 4 steps"}
-                  onChange={(event) => setSteps(event.target.valueAsNumber)} />
-              </label>);
+  const structuredFields = (
+    <div className={phoneStyles.structuredFields} key={mode}>
+      <label className={phoneStyles.structuredRow} htmlFor="create-preview-vgl-enabled">
+        <Checkbox id="create-preview-vgl-enabled" checked={vglOpen} disabled={busy || (!advancedPrompt && !vglOpen)}
+          onCheckedChange={checked => updateDraft(mode, { vglOpen: checked === true })}
+          aria-controls={vglOpen ? "create-preview-vgl-editor" : undefined} />
+        <span>Use my own structured prompt</span>
+      </label>
+      {vglOpen && <div id="create-preview-vgl-editor" className={phoneStyles.structuredEditor}>
+        {hosted && <p className="create-preview-caption">{generatedVglNotice}</p>}
+        <Textarea aria-label="Manual VGL JSON" className="create-preview-vgl" rows={5} maxLength={8192}
+          spellCheck={false} autoCorrect="off" autoCapitalize="off" placeholder="Enter VGL JSON…" value={vgl}
+          disabled={busy} aria-invalid={!vglValid} aria-describedby={!vglValid ? "create-preview-vgl-invalid" : undefined}
+          onChange={event => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
+        {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
+      </div>}
+    </div>);
+  const seedField = (
+    <div className={phoneStyles.seedRow}>
+      <label htmlFor="create-preview-seed">Seed</label>
+      <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
+        required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
+      <Button type="button" variant="ghost" className={phoneStyles.randomize} title="Randomize seed each time"
+        aria-label="Randomize seed each time" aria-pressed={randomize} disabled={busy}
+        onClick={() => updateDraft(mode, { randomize: !randomize })}>
+        <RefreshCw aria-hidden="true" />
+      </Button>
+    </div>);
+  const stepsField = (
+    <div className={phoneStyles.stepsRow}>
+      <label htmlFor="create-preview-steps">Steps</label>
+      <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
+        disabled={busy} title={variableSteps ? undefined : "The current worker renders at 4 steps"}
+        onChange={(event) => setSteps(event.target.valueAsNumber)} />
+      <output htmlFor="create-preview-steps">{steps}</output>
+    </div>);
   function resetAdvanced() {
     if (busy) return;
     updateDraft(mode, { seed: emptyDraft.seed, randomize: emptyDraft.randomize,
@@ -1267,7 +1283,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const selectedResultIndex = result ? shortcutResults.findIndex(image => image === result || matchesImage(image, result)) : -1;
   const shortcuts = useCreateShortcuts({
     root: workspaceRoot,
-    overlay: advancedSheetOpen || toolbarPopover !== null || maskOpen || historyOpen,
+    overlay: advancedSheetOpen || toolbarPopover !== null || composerPopover !== null || maskOpen || historyOpen,
     canGenerate: canSubmit,
     canStep: !busy && !continuationPending && shortcutResults.length > 1,
     step: direction => {
@@ -1275,6 +1291,22 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       if (next >= 0) setHistorySelection({ image: shortcutResults[next] });
     },
   });
+
+  useEffect(() => registerCreateCommand({
+    id: "generate", label: busy ? "Queue render" : "Generate", keywords: ["render", "submit"],
+    shortcut: shortcuts.enabled ? shortcuts.modifierHint + " Enter" : undefined, group: "Create",
+    enabled: canSubmit, run: () => workspaceRoot.current?.querySelector<HTMLFormElement>("form.create-preview-controls")?.requestSubmit(),
+  }), [busy, canSubmit, shortcuts.enabled, shortcuts.modifierHint]);
+  useEffect(() => registerCreateCommand({
+    id: "focus-prompt", label: "Focus prompt", keywords: ["prompt", "write"], shortcut: shortcuts.enabled ? "/" : undefined,
+    group: "Create", enabled: !continuationPending && !promptDisabled,
+    run: () => workspaceRoot.current?.querySelector<HTMLElement>("#create-preview-prompt")?.focus(),
+  }), [continuationPending, promptDisabled, shortcuts.enabled]);
+  useEffect(() => registerCreateCommand({
+    id: "switch-mode", label: mode === "generate" ? "Edit image" : "Text to image", keywords: ["mode", "text", "edit"],
+    group: "Create", enabled: !busy && !continuationPending,
+    run: () => { setMaskEditor(undefined); setMode(mode === "generate" ? "edit" : "generate"); },
+  }), [mode, busy, continuationPending]);
 
   const railResults: RailResult[] = historyRead.accountAvailable ? historyRead.session.map(entry => {
     const image = history.find(item => item.assetId === entry.id);
@@ -1349,120 +1381,23 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
       <div className={"create-preview-grid " + columns.grid}>
         <form inert={continuationPending} className={"create-preview-controls " + phoneStyles.composer} noValidate onSubmit={submit}>
-          <div className="create-preview-fields">
-            <div className="create-preview-modes" role="group" aria-label="Workflow">
-              <animated.span className="create-preview-mode-highlight" aria-hidden="true"
-                style={{ transform: modeSpring.position.to((position) => "translateX(calc(" + (position * 100) + "% + " + (position * 4) + "px))") }} />
-              <Button type="button" variant="ghost" aria-label="Text to Image" title="Text to Image"
-                aria-pressed={mode === "generate"} disabled={busy}
-                onClick={() => { setMaskEditor(undefined); setMode("generate"); }}>
-                <ImagePlus aria-hidden="true" />
-                <span>Text to image</span>
-              </Button>
-              <Button type="button" variant="ghost" aria-label="Image Editing" title="Image Editing"
-                aria-pressed={mode === "edit"} disabled={busy}
-                onClick={() => { setMode("edit"); }}>
-                <Pencil aria-hidden="true" />
-                <span>Image Editing</span>
-              </Button>
-            </div>
-            <section aria-labelledby="create-preview-setup">
-              <h2 id="create-preview-setup">Image setup</h2>
-              <div className="create-preview-setup-slot">
-                <div className="create-preview-tiles" inert={mode !== "edit"}>
-                  {slots.map((label, index) => (
-                    <div className="create-preview-tile" key={label} {...uploadDropTarget(index)}>
-                      <Button ref={index === 0 ? sourceButton : undefined} type="button" variant="outline" aria-label={desktop && files[index] ? "Insert " + imageTag(index) + " into prompt" : "Choose " + label.toLowerCase() + " image"}
-                        title={desktop && files[index] ? "Insert " + imageTag(index) + " into prompt" : files[index]?.name ?? label}
-                        disabled={!admitted || busy} draggable={desktop && !!files[index] && !busy}
-                        onDragStart={(event) => {
-                          event.dataTransfer.effectAllowed = "move";
-                          event.dataTransfer.setData(tileDragType, String(index));
-                        }}
-                        onClick={() => desktop && files[index] ? insertImageTag(index) : chooseImage(index)}>
-                        {previews[index] ? <img src={previews[index]} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}<span>{label}</span>{desktop && previews[index] && <span aria-hidden="true" className="create-preview-tile-tag">+ {imageTag(index)}</span>}
-                      </Button>
-                      {files[index] && <Button type="button" variant="secondary" size="icon-sm"
-                        className="create-preview-remove" aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
-                        onClick={() => {
-                          setDrafts((previous) => ({
-                            ...previous,
-                            edit: {
-                              ...previous.edit,
-                              prompt: previous.edit.prompt.replaceAll(slotMarker(index) + " ", "").replaceAll(slotMarker(index), ""),
-                              vgl: "",
-                              generatedVgl: false,
-                            },
-                          }));
-                          if (index === 0) { setEditAspectRatio("original"); setSelection(undefined); if (desktop) { setResult(undefined); writeStageBookmark(bookmarkKey); } }
-                          setMaskEditor(undefined);
-                          setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
-                        }}><X /></Button>}
-                    </div>
-                  ))}
-                </div>
-                <div className="create-preview-size" data-inspiration-available={inspirationEnabled} inert={mode !== "generate"}>
-                  {inspirationEnabled ? <div className="create-preview-tile" {...uploadDropTarget(4)}>
-                    <Button type="button" variant="outline" disabled={!admitted || busy}
-                      aria-label="Choose reference image" onClick={() => chooseImage(4)}>
-                      {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
-                      <span>Reference</span>
-                    </Button>
-                    {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="create-preview-remove"
-                      aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
-                  </div> : null}
-                  <label className="create-preview-aspect">Aspect ratio
-                    <span className="create-preview-aspect-preview" aria-hidden="true"><span style={{ "--create-aspect": size.width / size.height } as CSSProperties} /></span>
-                    <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
-                      {previewImageSizes.map(({ label, width, height }, index) => (
-                        <NativeSelectOption key={label} value={index}>{label} · {width} × {height}</NativeSelectOption>
-                      ))}
-                    </NativeSelect>
-                  </label>
+          <div className={phoneStyles.fields}>
+            <ToggleGroup type="single" value={mode} onValueChange={(value) => {
+              if (value === "generate") { setMaskEditor(undefined); setMode("generate"); }
+              else if (value === "edit") setMode("edit");
+            }} disabled={busy} aria-label="Mode" className={phoneStyles.modeGroup}>
+              <animated.span className={phoneStyles.modeHighlight} aria-hidden="true"
+                style={{ transform: modeSpring.position.to((position) => "translateX(" + (position * 100) + "%)") }} />
+              <ToggleGroupItem value="generate" aria-label="Text to image">Text to image</ToggleGroupItem>
+              <ToggleGroupItem value="edit" aria-label="Edit image">Edit image</ToggleGroupItem>
+            </ToggleGroup>
+            <div className={phoneStyles.promptSection}>
+              <div className={phoneStyles.promptHeading}>
+                <label id="create-preview-main-prompt-label" htmlFor={richPrompt ? undefined : "create-preview-prompt"} onClick={() => { if (richPrompt) promptEditor.current?.focus(); }}>Prompt</label>
+                <div className={phoneStyles.promptHints}>
+                  {shortcuts.enabled && <kbd aria-hidden="true">/</kbd>}
                 </div>
               </div>
-              <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
-                const file = event.currentTarget.files?.[0];
-                if (file && admitted && !busy) {
-                  if (slot.current === 4) setReference(file);
-                  else attachImage(file, slot.current);
-                }
-                event.currentTarget.value = "";
-              }} />
-            </section>
-            <div className="create-preview-prompt-heading">
-              <label id="create-preview-main-prompt-label" htmlFor={richPrompt ? undefined : "create-preview-prompt"} onClick={() => { if (richPrompt) promptEditor.current?.focus(); }}>Prompt</label>
-              <details ref={recentMenu} className="create-preview-recents" onKeyDown={(event) => {
-                if (!desktop || event.key !== "Escape" || !event.currentTarget.open) return;
-                event.preventDefault();
-                event.currentTarget.open = false;
-                event.currentTarget.querySelector("summary")?.focus();
-              }}>
-                <summary aria-label="Recent prompts" title="Recent prompts"><Clock size={16} aria-hidden="true" /></summary>
-                <div>
-                  {desktop && <div className="create-preview-recents-heading">
-                    <strong>Recent prompts</strong>
-                    {recent.length > 0 && <Button type="button" variant="ghost" size="sm" disabled={busy}
-                      onClick={() => { setRecent([]); recentMenu.current?.querySelector("summary")?.focus(); }}>Clear</Button>}
-                  </div>}
-                  {recent.length ? <div className="create-preview-recents-list">
-                    {recent.map((value) => <div className="create-preview-recents-row" key={value}>
-                      <Button type="button" variant="ghost" disabled={busy} onClick={() => {
-                        setPrompt(value);
-                        if (recentMenu.current) recentMenu.current.open = false;
-                        document.getElementById("create-preview-prompt")?.focus();
-                      }}>{value}</Button>
-                      {desktop && <Button type="button" variant="ghost" size="icon-sm" disabled={busy}
-                        aria-label={"Remove recent prompt: " + value}
-                        onClick={() => {
-                          setRecent((items) => items.filter((item) => item !== value));
-                          recentMenu.current?.querySelector("summary")?.focus();
-                        }}><X aria-hidden="true" /></Button>}
-                    </div>)}
-                  </div> : <p>No recent prompts in this session.</p>}
-                </div>
-              </details>
-            </div>
             {richPrompt ? (
               <div ref={promptEditor} id="create-preview-prompt" className="create-preview-rich-prompt"
                 role="textbox" aria-labelledby="create-preview-main-prompt-label" aria-multiline="true" aria-keyshortcuts={shortcuts.enabled ? "/" : undefined} title={shortcuts.enabled ? "Focus prompt: /" : undefined}
@@ -1478,51 +1413,175 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               <Textarea id="create-preview-prompt" aria-keyshortcuts={shortcuts.enabled ? "/" : undefined} title={shortcuts.enabled ? "Focus prompt: /" : undefined} required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
                 maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
             )}
-            {!phone && !advancedSheetOpen && <div className={phoneStyles.inlineStructured}>{structuredFields}</div>}
-          </div>
-          <div className="create-preview-dock">
-            <Sheet open={advancedSheetOpen} onOpenChange={changeAdvancedOpen}>
-              <SheetTrigger asChild>
-                <Button ref={advancedTrigger} type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
-              </SheetTrigger>
-              {advancedSheetOpen && (
-                <SheetContent data-create-shortcut-overlay="" side="bottom" showCloseButton={false} className={phoneStyles.sheet}
-                  style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
-                  onCloseAutoFocus={event => event.preventDefault()}>
-                  <div className={phoneStyles.heading}>
-                    <SheetTitle>Advanced</SheetTitle>
-                    <SheetClose asChild><Button type="button" variant="ghost" size="lg">Done</Button></SheetClose>
-                  </div>
-                  <SheetDescription>Settings for your next image. Mode, shape and references stay in the composer.</SheetDescription>
-                  <div className={phoneStyles.settings}>
-                    {seedField}{stepsField}{structuredFields}
-                  </div>
-                  <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
-                </SheetContent>
-              )}
-            </Sheet>
-            <div className="create-preview-settings" data-multi-output-available={multiOutputEnabled}>
-              {!phone && !advancedSheetOpen && seedField}
-              {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
-              {imageCountField && <label className="create-preview-render-field" htmlFor="create-preview-count">Images
-                {imageCountField}
-              </label>}
-              {phone && !multiOutputEnabled && <span className="create-preview-caption create-preview-output-note">One image per render.</span>}
-              {!phone && !advancedSheetOpen && stepsField}
+
             </div>
-            <p className="create-preview-caption create-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
+            {mode === "edit" && !phone && <section className={phoneStyles.references} aria-label="References">
+              <div className={phoneStyles.referenceHeading}>
+                <span>References · {files.filter(Boolean).length} of 4</span>
+                <Button type="button" variant="ghost" data-create-mask-trigger="" disabled={!admitted || busy || !masksEnabled || !files[0] || files.slice(1).some(Boolean)}
+                  onClick={() => { setMaskAnnouncement(""); setMaskEditor(desktop ? "inline" : "dialog"); }}>Select region</Button>
+              </div>
+              <div className={phoneStyles.referenceTiles}>
+                {slots.map((label, index) => files[index] ? (
+                  <div className={phoneStyles.referenceTile} key={label} {...uploadDropTarget(index)}>
+                    <Button ref={index === 0 ? sourceButton : undefined} type="button" variant="ghost" aria-label={desktop ? "Insert " + imageTag(index) + " into prompt" : "Choose " + label.toLowerCase() + " image"}
+                      title={desktop ? "Insert " + imageTag(index) + " into prompt" : files[index]?.name ?? label}
+                      disabled={!admitted || busy} draggable={desktop && !busy}
+                      onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData(tileDragType, String(index)); }}
+                      onClick={() => desktop ? insertImageTag(index) : chooseImage(index)}>
+                      {previews[index] && <img src={previews[index]} alt="" draggable={false} />}
+                    </Button>
+                    <Button type="button" variant="secondary" size="icon-sm" className={phoneStyles.removeReference}
+                      aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
+                      onClick={() => {
+                          setDrafts((previous) => ({
+                            ...previous,
+                            edit: {
+                              ...previous.edit,
+                              prompt: previous.edit.prompt.replaceAll(slotMarker(index) + " ", "").replaceAll(slotMarker(index), ""),
+                              vgl: "",
+                              generatedVgl: false,
+                            },
+                          }));
+                          if (index === 0) { setEditAspectRatio("original"); setSelection(undefined); if (desktop) { setResult(undefined); writeStageBookmark(bookmarkKey); } }
+                          setMaskEditor(undefined);
+                          setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
+                        }}><X /></Button>
+                  </div>
+                ) : null)}
+                {slots.some((_, index) => !files[index]) && (() => {
+                  const index = slots.findIndex((_, index) => !files[index]);
+                  return <div className={phoneStyles.referenceTile} {...uploadDropTarget(index)}>
+                    <Button ref={index === 0 ? sourceButton : undefined} type="button" variant="ghost" className={phoneStyles.addTile}
+                      aria-label="Add a reference image" disabled={!admitted || busy} onClick={() => chooseImage(index)}><Plus aria-hidden="true" /></Button>
+                  </div>;
+                })()}
+              </div>
+            </section>}
+              <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                if (file && admitted && !busy) {
+                  if (slot.current === 4) setReference(file);
+                  else attachImage(file, slot.current);
+                }
+                event.currentTarget.value = "";
+              }} />
+
+            <section className={phoneStyles.shapeSection} aria-label="Shape">
+              <div className={phoneStyles.sectionLabel}>Shape</div>
+              <ToggleGroup type="single" value={selectedShape} disabled={busy} aria-label="Shape" className={phoneStyles.shapes}
+                onValueChange={selectShape}>
+                {shapeOptions.map(ratio => <ToggleGroupItem key={ratio} value={ratio}
+                  disabled={mode === "generate" && !extendedSetup && ratio !== "1:1"}>{ratio === "original" ? "Original" : ratio}</ToggleGroupItem>)}
+              </ToggleGroup>
+            </section>
+            {!phone && !advancedSheetOpen && <section className={phoneStyles.desktopAdvanced}>
+              <Button type="button" variant="ghost" aria-expanded={desktopAdvancedOpen} aria-controls="create-desktop-advanced-fields"
+                onClick={() => setDesktopAdvancedOpen(value => !value)} className={phoneStyles.advancedHeading}>
+                Advanced <ChevronDown aria-hidden="true" data-expanded={desktopAdvancedOpen} />
+              </Button>
+              <div id="create-desktop-advanced-fields" hidden={!desktopAdvancedOpen} className={phoneStyles.advancedFields}>
+                {seedField}{stepsField}{structuredFields}
+              </div>
+            </section>}
+          </div>
+          <div className={phoneStyles.dock}>
+            <p className={phoneStyles.workerNote} role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
             <span id="create-preview-blocker" className="sr-only">{blocker}</span>
-            <div className="create-preview-submit-actions">
-              <Button type="submit" className="create-preview-generate" disabled={!canSubmit}
+            <div className={phoneStyles.actionRow}>
+              <div className={phoneStyles.phoneActions}>
+                {mode === "generate" ? (
+                  <Button type="button" variant="ghost" className={phoneStyles.roundControl} ref={phone ? sourceButton : undefined}
+                    aria-label="Add a reference image" disabled={!admitted || busy} onClick={() => chooseImage(0)}><Plus aria-hidden="true" /></Button>
+                ) : (
+                  <Popover open={composerPopover === "references"} onOpenChange={open => setComposerPopover(current => open ? "references" : current === "references" ? null : current)}>
+                    <PopoverTrigger asChild><Button type="button" variant="ghost" ref={phone ? sourceButton : undefined} className={phoneStyles.roundControl}
+                      aria-label="References" disabled={!admitted || busy}><Plus aria-hidden="true" /></Button></PopoverTrigger>
+                    <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="References">
+                      <div className={phoneStyles.referenceHeading}><span>References · {files.filter(Boolean).length} of 4</span>
+                        <Button type="button" variant="ghost" data-create-mask-trigger="" disabled={!admitted || busy || !masksEnabled || !files[0] || files.slice(1).some(Boolean)}
+                          onClick={() => { setComposerPopover(null); setMaskAnnouncement(""); setMaskEditor("dialog"); }}>Select region</Button></div>
+                      <div className={phoneStyles.referenceTiles}>
+                        {slots.map((label, index) => files[index] ? <div className={phoneStyles.referenceTile} key={label} {...uploadDropTarget(index)}>
+                          <Button type="button" variant="ghost" aria-label={"Choose " + label.toLowerCase() + " image"} disabled={!admitted || busy} onClick={() => chooseImage(index)}>
+                            {previews[index] && <img src={previews[index]} alt="" draggable={false} />}
+                          </Button>
+                          <Button type="button" variant="secondary" size="icon-sm" className={phoneStyles.removeReference}
+                            aria-label={"Remove " + label.toLowerCase() + " image"} disabled={busy}
+                            onClick={() => {
+                          setDrafts((previous) => ({
+                            ...previous,
+                            edit: {
+                              ...previous.edit,
+                              prompt: previous.edit.prompt.replaceAll(slotMarker(index) + " ", "").replaceAll(slotMarker(index), ""),
+                              vgl: "",
+                              generatedVgl: false,
+                            },
+                          }));
+                          if (index === 0) { setEditAspectRatio("original"); setSelection(undefined); if (desktop) { setResult(undefined); writeStageBookmark(bookmarkKey); } }
+                          setMaskEditor(undefined);
+                          setFiles((previous) => previous.map((file, i) => i === index ? undefined : file));
+                        }}><X /></Button>
+                        </div> : null)}
+                        {slots.some((_, index) => !files[index]) && (() => {
+                          const index = slots.findIndex((_, index) => !files[index]);
+                          return <div className={phoneStyles.referenceTile} {...uploadDropTarget(index)}>
+                            <Button type="button" variant="ghost" className={phoneStyles.addTile} aria-label="Add a reference image" disabled={!admitted || busy}
+                              onClick={() => chooseImage(index)}><Plus aria-hidden="true" /></Button>
+                          </div>;
+                        })()}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+                <Popover open={composerPopover === "mode"} onOpenChange={open => setComposerPopover(current => open ? "mode" : current === "mode" ? null : current)}>
+                  <PopoverTrigger asChild><Button type="button" variant="ghost" className={phoneStyles.phoneChip} disabled={busy} aria-label={"Mode: " + (mode === "generate" ? "text to image" : "edit image")}>
+                    {mode === "generate" ? "Text" : "Edit"} <ChevronDown aria-hidden="true" />
+                  </Button></PopoverTrigger>
+                  <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="Mode">
+                    <ToggleGroup type="single" orientation="vertical" value={mode} className={phoneStyles.menuChoices} onValueChange={value => {
+                      if (value === "generate") { setMaskEditor(undefined); setMode("generate"); }
+                      else if (value === "edit") setMode("edit");
+                      setComposerPopover(null);
+                    }}>
+                      <ToggleGroupItem value="generate">Text to image</ToggleGroupItem><ToggleGroupItem value="edit">Edit image</ToggleGroupItem>
+                    </ToggleGroup>
+                  </PopoverContent>
+                </Popover>
+                <Popover open={composerPopover === "shape"} onOpenChange={open => setComposerPopover(current => open ? "shape" : current === "shape" ? null : current)}>
+                  <PopoverTrigger asChild><Button type="button" variant="ghost" className={phoneStyles.phoneChip} disabled={busy} aria-label={"Shape " + shapeLabel}>{shapeLabel}</Button></PopoverTrigger>
+                  <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="Shape">
+                    <ToggleGroup type="single" orientation="vertical" value={selectedShape} className={phoneStyles.menuChoices}
+                      onValueChange={value => { selectShape(value); setComposerPopover(null); }}>
+                      {shapeOptions.map(ratio => <ToggleGroupItem key={ratio} value={ratio}
+                        disabled={mode === "generate" && !extendedSetup && ratio !== "1:1"}>{ratio === "original" ? "Original" : ratio}</ToggleGroupItem>)}
+                    </ToggleGroup>
+                  </PopoverContent>
+                </Popover>
+                <Sheet open={advancedSheetOpen} onOpenChange={changeAdvancedOpen}>
+                  <SheetTrigger asChild><Button ref={advancedTrigger} type="button" variant="ghost" className={phoneStyles.roundControl} aria-label="Advanced settings"><SlidersHorizontal aria-hidden="true" /></Button></SheetTrigger>
+                  {advancedSheetOpen && (
+                    <SheetContent data-create-shortcut-overlay="" side="bottom" showCloseButton={false} className={phoneStyles.sheet}
+                      style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }} onCloseAutoFocus={event => event.preventDefault()}>
+                      <div className={phoneStyles.handle} aria-hidden="true" />
+                      <div className={phoneStyles.heading}><SheetTitle>Advanced</SheetTitle>
+                        <SheetClose asChild><Button type="button" variant="ghost">Done</Button></SheetClose>
+                      </div>
+                      <SheetDescription>These apply to your next image. Mode, shape and references are in the prompt box.</SheetDescription>
+                      <div className={phoneStyles.settings}>{seedField}{stepsField}{structuredFields}</div>
+                      <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
+                    </SheetContent>
+                  )}
+                </Sheet>
+              </div>
+              <Button type="submit" className={"create-preview-generate " + phoneStyles.generate} disabled={!canSubmit}
+                aria-label={enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}
                 aria-keyshortcuts={shortcuts.enabled ? "Control+Enter Meta+Enter" : undefined}
                 title={blocker || (shortcuts.enabled ? shortcuts.modifierHint + " + Enter" : undefined)} aria-describedby={blocker ? "create-preview-blocker" : undefined}>
-                <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}{shortcuts.enabled && <kbd aria-hidden="true">{shortcuts.modifierHint} + Enter</kbd>}
+                <Sparkles aria-hidden="true" className={phoneStyles.desktopIcon} /><ArrowUp aria-hidden="true" className={phoneStyles.phoneIcon} />
+                <span className={phoneStyles.generateLabel}>{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}</span>
+                {shortcuts.enabled && <kbd aria-hidden="true">{shortcuts.modifierHint} Enter</kbd>}
               </Button>
-              {busy && activeCancel && <Button type="button" variant="outline"
-                disabled={sendingCancel || activeCancel.pending} onClick={() => void cancelActiveRender()}
-                aria-label={sendingCancel || activeCancel.pending ? "Cancelling render" : "Cancel render"}>
-                {sendingCancel || activeCancel.pending ? "Cancelling…" : "Cancel"}
-              </Button>}
             </div>
           </div>
         </form>
