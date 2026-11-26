@@ -2,7 +2,7 @@
 @import "./semantic-tokens.css";
 
 @theme {
-  --color-canvas: #06070a;
+  --color-canvas: #07060b;
   --color-surface-1: #0e1016;
   --color-surface-2: #151821;
   --color-surface-3: #1d2230;
@@ -2111,4 +2111,42 @@ a {
     transition-duration: var(--rl-duration-micro);
     transition-timing-function: var(--rl-ease-out);
   }
+}
+
+/* UI rebuild: approved controlled-canvas glass and filled controls.
+ * Opt-in composition classes; arbitrary artwork requires the overlay role. */
+.rl-glass-panel {
+  background: var(--rl-surface-panel-layered);
+  border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-panel);
+  box-shadow: var(--rl-elevation-panel);
+  backdrop-filter: var(--rl-material-panel);
+  -webkit-backdrop-filter: var(--rl-material-panel);
+}
+.rl-soft-control {
+  border: 0;
+  border-radius: var(--rl-radius-control);
+  background: var(--rl-surface-control);
+  color: var(--rl-text-primary);
+}
+.rl-generate-control {
+  border: 0;
+  border-radius: var(--rl-radius-field);
+  background: var(--rl-gradient-primary);
+  color: var(--rl-on-accent);
+  box-shadow: var(--rl-elevation-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rl-soft-control:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--rl-surface-hover); }
+  .rl-generate-control:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--rl-gradient-hover); }
+}
+.rl-soft-control:active:not(:disabled):not([aria-disabled="true"]) { background: var(--rl-surface-pressed); }
+.rl-generate-control:active:not(:disabled):not([aria-disabled="true"]) { background: var(--rl-gradient-pressed); }
+:is(.rl-soft-control, .rl-generate-control):focus-visible {
+  outline: var(--rl-focus-width) solid var(--rl-focus);
+  outline-offset: var(--rl-focus-offset);
+}
+:is(.rl-soft-control, .rl-generate-control):is(:disabled, [aria-disabled="true"]) {
+  background: var(--rl-surface-disabled);
+  color: var(--rl-text-disabled);
 }

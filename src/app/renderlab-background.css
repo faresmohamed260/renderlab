@@ -1,53 +1,30 @@
-/* ChatrLabs background layers. Calibrate to the reference canvas, not each route's scroll height. */
+/* Approved Violet Studio atmosphere: fixed to the comp viewport, not scroll height. */
 .renderlab-gradient {
-  --bg: #07070a;
+  --bg: var(--rl-canvas);
+  --rl-current-atmosphere: var(--rl-atmosphere-scene);
   position: relative;
   isolation: isolate;
   display: flow-root;
   min-block-size: 100dvh;
   background: var(--bg);
 }
-
+.renderlab-gradient:has([data-shell-surface="library"]) { --rl-current-atmosphere: var(--rl-atmosphere-library); }
+.renderlab-gradient:has([data-shell-surface="settings"], [data-shell-surface="admin"]) { --rl-current-atmosphere: var(--rl-atmosphere-utility); }
+.renderlab-gradient:has([data-landing-experience]) { --rl-current-atmosphere: var(--rl-atmosphere-landing); }
 .renderlab-reference-atmosphere {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: -1;
   overflow: clip;
   pointer-events: none;
+  background: var(--rl-current-atmosphere);
 }
-
-.renderlab-reference-atmosphere::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  block-size: 3355px;
-  background:
-    radial-gradient(circle at 75% 5%, rgba(91, 73, 255, 0.18), transparent 27rem),
-    radial-gradient(circle at 18% 31%, rgba(255, 64, 210, 0.1), transparent 25rem),
-    var(--bg);
-}
-
-.renderlab-reference-wash {
-  position: absolute;
-  inset: 92px 0 auto;
-  width: min(1180px, calc(100% - 40px));
-  margin-inline: auto;
-}
-
-.renderlab-reference-wash::before {
-  content: "";
-  position: absolute;
-  inset: 20px 10% auto;
-  height: 360px;
-  border-radius: 50%;
-  background: linear-gradient(90deg, rgba(255, 70, 210, 0.15), rgba(87, 74, 255, 0.22), rgba(68, 188, 255, 0.12));
-  filter: blur(90px);
-  pointer-events: none;
-}
-
-@media (max-width: 520px) {
-  .renderlab-reference-atmosphere::before { block-size: 4801px; }
-  .renderlab-reference-wash { inset-block-start: 78px; width: calc(100% - 28px); }
+.renderlab-reference-wash { display: none; }
+@media (max-width: 700px) {
+  .renderlab-gradient,
+  .renderlab-gradient:has([data-shell-surface="library"]),
+  .renderlab-gradient:has([data-shell-surface="settings"], [data-shell-surface="admin"]) { --rl-current-atmosphere: var(--rl-atmosphere-phone); }
+  .renderlab-gradient:has([data-landing-experience]) { --rl-current-atmosphere: var(--rl-atmosphere-landing-phone); }
 }
 
 /* Use the shared wash, not a second effect clipped by the legacy Home hero. */

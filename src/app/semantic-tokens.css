@@ -62,6 +62,15 @@
   --rl-atmosphere-pink: rgb(217 100 160 / 20%);
   --rl-atmosphere-indigo: rgb(70 90 220 / 18%);
   --rl-atmosphere-scene: radial-gradient(45% 45% at 78% 6%, var(--rl-atmosphere-creative), transparent 70%), radial-gradient(40% 45% at 8% 96%, var(--rl-atmosphere-pink), transparent 70%), radial-gradient(40% 30% at 50% 100%, var(--rl-atmosphere-indigo), transparent 70%);
+  --rl-atmosphere-library: radial-gradient(45% 45% at 78% 6%, rgb(117 94 210 / 34%), rgb(117 94 210 / 0%) 70%), radial-gradient(40% 45% at 8% 96%, rgb(217 100 160 / 18%), rgb(217 100 160 / 0%) 70%);
+  --rl-atmosphere-utility: radial-gradient(55% 45% at 85% 0%, rgb(117 94 210 / 42%), rgb(117 94 210 / 0%) 70%), radial-gradient(45% 40% at 0% 100%, rgb(217 100 160 / 18%), rgb(217 100 160 / 0%) 70%);
+  --rl-atmosphere-phone: radial-gradient(70% 32% at 80% 6%, rgb(117 94 210 / 42%), rgb(117 94 210 / 0%) 70%), radial-gradient(60% 30% at 6% 86%, rgb(217 100 160 / 20%), rgb(217 100 160 / 0%) 70%);
+  --rl-atmosphere-landing: radial-gradient(60% 55% at 78% 8%, rgb(117 94 210 / 50%), rgb(117 94 210 / 0%) 70%), radial-gradient(50% 45% at 8% 92%, rgb(217 100 160 / 24%), rgb(217 100 160 / 0%) 70%);
+  --rl-atmosphere-landing-phone: radial-gradient(80% 40% at 80% 6%, rgb(117 94 210 / 50%), rgb(117 94 210 / 0%) 70%), radial-gradient(70% 36% at 6% 92%, rgb(217 100 160 / 24%), rgb(217 100 160 / 0%) 70%);
+  --rl-brand-start: #a89bff;
+  --rl-brand-end: #6251c7;
+  --rl-brand-gradient: linear-gradient(135deg, var(--rl-brand-start), var(--rl-brand-end));
+  --rl-radius-soft-large: 24px;
   --rl-gradient-primary: linear-gradient(110deg, var(--rl-accent-primary), var(--rl-accent-primary-end));
   --rl-gradient-hover: linear-gradient(110deg, var(--rl-accent-hover), var(--rl-accent-hover-end));
   --rl-gradient-pressed: linear-gradient(110deg, var(--rl-accent-pressed), var(--rl-accent-pressed-end));
@@ -121,6 +130,11 @@
     --rl-surface-pressed: var(--rl-surface-selected);
     --rl-border-subtle: var(--rl-border-boundary);
     --rl-atmosphere-scene: none;
+    --rl-atmosphere-library: none;
+    --rl-atmosphere-utility: none;
+    --rl-atmosphere-phone: none;
+    --rl-atmosphere-landing: none;
+    --rl-atmosphere-landing-phone: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
