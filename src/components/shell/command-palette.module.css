@@ -12,3 +12,11 @@
 .empty { padding:24px 12px; color:var(--rl-text-quiet); text-align:center; }
 .trigger:focus-visible,.input:focus-visible { outline:var(--rl-focus-width) solid var(--rl-focus); outline-offset:var(--rl-focus-offset); }
 @media (hover:hover) and (pointer:fine) { .trigger:hover { background:var(--rl-surface-hover); } }
+
+/* Exact comp dimensions, unaffected by flex shrink or primitive sizing. */
+.trigger[data-slot="button"] { flex:0 0 177px; inline-size:177px; min-inline-size:177px; block-size:40px; min-block-size:40px; padding:0 10px 0 14px; border:0; border-radius:20px; background:var(--rl-surface-control); color:rgb(245 245 247 / 78%); font:500 14px/14px var(--rl-type-family); }
+.trigger kbd { flex:0 0 44px; inline-size:44px; block-size:19px; padding:0; background:var(--rl-surface-hover); color:rgb(245 245 247 / 80%); }
+.dialog .command input[cmdk-input] { appearance:none; border:0; outline:none; box-shadow:none; background:var(--rl-surface-control); color:var(--rl-text-primary); border-radius:var(--rl-radius-control); height:48px; }
+.dialog .command input[cmdk-input]:focus-visible { outline:var(--rl-focus-width) solid var(--rl-focus); outline-offset:var(--rl-focus-offset); }
+.list [cmdk-item] { min-height:44px; }
+.list [cmdk-item][data-selected="true"] { background:var(--rl-surface-hover); }
