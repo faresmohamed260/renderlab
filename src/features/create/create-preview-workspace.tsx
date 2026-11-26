@@ -1514,7 +1514,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               )}
             </Sheet>
             <div className="create-preview-settings" data-multi-output-available={multiOutputEnabled}>
-              {advancedSheetOpen ? <div aria-hidden="true" style={{ blockSize: advancedReserve.seed }} /> : seedField}
+              {advancedSheetOpen ? <div aria-hidden="true" className="create-preview-seed-reserve" style={{ blockSize: advancedReserve.seed }} /> : seedField}
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
               {imageCountField && <label className="create-preview-render-field" htmlFor="create-preview-count">Images
                 {imageCountField}
