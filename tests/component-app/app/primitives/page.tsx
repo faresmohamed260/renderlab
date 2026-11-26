@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -47,5 +48,6 @@ export default function PrimitiveFixture() {
       </DropdownMenuContent>
     </DropdownMenu>
     <Button>Before skeleton</Button><Skeleton className="h-12 w-32" /><Button>After skeleton</Button>
+    <NativeSelect aria-label="Fixture choice" defaultValue="a"><NativeSelectOption value="a">Choice A</NativeSelectOption><NativeSelectOption value="b">Choice B</NativeSelectOption></NativeSelect>
   </div>;
 }

@@ -71,6 +71,8 @@ Accent/status colors are semantic, not decoration. Do not flood large surfaces w
 ## Typography
 For V2 consumers, the semantic owner and Design Language V2 supersede the legacy typography, spacing, radius, control and elevation guidance below. The corrected action endpoints are #6d50d1 and #9841bd; opaque material fallbacks cover unsupported filters and reduced transparency/high contrast. Reduced motion sets feedback durations to zero. No nested backdrop filters.
 
+The `--rl-border-glass-control` role mixes the existing boundary color at 60% with transparency for NativeSelect resting boundaries and Slider unfilled tracks on controlled dark surfaces. Its composited non-text contrast target is 3.2–4.5:1 on the mounted fixture in default, increased-contrast, and reduced-transparency modes; the WCAG gate remains 3:1. It is not a substitute for the stronger boundary or selection roles on other controls. Forced colors retain system colors (ButtonText, CanvasText, Highlight), and focus outlines remain unchanged.
+
 Initial UI typeface: **Inter** or its platform-appropriate bundled/web equivalent. Typography should be compact and functional rather than editorial/marketing-sized.
 
 - Display: 36px / semibold — rare, major empty/onboarding moments only

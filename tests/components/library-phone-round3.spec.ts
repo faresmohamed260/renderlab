@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "./library-io";
 import { collectTextContrast } from "./composited-contrast";
 import { firstAsset } from "../component-app/library-fixtures";
@@ -67,6 +68,13 @@ for (const width of [195, 320, 390, 1440]) {
       await expect(inspector).toBeVisible();
       await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveAccessibleName(width === 1440 ? "Open in Create Edit image" : "Open in Create");
       await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveAttribute("href", "/create?source=" + firstAsset.id + "&action=edit-image");
+      if (width === 1440) {
+        const action = inspector.getByRole("link", { name: "Open in Create" });
+        await expect(action.getByText("Open in Create", { exact: true })).toBeVisible();
+        await expect(action.getByText("Edit image", { exact: true })).toBeVisible();
+        const labelReport = await new AxeBuilder({ page }).include('a[href="/create?source=' + firstAsset.id + '&action=edit-image"]').withRules(["label-content-name-mismatch"]).analyze();
+        expect(labelReport.violations, "Desktop Create action name must contain its complete visible label").toEqual([]);
+      }
       await expect(inspector.getByRole("link", { name: "Open Viewer" })).toHaveAttribute("href", "/library/" + firstAsset.id);
       await expect(inspector.getByRole("button", { name: "Favorite", exact: true })).toBeVisible();
       await expect(inspector.getByRole("link", { name: "Download", exact: true })).toHaveAttribute("href", "/api/media/assets/" + firstAsset.id + "/download");

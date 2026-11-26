@@ -65,9 +65,9 @@ export function LibraryInspector({
       <div className={styles.inspectorActions}>
         {editHref ? (
           <Button asChild size="lg" className={styles.createAction}>
-            <Link href={editHref} prefetch={false} aria-label={phone ? "Open in Create" : "Open in Create Edit image"} aria-description={phone ? "Edit image" : undefined}>
+            <Link href={editHref} prefetch={false} aria-description={phone ? "Edit image" : undefined}>
               <span>Open in Create</span>
-              {!phone ? <span className={styles.editLabel}>Edit image</span> : null}
+              {!phone ? <>{" "}<span className={styles.editLabel}>Edit image</span></> : null}
             </Link>
           </Button>
         ) : null}

@@ -29,6 +29,7 @@
   --rl-panel-highlight: rgb(255 255 255 / 12%);
   --rl-border-subtle: rgb(255 255 255 / 9%);
   --rl-border-boundary: #a9a0bd;
+  --rl-border-glass-control: color-mix(in srgb, var(--rl-border-boundary) 60%, transparent);
   --rl-border-action-selection: #e6ddff;
   --rl-success: #76dbb3;
   --rl-warning: #f0c878;
