@@ -90,7 +90,7 @@ for (const { width, route } of [{ width: 390, route: "/create" }, { width: 390, 
             // Radix hides the siblings of the modal's ancestor path. The
             // shell itself can be nested inside a hidden fixture wrapper;
             // the contract is inaccessible background, not a specific node.
-            const logo = page.getByRole("button", { name: "Open navigation", exact: true });
+            const logo = page.getByRole("button", { name: "RenderLab — Open navigation", exact: true });
             const workspace = page.getByRole("region", { name: "Create with FIBO" });
             const queue = page.locator('.create-preview-toolbar-trigger[data-slot=popover-trigger]:nth-child(1)');
             const hiddenBy = (element: Locator) => element.evaluate(el =>

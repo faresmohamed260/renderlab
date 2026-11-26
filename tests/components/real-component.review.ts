@@ -134,7 +134,7 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
         await expect(header).toBeVisible();
         await capture("create");
         const trigger = header.getByRole("button", {
-          name: phone ? "Open navigation" : "Account menu: Synthetic Member",
+          name: phone ? "RenderLab — Open navigation" : "Account menu: Synthetic Member",
           exact: true,
         });
         const dialog = page.getByRole("dialog", { name: "RenderLab navigation", exact: true });
@@ -149,9 +149,9 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
           // while the modal is open. Retain the DOM assertion without treating
           // the hidden background trigger as an accessible control.
           await expect(trigger).toHaveCount(0);
-          await expect(header.locator('button[aria-label="Open navigation"]')).toHaveAttribute("aria-expanded", "true");
+          await expect(header.locator('button[aria-label="RenderLab — Open navigation"]')).toHaveAttribute("aria-expanded", "true");
           await expect(dialog.getByRole("button", { name: "Close navigation", exact: true })).toBeFocused();
-          await expect(dialog.getByRole("link", { name: "Account settings: Synthetic Member", exact: true })).toBeVisible();
+          await expect(dialog.getByRole("link", { name: "Synthetic Member Settings", exact: true })).toBeVisible();
         } else {
           await expect(trigger).toHaveAttribute("aria-expanded", "true");
           await expect(desktopSettings).toBeVisible();
