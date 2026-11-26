@@ -1522,6 +1522,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               {imageCountField && <label className="create-preview-render-field" htmlFor="create-preview-count">Images
                 {imageCountField}
               </label>}
+              {phone && !multiOutputEnabled && <span className="create-preview-caption create-preview-output-note">One image per render.</span>}
               {!phone && !advancedSheetOpen && stepsField}
             </div>
             <p className="create-preview-caption create-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
