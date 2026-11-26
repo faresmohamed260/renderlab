@@ -424,3 +424,15 @@ When the user starts a new authorized redesign:
 - do not mark the redesign complete because builds/tests pass if the implementation materially misses the accepted design/prototype.
 
 This interpretation changes design governance only. It does not itself reopen a surface, create Phase 23/Cycle 5, adopt a dependency, modify product code, or authorize deployment.
+
+## UI rebuild shared material (2026-11-27)
+
+The approved comp frame controls the atmospheric background. The existing `--rl-canvas` and `--rl-atmosphere-scene` remain the Create desktop roles; `--rl-atmosphere-library`, `--rl-atmosphere-utility`, `--rl-atmosphere-phone`, `--rl-atmosphere-landing` and `--rl-atmosphere-landing-phone` reproduce the respective comp element 0 radial stops. The shell's `data-shell-surface` selects desktop variants; the phone and landing variants follow the viewport and landing root. Reduced transparency/contrast disables these decorative layers.
+
+- `--rl-brand-start` / `--rl-brand-end` / `--rl-brand-gradient`: approved gradient brand tile (#a89bff → #6251c7, 135deg).
+- `--rl-radius-soft-large`: 24px for large soft controls.
+- `.rl-glass-panel`: controlled-canvas panel, existing layered fill (5.5%), hairline (9%), 28px radius, panel elevation and 30px/150% blur/saturation, with existing opaque fallback. Do not nest backdrop filters or use this over arbitrary artwork.
+- `.rl-soft-control`: filled 7% control, no decorative outline, 18px default radius, existing hover/press/focus/disabled states.
+- `.rl-generate-control`: approved action gradient (#6d50d1 → #9841bd, not the brighter historical comp fill), white text, 20px radius, shared action states and focus ring.
+
+Use the semantic roles directly where a measured comp requires a different size, radius or layout. These classes are opt-in; this does not authorize changes to feature-owned composition or any claim of rendered fidelity before judge acceptance.
