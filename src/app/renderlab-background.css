@@ -321,29 +321,40 @@
 .create-preview-modes {
   position: relative;
   display: flex;
-  inline-size: max-content;
-  gap: 4px;
-  padding: 4px;
+  inline-size: 100%;
+  min-inline-size: 0;
+  gap: var(--rl-space-4);
+  padding: var(--rl-space-4);
   margin-block-end: 14px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 5%);
+  border-radius: var(--rl-radius-control);
+  background: var(--rl-surface-control);
 }
 .create-preview-mode-highlight {
   position: absolute;
-  inset: 4px auto 4px 4px;
-  inline-size: 40px;
-  border-radius: 999px;
+  inset: var(--rl-space-4) auto var(--rl-space-4) var(--rl-space-4);
+  inline-size: calc((100% - 3 * var(--rl-space-4)) / 2);
+  border-radius: var(--rl-radius-micro);
   pointer-events: none;
-  background: rgb(175 146 255 / 23%);
+  background: var(--rl-surface-selected);
 }
-.create-preview-modes button {
+.create-preview-workspace .create-preview-modes button {
   position: relative;
-  inline-size: 40px;
-  block-size: 38px;
-  min-block-size: 38px;
-  padding: 0;
+  flex: 1 1 0;
+  min-inline-size: var(--rl-hit-preferred);
+  min-block-size: var(--rl-hit-preferred);
+  block-size: auto;
+  padding: var(--rl-space-4);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: var(--rl-type-caption);
+  line-height: var(--rl-leading-caption);
+  color: var(--rl-text-secondary);
 }
-.create-preview-modes button[aria-pressed="true"] { color: #f6f2ff; }
+.create-preview-modes button[aria-pressed="true"] { color: var(--rl-text-selected); }
+@media (max-width: 700px) {
+  .create-preview-modes button > svg { display: none; }
+}
 .create-preview-tools { display: flex; gap: 4px; align-items: center; position: absolute; inset-inline-end: 0; inset-block-start: 0; }
 .create-preview-workspace summary { cursor: pointer; }
 .create-preview-workspace .create-preview-toolbar-trigger { display: flex; align-items: center; gap: 6px; padding: 7px 9px; min-block-size: 38px; font-size: 12px; font-weight: normal; color: inherit; }
@@ -1603,14 +1614,6 @@
 /* P6 axe phone targets: the visual outline must not cut into the usable hit
  * area. Keep desktop geometry unchanged and preserve the narrow two-column reflow. */
 @media (max-width: 700px) {
-  .create-preview-workspace .create-preview-modes button {
-    flex: 0 0 var(--rl-hit-preferred);
-    inline-size: var(--rl-hit-preferred);
-    block-size: var(--rl-hit-preferred);
-    min-block-size: var(--rl-hit-preferred);
-    border-radius: var(--rl-radius-micro);
-  }
-  .create-preview-mode-highlight { inline-size: var(--rl-hit-preferred); border-radius: var(--rl-radius-micro); }
   .create-preview-workspace .create-preview-tile > button:first-child {
     min-block-size: var(--rl-hit-preferred);
     border-radius: var(--rl-radius-micro);

@@ -1366,11 +1366,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 aria-pressed={mode === "generate"} disabled={busy}
                 onClick={() => { setMaskEditor(undefined); setMode("generate"); }}>
                 <ImagePlus aria-hidden="true" />
+                <span>Text to image</span>
               </Button>
               <Button type="button" variant="ghost" aria-label="Image Editing" title="Image Editing"
                 aria-pressed={mode === "edit"} disabled={busy}
                 onClick={() => { setMode("edit"); }}>
                 <Pencil aria-hidden="true" />
+                <span>Image Editing</span>
               </Button>
             </div>
             <section aria-labelledby="create-preview-setup">

@@ -1426,3 +1426,46 @@
 @media (max-width: 24rem) {
   .phoneInspector .inspectorPreview { max-height: 32dvh; }
 }
+
+/* Approved round selection marker; retain the full 44px shared Checkbox hit
+   target. In selection mode the independent inspector affordance moves to
+   the opposite lower edge, rather than being covered by the checkbox. */
+.selectionCheckboxWrap {
+  inset: var(--rl-space-4) var(--rl-space-4) auto auto;
+}
+.selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before {
+  width: var(--rl-space-24);
+  height: var(--rl-space-24);
+  border: 2px solid var(--rl-on-accent);
+  border-radius: var(--rl-radius-pill);
+  background: var(--rl-surface-overlay);
+  backdrop-filter: none;
+  /* The checkmark and fill represent one atomic selection state. Do not
+     animate the fill from the unselected surface after aria-checked changes. */
+  transition: none;
+}
+.selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"][aria-checked="true"])::before {
+  border-color: var(--rl-on-accent);
+  background: var(--rl-accent-primary);
+}
+.cardShell:has(.selectionCheckboxWrap) .inspectAction[data-slot="button"] {
+  inset: auto auto var(--rl-space-4) var(--rl-space-4);
+}
+@media (max-width: 15rem) {
+  .cardShell:has(.selectionCheckboxWrap) .inspectAction[data-slot="button"] {
+    inset: auto auto 0 0;
+  }
+}
+@media (forced-colors: active) {
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before {
+    border-color: ButtonText;
+    background: Canvas;
+  }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"][aria-checked="true"])::before {
+    border-color: Highlight;
+    background: Highlight;
+  }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"]) {
+    color: HighlightText;
+  }
+}
