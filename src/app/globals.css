@@ -853,7 +853,7 @@ a {
 
 .kinetic-landing-copy,
 .kinetic-landing-preview {
-  animation: kinetic-landing-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: kinetic-landing-enter 420ms var(--rl-ease-out) both;
 }
 
 .kinetic-landing-preview {

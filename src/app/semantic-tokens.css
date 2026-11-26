@@ -97,6 +97,8 @@
   --rl-duration-normal: 160ms;
   --rl-duration-contextual: 240ms;
   --rl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --rl-z-navigation: 100;
+  --rl-z-grain: 999;
 }
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
