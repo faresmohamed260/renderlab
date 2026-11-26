@@ -2,13 +2,43 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type PointerEvent, type HTMLAttributes } from "react";
 import { createPortal } from "react-dom";
-import { Download, Undo2, X } from "lucide-react";
+import { Download, Star, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildImageBatchZip } from "./create-preview-batch-zip";
 import pagerStyles from "./create-result-pager.module.css";
 
-type StageResult = { assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
+type StageResult = { assetId?: string; isFavorite?: boolean; image_data: string; aspect?: number; seed: number; filename?: string; source?: File; run?: { mode: "edit" | "generate" } };
 export type StageTurn<T> = { id: string; prompt: string; input?: File; images?: T[]; error?: string };
+
+function ResultFavorite({ assetId, favorite, onChange }: { assetId: string; favorite: boolean; onChange: (id: string, favorite: boolean) => void }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const pending = useRef(false);
+  async function toggle() {
+    if (pending.current) return;
+    pending.current = true;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/media/assets/" + encodeURIComponent(assetId) + "/favorite", { method: favorite ? "DELETE" : "PUT" });
+      const payload = await response.json();
+      if (!response.ok || payload.ok !== true || payload.asset?.id !== assetId || typeof payload.asset.isFavorite !== "boolean") throw Error("Could not update favorite.");
+      onChange(assetId, payload.asset.isFavorite);
+    } catch {
+      setError("Could not update favorite.");
+    } finally {
+      pending.current = false;
+      setSaving(false);
+    }
+  }
+  return <>
+    <Button type="button" variant="secondary" size="sm" disabled={saving} aria-pressed={favorite}
+      aria-label={favorite ? "Favorited" : "Favorite"} onClick={() => void toggle()}>
+      <Star aria-hidden="true" fill={favorite ? "currentColor" : "none"} />{favorite ? "Favorited" : "Favorite"}
+    </Button>
+    {error && <span role="alert">{error}</span>}
+  </>;
+}
 
 function TurnImage({ url, label, disabled, onOpen, onReuse }: {
   url: string; label: string; disabled?: boolean; onOpen: () => void; onReuse: () => void;
@@ -68,6 +98,8 @@ type Props<T extends StageResult> = {
   desktopArrows?: boolean;
   dropTarget?: Pick<HTMLAttributes<HTMLDivElement>, "onDragOver" | "onDragLeave" | "onDrop"> & { "data-drag-over"?: string };
   desktopResultActions?: HTMLElement | null;
+  desktopActions?: boolean;
+  onFavoriteChange?: (id: string, favorite: boolean) => void;
   workflow?: "edit" | "generate";
   turns?: StageTurn<T>[];
   inlineMask?: ReactNode;
@@ -97,7 +129,7 @@ type Props<T extends StageResult> = {
   onUseInput?: (file: File) => void;
 };
 
-export function CreatePreviewStage<T extends StageResult>({ historySelection, resultPosition, desktopArrows, dropTarget, desktopResultActions, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, browseUnavailableReason, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
+export function CreatePreviewStage<T extends StageResult>({ historySelection, resultPosition, desktopArrows, dropTarget, desktopResultActions, desktopActions, onFavoriteChange, workflow, turns = [], inlineMask, result, source, batch, history, onRestore, onSaveEdit, savingEdit, onSelect, onReturnToProgress, expectedImages, input, inputLabel, browseDisabled, browseUnavailableReason, maskAction, busy, cancelling, liveFrame, liveBlur, renderRatio, status, onBrowse, onUseSource, onUseInput }: Props<T>) {
   const [before, setBefore] = useState<string>();
   const [split, setSplit] = useState(50);
   const [compared, setCompared] = useState<StageResult>();
@@ -395,7 +427,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
     },
   };
 
-  function tools() {
+  function tools(detached = false) {
     if (maskAction && !result && !busy && !inputPending) return (
       <div className="create-preview-stage-tools" role="group" aria-label="Mask actions" {...toolEvents}>
         <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="M" data-create-mask-trigger disabled={maskAction.blocked}
@@ -412,7 +444,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
       </div>
     );
     return result && (
-      <div className="create-preview-stage-tools" role="group" aria-label="Stage tools" {...toolEvents}>
+      <div className={detached ? "create-preview-result-actions" : "create-preview-stage-tools"} role="group" aria-label={detached ? "Result actions" : "Stage tools"} {...(!detached ? toolEvents : {})}>
         {inspecting ? <Button type="button" variant="ghost" size="sm" onClick={returnToProgress}>Live preview</Button> : <>
         {canCompare && <Button type="button" variant="ghost" size="sm" aria-keyshortcuts="C" aria-pressed={compare} title="Compare before and after"
           onClick={(event) => {
@@ -424,6 +456,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
           if (viewerOpen) dialog.current?.close();
           onUseSource(result);
         }}><Undo2 aria-hidden="true" />Use as source</Button>
+        {detached && result.assetId && typeof result.isFavorite === "boolean" && onFavoriteChange && <ResultFavorite key={result.assetId} assetId={result.assetId} favorite={result.isFavorite} onChange={onFavoriteChange} />}
         {batch.length > 1 && <Button type="button" variant="ghost" size="sm" title="Download all batch images as a ZIP"
           onClick={downloadBatch}>Download batch</Button>}
         <a href={result.image_data} download={result.filename ?? "result.png"} aria-keyshortcuts="D" aria-label="Download image" title="Download image"><Download size={15} aria-hidden="true" /></a>
@@ -561,7 +594,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
           </>
             : shown ? <>
               {!viewerOpen && media()}
-              {!viewerOpen && tools()}
+              {!viewerOpen && (!desktopActions || !result || reviewing) && tools()}
               <Button ref={opener} type="button" className="create-preview-stage-open" variant="ghost" size="icon-sm"
                 aria-label="Open image viewer" aria-haspopup="dialog" onClick={() => openViewer()} />
             </> : browseUnavailableReason ? <p className="create-preview-caption mx-auto max-w-[24rem] px-4 text-center">{browseUnavailableReason}</p> : <Button type="button" variant="ghost" className="create-preview-canvas-upload"
@@ -573,6 +606,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
               <span>Drop an image or click to upload</span>
             </Button>)}
         </div>
+        {!viewerOpen && desktopActions && result && !reviewing && tools(true)}
         {!inThread && resultPager()}
         {!viewerOpen && carousel()}
         {!viewerOpen && !desktopResultActions && runActions()}
