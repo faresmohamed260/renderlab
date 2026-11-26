@@ -447,7 +447,8 @@
 }
 @media (max-width: 700px) {
   .create-preview-grid { grid-template-columns: minmax(0, 1fr); min-block-size: 0; }
-  .create-preview-canvas { order: -1; inline-size: min(80%, 336px); }
+  /* Use the phone grid's available width; the stage document still constrains media by aspect ratio. */
+  .create-preview-canvas { order: -1; inline-size: 100%; }
   .create-preview-toolbar { flex-wrap: wrap; align-items: center; }
   .create-preview-tools { position: relative; inset: auto; }
 }
