@@ -188,7 +188,7 @@ export function LandingExperience() {
       <GeometryDefs />
       <header className={styles.nav} data-landing-header="">
         <Link href="/" aria-label="RenderLab home" className={styles.brandLink}>
-          <RenderLabBrand markClassName="size-7" textClassName="text-base" />
+          <RenderLabBrand markClassName={styles.heroBrandMark} textClassName={styles.heroBrandText} />
         </Link>
         <div className={styles.navActions}>
           <Button asChild variant="ghost" size="sm" className={styles.signInButton}>
@@ -223,7 +223,7 @@ export function LandingExperience() {
           </div>
         </div>
         <ul className={styles.heroFoot} aria-label="What you can do">
-          {["Create image", "Edit image", "Use references", "Save to Library"].map(label => <li key={label}>{label}</li>)}
+          {[["Create image", "Create"], ["Edit image", "Edit"], ["Use references", "References"], ["Save to Library", "Library"]].map(([label, short]) => <li key={label}><span className={styles.desktopChip}>{label}</span><span className={styles.phoneChip}>{short}</span></li>)}
         </ul>
       </section>
 
@@ -443,7 +443,7 @@ function HeroPreview() {
           <path d="M0 545 C200 515 420 565 800 525 V600 H0Z" fill="#8c5540" />
         </svg>
       </div>
-      <div className={styles.previewComposer} aria-hidden="true"><span>A sculptural arch under a warm sunset</span><i><ArrowRight /></i></div>
+      <div className={styles.previewComposer} aria-hidden="true"><span>A luminous mountain lake beneath a storm-softened sky</span><i><ArrowRight /></i></div>
     </div>
   );
 }
