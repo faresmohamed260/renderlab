@@ -17,7 +17,7 @@ function NativeSelect({ className, size = "default", ...props }: NativeSelectPro
       <select
         data-slot="native-select"
         data-size={size}
-        className="min-h-10 w-full appearance-none rounded-[var(--rl-radius-field)] border border-[color:var(--rl-border-boundary)] bg-[var(--rl-surface-control)] px-3 pr-9 text-sm text-[color:var(--rl-text-primary)] outline-none transition-colors focus-visible:bg-[var(--rl-surface-field-focus)] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[var(--rl-focus-offset)] focus-visible:outline-[color:var(--rl-focus)] disabled:pointer-events-none disabled:cursor-not-allowed data-[size=sm]:min-h-9"
+        className="min-h-10 w-full appearance-none rounded-[var(--rl-radius-field)] border border-[color:var(--rl-border-glass-control)] forced-colors:border-[ButtonText] bg-[var(--rl-surface-control)] px-3 pr-9 text-sm text-[color:var(--rl-text-primary)] outline-none transition-colors focus-visible:bg-[var(--rl-surface-field-focus)] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[var(--rl-focus-offset)] focus-visible:outline-[color:var(--rl-focus)] disabled:pointer-events-none disabled:cursor-not-allowed data-[size=sm]:min-h-9"
         {...props}
       />
       <ChevronDown
