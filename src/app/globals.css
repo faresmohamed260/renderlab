@@ -584,10 +584,13 @@ a {
   -webkit-backdrop-filter: blur(14px) saturate(128%);
 }
 
-.kinetic-selection-checkbox:hover::before {
+@media (hover: hover) and (pointer: fine) {
+  .kinetic-selection-checkbox:hover::before {
   border-color: rgb(178 167 255 / 44%);
   background: rgb(10 11 17 / 88%);
 }
+}
+
 
 .kinetic-selection-checkbox[data-state="checked"]::before {
   border-color: rgb(178 167 255 / 68%);
@@ -853,7 +856,7 @@ a {
 
 .kinetic-landing-copy,
 .kinetic-landing-preview {
-  animation: kinetic-landing-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: kinetic-landing-enter 420ms var(--rl-ease-out) both;
 }
 
 .kinetic-landing-preview {
@@ -1005,12 +1008,19 @@ a {
     transition: none;
   }
 
-  .kinetic-media-card:hover,
-  .kinetic-media-card:focus-visible,
-  .kinetic-media-card:hover .kinetic-media-preview {
+  .kinetic-media-card:focus-visible {
     transform: none;
     filter: none;
   }
+
+
+  @media (hover: hover) and (pointer: fine) {
+  .kinetic-media-card:hover, .kinetic-media-card:hover .kinetic-media-preview {
+    transform: none;
+    filter: none;
+  }
+}
+
 
   .kinetic-selection-deck {
     animation: none;
@@ -1595,9 +1605,12 @@ a {
     transform: none;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .clear-create-result-media:hover {
     transform: none;
   }
+}
+
 }
 
 
@@ -2088,4 +2101,14 @@ a {
 }
 @keyframes rl-skeleton-shimmer {
   to { transform: translateX(100%); }
+}
+
+/* Shared transform-only press feedback; the semantic reduced-motion role is 1. */
+@media (prefers-reduced-motion: no-preference) {
+  :is([data-slot="button"], [data-slot="toggle"], [data-slot="toggle-group-item"], [data-slot="switch"]):not(:disabled):not([data-disabled]):active {
+    transform: scale(var(--rl-press-scale));
+    transition-property: transform;
+    transition-duration: var(--rl-duration-micro);
+    transition-timing-function: var(--rl-ease-out);
+  }
 }

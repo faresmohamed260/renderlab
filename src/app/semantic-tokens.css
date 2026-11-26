@@ -93,10 +93,13 @@
   --rl-control-large: 44px;
   --rl-hit-preferred: 44px;
   --rl-hit-minimum: 24px;
+  --rl-press-scale: 0.97;
   --rl-duration-micro: 120ms;
   --rl-duration-normal: 160ms;
   --rl-duration-contextual: 240ms;
   --rl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --rl-z-navigation: 100;
+  --rl-z-grain: 999;
 }
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
@@ -122,6 +125,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   :root {
+    --rl-press-scale: 1;
     --rl-duration-micro: 0ms;
     --rl-duration-normal: 0ms;
     --rl-duration-contextual: 0ms;

@@ -12,6 +12,10 @@ The previous Figma file `RenderLab Design System` (`PHqgsDctOsEXX4EFR0SS7i`) is 
 
 Design-tool explorations are not automatically `APPROVED` or `LOCKED`. They become authoritative only when the corresponding rules are accepted and documented here or in the appropriate repository file, and implemented surfaces still require rendered verification. A static design artifact cannot by itself approve a claimed kinetic/morphing/physics interaction; follow `DESIGN_WORKFLOW.md` for temporal evidence requirements.
 
+## Layering tokens
+
+The fixed Landing navigation uses `--rl-z-navigation` (100); its noninteractive grain overlay uses `--rl-z-grain` (999). Keep these semantic roles distinct so the atmospheric overlay stays above the page while allowing pointer input through.
+
 ## Design Priorities
 - Generated media first
 - Speed and clarity

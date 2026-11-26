@@ -481,6 +481,8 @@
   margin: 0 0 var(--rl-space-12);
 }
 
+.observeDashboard time { font-variant-numeric: tabular-nums; }
+
 .observeDescription:last-child {
   margin-bottom: 0;
 }
@@ -740,18 +742,19 @@
   backdrop-filter: var(--rl-material-panel); box-shadow: var(--rl-elevation-panel);
   overflow-wrap: anywhere;
 }
-.observeValue { font-size: var(--rl-type-display); line-height: 1.12; font-weight: var(--rl-weight-heading); }
+.observeValue { font-size: var(--rl-type-display); line-height: 1.12; font-weight: var(--rl-weight-heading); font-variant-numeric: tabular-nums; }
 .observeNote { margin: 0; color: var(--rl-text-secondary); font-size: var(--rl-type-caption); line-height: var(--rl-leading-body); }
 .observePanel h2, .observeLocked h2 { margin: 0; font-size: var(--rl-type-body); font-weight: var(--rl-weight-heading); line-height: var(--rl-leading-label); }
 .observeChart { display: grid; gap: var(--rl-space-16); padding-block: var(--rl-space-16); }
 .observeBarRow { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: var(--rl-space-8); font-size: var(--rl-type-label); color: var(--rl-text-secondary); }
-.observeBarRow > span:nth-child(2) { text-align: end; }
+.observeBarRow > span:nth-child(2) { text-align: end; font-variant-numeric: tabular-nums; }
 .observeTrack { grid-column: 1/-1; height: var(--rl-space-16); border-radius: var(--rl-radius-micro); background: var(--rl-surface-control); }
 .observeBar { height: 100%; border-radius: inherit; background: var(--rl-accent-primary); }
 .observeTable { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: var(--rl-type-caption); text-align: start; }
 .observeTable :is(th,td) { text-align: start; padding: var(--rl-space-8) var(--rl-space-4); border-bottom: 1px solid var(--rl-border-subtle); overflow-wrap: anywhere; }
 .observeTable thead { color: var(--rl-text-secondary); }
 .observeTable th { font-weight: var(--rl-weight-label); }
+.observeTable td { font-variant-numeric: tabular-nums; }
 .observeLocked { border-style: dashed; background: var(--rl-surface-control); box-shadow: none; }
 .observeLockTitle { display: flex; align-items: start; justify-content: space-between; gap: var(--rl-space-8); }
 .observeLockTitle svg { flex-shrink: 0; color: var(--rl-text-secondary); }

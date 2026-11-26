@@ -56,10 +56,17 @@
   font-weight: 650;
 }
 
-.returnLink:hover,
 .returnLink:focus-visible {
   color: white;
 }
+
+
+@media (hover: hover) and (pointer: fine) {
+  .returnLink:hover {
+  color: white;
+}
+}
+
 
 .contextRule {
   width: 34px;
@@ -302,10 +309,17 @@
   font-weight: 650;
 }
 
-.sourceLink:hover,
 .sourceLink:focus-visible {
   color: white;
 }
+
+
+@media (hover: hover) and (pointer: fine) {
+  .sourceLink:hover {
+  color: white;
+}
+}
+
 
 .registerShell {
   position: relative;
@@ -607,3 +621,10 @@
     transform: none !important;
   }
 }
+
+.meta,
+.regTr,
+.regBr,
+.detailGrid dd { font-variant-numeric: tabular-nums; }
+.panelHeading { text-wrap: balance; }
+.registerCopy p { text-wrap: pretty; }
