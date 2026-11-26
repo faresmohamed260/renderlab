@@ -194,7 +194,6 @@ for (const viewport of viewports) {
         await expect.poll(() => advancedSheet.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
       }
       const advanced = phone ? advancedSheet : create;
-      await advanced.locator("#create-preview-negative-label").click();
       await advanced.locator("#create-preview-vgl-label").click();
       await expect(advanced.getByText(autoVgl ? "Generated VGL is advertised by the server but not available in this workspace. Enter manual JSON instead." : "Generated VGL is unavailable. Enter manual JSON instead.", { exact: true })).toBeVisible();
       await advanced.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');

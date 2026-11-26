@@ -61,7 +61,8 @@ test("P5-01 production workspace gates all visible and alternate attachment path
   assert.match(workspace, /browseUnavailableReason=\{/);
   assert.match(stage, /browseUnavailableReason \? <p/);
   assert.match(workspace, /multiOutputEnabled \? <Input id="create-preview-count"/);
-  assert.match(workspace, /disabled=\{busy \|\| !negativeConditioningEnabled\}/);
+  // Negative prompt control removed by owner decision (2026-11-26); the submit gate below still never sends it unless the capability is advertised.
+  assert.doesNotMatch(workspace, /create-preview-negative-label/);
   assert.match(workspace, /negativeConditioningEnabled \? negativePrompt\.trim\(\) : ""/);
   assert.match(workspace, /generatedVglNotice/);
   assert.match(workspace, /manual VGL JSON/i);

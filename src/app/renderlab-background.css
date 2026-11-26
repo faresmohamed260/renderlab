@@ -395,8 +395,11 @@
 .create-preview-tile { position: relative; min-inline-size: 0; }
 .create-preview-tile > button:first-child {
   inline-size: 100%; block-size: auto; min-block-size: 58px; aspect-ratio: 1;
-  flex-direction: column; gap: 6px; padding: 4px; white-space: normal; font-size: 11px;
+  /* Top-align so every tile's plus icon sits on the same line whether its label
+   * wraps to one line (Source) or two (Reference 2). */
+  flex-direction: column; justify-content: flex-start; gap: 6px; padding: 12px 4px 4px; white-space: normal; font-size: 11px;
 }
+.create-preview-tile > button:first-child > span:not(.create-preview-tile-tag) { text-align: center; line-height: 1.2; }
 .create-preview-tile img { inline-size: 100%; block-size: 55%; object-fit: cover; border-radius: 4px; }
 .create-preview-remove { position: absolute; inset-block-start: 2px; inset-inline-end: 2px; }
 .create-preview-prompt-heading { display: flex; align-items: center; gap: 8px; font-size: 13px; }
@@ -1620,6 +1623,7 @@
     min-inline-size: 0;
     padding-block: 13px;
   }
+  .p6-desktop-brand [data-renderlab-mark] { inline-size: 24px; block-size: 24px; }
   .p6-desktop-brand { gap: var(--rl-space-8, 8px); padding-inline: var(--rl-space-12, 12px); color: var(--rl-text-primary, var(--color-text)); }
   .p6-desktop-links { position: absolute; inset-inline-start: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: var(--rl-space-4, 4px); }
   .p6-desktop-links .p6-desktop-link { min-block-size: var(--rl-hit-preferred, 44px); border-radius: var(--rl-radius-pill, 999px); color: var(--rl-text-secondary, var(--color-text-muted)); padding-inline: var(--rl-space-12, 12px); }
@@ -1660,22 +1664,16 @@
 }
 
 
-/* Header disclosures are above the route in the paint order. Reserve their
- * measured overhang only while open, rather than leaving the Create tools
- * underneath or raising the tools above the disclosure's own controls.
- * Closed desktop alignment and baseline geometry remain unchanged. */
-.preview-navigation-shell:has(.create-preview-workspace) {
-  --create-open-section-clearance: 0px;
-  --create-open-account-clearance: 0px;
-}
-.preview-navigation-shell:has(> .preview-navigation-header .preview-section-panel[data-open="true"]) {
-  --create-open-section-clearance: var(--create-section-menu-clearance, 0px);
-}
-.preview-navigation-shell:has(> .preview-navigation-header .preview-account-menu[aria-hidden="false"]) {
-  --create-open-account-clearance: var(--create-account-menu-clearance, 0px);
-}
-.preview-navigation-shell:has(> .preview-navigation-header :is(.preview-section-panel[data-open="true"], .preview-account-menu[aria-hidden="false"])) .create-preview-toolbar {
-  margin-block-start: calc(max(var(--create-open-section-clearance), var(--create-open-account-clearance)) + var(--rl-space-8));
+/* Header menus float over the page: opening one never moves the layout under
+ * it. On desktop the Create tools step aside, left of the account menu, instead
+ * of being covered; no space is reserved and nothing below the header shifts. */
+@media (min-width: 1025px) {
+  .preview-navigation-shell:has(> .preview-navigation-header .preview-account-menu[aria-hidden="false"]) .create-preview-tools {
+    transform: translateX(calc(-1 * (236px + var(--rl-space-12, 12px))));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .create-preview-tools { transition: transform var(--rl-duration-contextual, 240ms) var(--rl-ease-out, ease-out); }
+  }
 }
 /* P6 axe phone targets: the visual outline must not cut into the usable hit
  * area. Keep desktop geometry unchanged and preserve the narrow two-column reflow. */

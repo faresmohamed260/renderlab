@@ -176,7 +176,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const negativeConditioningEnabled = !hosted || hostedCapabilities?.negativeConditioning === true;
   const masksEnabled = configuredMasksEnabled && (!hosted || hostedCapabilities?.mask === true);
   const generatedVglNotice = hostedCapabilities?.generatedVglNotice ?? "Generated VGL availability is not confirmed. Manual VGL JSON is the supported workspace input.";
-  const inspirationNotice = "Text-to-image inspiration is unavailable. Use Image Editing to attach images.";
+  const inspirationNotice = "Describe what you want below, then generate.";
   const bookmarkKey = hostedModel && hostedAccountKey ? "renderlab:hosted-fibo-stage:" + hostedAccountKey
     : admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
@@ -199,7 +199,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const mask = mode === "edit" && selection?.source === files[0] ? selection?.mask : undefined;
   const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
-  const { prompt: promptDraft, negativePrompt, vgl, generatedVgl, negativeOpen, vglOpen, seed, randomize, imageCount: draftImageCount } = drafts[mode];
+  const { prompt: promptDraft, negativePrompt, vgl, generatedVgl, vglOpen, seed, randomize, imageCount: draftImageCount } = drafts[mode];
   const imageCount = multiOutputEnabled ? draftImageCount : "1";
   let missingPromptImage = false;
   const prompt = promptDraft.replace(slotMarkers, (_, slot: string) => {
@@ -1238,16 +1238,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   // These controlled fields have a single draft owner. On phones they are
   // rendered only in Advanced; wider layouts keep their existing inline access.
   const structuredFields = (<div className="create-preview-extra" key={mode}>
-              <details open={negativeOpen} onToggle={(event) => {
-                if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
-              }}>
-                <summary id="create-preview-negative-label">Negative prompt{!negativeConditioningEnabled && " · unavailable"}</summary>
-                {!negativeConditioningEnabled && <p id="create-preview-negative-unavailable" className="create-preview-caption">FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.</p>}
-                <Textarea aria-labelledby="create-preview-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
-                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy || !negativeConditioningEnabled}
-                  aria-describedby={!negativeConditioningEnabled ? "create-preview-negative-unavailable" : undefined}
-                  onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
-              </details>
               <details open={vglOpen} onToggle={(event) => {
                 if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
               }}>
@@ -1435,7 +1425,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   </label>
                 </div>
               </div>
-              {mode === "generate" && !inspirationEnabled && <p id="create-preview-inspiration-unavailable" className="create-preview-caption">{inspirationNotice}</p>}
               <input ref={picker} type="file" accept="image/*" hidden onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (file && admitted && !busy) {

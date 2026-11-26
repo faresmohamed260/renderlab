@@ -32,11 +32,11 @@ test("Viewer Reuse settings hydrates the saved draft, image and advanced setting
   await expect(advanced.getByRole("textbox", { name: "Seed", exact: true })).toHaveValue("1234");
   await expect(advanced.getByRole("checkbox", { name: "Randomize seed each time" })).not.toBeChecked();
   await expect(advanced.getByRole("slider", { name: /Steps/ })).toHaveValue("7");
-  // #681: hosted FIBO preserves saved negative conditioning for reference only.
-  const negative = advanced.getByRole("textbox", { name: "Negative prompt · unavailable", exact: true });
-  await expect(negative).toHaveValue("blur");
-  await expect(negative).toBeDisabled();
-  await expect(negative).toHaveAccessibleDescription("FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.");
+  // Owner decision (2026-11-26): the negative prompt control is removed because FIBO Edit Turbo
+  // does not apply it. A saved negative prompt is still carried in the recipe state and is never
+  // sent by the hosted worker, but there is no visible control for it.
+  await expect(advanced.getByText("Negative prompt")).toHaveCount(0);
+  await expect(advanced.getByRole("textbox", { name: /Negative prompt/ })).toHaveCount(0);
   // #681: hosted VGL is explicitly manual, not generated.
   const vgl = advanced.getByRole("textbox", { name: "Manual VGL JSON", exact: true });
   await expect(vgl).toBeVisible();

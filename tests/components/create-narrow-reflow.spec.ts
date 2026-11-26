@@ -51,11 +51,10 @@ for (const width of [195, 320]) {
     await opener.press("Enter");
     const sheet = page.getByRole("dialog", { name: "Advanced" });
     await expect(sheet).toBeVisible();
-    await sheet.locator("#create-preview-negative-label").click();
     await sheet.locator("#create-preview-vgl-label").click();
     await expect(sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
     await sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');
-    for (const selector of ["#create-preview-negative-label", "#create-preview-vgl-label"]) {
+    for (const selector of ["#create-preview-vgl-label"]) {
       expect((await sheet.locator(selector).boundingBox())?.height).toBeGreaterThanOrEqual(44);
     }
     await assertReflow(page, "advanced open with long VGL");
