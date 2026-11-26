@@ -63,3 +63,7 @@
 :global([data-slot="sheet-overlay"]):has(+ .sidebar) { background:rgb(7 6 11 / 62%); }
 @supports (backdrop-filter:blur(1px)) { .sidebar { background:rgb(26 21 46 / 88%); backdrop-filter:blur(40px) saturate(1.5); } .logo { backdrop-filter:blur(28px) saturate(1.6); } }
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active) { .sidebar { background:var(--rl-surface-overlay); backdrop-filter:none; } .logo { backdrop-filter:none; background:var(--rl-surface-raised); } }
+
+.logo[data-slot="button"] { flex:none; min-inline-size:130px; inline-size:130px; padding:0 8px; gap:10px; }
+.createLogo[data-slot="button"] { min-inline-size:148px; inline-size:148px; }
+@media(max-width:240px) { .logo[data-slot="button"] { min-inline-size:0; width:auto; max-width:100%; } }

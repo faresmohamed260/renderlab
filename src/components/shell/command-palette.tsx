@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCreateCommands, type CreateCommand } from "@/lib/create-commands";
 import styles from "./command-palette.module.css";
+import { Button } from "@/components/ui/button";
 
-export function CommandPalette({ showAdmin }: { showAdmin: boolean }) {
+export function CommandPalette({ showAdmin, pathname }: { showAdmin: boolean; pathname: string }) {
   const router = useRouter();
   const registered = useCreateCommands();
   const [open, setOpen] = useState(false);
@@ -55,9 +56,9 @@ export function CommandPalette({ showAdmin }: { showAdmin: boolean }) {
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <button ref={trigger} type="button" className={styles.trigger} aria-haspopup="dialog" aria-expanded={open} onClick={openPalette}>
+      <Button ref={trigger} type="button" variant="ghost" className={styles.trigger} aria-haspopup="dialog" aria-expanded={open} onClick={openPalette}>
         <span>Search actions</span><kbd>Ctrl K</kbd>
-      </button>
+      </Button>
       <span role="status" className="sr-only">{error}</span>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.scrim} />
@@ -88,6 +89,7 @@ export function CommandPalette({ showAdmin }: { showAdmin: boolean }) {
                 </Command.Group>
               ))}
               <Command.Group heading="Navigation">
+                {!pathname.startsWith("/create") && <Command.Item value="global-queue" keywords={["Queue", "jobs", "history"]} onSelect={() => select(() => router.push("/create?queue=1"))}>Queue</Command.Item>}
                 {navigation.map(item => (
                   <Command.Item key={item.path} value={"navigation-" + item.path} keywords={[item.label]} onSelect={() => select(() => router.push(item.path))}>{item.label}</Command.Item>
                 ))}
