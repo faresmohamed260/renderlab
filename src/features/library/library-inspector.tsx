@@ -27,7 +27,9 @@ export function LibraryInspector({
   const title = asset.displayName || asset.originalFilename || `${asset.origin === "uploaded" ? "Uploaded" : "Generated"} ${asset.kind}`;
   const edit = continuationActionForMedia(asset.kind, "edit-image");
   const editHref = edit ? `/create?${new URLSearchParams({ source: asset.id, action: edit.id })}` : null;
-  const shape = asset.width && asset.height ? (() => { let a = asset.width, b = asset.height; while (b) { const remainder = a % b; a = b; b = remainder; } return `${asset.width / a}:${asset.height / a}`; })() : null;
+  const width = asset.width;
+  const height = asset.height;
+  const shape = width && height ? (() => { let a = width, b = height; while (b) { const remainder = a % b; a = b; b = remainder; } return `${width / a}:${height / a}`; })() : null;
   const date = new Date(asset.createdAt);
   const created = Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
   const reducedMotion = useReducedMotion();

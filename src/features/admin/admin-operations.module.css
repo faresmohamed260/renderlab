@@ -777,12 +777,12 @@
 /* Observe: measured layout only. The production telemetry and all existing
    controls are deliberately unchanged; the three later controls stay locked. */
 @media (min-width: 1025px) {
-  .workspace:has(.observeDashboard) { width: 100%; max-width: none; padding: 28px 0 24px; }
+  .workspace:has(.observeDashboard) { width: 100%; max-width: none; padding: 12px 0 24px; }
   .workspace:has(.observeDashboard)::before, .workspace:has(.observeDashboard) .intro::after { content: none; }
   .workspace:has(.observeDashboard) .intro { margin-bottom: 18px; padding: 0; max-width: none; }
   .workspace:has(.observeDashboard) .eyebrow { display: none; }
-  .workspace:has(.observeDashboard) .title { font-size: 32px; line-height: 38px; font-weight: 700; }
-  .workspace:has(.observeDashboard) .lede { font-size: 15px; line-height: 22px; margin-top: 6px; max-width: none; }
+  .workspace:has(.observeDashboard) .title { font-size: 32px; line-height: 39px; font-weight: 700; }
+  .workspace:has(.observeDashboard) .lede { font-size: 15px; line-height: 19px; margin-top: 6px; max-width: none; }
   .surfaceWrap:has(.observeDashboard) { gap: 18px; }
   .observeTabs { gap: 6px; }
   .observeTabs .observeTab { min-height: 40px; height: 40px; padding-inline: 18px; border-radius: 20px; font-size: 14px; font-weight: 600; }
