@@ -1628,16 +1628,33 @@
 }
 
 
-/* Reserve the full ratio-sized canvas row before the composer. The stage's
- * absolute upload control otherwise extends into the following mode control.
- * Keep the other two tracks and their existing lazy-media behavior intact. */
+/* Allocate the first screen to the stage and in-flow composer. The history
+ * remains below them in the same scroll container; the keyboard can still
+ * shrink the available viewport without covering either surface. */
 @media (max-width: 700px) {
   .create-preview-grid {
-    grid-template-rows: max-content auto auto;
+    grid-template-rows: minmax(96px, 1fr) auto auto;
+    min-block-size: 0;
   }
   .create-preview-grid > .create-preview-canvas {
-    align-self: start;
+    align-self: stretch;
+    place-self: stretch;
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: 96px;
+    aspect-ratio: auto;
   }
+  .create-preview-grid > .create-preview-controls {
+    min-block-size: 0;
+  }
+  .create-preview-fields textarea {
+    min-block-size: var(--rl-hit-preferred);
+    block-size: clamp(var(--rl-hit-preferred), 8dvh, 72px);
+  }
+  .create-preview-dock { margin-block-start: var(--rl-space-8); }
+  .create-preview-prompt-heading { margin-block: var(--rl-space-4); }
+  .create-preview-modes { margin-block-end: var(--rl-space-8); }
+  .create-preview-submit-actions { margin-block-start: var(--rl-space-8); }
   .create-preview-stage-surface > .create-preview-canvas-upload {
     box-sizing: border-box;
     min-inline-size: 0;

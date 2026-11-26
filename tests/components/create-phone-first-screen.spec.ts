@@ -23,6 +23,15 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
       expect(advancedBox!.y + advancedBox!.height).toBeLessThanOrEqual(viewport.height);
       expect(stageBox!.y + stageBox!.height).toBeLessThanOrEqual(promptBox!.y + 1);
       expect(stageBox!.height).toBeGreaterThan(0);
+      const mode = workspace.getByRole("button", { name: "Text to Image" });
+      const modeBox = await mode.boundingBox();
+      expect(modeBox!.y + modeBox!.height).toBeLessThanOrEqual(viewport.height);
+      await mode.click();
+      const ratio = workspace.getByLabel("Aspect ratio");
+      const ratioBox = await ratio.boundingBox();
+      expect(ratioBox!.y + ratioBox!.height).toBeLessThanOrEqual(viewport.height);
+      const generateInTextMode = await generate.boundingBox();
+      expect(generateInTextMode!.y + generateInTextMode!.height).toBeLessThanOrEqual(viewport.height);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
     });
   }
