@@ -38,7 +38,7 @@ export function AccountProfileIdentity({
       <div className={styles.valueStack}>
         {overviewEmail === undefined ? <p className={styles.valueLabel}>Profile</p> : null}
         <p className={styles.profileName}>{profile.displayName ?? "No display name"}</p>
-        {overviewEmail !== undefined ? <p className={styles.helper}>{overviewEmail}</p> : <p className={styles.helper}>Display identity only. It does not change sign-in, access, role or ownership.</p>}
+        {overviewEmail !== undefined ? <><p className={`${styles.helper} ${styles.profileOverviewEmail}`}>{overviewEmail}</p><p className={`${styles.helper} ${styles.profileOverviewHelp}`}>Shown in the sidebar and on shared work</p></> : <p className={styles.helper}>Display identity only. It does not change sign-in, access, role or ownership.</p>}
       </div>
     </div>
   );

@@ -115,6 +115,7 @@ export function AccountSettings({
   const [password, setPassword] = useState("");
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [feedback, setFeedback] = useState<Feedback>(initialFeedback);
+  const [sessionExpanded, setSessionExpanded] = useState(false);
 
   if (!configured) {
     return (
@@ -259,12 +260,14 @@ export function AccountSettings({
                 )
               }
           </RegisterRow> : null}
-          <RegisterRow index="01" title="Account" id="settings-email">
+          <p className={styles.phoneGroupLabel}>Account</p>
+          <RegisterRow index="01" title="Sign-in email" id="settings-email">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Sign-in email</p>
                   <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
-                  <p className={styles.helper}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>
+                  <p className={`${styles.helper} ${styles.desktopEmailHelp}`}>Used to sign in. Changing it keeps the same account, access and ownership.</p>
+                  <p className={`${styles.helper} ${styles.phoneOnly}`}>Change how you sign in</p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
                   <Link href="/settings/email" aria-label="Change email"><span className={styles.desktopActionLabel}>Change email</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
@@ -272,7 +275,7 @@ export function AccountSettings({
               </div>
           </RegisterRow>
 
-          <RegisterRow index="02" title="Access" id="settings-access">
+          <RegisterRow index="02" title="Closed Beta access" id="settings-access">
             <div className={styles.valueStack}>
               <div className={styles.valueHeader}>
                 <div>
@@ -281,16 +284,18 @@ export function AccountSettings({
                 </div>
                 <span className={styles.status} data-access-state={accessState.key}>{accessState.label}</span>
               </div>
-              <p className={styles.helper}>{accessState.message}</p>
+              <p className={`${styles.helper} ${styles.accessDetail}`}>{accessState.message}</p>
             </div>
           </RegisterRow>
 
-          <RegisterRow index="03" title="Security" id="settings-security">
+          <p className={styles.phoneGroupLabel}>Security</p>
+          <RegisterRow index="03" title="Multi-factor authentication" id="settings-security">
             <div className={styles.passwordStack}>
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Multi-factor authentication</p>
-                  <p className={styles.helper}>{mfa.message}</p>
+                  <p className={`${styles.helper} ${styles.desktopMfaHelp}`}>{mfa.message}</p>
+                  <p className={`${styles.helper} ${styles.phoneOnly}`}>Authenticator app</p>
                 </div>
                 <Button asChild variant="secondary" size="lg" disabled={mfaState === "unavailable"}>
                   <Link href={mfa.href} aria-label={`${mfa.label} ${mfaStatus}`}>
@@ -303,9 +308,7 @@ export function AccountSettings({
               <div className={styles.factorRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Password</p>
-                  <p className={styles.helper}>
-                    Change your password. This browser stays signed in while other RenderLab sessions are revoked after a successful update.
-                  </p>
+                  <p className={styles.helper}>Change your password</p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
                   <Link href="/settings/password" aria-label="Change password"><span className={styles.desktopActionLabel}>Change password</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
@@ -314,8 +317,9 @@ export function AccountSettings({
             </div>
           </RegisterRow>
 
-          <RegisterRow index="04" title="Sessions" id="settings-sessions">
-            <div className={styles.sessionStack}>
+          <RegisterRow index="04" title="Active sessions" id="settings-sessions">
+            <button type="button" className={styles.phoneSessionToggle} aria-expanded={sessionExpanded} aria-controls="settings-session-details" onClick={() => setSessionExpanded(open => !open)}><span><strong>Active sessions</strong><small>{sessions ? `${sessions.length} ${sessions.length === 1 ? "device" : "devices"}` : "Session details unavailable"}</small></span><ChevronRight aria-hidden="true" /></button>
+            <div id="settings-session-details" className={styles.sessionStack} data-expanded={sessionExpanded}>
               <div className={styles.valueStack}>
                 <p className={styles.valueLabel}>Active RenderLab sessions</p>
                 <p className={styles.helper}>
@@ -366,8 +370,9 @@ export function AccountSettings({
             <AccountDataPrivacy />
           </RegisterRow>
 
+          {access || showAdminLink ? <p className={styles.phoneGroupLabel}>Create</p> : null}
           {access ? (
-            <RegisterRow index="06" title="Create" id="settings-preferences">
+            <RegisterRow index="06" title="Create defaults" id="settings-preferences">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Create defaults</p>
@@ -376,14 +381,14 @@ export function AccountSettings({
                   </p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href="/settings/preferences" aria-label="Manage preferences"><span className={styles.desktopActionLabel}>Manage preferences</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
+                  <Link href="/settings/preferences" aria-label="Manage preferences"><span className={styles.desktopActionLabel}>Manage</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
                 </Button>
               </div>
             </RegisterRow>
           ) : null}
 
           {showAdminLink ? (
-            <RegisterRow index="07" title="Admin" id="settings-admin">
+            <RegisterRow index="07" title="Admin operations" id="settings-admin">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Admin operations</p>
