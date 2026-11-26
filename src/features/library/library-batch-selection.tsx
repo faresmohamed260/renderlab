@@ -673,7 +673,7 @@ export function LibraryBatchSelection({
           if (target?.isConnected) target.focus({ preventScroll: true });
           else (selectTrigger.current ?? galleryHeading.current)?.focus({ preventScroll: true });
         }}>
-          <SheetTitle>Media inspector</SheetTitle>
+          <SheetTitle className="sr-only">Media inspector</SheetTitle>
           <SheetDescription className="sr-only">Details and actions for selected Library media.</SheetDescription>
           <LibraryInspector phone key={inspected.id} asset={inspected} reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null} onClose={() => dismissInspector()} onDeleted={() => dismissInspector(inspected.id)} />
         </SheetContent> : null}
