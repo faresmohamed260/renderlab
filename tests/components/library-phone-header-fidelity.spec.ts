@@ -1,4 +1,5 @@
 import { test, expect } from "./library-io";
+import { firstAsset } from "../component-app/library-fixtures";
 
 for (const motion of ["reduce", "no-preference"] as const) {
   test("Approved phone Library hierarchy and compact initial grid: " + motion, async ({ page, io }) => {
@@ -22,6 +23,7 @@ for (const motion of ["reduce", "no-preference"] as const) {
     expect(g!.y - (f!.y + f!.height)).toBeLessThanOrEqual(16);
     expect(g!.y).toBeLessThanOrEqual(240);
     await expect(page.getByText("2 items on this page", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Open First image / })).toHaveAttribute("href", "/library?inspect=" + firstAsset.id);
     await search.click();
     await expect(page.getByRole("searchbox", { name: "Search Library" })).toBeFocused();
     await search.click();

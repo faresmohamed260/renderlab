@@ -1,4 +1,5 @@
 import { test, expect } from "./library-io";
+import { firstAsset } from "../component-app/library-fixtures";
 
 for (const motion of ["reduce", "no-preference"] as const) {
   test("Phone inspector places asset title and Done above a substantial preview: " + motion, async ({ page, io }) => {
@@ -6,6 +7,8 @@ for (const motion of ["reduce", "no-preference"] as const) {
     await page.emulateMedia({ reducedMotion: motion });
     await page.goto("/library");
     const trigger = page.getByRole("link", { name: "Inspect First image", exact: true });
+    // As in #803, the card href changes only after the phone inspector contract hydrates.
+    await expect(page.getByRole("link", { name: /^Open First image / })).toHaveAttribute("href", "/library?inspect=" + firstAsset.id);
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "Media inspector" });
     await expect(dialog).toBeVisible();
