@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { registerCreateCommand } from "@/lib/create-commands";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { Check, CheckSquare2, Eye, FolderOpen, Grid2X2, Grid3X3, Minus, Plus, Search, Star, Trash2, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -151,6 +152,14 @@ export function LibraryBatchSelection({
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
+  useEffect(() => registerCreateCommand({
+    id: "library-search", label: "Search the Library", keywords: ["library", "search", "media"],
+    shortcut: "Ctrl+F", group: "Library", enabled: true,
+    run: () => {
+      if (narrow && !searchOpen) setSearchOpen(true);
+      else searchContainer.current?.querySelector<HTMLInputElement>("input[type=search]")?.focus({ preventScroll: true });
+    },
+  }), [narrow, searchOpen]);
   const inspectTrigger = useRef<HTMLAnchorElement>(null);
   const phoneInspectorTrigger = useRef<HTMLAnchorElement>(null);
   const galleryHeading = useRef<HTMLHeadingElement>(null);
@@ -189,6 +198,24 @@ export function LibraryBatchSelection({
   const allSelected = visibleItems.length > 0 && selectedCount === visibleItems.length;
   const busy = deleting || organizingAction !== null;
   const selectedCollection = collections.find((collection) => collection.id === organizeCollectionId) ?? null;
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing || event.repeat || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [role=dialog]"))) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f" && !event.shiftKey) {
+        event.preventDefault();
+        if (narrow && !searchOpen) setSearchOpen(true);
+        else searchContainer.current?.querySelector<HTMLInputElement>("input[type=search]")?.focus({ preventScroll: true });
+      } else if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key.toLowerCase() === "s" && !busy && visibleItems.length > 0) {
+        event.preventDefault();
+        selectTrigger.current?.click();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [narrow, searchOpen, busy, visibleItems.length]);
 
   function enterSelectionMode() {
     setFeedback(null);
@@ -397,6 +424,7 @@ export function LibraryBatchSelection({
             <div ref={searchContainer} className={styles.searchCell} data-phone-search-open={searchOpen}>{searchControls}</div>
             <div className={styles.sourceCell}>{sourceControls}</div>
             {!narrow ? organizationControls : null}
+            <div className={styles.railShortcuts}><span><kbd>Ctrl F</kbd> Search</span><span><kbd>S</kbd> Select</span></div>
           </aside>
 
           <div className={styles.centerToolbar}>
@@ -491,7 +519,7 @@ export function LibraryBatchSelection({
                     <span className={styles.selectionLabel}>Delete</span>
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent onCloseAutoFocus={(event) => {
+                <AlertDialogContent className="rl-glass-panel" onCloseAutoFocus={(event) => {
                   if (!returnToSelect.current) return;
                   // Full success leaves selection mode, hiding the original trigger.
                   event.preventDefault();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Check, Download, Pencil, Star, Trash2, X } from "lucide-react";
+import { Check, Download, Heart, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -31,10 +31,12 @@ export function MediaViewerQuickActions({
   assetId,
   isFavorite,
   compact = false,
+  stacked = false,
 }: {
   assetId: string;
   isFavorite: boolean;
   compact?: boolean;
+  stacked?: boolean;
 }) {
   const router = useRouter();
   const [favorite, setFavorite] = useState(isFavorite);
@@ -69,7 +71,7 @@ export function MediaViewerQuickActions({
   }
 
   return (
-    <div className={compact ? "contents" : "flex min-w-0 flex-wrap justify-end gap-2"}>
+    <div className={compact ? "contents" : stacked ? "grid min-w-0 gap-2" : "flex min-w-0 flex-wrap justify-end gap-2"}>
       <Button
         type="button"
         variant={favorite ? "secondary" : "outline"}
@@ -82,9 +84,9 @@ export function MediaViewerQuickActions({
         {saving ? (
           <Spinner />
         ) : (
-          <Star aria-hidden="true" className={favorite ? "fill-current" : undefined} />
+          <Heart aria-hidden="true" className={favorite ? "fill-current" : undefined} />
         )}
-        <span className={compact ? "sr-only" : "hidden sm:inline"}>{saving ? "Saving…" : favorite ? "Favorited" : "Favorite"}</span>
+        <span className={compact ? "sr-only" : stacked ? undefined : "hidden sm:inline"}>{saving ? "Saving…" : favorite ? "Favorited" : "Favorite"}</span>
       </Button>
       <Button asChild variant="secondary" className={compact ? "h-11 w-full min-w-0 px-0" : "h-11 min-w-11 px-3 sm:min-w-0"}>
         <a
@@ -92,7 +94,7 @@ export function MediaViewerQuickActions({
           aria-label="Download"
         >
           <Download aria-hidden="true" />
-          <span className={compact ? "sr-only" : "hidden sm:inline"}>Download</span>
+          <span className={compact ? "sr-only" : stacked ? undefined : "hidden sm:inline"}>Download</span>
         </a>
       </Button>
       {error ? <p role="alert" className="col-span-full basis-full text-right text-xs text-danger">{error}</p> : null}
@@ -108,6 +110,7 @@ export function MediaViewerManageActions({
   collectionsAvailable = false,
   onDeleted,
   renderLayout,
+  stacked = false,
 }: {
   assetId: string;
   displayName: string | null;
@@ -116,6 +119,7 @@ export function MediaViewerManageActions({
   collectionsAvailable?: boolean;
   onDeleted?: () => void;
   renderLayout?: (parts: { rename: ReactNode; editor: ReactNode; remove: ReactNode }) => ReactNode;
+  stacked?: boolean;
 }) {
   const router = useRouter();
   const inputId = useId();
@@ -199,22 +203,22 @@ export function MediaViewerManageActions({
     <Button
         type="button"
         variant="secondary"
-        size={renderLayout ? "icon-lg" : "lg"}
+        size={renderLayout && !stacked ? "icon-lg" : "lg"}
         onClick={beginEditing}
         aria-expanded={editing}
         aria-controls={panelId}
-        className={renderLayout ? "shrink-0" : "w-full"}
+        className={renderLayout && !stacked ? "shrink-0" : "w-full"}
         aria-label="Rename"
       >
         <Pencil aria-hidden="true" data-icon="inline-start" />
-        <span className={renderLayout ? "sr-only" : undefined}>Rename</span>
+        <span className={renderLayout && !stacked ? "sr-only" : undefined}>Rename</span>
       </Button>
   );
   const editor = editing ? (
         <form
           id={panelId}
           onSubmit={submitRename}
-          className="rounded-xl border border-border bg-surface-2 p-3 sm:col-span-2"
+          className="rl-glass-panel p-4 sm:col-span-2"
         >
           <Field data-invalid={Boolean(error)}>
             <FieldLabel htmlFor={inputId} className="text-text">Media name</FieldLabel>
@@ -256,14 +260,14 @@ export function MediaViewerManageActions({
             type="button"
             variant="ghost"
             size="lg"
-            className={renderLayout ? "h-11 w-full min-w-0 px-0 text-danger hover:text-danger" : "w-full text-danger hover:text-danger sm:col-span-2"}
+            className={renderLayout && !stacked ? "h-11 w-full min-w-0 px-0 text-danger hover:text-danger" : "w-full text-danger hover:text-danger sm:col-span-2"}
             aria-label="Delete"
           >
             <Trash2 aria-hidden="true" data-icon="inline-start" />
-            <span className={renderLayout ? "sr-only" : undefined}>Delete</span>
+            <span className={renderLayout && !stacked ? "sr-only" : undefined}>Delete</span>
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent onCloseAutoFocus={(event) => {
+        <AlertDialogContent className="rl-glass-panel" onCloseAutoFocus={(event) => {
           if (!onDeleted || !deleted.current) return;
           event.preventDefault();
           onDeleted();

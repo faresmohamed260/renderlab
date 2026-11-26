@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, FolderOpen, ImageIcon, Search, Star, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, FolderOpen, Heart, ImageIcon, Search, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -186,7 +186,7 @@ export function LibraryView({
           href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}
           aria-current={favoriteOnly ? "page" : undefined}
         >
-          <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
+          <Heart aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
           Favorites
         </LibraryNavigationLink>
       </Button>
@@ -289,7 +289,7 @@ export function LibraryView({
                 href={collectionHrefs[collection.id]}
                 aria-current={selectedCollectionId === collection.id ? "page" : undefined}
               >
-                <FolderOpen aria-hidden="true" data-icon="inline-start" />
+                <span className={styles.collectionSwatch} aria-hidden="true" />
                 <span className="truncate">{collection.name}</span>
               </LibraryNavigationLink>
             </Button>
