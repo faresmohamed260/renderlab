@@ -23,6 +23,7 @@ function Textarea({
 }: React.ComponentProps<"textarea"> & VariantProps<typeof textareaVariants>) {
   return (
     <textarea
+      spellCheck
       data-slot="textarea"
       data-variant={variant}
       className={cn(textareaVariants({ variant }), className)}
