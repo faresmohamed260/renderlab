@@ -420,8 +420,7 @@ export function LibraryBatchSelection({
                   aria-disabled={busy || visibleItems.length === 0 || undefined}
                   aria-pressed={selectionMode}
                 >
-                  <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-                  Select
+                  {selectionMode ? "Done" : "Select"}
                 </Button>
               ) : null}
             </div>
@@ -474,7 +473,7 @@ export function LibraryBatchSelection({
               <CollapsibleTrigger asChild>
                 <Button type="button" variant={organizeOpen ? "secondary" : "ghost"} size="sm" disabled={selectedCount === 0 || busy}>
                   <FolderOpen aria-hidden="true" data-icon="inline-start" />
-                  <span className={styles.selectionLabel}>Organize</span>
+                  <span className={styles.selectionLabel}>Add to collection</span>
                 </Button>
               </CollapsibleTrigger>
               <AlertDialog
@@ -489,7 +488,7 @@ export function LibraryBatchSelection({
                 <AlertDialogTrigger asChild>
                   <Button type="button" variant="destructive" size="sm" disabled={selectedCount === 0 || busy}>
                     <Trash2 aria-hidden="true" data-icon="inline-start" />
-                    <span className={styles.selectionLabel}>Delete {selectedCount || ""}</span>
+                    <span className={styles.selectionLabel}>Delete</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent onCloseAutoFocus={(event) => {
@@ -597,7 +596,7 @@ export function LibraryBatchSelection({
           </Alert>
         ) : null}
 
-        <div hidden={items.length === 0} className={styles.mediaHead} data-library-media-head="true">
+        <div hidden={items.length === 0 || !dropHint} className={styles.mediaHead} data-library-media-head="true">
           <div className={styles.mediaContext}>
             <span className={styles.mediaEyebrow}>{mediaContextLabel}</span>
             <strong>{selectionMode ? `${selectedCount} of ${visibleItems.length} selected` : itemCountLabel(visibleItems.length)}</strong>
@@ -651,14 +650,14 @@ export function LibraryBatchSelection({
                   </Link>
                 </Button>
 
-                {selectionMode ? (
+                {selectionMode || narrow ? (
                   <div className={styles.selectionCheckboxWrap}>
                     <Checkbox
                       className="kinetic-selection-checkbox size-11"
                       aria-label={`Select ${title}`}
                       checked={selected}
                       disabled={busy}
-                      onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
+                      onCheckedChange={(checked) => { if (!selectionMode) enterSelectionMode(); toggleAsset(asset.id, checked === true); }}
                     />
                   </div>
                 ) : null}
@@ -676,6 +675,7 @@ export function LibraryBatchSelection({
           if (target?.isConnected) target.focus({ preventScroll: true });
           else (selectTrigger.current ?? galleryHeading.current)?.focus({ preventScroll: true });
         }}>
+          <div className={styles.sheetHandle} aria-hidden="true" />
           <SheetTitle className="sr-only">Media inspector</SheetTitle>
           <SheetDescription className="sr-only">Details and actions for selected Library media.</SheetDescription>
           <LibraryInspector phone key={inspected.id} asset={inspected} reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null} onClose={() => dismissInspector()} onDeleted={() => dismissInspector(inspected.id)} />

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { animated, useReducedMotion, useSpring } from "@react-spring/web";
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import styles from "@/features/library/library-gallery.module.css";
 import { MediaViewerManageActions, MediaViewerQuickActions } from "@/features/library/media-viewer-actions";
@@ -52,7 +52,7 @@ export function LibraryInspector({
         </Button>
       </div>
       {editor}
-      {asset.prompt ? <p className={styles.inspectorPrompt}>{asset.prompt}</p> : null}
+      {asset.prompt ? <div className={styles.promptBlock}>{phone ? <span>Prompt</span> : null}<p className={styles.inspectorPrompt}>{asset.prompt}</p></div> : null}
       <dl className={styles.inspectorFacts}>
         {created ? <><dt>Created</dt><dd><time dateTime={asset.createdAt}>{created}</time></dd></> : null}
         <dt>Media type</dt><dd>{asset.kind === "image" ? "Image" : "Video"}</dd>
@@ -66,11 +66,12 @@ export function LibraryInspector({
         {editHref ? (
           <Button asChild size="lg" className={styles.createAction}>
             <Link href={editHref} prefetch={false} aria-description={phone ? "Edit image" : undefined}>
+              {phone ? <Sparkles aria-hidden="true" data-icon="inline-start" /> : null}
               <span>Open in Create</span>
-              {!phone ? <>{" "}<span className={styles.editLabel}>Edit image</span></> : null}
             </Link>
           </Button>
         ) : null}
+        <div className={styles.inspectorSecondary}>
         {reuseRecipeJobId ? (
           <Button asChild variant="secondary" size="lg">
             <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`} prefetch={false}>Reuse settings</Link>
@@ -82,6 +83,7 @@ export function LibraryInspector({
             Open Viewer
           </Link>
         </Button>
+        </div>
         {compact ? (
           <div className="grid min-w-0 grid-cols-3 gap-2">
             <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} compact />
