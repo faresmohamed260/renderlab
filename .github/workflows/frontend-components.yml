@@ -30,7 +30,7 @@ concurrency:
 jobs:
   mounted-components:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     env:
       NEXT_TELEMETRY_DISABLED: "1"
     steps:

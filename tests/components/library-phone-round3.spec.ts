@@ -25,6 +25,7 @@ for (const width of [195, 320, 390, 1440]) {
       }));
       expect(overflow.width, JSON.stringify(overflow)).toBeLessThanOrEqual(width);
       if (width !== 1440) {
+        await expect(page.getByRole("link", { name: /^Open First image / })).toHaveAttribute("href", "/library?inspect=" + firstAsset.id);
         const search = page.getByRole("button", { name: "Search the Library", exact: true });
         await expect(search).toBeVisible();
         await search.click();
