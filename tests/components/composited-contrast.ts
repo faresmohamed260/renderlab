@@ -97,33 +97,44 @@ export async function captureStableTextFrame<T extends TextFrame>(capture:()=>Pr
   return {stable:false,frame,previous,attempts:limit,deltas};
 }
 
-// Hide only glyph fill, not the computed placeholder color or inline style.
-// Apply and remove the two temporary DOM nodes/attributes in one browser task
-// each, so no intermediate style state can be rendered between round trips.
+const placeholderPaintRule = "[data-review-hide-placeholder]::placeholder { -webkit-text-fill-color: transparent !important; }";
+
+// Install the inert rule once before the first placeholder frame. Reusing the
+// stylesheet avoids head insertion/removal during a measured paint transaction.
+export async function installPlaceholderPaintStyle(locator: Locator) {
+  await locator.evaluate((element, rule) => {
+    const document = element.ownerDocument;
+    if (document.querySelector("[data-review-hide-placeholder]")) throw Error("Placeholder paint marker collision");
+    const styles = document.querySelectorAll("[data-review-placeholder-style]");
+    if (styles.length) {
+      if (styles.length !== 1 || styles[0].tagName !== "STYLE" || styles[0].textContent !== rule) throw Error("Placeholder paint stylesheet collision");
+      return;
+    }
+    const style = document.createElement("style");
+    style.setAttribute("data-review-placeholder-style", "");
+    style.textContent = rule;
+    document.head.appendChild(style);
+  }, placeholderPaintRule);
+}
+
+// Hide only glyph fill. The existing stylesheet stays inert between captures;
+// each hide/restore changes only the reserved attribute in one browser task.
 export async function setPlaceholderPaintHidden(locator: Locator, hidden: boolean) {
-  await locator.evaluate((element, hide) => {
+  await locator.evaluate((element, { hide, rule }) => {
     const document = element.ownerDocument;
     const marker = "data-review-hide-placeholder";
-    const existing = document.querySelector("style[data-review-placeholder-style]");
+    const styles = document.querySelectorAll("[data-review-placeholder-style]");
+    if (!styles.length) throw Error("Placeholder paint stylesheet missing");
+    if (styles.length !== 1 || styles[0].tagName !== "STYLE" || styles[0].textContent !== rule) throw Error("Placeholder paint stylesheet collision");
     if (hide) {
-      if (existing || element.hasAttribute(marker)) throw Error("Placeholder paint transaction already present");
-      const style = document.createElement("style");
-      style.setAttribute("data-review-placeholder-style", "");
-      style.textContent = "[data-review-hide-placeholder]::placeholder { -webkit-text-fill-color: transparent !important; }";
+      if (element.hasAttribute(marker) || document.querySelector("[data-review-hide-placeholder]")) throw Error("Placeholder paint transaction already present");
       element.setAttribute(marker, "");
-      try {
-        document.head.appendChild(style);
-      } catch (error) {
-        element.removeAttribute(marker);
-        style.remove();
-        throw error;
-      }
     } else {
-      if (!existing || !element.hasAttribute(marker)) throw Error("Placeholder paint transaction missing");
-      existing.remove();
+      if (!element.hasAttribute(marker)) throw Error("Placeholder paint transaction missing");
+      if (element.getAttribute(marker) !== "") throw Error("Placeholder paint marker collision");
       element.removeAttribute(marker);
     }
-  }, hidden);
+  }, { hide: hidden, rule: placeholderPaintRule });
 }
 
 const raw = async (page: Page) => {
@@ -135,6 +146,7 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
   const manual = (detail: string, minimum = 4.5): ContrastRow => ({ state, sample, status: "MANUAL", minimum, ratio: null, pixels: 0, detail });
   if (await locator.count() !== 1 || !await locator.isVisible()) return manual("Missing, ambiguous or hidden target");
   await locator.scrollIntoViewIfNeeded();
+  if (control === "placeholder") await installPlaceholderPaintStyle(locator);
   const info = await locator.evaluate((element, control) => {
     const style = getComputedStyle(element, control === "placeholder" ? "::placeholder" : null);
     const minimum = parseFloat(style.fontSize) >= 24 || (parseFloat(style.fontSize) >= 18.667 && Number(style.fontWeight) >= 700) ? 3 : 4.5;
@@ -175,6 +187,7 @@ export async function collectTextContrast(page: Page, locator: Locator, state: s
   }, control);
   if (!info.fg) return manual(info.reason ?? "Unresolved foreground", info.minimum);
   const settle = () => page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  if (control === "placeholder") await settle();
   const visible = control === "placeholder" ? await captureStableTextFrame(() => raw(page), info.rects, settle) : null;
   if (visible && !visible.stable) {
     console.log("PLACEHOLDER PIXEL STABILITY", state, sample, JSON.stringify({phase:"visible", attempts:visible.attempts,deltas:visible.deltas}));
