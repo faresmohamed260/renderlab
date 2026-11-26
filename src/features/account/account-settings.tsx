@@ -214,6 +214,7 @@ export function AccountSettings({
   if (identity) {
     const accessState = accessPresentation(access, enforcementEnabled);
     const mfa = mfaPresentation(mfaState);
+    const mfaStatus = mfaState === "verified" ? "Enabled" : mfaState === "verification-required" ? "Verify" : mfaState === "disabled" ? "Off" : "Unavailable";
     const adminReady = showAdminLink && mfaState === "verified";
     const adminHref = adminReady
       ? "/admin"
@@ -292,7 +293,11 @@ export function AccountSettings({
                   <p className={styles.helper}>{mfa.message}</p>
                 </div>
                 <Button asChild variant="secondary" size="lg" disabled={mfaState === "unavailable"}>
-                  <Link href={mfa.href} aria-label={mfa.label}><span className={styles.desktopActionLabel}>{mfa.label}</span><span className={styles.mfaStatus} data-mfa-state={mfaState}>{mfaState === "verified" ? "Enabled" : mfaState === "verification-required" ? "Verify" : mfaState === "disabled" ? "Off" : "Unavailable"}</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
+                  <Link href={mfa.href} aria-label={`${mfa.label} ${mfaStatus}`}>
+                    <span className={styles.desktopActionLabel}>{mfa.label}</span>{" "}
+                    <span className={styles.mfaStatus} data-mfa-state={mfaState}>{mfaStatus}</span>
+                    <ChevronRight className={styles.phoneChevron} aria-hidden="true" />
+                  </Link>
                 </Button>
               </div>
               <div className={styles.factorRow}>
