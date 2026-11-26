@@ -455,22 +455,22 @@ export function LibraryBatchSelection({
           aria-hidden={selectionMode ? undefined : "true"}
         >
           <div className={styles.selectionMain}>
-            <div className={styles.selectionSummary}>
+            <div className={`${styles.selectionSummary} min-[75rem]:!min-w-0 min-[75rem]:!pr-2`}>
               <span className={styles.selectionEyebrow}>SELECTION</span>
               <strong role="status" aria-live="polite">
-                {selectedCount === 0 ? (narrow ? "Select media" : "Select media on this page") : narrow ? `${selectedCount} selected` : `${selectedCount} selected on this page`}
+                {selectedCount === 0 ? (narrow ? "Select media" : "Select media on this page") : narrow ? `${selectedCount} selected` : `${selectedCount} selected`}
               </strong>
-              <small>{itemCountLabel(visibleItems.length)} visible</small>
+              <small className="min-[75rem]:hidden">{itemCountLabel(visibleItems.length)} visible</small>
             </div>
 
-            <div className={styles.selectionActions}>
+            <div className={`${styles.selectionActions} min-[75rem]:items-start! min-[75rem]:[&>[data-slot=button]]:h-[var(--rl-hit-preferred)]! min-[75rem]:[&>[data-slot=button]]:min-h-[var(--rl-hit-preferred)]!`}>
               <Button type="button" variant="ghost" size="sm" onClick={togglePageSelection} disabled={busy}>
                 <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-                <span className={styles.selectionLabel}>{allSelected ? "Clear page" : `Select page (${visibleItems.length})`}</span>
+                <span className={`${styles.selectionLabel} min-[75rem]:sr-only`}>{allSelected ? "Clear page" : `Select page (${visibleItems.length})`}</span>
               </Button>
-              {narrow ? <Button type="button" variant="ghost" size="sm" disabled={selectedCount === 0 || busy} onClick={() => void setSelectedFavorite(true)}>
+              {<Button type="button" variant="ghost" size="sm" disabled={selectedCount === 0 || busy} onClick={() => void setSelectedFavorite(true)}>
                 <Star aria-hidden="true" data-icon="inline-start" /> <span className={styles.selectionLabel}>Favorite</span>
-              </Button> : null}
+              </Button>}
               <CollapsibleTrigger asChild>
                 <Button type="button" variant={organizeOpen ? "secondary" : "ghost"} size="sm" disabled={selectedCount === 0 || busy}>
                   <FolderOpen aria-hidden="true" data-icon="inline-start" />
@@ -525,7 +525,7 @@ export function LibraryBatchSelection({
               </AlertDialog>
               <Button type="button" variant="ghost" size="sm" onClick={cancelSelection} disabled={busy}>
                 <X aria-hidden="true" data-icon="inline-start" />
-                <span className={styles.selectionLabel}>Cancel</span>
+                <span className={`${styles.selectionLabel} min-[75rem]:sr-only`}>Cancel</span>
               </Button>
             </div>
           </div>
