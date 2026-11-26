@@ -517,9 +517,9 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
     const run = result.run;
     const preset = run?.sizeIndex === undefined ? undefined : previewImageSizes[run.sizeIndex]?.label.split(" · ")[0];
     const shape = run?.mode === "edit" && run.editAspectRatio ? run.editAspectRatio === "original" ? undefined : run.editAspectRatio : preset;
-    const actualShape = result.width && result.height ? (()=>{let a=result.width,b=result.height;while(b){const c=a%b;a=b;b=c;}return result.width/a+":"+result.height/a;})() : undefined;
+    const actualShape = result.width && result.height && result.width > 0 && result.height > 0 ? (()=>{let a=result.width,b=result.height;while(b){const c=a%b;a=b;b=c;}return result.width/a+":"+result.height/a;})() : undefined;
     const chips = [run?.mode === "edit" ? "Edit image" : run?.mode === "generate" ? "Text to image" : undefined,shape ?? actualShape,run?.steps !== undefined ? run.steps+" steps" : undefined,run && Number.isFinite(result.seed) ? "Seed "+result.seed : undefined].filter(Boolean);
-    return <section className={stageStyles.promptCard} aria-label="Prompt used for this result"><h2>Prompt for this result</h2><p>{run?.prompt ?? result.promptUsed ?? "Prompt not available for this result."}</p>{chips.length>0 && <div className={stageStyles.chips}>{chips.map((chip,index)=><span key={index}>{chip}</span>)}</div>}</section>;
+    return <section className={stageStyles.promptCard} aria-label="Prompt used for this result"><h2>Prompt for this result</h2><p>{run?.prompt ?? result.promptUsed ?? "Prompt not available for this result."}</p>{chips.length>0 && <div className={stageStyles.chips}>{chips.map((chip,index)=><span key={index} title={chip === (shape ?? actualShape) && result.width && result.height ? result.width+" × "+result.height : undefined}>{chip}</span>)}</div>}</section>;
   }
 
   function returnToProgress() {
@@ -665,6 +665,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
             </Button>)}
         </div>
         {!phone && rebuiltActions()}
+        {phone && !inThread && !canActOnResult && turns.length > 0 && <Button type="button" variant="ghost" onClick={()=>setThreadOpen(true)}>Render conversation</Button>}
         {!inThread && resultPager()}
         {!viewerOpen && carousel()}
         {resultMetadata()}
