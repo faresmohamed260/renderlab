@@ -9,7 +9,7 @@ test("desktop Create orders History, Canvas and controls without replacing the c
   const stage = create.getByRole("region", { name: "Canvas" });
   const form = create.locator(".create-preview-controls");
   await expect(create.getByText("Prompt and job history", { exact: true })).toBeVisible();
-  await expect(create.getByText("Not available here yet. Activity remains available.", { exact: true })).toBeVisible();
+  await expect(create.getByText("History is unavailable in this workspace.", { exact: true })).toBeVisible();
   await expect(history).toBeVisible();
   await expect(stage).toBeVisible();
   await expect(form).toBeVisible();

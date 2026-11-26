@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, CircleUserRound } from "lucide-react";
+import { CircleUserRound } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { RenderLabBrand } from "@/components/brand/renderlab-brand";
@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 function routeSection(pathname: string) {
   if (pathname.startsWith("/create")) return "/create";
   if (pathname.startsWith("/library")) return "/library";
-  if (pathname.startsWith("/activity")) return "/activity";
   if (pathname.startsWith("/settings")) return "/settings";
   if (pathname.startsWith("/admin")) return "/admin";
   return null;
@@ -71,20 +70,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <Link href="/library" prefetch={true} aria-current={isActive(pathname, "/library") ? "page" : undefined}>
                 Library
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "min-h-11 min-w-11 rounded-lg text-text-muted hover:bg-white/[0.045] hover:text-text",
-                isActive(pathname, "/activity") && "text-text",
-              )}
-            >
-              <Link href="/activity" prefetch={true} aria-label="Open activity" aria-current={isActive(pathname, "/activity") ? "page" : undefined}>
-                <Activity aria-hidden="true" className="size-4" />
               </Link>
             </Button>
 

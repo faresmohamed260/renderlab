@@ -114,7 +114,9 @@ try {
   // login redirects. Admin is concealed as not-found. Pin status AND Location.
   const cases = [
     { route: "/create", status: 200, location: null, marker: /Sign in with an account that has Create access|Sign in to upload/ },
-    { route: "/activity", status: 200, location: null, marker: /Sign in to view Activity/ },
+    { route: "/activity", status: 307, location: "/create?history=jobs", marker: null },
+    { route: "/activity?offset=20&next=https%3A%2F%2Fevil.invalid", status: 307, location: "/create?history=jobs&historyOffset=20", marker: null },
+    { route: "/create?history=jobs", status: 200, location: null, marker: /Sign in to view History/ },
     { route: "/library", status: 200, location: null, marker: /Sign in to use Library/ },
     { route: "/admin", status: 404, location: null, marker: null },
   ];
@@ -127,7 +129,8 @@ try {
     console.log("SIGNED_OUT_HTTP " + JSON.stringify({ route: c.route, status: response.status, location, contentType: response.headers.get("content-type") }));
     assert.equal(response.status, c.status, c.route + " HTTP status");
     assert.equal(location, c.location, c.route + " Location");
-    assert.match(response.headers.get("content-type") ?? "", /text\/html/i);
+    if (c.status === 307) assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+    else assert.match(response.headers.get("content-type") ?? "", /text\/html/i);
     if (c.marker) assert.match(html, c.marker, c.route + " signed-out private-state content");
     } catch (error) { failures.push(c.route + ": " + String(error)); }
   }

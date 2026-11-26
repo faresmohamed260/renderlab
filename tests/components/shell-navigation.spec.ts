@@ -18,7 +18,7 @@ for (const variant of ["signed-out", "member", "owner"] as const) {
     const nav = header.getByRole("navigation", { name: "Primary navigation" });
     await expect(nav.getByRole("link", { name: "Create", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
-    await expect(nav.getByRole("link", { name: "Activity", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Activity", exact: true })).toHaveCount(0);
     await expect(header.getByRole("button", { name: /search actions|queue/i })).toHaveCount(0);
     const account = header.getByRole("button", { name: /Account menu/ });
     await account.focus();

@@ -1,6 +1,4 @@
 import { test, expect, type BrowserContext, type Route, type Page } from "@playwright/test";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { activityIds } from "../component-app/activity-fixtures";
 
 const origin = "http://127.0.0.1:4173";
@@ -29,22 +27,11 @@ async function isolate(context: BrowserContext) {
   return io;
 }
 const row = (page: Page, summary: string) => page.locator("[data-activity-status]").filter({ hasText: summary });
-// History must mount its real replacement with the same synthetic job contract.
- // Never skip a broken mounted route based on missing UI or failed assertions.
-const surfaces = [
-  { heading: "Activity", route: "/activity", emptyPage: "No visible activity on this page", newer: "Newer activity",
-    fixture: "tests/component-app/app/activity/page.tsx",
-    privateStates: [["private", "Sign in to view Activity"], ["unavailable", "Activity is temporarily unavailable"], ["empty", "No activity yet"]] },
-  { heading: "History", route: "/history", emptyPage: /No visible (?:activity|history|jobs) on this page/i, newer: /Newer (?:activity|history|jobs)/i,
-    fixture: "tests/component-app/app/history/page.tsx",
-    privateStates: [["private", /Sign in to view History/i], ["unavailable", /History is temporarily unavailable/i], ["empty", /No (?:history|jobs|activity) yet/i]] as const },
-] as const;
-for (const surface of surfaces) test.describe(surface.heading + " lifecycle characterization", () => {
-  test.beforeEach(() => {
-    if (surface.route === "/history") {
-      test.skip(!existsSync(path.resolve(surface.fixture)), "History replacement fixture is not mounted yet");
-    }
-  });
+// The retired Activity matrix is now exercised on the real replacement History fixture.
+// Keep every lifecycle assertion, without the former missing-fixture skip.
+const surface = { heading: "History", route: "/history", emptyPage: /No visible (?:activity|history|jobs) on this page/i, newer: /Newer (?:activity|history|jobs)/i,
+  privateStates: [["private", /Sign in to view History/i], ["unavailable", /History is temporarily unavailable/i], ["empty", /No (?:history|jobs|activity) yet/i]] as const };
+test.describe("Migrated Activity lifecycle characterization in History", () => {
   test("Activity status, action eligibility, no fake progress, surviving result and paging", async ({ page, context }) => {
     const io = await isolate(context);
     await page.goto(surface.route);
