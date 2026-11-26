@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { animated, useReducedMotion, useSpring } from "@react-spring/web";
-import { ExternalLink, Sparkles, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import styles from "@/features/library/library-gallery.module.css";
 import { MediaViewerManageActions, MediaViewerQuickActions } from "@/features/library/media-viewer-actions";
@@ -27,7 +27,7 @@ export function LibraryInspector({
   const title = asset.displayName || asset.originalFilename || `${asset.origin === "uploaded" ? "Uploaded" : "Generated"} ${asset.kind}`;
   const edit = continuationActionForMedia(asset.kind, "edit-image");
   const editHref = edit ? `/create?${new URLSearchParams({ source: asset.id, action: edit.id })}` : null;
-  const dimensions = asset.width && asset.height ? `${asset.width} × ${asset.height}` : null;
+  const shape = asset.width && asset.height ? (() => { let a = asset.width, b = asset.height; while (b) { const remainder = a % b; a = b; b = remainder; } return `${asset.width / a}:${asset.height / a}`; })() : null;
   const date = new Date(asset.createdAt);
   const created = Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
   const reducedMotion = useReducedMotion();
@@ -53,11 +53,10 @@ export function LibraryInspector({
       </div>
       {editor}
       {asset.prompt ? <div className={styles.promptBlock}>{phone ? <span>Prompt</span> : null}<p className={styles.inspectorPrompt}>{asset.prompt}</p></div> : null}
-      <dl className={styles.inspectorFacts}>
+      {phone ? <p className={styles.inspectorFactsLine}>{shape ? <span>{shape}</span> : null}{shape && created ? " · " : null}{created ? <time dateTime={asset.createdAt}>Created {created}</time> : null}</p> : <dl className={styles.inspectorFacts}>
         {created ? <><dt>Created</dt><dd><time dateTime={asset.createdAt}>{created}</time></dd></> : null}
-        <dt>Media type</dt><dd>{asset.kind === "image" ? "Image" : "Video"}</dd>
-        {dimensions ? <><dt>Dimensions</dt><dd>{dimensions}</dd></> : null}
-      </dl>
+        {shape ? <><dt>Shape</dt><dd>{shape}</dd></> : null}
+      </dl>}
     </>;
   }
   function actions(manage: ReactNode, compact = false, rename?: ReactNode) {
@@ -78,12 +77,7 @@ export function LibraryInspector({
             <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`} prefetch={false}>Reuse settings</Link>
           </Button>
         ) : null}
-        <Button asChild variant="ghost" size="lg">
-          <Link href={`/library/${encodeURIComponent(asset.id)}`}>
-            <ExternalLink aria-hidden="true" data-icon="inline-start" />
-            Open Viewer
-          </Link>
-        </Button>
+        {editHref ? <Button asChild variant="secondary" size="lg"><Link href={editHref} prefetch={false}>Edit image</Link></Button> : null}
         {phone ? rename : null}
         </div>
         {compact ? (
@@ -95,6 +89,7 @@ export function LibraryInspector({
           <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} />
           {manage}
         </> : null}
+        <Link className={styles.quietViewerLink} href={`/library/${encodeURIComponent(asset.id)}`}>Open Viewer</Link>
       </div>
     );
   }

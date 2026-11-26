@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, FolderOpen, Heart, ImageIcon, Search, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, FolderOpen, ImageIcon, Search, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -186,7 +186,6 @@ export function LibraryView({
           href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}
           aria-current={favoriteOnly ? "page" : undefined}
         >
-          <Heart aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
           Favorites
         </LibraryNavigationLink>
       </Button>
@@ -195,7 +194,7 @@ export function LibraryView({
   const sourceControls = (
     <nav className={styles.sourceSwitch} aria-label="Library sections">
       {tabs.map((section) => {
-        const active = tab === section.value;
+        const active = tab === section.value && !favoriteOnly;
         return (
           <Fragment key={section.value}>
           {section.value === "uploads" ? <div className="hidden min-[75rem]:grid">{favoriteControl}</div> : null}
@@ -302,6 +301,10 @@ export function LibraryView({
   const sortControl = (
     <LibrarySortToggle
       sort={sort}
+      kind={kind}
+      kindHrefs={{ all: libraryHref(tab, "all", searchQuery, sort, favoriteOnly, selectedCollectionId), image: libraryHref(tab, "image", searchQuery, sort, favoriteOnly, selectedCollectionId), video: libraryHref(tab, "video", searchQuery, sort, favoriteOnly, selectedCollectionId) }}
+      tab={tab}
+      sourceHrefs={{ creatives: libraryHref("creatives", kind, searchQuery, sort, favoriteOnly, selectedCollectionId), uploads: libraryHref("uploads", kind, searchQuery, sort, favoriteOnly, selectedCollectionId) }}
       newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
       oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
     />

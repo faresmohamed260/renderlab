@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FolderOpen, Plus, Settings2 } from "lucide-react";
+import { Plus, Settings2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -53,8 +53,7 @@ export function LibraryCollectionMenu({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {/* UI-075 keeps adjacent Gallery Rail retrieval controls at the shared 44px touch height. */}
-          <Button variant={selected ? "secondary" : "outline"} size="sm" className={`min-h-11 w-full max-w-none sm:w-auto sm:max-w-56 ${selected ? "" : styles.collectionMenuTrigger}`}>
-            <FolderOpen aria-hidden="true" data-icon="inline-start" />
+          <Button variant={selected ? "secondary" : "ghost"} size="sm" className={`min-h-11 w-full max-w-none sm:w-auto sm:max-w-56 ${selected ? "" : styles.collectionMenuTrigger}`}>
             <span className="truncate">{selected?.name ?? "Collections"}</span>
           </Button>
         </DropdownMenuTrigger>
@@ -79,7 +78,7 @@ export function LibraryCollectionMenu({
       </DropdownMenu>
 
       <Collapsible open={managerOpen} onOpenChange={setManagerOpen}>
-        <CollapsibleContent className="pt-2">
+        <CollapsibleContent className={`${styles.collectionManager} pt-2`}>
           <LibraryCollectionManager
             collections={collections}
             selectedCollectionId={selectedCollectionId}
