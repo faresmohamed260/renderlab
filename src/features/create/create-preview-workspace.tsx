@@ -1258,6 +1258,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
               </details>
             </div>);
+  const imageCountField = multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
+    disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : null;
   const seedField = (<div ref={advancedSheetOpen ? undefined : inlineSeed} className="create-preview-render-field">
                 <label htmlFor="create-preview-seed">Seed</label>
                 <div className="create-preview-seed">
@@ -1409,7 +1411,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   ))}
                 </div>
                 <div className="create-preview-size" data-inspiration-available={inspirationEnabled} inert={mode !== "generate"}>
-                  {inspirationEnabled && <div className="create-preview-tile" {...uploadDropTarget(4)}>
+                  {inspirationEnabled ? <div className="create-preview-tile" {...uploadDropTarget(4)}>
                     <Button type="button" variant="outline" disabled={!admitted || busy}
                       aria-label="Choose reference image" onClick={() => chooseImage(4)}>
                       {inspirationPreview ? <img src={inspirationPreview} alt="" draggable={false} /> : <Plus size={14} aria-hidden="true" />}
@@ -1417,7 +1419,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     </Button>
                     {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="create-preview-remove"
                       aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
-                  </div>}
+                  </div> : null}
                   <label className="create-preview-aspect">Aspect ratio
                     <span className="create-preview-aspect-preview" aria-hidden="true"><span style={{ "--create-aspect": size.width / size.height } as CSSProperties} /></span>
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
@@ -1514,9 +1516,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             <div className="create-preview-settings" data-multi-output-available={multiOutputEnabled}>
               {advancedSheetOpen ? <div aria-hidden="true" style={{ blockSize: advancedReserve.seed }} /> : seedField}
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
-              {multiOutputEnabled && <label className="create-preview-render-field" htmlFor="create-preview-count">Images
-                <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
-                  disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} />
+              {imageCountField && <label className="create-preview-render-field" htmlFor="create-preview-count">Images
+                {imageCountField}
               </label>}
               {advancedSheetOpen ? <div aria-hidden="true" className="create-preview-steps" style={{ blockSize: advancedReserve.steps }} /> : stepsField}
             </div>
