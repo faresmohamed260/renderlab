@@ -147,7 +147,7 @@ export function CreateHistoryPanel(props: RailProps) {
 export function CreateHistorySheet({ open, onOpenChange, trigger, ...props }: RailProps & { open: boolean; onOpenChange: (open: boolean) => void; trigger?: ReactNode }) {
   return <Sheet open={open} onOpenChange={onOpenChange}>
     {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-    <SheetContent side="bottom" showCloseButton={false} className={styles.sheet} data-create-shortcut-overlay="">
+    <SheetContent side="bottom" showCloseButton={false} className={styles.sheet} data-create-shortcut-overlay="" onCloseAutoFocus={event => { event.preventDefault(); document.querySelector<HTMLElement>(".rebuild-phone-action")?.focus({ preventScroll: true }); }}>
       <div className={styles.handle} aria-hidden="true" />
       <div className={styles.sheetTitle}><SheetTitle>History</SheetTitle><SheetClose asChild><Button type="button" variant="ghost">Done</Button></SheetClose></div>
       <SheetDescription className="sr-only">Jobs, results from this tab, and saved prompts.</SheetDescription>

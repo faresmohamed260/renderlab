@@ -1,6 +1,7 @@
 "use client";
 
 import columns from "./create-desktop-columns.module.css";
+import { CreateStageSkeleton } from "./create-rail-stage-skeleton";
 
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
@@ -51,13 +52,6 @@ async function hostedRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const data = await response.json();
   if (!response.ok || data.ok !== true) throw new Error(data.error?.message ?? "Hosted request failed.");
   return data as T;
-}
-
-function formatResultDimensions(width: number, height: number) {
-  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) return "";
-  let a = width, b = height;
-  while (b) { const remainder = a % b; a = b; b = remainder; }
-  return (width / a) + ":" + (height / a) + " · " + width + " × " + height;
 }
 
 function hostedResult(asset: PublicMediaAsset): Result {
@@ -516,7 +510,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       const { asset } = await hostedRequest<{ asset: PublicMediaAsset }>("/api/media/assets/" + encodeURIComponent(id), { signal: controller.signal });
       if (controller.signal.aborted || active.current || preparing.current || asset.id !== id || asset.kind !== "image") return;
       setMaskEditor(undefined);
-      setHistorySelection({ image: hostedResult(asset) });
+      setHistorySelection({ image: { ...hostedResult(asset), ...sessionHistory.find(item => item.assetId === id), image_data: hostedResult(asset).image_data, isFavorite: asset.isFavorite } });
       setHistoryOpen(false);
     } catch {
       if (!controller.signal.aborted) setStatus("This result is no longer available.");
@@ -1273,7 +1267,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const selectedResultIndex = result ? shortcutResults.findIndex(image => image === result || matchesImage(image, result)) : -1;
   const shortcuts = useCreateShortcuts({
     root: workspaceRoot,
-    overlay: advancedSheetOpen || toolbarPopover !== null || maskOpen,
+    overlay: advancedSheetOpen || toolbarPopover !== null || maskOpen || historyOpen,
     canGenerate: canSubmit,
     canStep: !busy && !continuationPending && shortcutResults.length > 1,
     step: direction => {
@@ -1317,13 +1311,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     // Radix returns focus after portal teardown. Preserve any newer focus and
     // otherwise let Radix decide whether this dismissal should focus the trigger.
     const { activeElement, body, documentElement } = document;
-    if (activeElement?.isConnected && activeElement !== body && activeElement !== documentElement) {
-      event.preventDefault();
-    }
+    event.preventDefault();
+    if (activeElement?.isConnected && activeElement !== body && activeElement !== documentElement && activeElement !== queue.current) return;
+    document.querySelector<HTMLElement>(".rebuild-queue-pill")?.focus({ preventScroll: true });
   }
 
   return (
-    <section ref={workspaceRoot} tabIndex={-1} onKeyDown={shortcuts.onKeyDown} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
+    <section ref={workspaceRoot} tabIndex={-1} onKeyDown={shortcuts.onKeyDown} className={"create-preview-workspace mx-auto w-full " + columns.workspace} aria-label="Create with FIBO">
       <p className="sr-only" role="status" aria-live="polite">{maskAnnouncement}</p>
       <p className="sr-only" role="status" aria-live="polite" data-create-shortcut-announcement>{selectedResultIndex >= 0 ? "Result " + (selectedResultIndex + 1) + " of " + shortcutResults.length : ""}</p>
       <div className={columns.queueAnchor}>
@@ -1332,7 +1326,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           <PopoverContent data-create-shortcut-overlay="" aria-label="Queue" className={columns.queuePopover} onCloseAutoFocus={preserveToolbarFocus}>
             <h2 className="font-semibold">Queue</h2>
             {historyActions && <Jobs state={historyRead} />}
-            {(!hostedModel || queueNotice) && <>
+            {(!historyActions || !hostedModel || queueNotice) && <>
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               <div className="create-preview-caption">Waiting requests keep their prompt and inputs in this preview until they start, are removed, or expire.</div>
               {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
@@ -1532,9 +1526,9 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             </div>
           </div>
         </form>
-        <section inert={continuationPending && !busy} className={"create-preview-canvas" + (desktop && result && !busy ? " " + columns.withMetadata : "")} aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
+        <section inert={continuationPending && !busy} className={"create-preview-canvas " + columns.canvas} aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
             <div className={columns.stageRegion}>
-            {stageReady && <CreatePreviewStage
+            {stageReady ? <CreatePreviewStage
               workflow={mode}
               turns={turns[mode]}
               inlineMask={maskEditor === "inline" ? maskEditorNode : undefined}
@@ -1622,14 +1616,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   if (sourceLoad.current === controller) sourceLoad.current = null;
                 }
               }}
-            />}
+            /> : <CreateStageSkeleton />}
             </div>
-            {desktop && result && !busy && <section aria-label="Prompt used" className={columns.promptUsed}>
-              <h2>Prompt used</h2>
-              <p>{result.run?.prompt ?? result.promptUsed ?? "Prompt not available for this result."}</p>
-              {result.width && result.height && <p>{formatResultDimensions(result.width, result.height)}</p>}
-              {!result.assetId && result.run && <p>Seed {result.seed} · {result.run.steps} steps</p>}
-            </section>}
             {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="create-preview-stage-sign-in">Sign in to upload</Link>}
         </section>

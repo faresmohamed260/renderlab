@@ -54,3 +54,15 @@
 .sheet .prompt{padding:10px 6px;min-height:52px;font-size:14px;border-radius:0;border-bottom:1px solid var(--rl-border-subtle)}
 .sheet .promptSection{flex:none}
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){.sheet:global([data-slot=sheet-content]){background:var(--rl-surface-overlay);backdrop-filter:none}}
+
+/* Neutralize historical global rail margins and resting fill. */
+.rail .heading h2{margin:0;font-size:15px;font-weight:600;line-height:19px}
+.rail .heading>span:first-of-type{font-size:13px}
+.rail .promptSection .heading>span{font-size:12px}
+:global(.create-preview-workspace) .rail .result,:global(.create-preview-workspace) .rail .prompt,:global(.create-preview-workspace) .rail .quietIcon{margin:0}
+:global(.create-preview-workspace) .rail .result{background:transparent;border-radius:18px}
+:global(.create-preview-workspace) .rail .result[aria-current=true]{background:var(--rl-surface-hover)}
+:global(.create-preview-workspace) .rail .prompt{background:transparent;border-radius:14px}
+:global(.create-preview-workspace) .rail .quietIcon{background:transparent;width:28px}
+.sheet .reuseHint{font-size:0}
+.sheet .reuseHint::after{content:"Tap to reuse";font-size:12px}
