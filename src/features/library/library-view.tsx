@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, FolderOpen, ImageIcon, Search, Star, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -179,12 +180,26 @@ export function LibraryView({
     String(offset),
   ].join(":");
 
+  const favoriteControl = (
+    <Button asChild variant={favoriteOnly ? "secondary" : "ghost"} size="sm" className="min-h-11">
+        <LibraryNavigationLink
+          href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}
+          aria-current={favoriteOnly ? "page" : undefined}
+        >
+          <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
+          Favorites
+        </LibraryNavigationLink>
+      </Button>
+  );
+
   const sourceControls = (
     <nav className={styles.sourceSwitch} aria-label="Library sections">
       {tabs.map((section) => {
         const active = tab === section.value;
         return (
-          <Button key={section.value} asChild variant={active ? "secondary" : "ghost"} size="sm">
+          <Fragment key={section.value}>
+          {section.value === "uploads" ? <div className="hidden min-[75rem]:grid">{favoriteControl}</div> : null}
+          <Button asChild variant={active ? "secondary" : "ghost"} size="sm">
             <LibraryNavigationLink
               href={libraryHref(section.value, kind, searchQuery, sort, favoriteOnly, selectedCollectionId)}
               aria-current={active ? "page" : undefined}
@@ -197,6 +212,7 @@ export function LibraryView({
               ) : section.label}
             </LibraryNavigationLink>
           </Button>
+          </Fragment>
         );
       })}
     </nav>
@@ -256,15 +272,7 @@ export function LibraryView({
 
   const organizationControls = (
     <div className={styles.organizationCell}>
-      <Button asChild variant={favoriteOnly ? "secondary" : "ghost"} size="sm" className="min-h-11">
-        <LibraryNavigationLink
-          href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}
-          aria-current={favoriteOnly ? "page" : undefined}
-        >
-          <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
-          Favorites
-        </LibraryNavigationLink>
-      </Button>
+      <div className="min-[75rem]:hidden">{favoriteControl}</div>
       {collectionsAvailable ? (
         <LibraryCollectionMenu
           collections={collections}
