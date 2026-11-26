@@ -1,24 +1,24 @@
 {
   "schemaVersion": 2,
-  "applicationSha": "34efe0b84ac1d950581d7b371b65bbf331852e89",
-  "deploymentId": "dpl_Fn5yNhNWz7owH9tMqi5cSbs3Y4WE",
-  "deploymentUrl": "https://renderlab-is4jlxf69-faresmohamedsalah10-1681.vercel.app",
+  "applicationSha": "fb84c89cb41b42fcceeb0ba0fc132959a1368107",
+  "deploymentId": "dpl_FVt77brpWxKkKYJQCjUtLbr9wTcn",
+  "deploymentUrl": "https://renderlab-djs4imuqi-faresmohamedsalah10-1681.vercel.app",
   "domain": "renderlab.faresuniform.uk",
-  "rollbackDeploymentId": "dpl_FLynJG8JYSmFYSJJWaTs3Hg6yU5i",
-  "rollbackApplicationSha": "429afee1d1f8ea06f663e96f9c554bf37c5c2ab8",
+  "rollbackDeploymentId": "dpl_Fn5yNhNWz7owH9tMqi5cSbs3Y4WE",
+  "rollbackApplicationSha": "34efe0b84ac1d950581d7b371b65bbf331852e89",
   "releaseQualification": {
     "type": "protected-main-checks",
     "requiredCheckRunIds": {
-      "quality": 138664238729,
-      "governance": 138664240866,
-      "unit-coverage": 138664238628,
-      "javascript-typescript": 138664238657,
-      "clean-room (ubuntu-latest)": 138664239287,
-      "clean-room (windows-latest)": 138664238543
+      "quality": 140188039670,
+      "governance": 140188038887,
+      "unit-coverage": 140188038526,
+      "javascript-typescript": 140188038767,
+      "clean-room (ubuntu-latest)": 140188038681,
+      "clean-room (windows-latest)": 140188038918
     },
-    "deploymentReadinessRunId": 45457731811,
-    "qualifiedAt": "2026-11-24T18:17:02.000Z"
+    "deploymentReadinessRunId": 45901479925,
+    "qualifiedAt": "2026-11-26T21:58:03.000Z"
   },
-  "cutoverAt": "2026-11-24T18:21:47.297Z",
-  "accountMigrationNote": "Batch G: app-only; 0037 ledger 20261124090831 unchanged; renderer v13 and gateway/dispatcher v14 unchanged; worker tree 4633471969d96f3b3a861a15edadd835253d85b4. No verification generation: no backend or request-path change."
+  "cutoverAt": "2026-11-26T22:43:54.413Z",
+  "accountMigrationNote": "Phase 6: app-only release of fb84c89c (UI redesign); 0037 ledger 20261124090831 unchanged; renderer v13 and gateway/dispatcher v14 unchanged; worker tree 4633471969d96f3b3a861a15edadd835253d85b4. No verification generation: no backend or ordinary generation request-path change; owner authorized zero spend."
 }
