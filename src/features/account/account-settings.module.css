@@ -82,9 +82,12 @@
   transition: color 160ms ease;
 }
 
-.backLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .backLink:hover {
   color: var(--color-text);
 }
+}
+
 
 .surfaceWrap {
   display: grid;
@@ -270,9 +273,12 @@
   font-size: 0.8rem;
 }
 
-.recoveryButton:hover {
+@media (hover: hover) and (pointer: fine) {
+  .recoveryButton:hover {
   color: var(--color-text);
 }
+}
+
 
 .formActions {
   align-items: center;
@@ -822,7 +828,10 @@
     color: var(--rl-text-primary);
     text-decoration: none;
   }
+  @media (hover: hover) and (pointer: fine) {
   .settingsSections a:hover { background: var(--rl-surface-hover); }
+}
+
   .settingsSections a:focus-visible {
     outline: var(--rl-focus-width) solid var(--rl-focus);
     outline-offset: var(--rl-focus-offset);
@@ -897,7 +906,10 @@
     padding-inline: var(--rl-space-4);
     color: var(--rl-text-primary);
   }
+  @media (hover: hover) and (pointer: fine) {
   .settingsCards .actionRow > [data-slot="button"]:hover, .settingsCards .factorRow > [data-slot="button"]:hover { background: var(--rl-surface-hover); }
+}
+
   .settingsCards .desktopActionLabel { display: none; }
   .settingsCards .phoneChevron, .settingsCards .phoneActionLabel { display: inline; }
   .settingsCards .phoneActionLabel { color: var(--rl-text-selected); }
@@ -958,5 +970,18 @@
   }
   .settingsCards .sessionHeader {
     flex-wrap: wrap;
+  }
+}
+
+.sessionTimes,
+.sessionCount,
+.index { font-variant-numeric: tabular-nums; }
+.sectionTitle { text-wrap: balance; }
+.helper { text-wrap: pretty; }
+@media (max-width: 700px) {
+  .workspace :global(input[data-slot="input"]),
+  .workspace :global(textarea[data-slot="textarea"]),
+  .workspace :global(select[data-slot="native-select"]) {
+    font-size: max(16px, var(--rl-type-body));
   }
 }
