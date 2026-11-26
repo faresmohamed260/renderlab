@@ -1,0 +1,508 @@
+{
+ "source": "design/approved/2026-11-25-phase6/html/create-desktop-skeleton.html",
+ "render": "design/approved/2026-11-25-phase6/renders/create-desktop-skeleton.png",
+ "viewport": "1440x900",
+ "root": {
+  "w": 1440,
+  "h": 900,
+  "bg": "none"
+ },
+ "elements": [
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900,
+   "bgImage": "radial-gradient(45% 45% at 78% 6%, rgba(117, 94, 210, 0.38), rgba(117, 94, 210, 0) 70%), radial-gradient(40% 45% at 8% 96%, rgba(217, 100, 160, 0.2), rgba(217, 100, 160, 0) 70%)"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 28,
+   "y": 20,
+   "w": 124,
+   "h": 26,
+   "text": "RenderLab",
+   "font": "600 17px/normal Inter",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px",
+   "layout": "flex gap 10px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 28,
+   "y": 20,
+   "w": 26,
+   "h": 26,
+   "bgImage": "linear-gradient(135deg, rgb(168, 155, 255), rgb(98, 81, 199))",
+   "radius": "9px"
+  },
+  {
+   "tag": "a",
+   "depth": 1,
+   "x": 655,
+   "y": 22,
+   "w": 47,
+   "h": 27,
+   "text": "Create",
+   "font": "500 15px/normal Inter",
+   "color": "rgb(255, 255, 255)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 677,
+   "y": 46,
+   "w": 5,
+   "h": 5,
+   "bg": "rgb(168, 155, 255)",
+   "radius": "50%"
+  },
+  {
+   "tag": "a",
+   "depth": 1,
+   "x": 736,
+   "y": 22,
+   "w": 49,
+   "h": 27,
+   "text": "Library",
+   "font": "400 15px/normal Inter",
+   "color": "rgba(245, 245, 247, 0.68)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 1118,
+   "y": 14,
+   "w": 160,
+   "h": 40,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "20px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 1288,
+   "y": 14,
+   "w": 74,
+   "h": 40,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "20px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 1372,
+   "y": 14,
+   "w": 40,
+   "h": 40,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "20px"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 24,
+   "y": 76,
+   "w": 288,
+   "h": 808,
+   "ariaLabel": "Loading Create",
+   "role": "status",
+   "bg": "rgba(255, 255, 255, 0.055)",
+   "radius": "28px",
+   "border": "1px solid rgba(255, 255, 255, 0.09)"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 41,
+   "y": 97,
+   "w": 110,
+   "h": 16,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "8px"
+  },
+  {
+   "tag": "span",
+   "depth": 3,
+   "x": 41,
+   "y": 129,
+   "w": 56,
+   "h": 56,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "14px"
+  },
+  {
+   "tag": "div",
+   "depth": 4,
+   "x": 109,
+   "y": 141,
+   "w": 186,
+   "h": 13,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 4,
+   "x": 109,
+   "y": 162,
+   "w": 112,
+   "h": 11,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "6px"
+  },
+  {
+   "tag": "span",
+   "depth": 3,
+   "x": 41,
+   "y": 199,
+   "w": 56,
+   "h": 56,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "14px"
+  },
+  {
+   "tag": "div",
+   "depth": 4,
+   "x": 109,
+   "y": 211,
+   "w": 186,
+   "h": 13,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 4,
+   "x": 109,
+   "y": 232,
+   "w": 112,
+   "h": 11,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "6px"
+  },
+  {
+   "tag": "span",
+   "depth": 3,
+   "x": 41,
+   "y": 269,
+   "w": 56,
+   "h": 56,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "14px"
+  },
+  {
+   "tag": "div",
+   "depth": 4,
+   "x": 109,
+   "y": 281,
+   "w": 186,
+   "h": 13,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 4,
+   "x": 109,
+   "y": 302,
+   "w": 112,
+   "h": 11,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "6px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 41,
+   "y": 359,
+   "w": 130,
+   "h": 16,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "8px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 41,
+   "y": 389,
+   "w": 254,
+   "h": 42,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "21px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 41,
+   "y": 445,
+   "w": 254,
+   "h": 14,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 41,
+   "y": 471,
+   "w": 203,
+   "h": 14,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 41,
+   "y": 507,
+   "w": 254,
+   "h": 14,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 41,
+   "y": 533,
+   "w": 178,
+   "h": 14,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 328,
+   "y": 76,
+   "w": 712,
+   "h": 540,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "32px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 328,
+   "y": 630,
+   "w": 104,
+   "h": 44,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "22px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 440,
+   "y": 630,
+   "w": 140,
+   "h": 44,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "22px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 588,
+   "y": 630,
+   "w": 132,
+   "h": 44,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "22px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 728,
+   "y": 630,
+   "w": 44,
+   "h": 44,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "22px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 780,
+   "y": 630,
+   "w": 44,
+   "h": 44,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "22px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 328,
+   "y": 688,
+   "w": 712,
+   "h": 150,
+   "bg": "rgba(255, 255, 255, 0.055)",
+   "radius": "26px",
+   "border": "1px solid rgba(255, 255, 255, 0.09)"
+  },
+  {
+   "tag": "div",
+   "depth": 2,
+   "x": 351,
+   "y": 709,
+   "w": 150,
+   "h": 12,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "6px"
+  },
+  {
+   "tag": "div",
+   "depth": 2,
+   "x": 351,
+   "y": 735,
+   "w": 666,
+   "h": 15,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "div",
+   "depth": 2,
+   "x": 351,
+   "y": 760,
+   "w": 500,
+   "h": 15,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "7px"
+  },
+  {
+   "tag": "aside",
+   "depth": 0,
+   "x": 1056,
+   "y": 76,
+   "w": 360,
+   "h": 808,
+   "ariaLabel": "Controls",
+   "bg": "rgba(255, 255, 255, 0.055)",
+   "radius": "28px",
+   "border": "1px solid rgba(255, 255, 255, 0.09)",
+   "layout": "flex column gap 16px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 1077,
+   "y": 97,
+   "w": 318,
+   "h": 48,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "24px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 1077,
+   "y": 161,
+   "w": 318,
+   "h": 132,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "20px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 1077,
+   "y": 309,
+   "w": 64,
+   "h": 64,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "18px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 1151,
+   "y": 309,
+   "w": 64,
+   "h": 64,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "18px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 1225,
+   "y": 309,
+   "w": 64,
+   "h": 64,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "18px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 1077,
+   "y": 389,
+   "w": 52,
+   "h": 36,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "18px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 1135,
+   "y": 389,
+   "w": 52,
+   "h": 36,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "18px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 1193,
+   "y": 389,
+   "w": 60,
+   "h": 36,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "18px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 1259,
+   "y": 389,
+   "w": 52,
+   "h": 36,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "18px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 1077,
+   "y": 441,
+   "w": 318,
+   "h": 200,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0px, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.055) 100%)",
+   "radius": "20px"
+  },
+  {
+   "tag": "button",
+   "depth": 1,
+   "x": 1077,
+   "y": 807,
+   "w": 318,
+   "h": 56,
+   "text": "Generate",
+   "font": "600 16px/16px Inter",
+   "color": "rgba(255, 255, 255, 0.6)",
+   "bg": "rgba(124, 108, 242, 0.3)",
+   "radius": "20px"
+  }
+ ]
+}

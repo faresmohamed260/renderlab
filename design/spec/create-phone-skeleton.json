@@ -1,0 +1,197 @@
+{
+ "source": "design/approved/2026-11-25-phase6/html/create-phone-skeleton.html",
+ "render": "design/approved/2026-11-25-phase6/renders/create-phone-skeleton.png",
+ "viewport": "390x844",
+ "root": {
+  "w": 390,
+  "h": 844,
+  "bg": "none"
+ },
+ "elements": [
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "bgImage": "radial-gradient(70% 32% at 80% 6%, rgba(117, 94, 210, 0.42), rgba(117, 94, 210, 0) 70%), radial-gradient(60% 30% at 6% 86%, rgba(217, 100, 160, 0.2), rgba(217, 100, 160, 0) 70%)"
+  },
+  {
+   "tag": "button",
+   "depth": 0,
+   "x": 12,
+   "y": 8,
+   "w": 148,
+   "h": 44,
+   "text": "RenderLab",
+   "ariaLabel": "Open navigation menu",
+   "font": "600 16px/16px -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.08)",
+   "radius": "22px",
+   "border": "1px solid rgba(255, 255, 255, 0.14)",
+   "backdropFilter": "blur(28px) saturate(1.6)",
+   "layout": "flex gap 10px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 21,
+   "y": 16,
+   "w": 28,
+   "h": 28,
+   "bgImage": "linear-gradient(135deg, rgb(168, 155, 255), rgb(98, 81, 199))",
+   "radius": "10px"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 334,
+   "y": 8,
+   "w": 44,
+   "h": 44,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.13) 50%, rgba(255, 255, 255, 0.06) 100%)",
+   "radius": "50%"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 12,
+   "y": 64,
+   "w": 366,
+   "h": 560,
+   "ariaLabel": "Loading your session",
+   "role": "status",
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.13) 50%, rgba(255, 255, 255, 0.06) 100%)",
+   "radius": "34px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 174,
+   "y": 636,
+   "w": 18,
+   "h": 6,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.13) 50%, rgba(255, 255, 255, 0.06) 100%)",
+   "radius": "3px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 198,
+   "y": 636,
+   "w": 6,
+   "h": 6,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.13) 50%, rgba(255, 255, 255, 0.06) 100%)",
+   "radius": "3px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 210,
+   "y": 636,
+   "w": 6,
+   "h": 6,
+   "bgImage": "linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.13) 50%, rgba(255, 255, 255, 0.06) 100%)",
+   "radius": "3px"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 12,
+   "y": 662,
+   "w": 366,
+   "h": 150,
+   "bg": "rgba(255, 255, 255, 0.08)",
+   "radius": "32px",
+   "border": "1px solid rgba(255, 255, 255, 0.14)",
+   "shadow": "rgba(255, 255, 255, 0.18) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.5) 0px 24px 60px 0px",
+   "backdropFilter": "blur(32px) saturate(1.7)",
+   "layout": "flex column"
+  },
+  {
+   "tag": "label",
+   "depth": 1,
+   "x": 31,
+   "y": 675,
+   "w": 1,
+   "h": 1,
+   "text": "Describe your image",
+   "font": "400 16px/normal -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "textarea",
+   "depth": 1,
+   "x": 31,
+   "y": 675,
+   "w": 332,
+   "h": 68,
+   "placeholder": "Describe your image…"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 31,
+   "y": 751,
+   "w": 44,
+   "h": 44,
+   "bg": "rgba(255, 255, 255, 0.12)",
+   "radius": "50%"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 83,
+   "y": 751,
+   "w": 76,
+   "h": 44,
+   "bg": "rgba(255, 255, 255, 0.12)",
+   "radius": "22px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 167,
+   "y": 751,
+   "w": 56,
+   "h": 44,
+   "bg": "rgba(255, 255, 255, 0.12)",
+   "radius": "22px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 231,
+   "y": 751,
+   "w": 44,
+   "h": 44,
+   "bg": "rgba(255, 255, 255, 0.12)",
+   "radius": "50%"
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 311,
+   "y": 747,
+   "w": 52,
+   "h": 52,
+   "ariaLabel": "Generate",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgba(255, 255, 255, 0.6)",
+   "bg": "rgba(124, 108, 242, 0.35)",
+   "radius": "50%",
+   "layout": "flex"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 326,
+   "y": 762,
+   "w": 22,
+   "h": 22
+  }
+ ]
+}

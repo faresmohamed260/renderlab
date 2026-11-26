@@ -1,0 +1,247 @@
+{
+ "source": "design/approved/2026-11-25-phase6/html/advanced-sheet-phone.html",
+ "render": "design/approved/2026-11-25-phase6/renders/advanced-sheet-phone.png",
+ "viewport": "390x844",
+ "root": {
+  "w": 390,
+  "h": 844,
+  "bg": "none"
+ },
+ "elements": [
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "bgImage": "radial-gradient(70% 32% at 80% 6%, rgba(117, 94, 210, 0.42), rgba(117, 94, 210, 0) 70%), radial-gradient(60% 30% at 6% 86%, rgba(217, 100, 160, 0.2), rgba(217, 100, 160, 0) 70%)"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 12,
+   "y": 64,
+   "w": 366,
+   "h": 500,
+   "bgImage": "linear-gradient(160deg, rgb(111, 129, 150), rgb(217, 169, 138) 60%, rgb(192, 127, 93))",
+   "radius": "34px"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "bg": "rgba(7, 6, 11, 0.58)"
+  },
+  {
+   "tag": "section",
+   "depth": 0,
+   "x": 0,
+   "y": 300,
+   "w": 390,
+   "h": 544,
+   "ariaLabel": "Advanced settings",
+   "bg": "rgba(26, 21, 46, 0.9)",
+   "radius": "34px 34px 0px 0px",
+   "border": "1px solid rgba(255, 255, 255, 0.14)",
+   "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.5) 0px -30px 80px 0px",
+   "backdropFilter": "blur(40px) saturate(1.5)",
+   "layout": "flex column gap 14px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 177,
+   "y": 309,
+   "w": 36,
+   "h": 5,
+   "bg": "rgba(255, 255, 255, 0.3)",
+   "radius": "3px"
+  },
+  {
+   "tag": "h2",
+   "depth": 2,
+   "x": 16,
+   "y": 335,
+   "w": 108,
+   "h": 26,
+   "text": "Advanced",
+   "font": "700 22px/normal -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 321,
+   "y": 326,
+   "w": 53,
+   "h": 44,
+   "text": "Done",
+   "font": "600 16px/16px -apple-system",
+   "color": "rgb(181, 169, 255)"
+  },
+  {
+   "tag": "p",
+   "depth": 1,
+   "x": 20,
+   "y": 382,
+   "w": 350,
+   "h": 38,
+   "text": "These apply to your next image. Mode, shape and references are in the prompt box.",
+   "font": "400 13px/18.85px -apple-system",
+   "color": "rgba(245, 245, 247, 0.66)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 16,
+   "y": 434,
+   "w": 358,
+   "h": 182,
+   "bg": "rgba(255, 255, 255, 0.06)",
+   "radius": "24px"
+  },
+  {
+   "tag": "label",
+   "depth": 3,
+   "x": 32,
+   "y": 454,
+   "w": 56,
+   "h": 19,
+   "text": "Seed",
+   "font": "400 15px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.78)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "input",
+   "depth": 3,
+   "x": 98,
+   "y": 443,
+   "w": 206,
+   "h": 42,
+   "font": "400 15px/15px -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.08)",
+   "radius": "14px"
+  },
+  {
+   "tag": "button",
+   "depth": 3,
+   "x": 314,
+   "y": 442,
+   "w": 44,
+   "h": 44,
+   "ariaLabel": "Randomize seed",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.08)",
+   "radius": "22px",
+   "layout": "flex"
+  },
+  {
+   "tag": "svg",
+   "depth": 4,
+   "x": 327,
+   "y": 455,
+   "w": 18,
+   "h": 18
+  },
+  {
+   "tag": "div",
+   "depth": 2,
+   "x": 32,
+   "y": 494,
+   "w": 326,
+   "h": 61,
+   "border": "1px solid rgba(255, 255, 255, 0.08)",
+   "layout": "flex gap 10px"
+  },
+  {
+   "tag": "label",
+   "depth": 3,
+   "x": 32,
+   "y": 515,
+   "w": 56,
+   "h": 19,
+   "text": "Steps",
+   "font": "400 15px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.78)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "input",
+   "depth": 3,
+   "x": 100,
+   "y": 517,
+   "w": 226,
+   "h": 16,
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(157, 150, 142)",
+   "bg": "rgb(255, 255, 255)"
+  },
+  {
+   "tag": "span",
+   "depth": 3,
+   "x": 338,
+   "y": 515,
+   "w": 20,
+   "h": 19,
+   "text": "4",
+   "font": "400 15px/normal -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "div",
+   "depth": 2,
+   "x": 32,
+   "y": 555,
+   "w": 326,
+   "h": 61,
+   "border": "1px solid rgba(255, 255, 255, 0.08)",
+   "layout": "flex gap 10px"
+  },
+  {
+   "tag": "label",
+   "depth": 3,
+   "x": 32,
+   "y": 576,
+   "w": 215,
+   "h": 19,
+   "text": "Use my own structured prompt",
+   "font": "400 15px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.9)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "input",
+   "depth": 3,
+   "x": 311,
+   "y": 573,
+   "w": 44,
+   "h": 26,
+   "role": "switch",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(0, 0, 0)"
+  },
+  {
+   "tag": "button",
+   "depth": 1,
+   "x": 16,
+   "y": 774,
+   "w": 358,
+   "h": 50,
+   "text": "Reset to defaults",
+   "font": "500 15px/15px -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.09)",
+   "radius": "18px"
+  }
+ ]
+}

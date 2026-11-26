@@ -1,0 +1,267 @@
+{
+ "source": "design/approved/2026-11-25-phase6/html/navigation-sidebar-phone.html",
+ "render": "design/approved/2026-11-25-phase6/renders/navigation-sidebar-phone.png",
+ "viewport": "390x844",
+ "root": {
+  "w": 390,
+  "h": 844,
+  "bg": "none"
+ },
+ "elements": [
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "bgImage": "radial-gradient(70% 32% at 80% 6%, rgba(117, 94, 210, 0.42), rgba(117, 94, 210, 0) 70%), radial-gradient(60% 30% at 6% 86%, rgba(217, 100, 160, 0.2), rgba(217, 100, 160, 0) 70%)"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 12,
+   "y": 64,
+   "w": 366,
+   "h": 500,
+   "bgImage": "linear-gradient(160deg, rgb(111, 129, 150), rgb(217, 169, 138) 60%, rgb(192, 127, 93))",
+   "radius": "34px"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "bg": "rgba(7, 6, 11, 0.62)"
+  },
+  {
+   "tag": "aside",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 318,
+   "h": 844,
+   "ariaLabel": "Navigation",
+   "bg": "rgba(26, 21, 46, 0.88)",
+   "radius": "0px 34px 34px 0px",
+   "shadow": "rgba(255, 255, 255, 0.08) -1px 0px 0px 0px inset, rgba(0, 0, 0, 0.5) 30px 0px 80px 0px",
+   "backdropFilter": "blur(40px) saturate(1.5)",
+   "layout": "flex column gap 6px"
+  },
+  {
+   "tag": "div",
+   "depth": 2,
+   "x": 14,
+   "y": 21,
+   "w": 140,
+   "h": 30,
+   "text": "RenderLab",
+   "font": "700 18px/normal -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px",
+   "layout": "flex gap 10px"
+  },
+  {
+   "tag": "span",
+   "depth": 3,
+   "x": 20,
+   "y": 21,
+   "w": 30,
+   "h": 30,
+   "bgImage": "linear-gradient(135deg, rgb(168, 155, 255), rgb(98, 81, 199))",
+   "radius": "10px"
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 259,
+   "y": 14,
+   "w": 44,
+   "h": 44,
+   "ariaLabel": "Close menu",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.09)",
+   "radius": "50%",
+   "layout": "flex"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 272,
+   "y": 27,
+   "w": 18,
+   "h": 18
+  },
+  {
+   "tag": "a",
+   "depth": 2,
+   "x": 14,
+   "y": 76,
+   "w": 289,
+   "h": 52,
+   "text": "Create",
+   "ariaCurrent": "page",
+   "font": "600 17px/normal -apple-system",
+   "color": "rgb(255, 255, 255)",
+   "letterSpacing": "-0.16px",
+   "bg": "rgba(255, 255, 255, 0.12)",
+   "radius": "18px",
+   "layout": "flex gap 14px"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 30,
+   "y": 91,
+   "w": 22,
+   "h": 22
+  },
+  {
+   "tag": "a",
+   "depth": 2,
+   "x": 14,
+   "y": 132,
+   "w": 289,
+   "h": 52,
+   "text": "Library",
+   "font": "500 17px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.86)",
+   "letterSpacing": "-0.16px",
+   "radius": "18px",
+   "layout": "flex gap 14px"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 30,
+   "y": 147,
+   "w": 22,
+   "h": 22
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 30,
+   "y": 200,
+   "w": 257,
+   "h": 1,
+   "bg": "rgba(255, 255, 255, 0.1)"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 14,
+   "y": 217,
+   "w": 289,
+   "h": 19,
+   "text": "Owner only",
+   "font": "600 12px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.58)",
+   "letterSpacing": "0.48px",
+   "textTransform": "uppercase"
+  },
+  {
+   "tag": "a",
+   "depth": 1,
+   "x": 14,
+   "y": 242,
+   "w": 289,
+   "h": 52,
+   "text": "Admin",
+   "font": "500 17px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.86)",
+   "letterSpacing": "-0.16px",
+   "radius": "18px",
+   "layout": "flex gap 14px"
+  },
+  {
+   "tag": "svg",
+   "depth": 2,
+   "x": 30,
+   "y": 257,
+   "w": 22,
+   "h": 22
+  },
+  {
+   "tag": "section",
+   "depth": 1,
+   "x": 14,
+   "y": 754,
+   "w": 289,
+   "h": 72,
+   "ariaLabel": "Your account",
+   "bg": "rgba(255, 255, 255, 0.07)",
+   "radius": "24px",
+   "border": "1px solid rgba(255, 255, 255, 0.1)",
+   "layout": "flex gap 12px"
+  },
+  {
+   "tag": "span",
+   "depth": 2,
+   "x": 27,
+   "y": 767,
+   "w": 46,
+   "h": 46,
+   "bgImage": "linear-gradient(135deg, rgb(133, 117, 245), rgb(176, 92, 240))",
+   "radius": "50%",
+   "layout": "flex"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 39,
+   "y": 779,
+   "w": 22,
+   "h": 22
+  },
+  {
+   "tag": "div",
+   "depth": 3,
+   "x": 85,
+   "y": 772,
+   "w": 149,
+   "h": 20,
+   "text": "Your name",
+   "font": "600 15px/19.5px -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "div",
+   "depth": 3,
+   "x": 85,
+   "y": 791,
+   "w": 149,
+   "h": 17,
+   "text": "you@example.com",
+   "font": "400 13px/16.9px -apple-system",
+   "color": "rgba(245, 245, 247, 0.66)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 246,
+   "y": 768,
+   "w": 44,
+   "h": 44,
+   "ariaLabel": "Settings",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.09)",
+   "radius": "50%",
+   "layout": "flex"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 258,
+   "y": 780,
+   "w": 20,
+   "h": 20
+  }
+ ]
+}
