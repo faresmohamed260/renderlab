@@ -27,6 +27,8 @@ async function geometry(page: Page) {
     const shell = document.querySelector(".preview-navigation-shell");
     const grid = document.querySelector(".create-preview-grid") as HTMLElement | null;
     if (!shell || !grid) throw new Error("Production shell/composer not mounted");
+    const sheet = document.querySelector('[data-slot="sheet-content"]');
+    const roots = [shell, ...(sheet && !shell.contains(sheet) ? [sheet] : [])];
     const visible = (el: Element): el is HTMLElement => el instanceof HTMLElement && el.clientWidth > 0 &&
       el.getClientRects().length > 0 && !el.closest("[inert],[hidden],.sr-only,details:not([open]) > :not(summary)") &&
       getComputedStyle(el).visibility === "visible";
@@ -37,14 +39,13 @@ async function geometry(page: Page) {
       const componentClass = [...el.classList].find(c => c.startsWith("create-preview-") || c.startsWith("preview-"));
       const label = el.getAttribute("aria-label");
       const selector = componentClass ? "." + componentClass : label ? el.tagName.toLowerCase() + "[aria-label=" + JSON.stringify(label) + "]" : el.tagName.toLowerCase();
-      const matches = [...shell.querySelectorAll(selector)];
-      if (shell.matches(selector)) matches.unshift(shell);
+      const matches = roots.flatMap(root => [...(root.matches(selector) ? [root] : []), ...root.querySelectorAll(selector)]);
       return matches.length === 1 ? selector : selector + "[" + (matches.indexOf(el) + 1) + "]";
     };
     const violations: Violation[] = [];
     const doc = document.documentElement;
     if (doc.scrollWidth > doc.clientWidth) violations.push({ selector: "html", kind: "scroll", pixels: doc.scrollWidth - doc.clientWidth });
-    for (const el of [shell, ...shell.querySelectorAll("*")].filter(visible)) {
+    for (const el of roots.flatMap(root => [root, ...root.querySelectorAll("*")]).filter(visible)) {
       if (!el.matches("input:not([type=range]),select") && el.scrollWidth > el.clientWidth) {
         violations.push({ selector: address(el), kind: "scroll", pixels: el.scrollWidth - el.clientWidth });
       }
@@ -101,8 +102,20 @@ for (const viewport of viewports) {
       if (result.violations.length) actual[state] = result.violations;
       console.log("OVERFLOW_ACCEPTANCE " + viewport.width + " " + state + " " + JSON.stringify(result));
       // A missing overflow entry must not mean that the corresponding UI vanished.
-      // Check the original addresses, not replacement selectors, in every 195px state.
+      // On 195px, retain the original control addresses and prove the Steps
+      // slider inside its approved Advanced sheet in each existing state.
       if (viewport.width === 195) {
+        const advancedOpener = page.getByRole("button", { name: "Advanced", exact: true });
+        const advancedSheet = page.getByRole("dialog", { name: "Advanced" });
+        const wasOpen = await advancedSheet.isVisible();
+        if (!wasOpen) {
+          await advancedOpener.press("Enter");
+          await expect(advancedSheet).toBeVisible();
+        }
+        await expect.poll(() => advancedSheet.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
+        const sheetGeometry = await geometry(page);
+        if (sheetGeometry.violations.length) actual[state + "/sheet"] = sheetGeometry.violations;
+        console.log("OVERFLOW_ACCEPTANCE " + viewport.width + " " + state + "/sheet " + JSON.stringify(sheetGeometry));
         const selectors = [".create-preview-dock", ".create-preview-settings", ".create-preview-steps", "input#create-preview-steps"];
         for (const selector of selectors) {
           const locator = page.locator(selector);
@@ -143,6 +156,11 @@ for (const viewport of viewports) {
         await expect(range).toHaveValue(String(before));
         await expect(page.locator(".create-preview-steps output")).toHaveText(String(before));
         console.log("OVERFLOW_CONTROL_PROOF " + state + " " + JSON.stringify({ boxes, hit, before, after, restored: before }));
+        if (!wasOpen) {
+          await page.keyboard.press("Escape");
+          await expect(advancedSheet).toHaveCount(0);
+          await expect(advancedOpener).toBeFocused();
+        }
       }
     };
     await page.setViewportSize(viewport);
@@ -167,11 +185,25 @@ for (const viewport of viewports) {
       await expect(create.getByText("No recent prompts in this session.")).toBeVisible();
       await measure(variant.name + "/recents");
       await create.getByLabel("Recent prompts", { exact: true }).click();
-      await create.locator("#create-preview-negative-label").click();
-      await create.locator("#create-preview-vgl-label").click();
-      await expect(create.getByText(autoVgl ? "Generated VGL is advertised by the server but not available in this workspace. Enter manual JSON instead." : "Generated VGL is unavailable. Enter manual JSON instead.", { exact: true })).toBeVisible();
-      await create.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');
+      const phone = viewport.width <= 700;
+      const advancedOpener = create.getByRole("button", { name: "Advanced", exact: true });
+      const advancedSheet = page.getByRole("dialog", { name: "Advanced" });
+      if (phone) {
+        await advancedOpener.press("Enter");
+        await expect(advancedSheet).toBeVisible();
+        await expect.poll(() => advancedSheet.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
+      }
+      const advanced = phone ? advancedSheet : create;
+      await advanced.locator("#create-preview-negative-label").click();
+      await advanced.locator("#create-preview-vgl-label").click();
+      await expect(advanced.getByText(autoVgl ? "Generated VGL is advertised by the server but not available in this workspace. Enter manual JSON instead." : "Generated VGL is unavailable. Enter manual JSON instead.", { exact: true })).toBeVisible();
+      await advanced.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');
       await measure(variant.name + "/advanced");
+      if (phone) {
+        await page.keyboard.press("Escape");
+        await expect(advancedSheet).toHaveCount(0);
+        await expect(advancedOpener).toBeFocused();
+      }
     }
     expect(unexpected, "No unexpected API, mutation or external browser requests").toEqual([]);
     // Exact equality, not a loose allowlist: a new state/selector or greater

@@ -119,7 +119,22 @@ for (const { width, route } of [{ width: 390, route: "/create" }, { width: 390, 
             expect(await hiddenBy(queue)).toBeNull();
           }
         }
+        const advancedNames = ["Manual VGL JSON", "Steps label", "Steps output"];
+        const advancedOpener = page.getByRole("button", { name: "Advanced", exact: true });
+        const advancedSheet = page.getByRole("dialog", { name: "Advanced" });
+        let advancedOpen = false;
         for (const [name, selector] of labels) {
+          if (width === 390 && advancedNames.includes(name) && !advancedOpen) {
+            await advancedOpener.press("Enter");
+            await expect(advancedSheet).toBeVisible();
+            await expect.poll(() => advancedSheet.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
+            advancedOpen = true;
+          } else if (advancedOpen && !advancedNames.includes(name)) {
+            await page.keyboard.press("Escape");
+            await expect(advancedSheet).toHaveCount(0);
+            await expect(advancedOpener).toBeFocused();
+            advancedOpen = false;
+          }
           if (state !== "create-shell" && (name === "Queue" || name === "Shortcuts")) {
             const target = page.locator(selector);
             await target.scrollIntoViewIfNeeded();
@@ -143,7 +158,7 @@ for (const { width, route } of [{ width: 390, route: "/create" }, { width: 390, 
             expect(paint.points.length, name + " actual text ranges").toBeGreaterThan(0);
             expect(paint.points.every(point => point.ownTarget && !point.insideDisclosure), name + " glyph area must remain clear of the disclosure").toBe(true);
           }
-          const row = await collectTextContrast(page, page.locator(selector), state, name + " " + selector);
+          const row = await collectTextContrast(page, advancedOpen ? advancedSheet.locator(selector) : page.locator(selector), state, name + " " + selector);
           rows.push(row);
           console.log("CREATE_MANUAL_CONTRAST " + JSON.stringify({ width, ...row }));
         }
