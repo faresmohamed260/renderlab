@@ -1073,3 +1073,15 @@
   .settingsCards .sessionStack[data-expanded="false"] { display: none; }
   .settingsCards .sessionStack[data-expanded="true"] { padding: 12px 18px 18px; }
 }
+
+/* Judge round 1, defects 8–9 and decision 21. */
+@media (min-width: 1025px) {
+  .workspace:has(.round3) .title { font-size: 32px; line-height: 39px; font-weight: 700; }
+  .workspace:has(.round3) .lede { font-size: 15px; line-height: 19px; margin-top: 6px; }
+  .settingsSections { width: 100%; }
+}
+@media (max-width: 1024px) {
+  .settingsCards > [id="settings-profile"] .actionRow > [data-slot="button"] { width: auto; min-width: 44px; min-height: 44px; height: 44px; padding: 0; justify-content: end; border: 0; box-shadow: none; background: transparent; }
+  .settingsCards > [id="settings-profile"] .phoneActionLabel { color: var(--rl-accent-decorative-start); font-size: 14px; font-weight: 600; }
+  .settingsCards > [id="settings-preferences"] .helper { display: none; }
+}

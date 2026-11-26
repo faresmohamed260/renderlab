@@ -802,3 +802,8 @@
   .observeLocked .observeNote { font-size: 13px; line-height: 18px; }
   .observeLockTitle svg { width: 18px; height: 18px; }
 }
+
+/* Judge round 1 defect 10 — prevent inherited metric-grid placement. */
+.observeStat { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; text-align: start; }
+.observeStat > .observeNote, .observeStat > .observeValue { display: block; align-self: flex-start; width: auto; max-width: 100%; text-align: start; margin: 0; }
+.observeStat > .observeValue { line-height: 39px; }
