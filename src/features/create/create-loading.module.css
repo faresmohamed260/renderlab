@@ -35,3 +35,9 @@
 
 @supports (backdrop-filter:blur(1px)) { @media(max-width:700px) { .phoneComposer { background:rgb(255 255 255 / 8%); backdrop-filter:blur(32px) saturate(1.7); } } }
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active) { .phoneComposer { background:var(--rl-surface-panel); backdrop-filter:none; } }
+
+/* The measured desktop skeleton uses flat translucent panels, not the
+   live panel's heavy elevation; preserve the exact corner geometry. */
+.rail,.composer,.promptCard { box-shadow:none; backdrop-filter:none; }
+.promptCard { border-radius:26px; }
+@media (max-width:700px) { .phoneComposer { padding-right:14px; } }
