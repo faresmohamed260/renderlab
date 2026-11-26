@@ -23,7 +23,7 @@ for (const width of [390, 320, 195]) {
     await page.keyboard.press("Escape");
     await expect(sheet).toHaveCount(0);
     await expect(opener).toBeFocused();
-    await expect(workspace.getByRole("textbox", { name: "Seed", exact: true })).toHaveValue("4567");
+    await expect(workspace.getByRole("textbox", { name: "Seed", exact: true })).toHaveCount(0);
     if (width === 390) {
       // Diagnostic only: observe the original second click concurrently, without
       // waiting for stability, retrying, forcing, or changing its assertions.

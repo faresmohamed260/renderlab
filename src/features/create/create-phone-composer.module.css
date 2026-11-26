@@ -1,7 +1,10 @@
 /* Phone-only composer card; keep normal flow at small heights and with the
  * software keyboard. Do not overlay the result, mask editor or focus targets. */
 .composer .advancedTrigger { display: none; }
+.inlineStructured { display: flow-root; }
 @media (max-width: 700px) {
+  /* Hide inline fields even before the first client media-query update. */
+  .composer .inlineStructured, .composer .inlineAdvanced { display: none; }
   .composer:global(.create-preview-controls) {
     border-radius: var(--rl-radius-sheet);
     border: 1px solid var(--rl-border-subtle);
@@ -42,7 +45,17 @@
 .settings :global(.create-preview-seed) { display: flex; gap: var(--rl-space-8); min-inline-size: 0; align-items: center; }
 .settings :global(.create-preview-seed) input[type="text"] { min-inline-size: 0; flex: 1; }
 .settings :global(.create-preview-seed-dice) { flex: 0 0 auto; min-inline-size: var(--rl-hit-preferred); min-block-size: var(--rl-hit-preferred); }
-.settings :global(.create-preview-steps) input { inline-size: 100%; min-block-size: var(--rl-hit-preferred); }
+.settings :global(.create-preview-steps) {
+  display: grid;
+  row-gap: var(--rl-space-12);
+  min-inline-size: 0;
+  color: var(--rl-text-secondary);
+  font-size: var(--rl-type-label);
+}
+/* Keep the label and numeric output on the same explicit foreground, including the portalled sheet. */
+.settings :global(.create-preview-steps) > span { color: var(--rl-text-primary); }
+.settings :global(.create-preview-steps) output { color: var(--rl-text-primary); }
+.settings :global(.create-preview-steps) input { box-sizing: border-box; inline-size: 100%; min-inline-size: 0; max-inline-size: 100%; min-block-size: var(--rl-hit-preferred); }
 .settings :global(.create-preview-extra) summary { min-block-size: var(--rl-hit-preferred); padding-block: var(--rl-space-12); cursor: pointer; overflow-wrap: anywhere; }
 .settings textarea { inline-size: 100%; max-inline-size: 100%; min-inline-size: 0; resize: vertical; }
 .settings :global(.create-preview-caption) { color: var(--rl-text-secondary); overflow-wrap: anywhere; }
