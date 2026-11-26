@@ -230,6 +230,14 @@ For local product development after the toolchain/install checks:
 npm run dev
 ```
 
+For a secret-free, hot-reloading preview of the redesigned surfaces (Create, Library, Settings, Admin, History and Landing) on synthetic fixture data, with no `.env.local`:
+
+```bash
+npm run dev:fixtures
+```
+
+It serves http://127.0.0.1:3000 (override with `PORT`). Pages render as a signed-in owner by default; open `/__shell/signed-out?to=/%3Flanding-review%3D1` for Landing and `/__shell/owner` to switch back (`member`, `review`, `create` and `none` are also available). Surfaces: `/create`, `/round3-library`, `/round3-settings`, `/admin`, `/create-history-mount`. This is the mounted-component fixture app used by the browser suites, not the authenticated product.
+
 `.gitattributes` makes repository-owned text LF on both native Windows and Linux/WSL, independent of a developer's global `core.autocrlf` setting. If `npm run verify:text-policy` reports CRLF in an existing checkout, use a fresh checkout after the policy is present rather than mass-editing file contents.
 
 ### Secret-free quality checks
