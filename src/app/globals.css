@@ -584,10 +584,13 @@ a {
   -webkit-backdrop-filter: blur(14px) saturate(128%);
 }
 
-.kinetic-selection-checkbox:hover::before {
+@media (hover: hover) and (pointer: fine) {
+  .kinetic-selection-checkbox:hover::before {
   border-color: rgb(178 167 255 / 44%);
   background: rgb(10 11 17 / 88%);
 }
+}
+
 
 .kinetic-selection-checkbox[data-state="checked"]::before {
   border-color: rgb(178 167 255 / 68%);
@@ -1005,12 +1008,19 @@ a {
     transition: none;
   }
 
-  .kinetic-media-card:hover,
-  .kinetic-media-card:focus-visible,
-  .kinetic-media-card:hover .kinetic-media-preview {
+  .kinetic-media-card:focus-visible {
     transform: none;
     filter: none;
   }
+
+
+  @media (hover: hover) and (pointer: fine) {
+  .kinetic-media-card:hover, .kinetic-media-card:hover .kinetic-media-preview {
+    transform: none;
+    filter: none;
+  }
+}
+
 
   .kinetic-selection-deck {
     animation: none;
@@ -1595,9 +1605,12 @@ a {
     transform: none;
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .clear-create-result-media:hover {
     transform: none;
   }
+}
+
 }
 
 
@@ -2088,4 +2101,30 @@ a {
 }
 @keyframes rl-skeleton-shimmer {
   to { transform: translateX(100%); }
+}
+
+/* Shared transform-only press feedback; the semantic reduced-motion role is 1. */
+@media (prefers-reduced-motion: no-preference) {
+  :is([data-slot="button"], [data-slot="toggle"], [data-slot="toggle-group-item"], [data-slot="switch"]):not(:disabled):not([data-disabled]):active {
+    transform: scale(var(--rl-press-scale));
+    transition-property: transform;
+    transition-duration: var(--rl-duration-micro);
+    transition-timing-function: var(--rl-ease-out);
+  }
+}
+
+/* Dialog and sheet presence use the same opacity timing for their surface and scrim. */
+@keyframes rl-surface-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rl-surface-exit { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  :is([data-slot="sheet-content"], [data-slot="sheet-overlay"], [data-slot="alert-dialog-content"], [data-slot="alert-dialog-overlay"])[data-state="open"] {
+    animation: rl-surface-enter var(--rl-duration-contextual) var(--rl-ease-out) both;
+  }
+  :is([data-slot="sheet-content"], [data-slot="sheet-overlay"], [data-slot="alert-dialog-content"], [data-slot="alert-dialog-overlay"])[data-state="closed"] {
+    animation: rl-surface-exit var(--rl-duration-normal) var(--rl-ease-out) both;
+  }
+  :is([data-slot="sheet-content"], [data-slot="alert-dialog-content"]):is(:focus-visible, :has(:focus-visible)),
+  body:has(:is([data-slot="sheet-content"], [data-slot="alert-dialog-content"]):is(:focus-visible, :has(:focus-visible))) :is([data-slot="sheet-overlay"], [data-slot="alert-dialog-overlay"]) {
+    animation: none;
+  }
 }

@@ -213,7 +213,12 @@
   font-weight: 500;
 }
 .preview-account-row svg { flex: none; opacity: .8; }
-.preview-account-settings:is(:hover, :focus-visible, [aria-current="page"]) svg { opacity: 1; }
+.preview-account-settings:is(:focus-visible, :focus-visible, [aria-current="page"]) svg { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .preview-account-settings:is(:hover, :focus-visible, [aria-current="page"]) svg { opacity: 1; }
+}
+
 .preview-account-row-meta {
   margin-inline-start: auto;
   flex: none;
@@ -238,9 +243,16 @@
 :is(.preview-account-settings, .preview-section-group a)[aria-current="page"] {
   --preview-row-highlight: rgb(221 211 255 / 16%);
 }
-:is(.preview-account-settings, .preview-section-group a):is(:hover, :focus-visible) {
+:is(.preview-account-settings, .preview-section-group a):is(:focus-visible, :focus-visible) {
   --preview-row-highlight: rgb(221 211 255 / 23%);
 }
+
+@media (hover: hover) and (pointer: fine) {
+  :is(.preview-account-settings, .preview-section-group a):is(:hover, :focus-visible) {
+  --preview-row-highlight: rgb(221 211 255 / 23%);
+}
+}
+
 :is(.preview-account-settings, .preview-section-group a):active {
   --preview-row-highlight: rgb(221 211 255 / 30%);
 }
@@ -471,9 +483,12 @@
   background: rgb(255 255 255 / 5%);
   box-shadow: none;
 }
-.create-preview-workspace :is(button, summary):not(:disabled):hover {
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace :is(button, summary):not(:disabled):hover {
   background-color: rgb(255 255 255 / 9%);
 }
+}
+
 /* FIBO Studio uses a light wash on buttons, but only an accent color on summaries. */
 .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select, .create-preview-recents summary) {
   background: rgb(255 255 255 / 4.5%);
@@ -484,18 +499,31 @@
 .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select) {
   transition: background-color .16s, color .16s;
 }
-.create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select):not(:disabled):hover {
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select):not(:disabled):hover {
   cursor: pointer;
   background-color: rgb(235 232 255 / 9%);
   color: #dedbed;
 }
-.create-preview-workspace .create-preview-recents summary:hover {
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-recents summary:hover {
   background: rgb(255 255 255 / 4.5%);
   color: #a5b4fc;
 }
-.create-preview-workspace .create-preview-recents button:not(:disabled):is(:hover, :focus-visible) {
+}
+
+.create-preview-workspace .create-preview-recents button:not(:disabled):is(:focus-visible, :focus-visible) {
   background-color: rgb(233 217 255 / 9%);
 }
+
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-recents button:not(:disabled):is(:hover, :focus-visible) {
+  background-color: rgb(233 217 255 / 9%);
+}
+}
+
 .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select, .create-preview-recents summary):focus-visible {
   outline: 2px solid #a5b4fc;
   outline-offset: 3px;
@@ -512,9 +540,12 @@
   color: var(--rl-on-accent);
   box-shadow: var(--rl-elevation-primary);
 }
-.create-preview-workspace .create-preview-generate:not(:disabled):hover {
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-generate:not(:disabled):hover {
   background: var(--rl-gradient-hover);
 }
+}
+
 .create-preview-workspace .create-preview-generate:not(:disabled):active {
   background: var(--rl-gradient-pressed);
 }
@@ -575,10 +606,13 @@
     padding-block: 12px;
   }
 }
-.create-preview-workspace .create-preview-extra summary:hover {
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-extra summary:hover {
   color: #a5b4fc;
   background: transparent;
 }
+}
+
 .create-preview-extra details[open] > summary { margin-block-end: 12px; }
 .create-preview-workspace .create-preview-extra textarea {
   display: block;
@@ -758,7 +792,10 @@
   text-decoration: underline;
   color: #bbb4ca;
 }
-.create-preview-workspace .create-preview-stage-surface .create-preview-canvas-upload:not(:disabled):hover { background: rgb(255 255 255 / 3.5%); }
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-stage-surface .create-preview-canvas-upload:not(:disabled):hover { background: rgb(255 255 255 / 3.5%); }
+}
+
 .create-preview-stage-surface {
   position: absolute;
   inset: 0;
@@ -843,7 +880,12 @@
   background: transparent;
   font-size: 12px;
 }
-.create-preview-workspace .create-preview-stage-tools :is(button, a):is(:hover, [aria-pressed="true"]) { color: white; background: transparent; }
+.create-preview-workspace .create-preview-stage-tools :is(button, a):is(:focus-visible, [aria-pressed="true"]) { color: white; background: transparent; }
+
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-stage-tools :is(button, a):is(:hover, [aria-pressed="true"]) { color: white; background: transparent; }
+}
+
 .create-preview-canvas .create-preview-stage-surface > .create-preview-stage-live {
   position: absolute;
   inset: 0;
@@ -978,7 +1020,13 @@
     font-weight: 600;
   }
   .create-preview-workspace .create-preview-stage-surface > .create-preview-stage-tools
+    :is(button, a):is(:focus-visible, [aria-pressed="true"]) { color: #fff; }
+
+  @media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-stage-surface > .create-preview-stage-tools
     :is(button, a):is(:hover:not(:disabled), [aria-pressed="true"]) { color: #fff; }
+}
+
 }
 .create-preview-stage-batch button[aria-current="true"] {
   outline: 2px solid #a5b4fc;
@@ -1036,7 +1084,10 @@
     background: transparent;
     border-radius: 0;
   }
+  @media (hover: hover) and (pointer: fine) {
   .create-preview-workspace .create-preview-stage-open:hover { background: transparent; }
+}
+
 }
 @media (prefers-reduced-motion: reduce) {
   .create-preview-stage-tools::before { transition: none; }
@@ -1419,7 +1470,12 @@
     padding: 2px;
     border-radius: 10px;
   }
+  .create-preview-recents-row:is(:focus-visible, :focus-within) { background: rgb(233 217 255 / 9%); }
+
+  @media (hover: hover) and (pointer: fine) {
   .create-preview-recents-row:is(:hover, :focus-within) { background: rgb(233 217 255 / 9%); }
+}
+
   .create-preview-recents-row > button:first-child {
     white-space: normal;
     block-size: auto;
@@ -1568,7 +1624,10 @@
   .p6-desktop-links { position: absolute; inset-inline-start: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: var(--rl-space-4, 4px); }
   .p6-desktop-links .p6-desktop-link { min-block-size: var(--rl-hit-preferred, 44px); border-radius: var(--rl-radius-pill, 999px); color: var(--rl-text-secondary, var(--color-text-muted)); padding-inline: var(--rl-space-12, 12px); }
   .p6-desktop-links .p6-desktop-link[aria-current="page"] { color: var(--rl-text-primary, var(--color-text)); background: var(--rl-surface-selected, var(--color-surface-3)); }
+  @media (hover: hover) and (pointer: fine) {
   .p6-desktop-links .p6-desktop-link:hover { background: var(--rl-surface-hover, var(--color-surface-2)); color: var(--rl-text-primary, var(--color-text)); }
+}
+
   .p6-desktop-navigation :focus-visible { outline: var(--rl-focus-width, 2px) solid var(--rl-focus, var(--color-accent-bright)); outline-offset: var(--rl-focus-offset, 3px); }
 }
 

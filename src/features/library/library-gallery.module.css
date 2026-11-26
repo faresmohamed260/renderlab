@@ -664,10 +664,17 @@
     transition-duration: 0.001ms !important;
   }
 
-  .cardShell:hover .cardLink,
   .cardShell[data-pointer="active"] .cardLink {
     transform: none !important;
   }
+
+
+  @media (hover: hover) and (pointer: fine) {
+  .cardShell:hover .cardLink {
+    transform: none !important;
+  }
+}
+
 
   .mediaFrame::after {
     opacity: 0.72 !important;
@@ -913,9 +920,7 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
-  .cardLink,
-  .cardShell:hover .cardLink,
-  .cardShell[data-pointer="active"] .cardLink {
+  .cardLink, .cardShell[data-pointer="active"] .cardLink {
     border-color: var(--rl-border-subtle);
     border-radius: var(--rl-radius-control);
     background: var(--rl-surface-base);
@@ -923,6 +928,19 @@
     transform: none;
     transition: none;
   }
+
+
+  @media (hover: hover) and (pointer: fine) {
+  .cardShell:hover .cardLink {
+    border-color: var(--rl-border-subtle);
+    border-radius: var(--rl-radius-control);
+    background: var(--rl-surface-base);
+    box-shadow: none;
+    transform: none;
+    transition: none;
+  }
+}
+
 
   .cardLink:focus-visible {
     outline: var(--rl-focus-width) solid var(--rl-focus);
@@ -957,10 +975,17 @@
     color: var(--rl-text-primary);
   }
 
-  .inspectAction[data-slot="button"]:hover,
   .inspectAction[data-slot="button"][aria-current="true"] {
     background: var(--rl-surface-selected);
   }
+
+
+  @media (hover: hover) and (pointer: fine) {
+  .inspectAction[data-slot="button"]:hover {
+    background: var(--rl-surface-selected);
+  }
+}
+
 
   .selectionMode {
     display: none;
@@ -1069,9 +1094,12 @@
     box-shadow: var(--rl-elevation-primary);
   }
 
+  @media (hover: hover) and (pointer: fine) {
   .inspectorActions .createAction:hover {
     background: var(--rl-gradient-hover);
   }
+}
+
 
   .inspectorActions .createAction:active {
     background: var(--rl-gradient-pressed);
@@ -1467,5 +1495,30 @@
   }
   .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"]) {
     color: HighlightText;
+  }
+}
+
+/* Stable figures in status and selection feedback. */
+.mediaContext strong,
+.desktopContext span,
+.selectionSummary strong,
+.selectionSummary small,
+.inspectorFacts dd {
+  font-variant-numeric: tabular-nums;
+}
+.searchInput { font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) {
+  .searchInput { font-size: max(16px, var(--rl-type-body)); }
+}
+.inspectorHeader h3,
+.workspace :global([data-slot="empty-title"]) { text-wrap: balance; }
+.workspace :global([data-slot="empty-description"]) { text-wrap: pretty; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cardLink:active {
+    transform: scale(var(--rl-press-scale));
+    transition-property: transform;
+    transition-duration: var(--rl-duration-micro);
+    transition-timing-function: var(--rl-ease-out);
   }
 }
