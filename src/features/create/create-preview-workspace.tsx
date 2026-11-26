@@ -6,9 +6,9 @@ import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { flushSync } from "react-dom";
-import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
+import { Clock, Dice5, ImagePlus, Pencil, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { registerCreateCommand } from "@/lib/create-commands";
 import { nextResultIndex, useCreateShortcuts } from "./use-create-shortcuts";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import phoneStyles from "./create-phone-composer.module.css";
@@ -26,7 +26,7 @@ import { previewImageSizes } from "./create-preview-sizes";
 import { loadCreateResultSource } from "./create-result-source";
 import { fetchHostedCreateCapabilities, rejectUnavailableInspirationDrop, type HostedCreateCapabilities } from "./create-hosted-capabilities";
 import { loadContinuationFiles, type CreateContinuationPlan } from "./create-continuation";
-import { CreateHistoryPanel, CreateHistorySheet } from "./history/create-history-panel";
+import { CreateHistoryPanel, CreateHistorySheet, Jobs, type RailResult } from "./history/create-history-panel";
 import { createHistoryTransport, type HistoryReadActions } from "./history/history-transport";
 import type { HistoryTransport } from "./history/history-contract";
 import { useCreateHistory } from "./history/use-create-history";
@@ -331,7 +331,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const queueCount = Number(busy) + waiting.length;
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historySelection, setHistorySelection] = useState<{ image: Result }>();
-  const [historyRail, setHistoryRail] = useState<HTMLDivElement | null>(null);
   const [result, setResult] = useState<Result>();
   const [turns, setTurns] = useState<Record<Workflow, StageTurn<Result>[]>>({ edit: [], generate: [] });
   const [liveFrame, setLiveFrame] = useState<string>();
@@ -345,7 +344,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [savedStatus, setSavedStatus] = useState("");
   const historyRead = useCreateHistory({
     accountKey: historyActions && admitted ? hostedAccountKey ?? null : null,
-    visible: !!historyActions && (desktop || historyOpen),
+    visible: !!historyActions && (desktop || historyOpen || toolbarPopover === "queue"),
+    combined: true,
     transport: historyActions ? createHistoryTransport(historyActions) : unavailableHistory,
     onReuseDraft: async (draft, signal) => {
       if (!admitted || busy || continuationPending || maskEditor) throw new Error("Create is busy.");
@@ -372,18 +372,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }
   const historyGroups = [...batches.values()].slice(0, 8);
 
-  useEffect(() => {
-    if (!historyRail) return;
-    const fade = () => {
-      historyRail.toggleAttribute("data-fade-top", historyRail.scrollTop > 1);
-      historyRail.toggleAttribute("data-fade-bottom", historyRail.scrollHeight - historyRail.scrollTop - historyRail.clientHeight > 1);
-    };
-    fade();
-    const observer = new ResizeObserver(fade);
-    observer.observe(historyRail);
-    historyRail.addEventListener("scroll", fade, { passive: true });
-    return () => { observer.disconnect(); historyRail.removeEventListener("scroll", fade); };
-  }, [historyRail, historyGroups.length, busy]);
+
 
   useEffect(() => {
     if (!admitted || !savedEditsAccount) return;
@@ -1293,6 +1282,37 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     },
   });
 
+  const railResults: RailResult[] = historyRead.accountAvailable ? historyRead.session.map(entry => {
+    const image = history.find(item => item.assetId === entry.id);
+    return { id: entry.id, label: entry.label, image: image?.image_data, createdAt: entry.createdAt, edit: image?.run?.mode === "edit", current: result?.assetId === entry.id,
+      onSelect: () => historyRead.selectSessionResult(entry) };
+  }) : historyGroups.map((group, index) => {
+    const image = group[0];
+    return { id: image.batchId ?? image.filename ?? String(index), label: image.run?.prompt || image.promptUsed || image.filename || "Generated result", image: image.image_data, edit: image.run?.mode === "edit",
+      current: !!result && group.some(item => item === result || matchesImage(item, result)), onSelect: () => { setMaskEditor(undefined); setHistorySelection({ image }); setHistoryOpen(false); } };
+  });
+  const railProps = { state: historyRead, results: railResults, recent, disabled: busy || continuationPending,
+    onReusePrompt: (value: string) => { if (!busy && !continuationPending) { setPrompt(value); setHistoryOpen(false); } },
+    onRemovePrompt: (value: string) => setRecent(items => items.filter(item => item !== value)),
+    onClearPrompts: () => setRecent([]), shortcutsEnabled: shortcuts.enabled };
+  useEffect(() => {
+    const openQueue = () => setToolbarPopover("queue");
+    const openHistory = () => { if (matchMedia("(min-width: 1025px)").matches) workspaceRoot.current?.querySelector<HTMLElement>(".create-preview-history")?.focus(); else setHistoryOpen(true); };
+    window.addEventListener("renderlab:open-queue", openQueue);
+    window.addEventListener("renderlab:open-history", openHistory);
+    if (new URLSearchParams(window.location.search).get("queue") === "1") openQueue();
+    const unregister = [
+      registerCreateCommand({id:"open-queue",label:"Open Queue",keywords:["jobs","cancel","retry"],group:"Create",enabled:true,run:openQueue}),
+      registerCreateCommand({id:"open-history",label:"Open History",keywords:["results","prompts"],group:"Create",enabled:true,run:openHistory}),
+    ];
+    return () => { window.removeEventListener("renderlab:open-queue",openQueue); window.removeEventListener("renderlab:open-history",openHistory); unregister.forEach(fn=>fn()); };
+  }, []);
+  useEffect(() => {
+    const unregister = ([-1,1] as const).map(direction => registerCreateCommand({id:direction === -1 ? "step-result-prev" : "step-result-next", label:direction === -1 ? "Previous result" : "Next result", keywords:["history","step"], shortcut:direction === -1 ? "[" : "]",group:"Create",enabled:!busy && !continuationPending && shortcutResults.length>1,run:()=>{const next=nextResultIndex(selectedResultIndex,direction,shortcutResults.length);if(next>=0)setHistorySelection({image:shortcutResults[next]});}}));
+    return () => unregister.forEach(fn=>fn());
+  }, [busy, continuationPending, selectedResultIndex, shortcutResults]);
+  useEffect(() => registerCreateCommand({id:"toggle-keyboard-shortcuts",label:shortcuts.enabled ? "Disable keyboard shortcuts" : "Enable keyboard shortcuts",keywords:["keyboard"],group:"Create",enabled:true,run:()=>shortcuts.changeEnabled(!shortcuts.enabled)}),[shortcuts.enabled,shortcuts.changeEnabled]);
+
   function preserveToolbarFocus(event: Event) {
     // Radix returns focus after portal teardown. Preserve any newer focus and
     // otherwise let Radix decide whether this dismissal should focus the trigger.
@@ -1306,16 +1326,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     <section ref={workspaceRoot} tabIndex={-1} onKeyDown={shortcuts.onKeyDown} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
       <p className="sr-only" role="status" aria-live="polite">{maskAnnouncement}</p>
       <p className="sr-only" role="status" aria-live="polite" data-create-shortcut-announcement>{selectedResultIndex >= 0 ? "Result " + (selectedResultIndex + 1) + " of " + shortcutResults.length : ""}</p>
-      <div className="create-preview-toolbar">
-        <div className="create-preview-tools">
-          {historyActions && !desktop && <CreateHistorySheet state={historyRead} open={historyOpen} onOpenChange={setHistoryOpen}
-            trigger={<Button type="button" variant="ghost" className="create-preview-toolbar-trigger" aria-label="Open History"><Clock size={16} aria-hidden="true" /> History</Button>} />}
-          <Popover open={toolbarPopover === "queue"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "queue", open))}>
-            <PopoverTrigger asChild>
-              <Button ref={queue} type="button" variant="ghost" className="create-preview-toolbar-trigger"><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</Button>
-            </PopoverTrigger>
-            <PopoverContent data-create-shortcut-overlay="" aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs"
-              onCloseAutoFocus={preserveToolbarFocus}>
+      <div className={columns.queueAnchor}>
+        <Popover open={toolbarPopover === "queue"} onOpenChange={(open) => setToolbarPopover(current => nextCreateToolbarPopover(current, "queue", open))}>
+          <PopoverTrigger asChild><Button ref={queue} type="button" tabIndex={-1} aria-hidden="true" className={columns.invisibleAnchor}>Queue</Button></PopoverTrigger>
+          <PopoverContent data-create-shortcut-overlay="" aria-label="Queue" className={columns.queuePopover} onCloseAutoFocus={preserveToolbarFocus}>
+            <h2 className="font-semibold">Queue</h2>
+            {historyActions && <Jobs state={historyRead} />}
+            {(!hostedModel || queueNotice) && <>
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               <div className="create-preview-caption">Waiting requests keep their prompt and inputs in this preview until they start, are removed, or expire.</div>
               {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
@@ -1329,26 +1346,11 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     onClick={() => void removeWaiting(bookmark.id)}>Remove waiting render</Button>
                 </div>
               ))}
-            </PopoverContent>
-          </Popover>
-          <Popover open={toolbarPopover === "shortcuts"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "shortcuts", open))}>
-            <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
-            </PopoverTrigger>
-            <PopoverContent data-create-shortcut-overlay="" aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover"
-              onCloseAutoFocus={preserveToolbarFocus}>
-              <p>/ to focus the prompt.</p>
-              <p>{shortcuts.modifierHint} + Enter to generate when the form is ready.</p>
-              <p>[ and ] to step through results.</p>
-              <p>Esc to dismiss the active overlay.</p>
-              <label className="flex flex-wrap items-center gap-2">
-                <Switch checked={shortcuts.enabled} onCheckedChange={shortcuts.changeEnabled} aria-label="Keyboard shortcuts" />
-                <span>Keyboard shortcuts {shortcuts.enabled ? "on" : "off"}</span>
-              </label>
-            </PopoverContent>
-          </Popover>
-        </div>
+            </>}
+          </PopoverContent>
+        </Popover>
       </div>
+      {!desktop && <CreateHistorySheet {...railProps} open={historyOpen} onOpenChange={setHistoryOpen} />}
       {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
       {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
       <div className={"create-preview-grid " + columns.grid}>
@@ -1631,7 +1633,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="create-preview-stage-sign-in">Sign in to upload</Link>}
         </section>
-        <aside className="create-preview-history" aria-labelledby="create-preview-history-title" aria-keyshortcuts={shortcuts.enabled ? "[ ]" : undefined} title={shortcuts.enabled ? "Previous result: [ · Next result: ]" : undefined}
+        <aside className={"create-preview-history " + columns.rebuiltRail} tabIndex={-1} aria-label="Session and prompt history" aria-keyshortcuts={shortcuts.enabled ? "[ ]" : undefined}
           onKeyDown={(event) => {
             if (busy || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
             const direction = ["ArrowUp", "ArrowLeft"].includes(event.key) ? -1 : ["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : 0;
@@ -1643,35 +1645,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             next.focus();
             next.click();
           }}>
-          <h2 id="create-preview-history-title">History</h2>
-          <div className={columns.historySlot}>
-            {historyActions && desktop ? <CreateHistoryPanel state={historyRead} showHeading={false} /> : <>
-              <h3>Prompt and job history</h3>
-              <p>Not available here yet. Activity remains available.</p>
-            </>}
-          </div>
-          {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
-            onClick={() => void saveEdit()}>Clear saved edits</Button>}
-          {savedStatus && <p className="create-preview-caption" role="status">{savedStatus}</p>}
-          <div ref={setHistoryRail} className="create-preview-history-rail">
-            {queueCount > 0 && <Button type="button" variant="ghost" className="create-preview-history-progress"
-              aria-label={"Open Queue, " + queueCount + (queueCount === 1 ? " active render" : " renders")} onClick={() => {
-                queue.current?.focus({ preventScroll: true });
-                setToolbarPopover("queue");
-              }}>
-              <span>Rendering</span><span>{queueCount} in Queue</span>
-            </Button>}
-            {historyGroups.length ? historyGroups.map((group, index) => {
-              const image = group[0];
-              return <Button key={image.batchId ?? image.filename ?? index} data-create-history-image type="button" variant="ghost"
-                className="create-preview-history-cover" disabled={busy} aria-current={!!result && group.some(item => item === result || (!!item.assetId && item.assetId === result.assetId))}
-                aria-label={"Open render " + (historyGroups.length - index) + ", seed " + image.seed + ", " + group.length + (group.length === 1 ? " image" : " images")}
-                onClick={() => { setMaskEditor(undefined); setHistorySelection({ image }); }}>
-                <img src={image.image_data} alt="" draggable={false} loading="lazy" />
-                {group.length > 1 && <span className="create-preview-history-stack" aria-hidden="true">▱ {group.length}</span>}
-              </Button>;
-            }) : !busy && <p className="create-preview-caption">Finished images will appear here.</p>}
-          </div>
+          <CreateHistoryPanel {...railProps}>
+            {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy} onClick={() => void saveEdit()}>Clear saved edits</Button>}
+            {savedStatus && <p className="create-preview-caption" role="status">{savedStatus}</p>}
+          </CreateHistoryPanel>
         </aside>
       </div>
     </section>
