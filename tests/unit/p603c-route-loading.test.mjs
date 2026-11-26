@@ -15,11 +15,14 @@ test("route loading boundaries are content-only shared Skeletons", async () => {
     await assert.rejects(access(new URL("../../src/app/(app)/" + route + "/loading.tsx", import.meta.url)), { code: "ENOENT" });
   }
   const create = await read("src/app/(app)/create/page.tsx");
-  const activity = await read("src/app/(app)/activity/page.tsx");
+  const activity = await read("src/app/(app)/activity/route.ts");
+  const history = await read("src/features/create/history/create-history-panel.tsx");
   assert.match(create, /async function ProductionCreatePage[\s\S]*?await getCurrentRenderLabAccount\(\)[\s\S]*?if \(!account\) return Create\(\{ params, account \}\);[\s\S]*?<Suspense fallback=\{<RouteLoading surface="create"/);
   assert.match(create, /const owner = await getCreatePreviewOwner\(\)\.catch\(\(\) => null\);[\s\S]*?if \(!owner\) return CreatePreviewCreate\(\{ owner, hostedOnly \}\);[\s\S]*?<Suspense fallback=\{<RouteLoading surface="create"/);
-  assert.match(activity, /await getCurrentRenderLabAccount\(\)[\s\S]*?if \(!account \|\| !available\)[\s\S]*?accountAvailable=\{Boolean\(account\)\}[\s\S]*?<Suspense fallback=\{<RouteLoading surface="activity"/);
-  assert.doesNotMatch(activity, /redirect\(|notFound\(/);
+  assert.match(activity, /return activityRedirect\(request\)/);
+  assert.doesNotMatch(activity, /getCurrentRenderLabAccount|settleOwnerGeneration|Suspense/);
+  assert.match(history, /!state.accountAvailable \? <PrivateHistory/);
+  assert.match(history, /!state.jobs && state.jobsPending\) return <Loading/);
 });
 
 test("loading decoration uses the shared token owner and static reduced motion", async () => {

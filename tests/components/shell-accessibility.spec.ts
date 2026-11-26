@@ -25,13 +25,14 @@ test("phone shell navigation text has actual composited contrast", async ({ page
   const rows = [];
   const samples = isLegacy ? [
     ["Workspace group", panel.getByText("Workspace", { exact: true })],
-    ["Media & history group", panel.getByText("Media & history", { exact: true })],
+    ["Media group", panel.getByText("Media", { exact: true })],
   ] as const : [];
   for (const [label, locator] of samples) {
     await expect(locator).toBeVisible();
     rows.push(await collectTextContrast(page, locator, "open", label));
   }
-  for (const label of ["Create", "Library", "Activity"]) {
+  await expect(panel.getByRole("link", { name: "Activity", exact: true })).toHaveCount(0);
+  for (const label of ["Create", "Library"]) {
     const link = panel.getByRole("link", { name: label, exact: true });
     await expect(link).toBeVisible();
     rows.push(await collectTextContrast(page, link, "open", label));

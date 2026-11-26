@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CircleHelp, House, Images, Menu, Settings, Shield, SlidersHorizontal, Sparkles, UserRound, X } from "lucide-react";
+import { CircleHelp, House, Images, Menu, Settings, Shield, SlidersHorizontal, Sparkles, UserRound, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { RenderLabMark } from "@/components/brand/renderlab-brand";
 
@@ -222,12 +222,11 @@ const destinations = [
   { href: "/", label: "Home", icon: House },
   { href: "/create", label: "Create", icon: Sparkles },
   { href: "/library", label: "Library", icon: Images },
-  { href: "/activity", label: "Activity", icon: Activity },
 ];
 
 const navigationGroups = [
   { title: "Workspace", destinations: destinations.slice(0, 2) },
-  { title: "Media & history", destinations: destinations.slice(2, 4) },
+  { title: "Media", destinations: destinations.slice(2) },
 ];
 
 

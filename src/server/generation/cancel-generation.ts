@@ -341,7 +341,7 @@ export async function requestGenerationCancellation(ownerId: string, jobId: stri
     if (current.status === "persisting" || terminalStatuses.has(current.status)) {
       return cancellationError("This generation can no longer be cancelled.");
     }
-    return cancellationError("Generation state is busy. Refresh Activity and try again.");
+    return cancellationError("Generation state is busy. Refresh History and try again.");
   }
 
   try {
@@ -398,7 +398,7 @@ export async function requestGenerationCancellation(ownerId: string, jobId: stri
       ok: false,
       error: {
         code: "generation_backend_unavailable",
-        message: "Cancellation could not be processed right now. Refresh Activity and try again.",
+        message: "Cancellation could not be processed right now. Refresh History and try again.",
       },
     };
   } finally {

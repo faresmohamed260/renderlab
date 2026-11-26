@@ -88,7 +88,8 @@ const { adminDiagnosticProjection } = await import("../../src/server/observabili
 const { POST: submitRoute } = await import("../../src/app/api/generation/jobs/route.ts");
 const { default: loadCreate, maxDuration: createDuration } = await import("../../src/app/(app)/create/page.tsx");
 const { default: loadLibraryPage, maxDuration: libraryDuration } = await import("../../src/app/(app)/library/page.tsx");
-const { default: loadActivity, maxDuration: activityDuration } = await import("../../src/app/(app)/activity/page.tsx");
+const { GET: redirectActivity } = await import("../../src/app/(app)/activity/route.ts");
+const { readHistoryActivity } = await import("../../src/server/generation/history/history-activity.ts");
 const { settleOwnerGenerationWithinResponse } = await import("../../src/server/generation/owner-generation-settlement.ts");
 const png = await sharp({
   create: { width: 16, height: 16, channels: 3, background: "#ffffff" },
@@ -625,18 +626,14 @@ test("production Create returns before settling the owner's result", async (t) =
   assert.equal(job.releases, 1);
 });
 
-test("Activity bounds reconciliation and lists a fresh successful result", async (t) => {
+test("History bounds reconciliation and lists a fresh successful result", async (t) => {
   const job = fixture(t);
   job.respond(pngResult());
-  const boundary = await loadActivity(pageInput());
-  assert.equal(boundary.type, Suspense);
-  const view = await boundary.props.children.type(boundary.props.children.props);
-
-  assert.equal(activityDuration, 30);
-  assert.equal(view.props.available, true);
-  assert.equal(view.props.hasActive, false);
-  assert.equal(view.props.items[0].status, "succeeded");
-  assert.equal(view.props.items[0].canRunAgain, true);
+  const view = await readHistoryActivity();
+  assert.equal(view.state, "ready");
+  assert.equal(view.hasActive, false);
+  assert.equal(view.items[0].status, "succeeded");
+  assert.equal(view.items[0].canRunAgain, true);
   assert.equal(job.candidateLookups, 1);
   assert.equal(job.reads, 1);
 });
@@ -705,14 +702,11 @@ test("Library returns normally at six seconds while the claimed PNG write finish
   assert.equal(job.releases, 1);
 });
 
-test("lookup failure leaves Activity available without a second provider poll", async (t) => {
+test("lookup failure leaves History available without a second provider poll", async (t) => {
   const job = fixture(t, { lookupError: () => Response.json({ message: "private-error" }, { status: 503 }) });
-  const boundary = await loadActivity(pageInput());
-  assert.equal(boundary.type, Suspense);
-  const view = await boundary.props.children.type(boundary.props.children.props);
-
-  assert.equal(view.props.available, true);
-  assert.equal(view.props.items[0].status, "running");
+  const view = await readHistoryActivity();
+  assert.equal(view.state, "ready");
+  assert.equal(view.items[0].status, "running");
   assert.equal(job.reads, 0);
   assert.ok(job.warnings.some((warning) => warning.includes("settlement_failed")));
   assert.ok(job.warnings.every((warning) => !warning.includes("private-error")));
@@ -774,12 +768,10 @@ for (const session of ["signed-out", "suspended", "denied"]) {
     assert.equal(library.props.accountAvailable, false);
     assert.deepEqual(library.props.items, []);
     assert.equal(library.props.hasMore, false);
-    const activity = await loadActivity(pageInput());
-    assert.notEqual(activity.type, Suspense);
-    assert.equal(activity.props.accountAvailable, false);
-    assert.deepEqual(activity.props.items, []);
-    assert.equal(activity.props.hasActive, false);
-    assert.equal(activity.props.hasMore, false);
+    assert.deepEqual(await readHistoryActivity(), { state: "private" });
+    const activity = redirectActivity(new Request("https://renderlab.example/activity"));
+    assert.equal(activity.status, 307);
+    assert.equal(activity.headers.get("location"), "/create?history=jobs");
   });
 }
 
@@ -828,13 +820,16 @@ for (const session of ["signed-out", "suspended", "denied"]) {
     t.mock.method(globalThis, "fetch", async () => assert.fail("Denied page performed outbound or private data I/O"));
     const server = createServer(async (request, response) => {
       try {
-        const create = request.url === "/create";
-        const node = create ? await loadCreate(pageInput()) : await loadActivity(pageInput());
-        const view = create ? await node.type(node.props) : node;
+        if (request.url === "/activity") {
+          const redirect = redirectActivity(new Request("https://renderlab.example/activity"));
+          response.writeHead(redirect.status, Object.fromEntries(redirect.headers));
+          response.end(); return;
+        }
+        const node = await loadCreate(pageInput());
+        const view = await node.type(node.props);
         assert.notEqual(view.type, Suspense);
-        assert.equal(create ? view.props.admitted : view.props.accountAvailable, false);
-        if (create) assert.equal(view.props.hostedAccountKey, undefined);
-        else assert.deepEqual(view.props.items, []);
+        assert.equal(view.props.admitted, false);
+        assert.equal(view.props.hostedAccountKey, undefined);
         let didError = false;
         const stream = renderToPipeableStream(view, {
           onShellReady() {
@@ -855,8 +850,8 @@ for (const session of ["signed-out", "suspended", "denied"]) {
         const response = await pageResponse(origin + route);
         // The pre-change denied pages rendered their private/guest view with
         // HTTP 200, no Location, and no redirect/not-found control flow.
-        assert.equal(response.status, 200, route);
-        assert.equal(response.location, undefined, route);
+        assert.equal(response.status, route === "/activity" ? 307 : 200, route);
+        assert.equal(response.location, route === "/activity" ? "/create?history=jobs" : undefined, route);
         assert.doesNotMatch(response.body, /Loading content|\$\?/, route);
       }
     } finally {

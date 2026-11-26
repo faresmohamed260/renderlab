@@ -27,7 +27,7 @@ for (const width of [390, 320, 195]) {
       await expect(close).toBeFocused();
       await expect(sidebar.getByRole("link", { name: "Create", exact: true })).toBeVisible();
       await expect(sidebar.getByRole("link", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
-      await expect(sidebar.getByRole("link", { name: "Activity", exact: true })).toBeVisible();
+      await expect(sidebar.getByRole("link", { name: "Activity", exact: true })).toHaveCount(0);
       const profile = sidebar.getByRole("link", { name: /account settings/i });
       await expect(profile).toBeVisible();
       await expect(profile).toHaveAttribute("href", "/settings");

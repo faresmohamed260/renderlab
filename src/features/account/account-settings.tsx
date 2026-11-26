@@ -33,7 +33,7 @@ function accessPresentation(access: RenderLabAccountAccess | null, enforcementEn
     return {
       key: "suspended",
       label: "Suspended",
-      message: "Creation, Library and Activity access are paused. Password and sign-out controls remain available.",
+      message: "Creation, Library and History access are paused. Password and sign-out controls remain available.",
     };
   }
   if (enforcementEnabled) {

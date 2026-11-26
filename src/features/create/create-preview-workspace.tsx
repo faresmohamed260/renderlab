@@ -149,7 +149,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null, historyActions }: { historyActions?: HistoryReadActions; initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null, historyActions, initialHistory }: { initialHistory?: { open: boolean; offset: number }; historyActions?: HistoryReadActions; initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const hosted = hostedOnly || !!hostedModel;
   const [hostedCapabilities, setHostedCapabilities] = useState<HostedCreateCapabilities>();
   const [capabilityReadFailed, setCapabilityReadFailed] = useState(false);
@@ -322,7 +322,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [waitingReady, setWaitingReady] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
   const queueCount = Number(busy) + waiting.length;
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(initialHistory?.open ?? false);
   const [historySelection, setHistorySelection] = useState<{ image: Result }>();
   const [historyRail, setHistoryRail] = useState<HTMLDivElement | null>(null);
   const [result, setResult] = useState<Result>();
@@ -339,6 +339,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const historyRead = useCreateHistory({
     accountKey: historyActions && admitted ? hostedAccountKey ?? null : null,
     visible: !!historyActions && (desktop || historyOpen),
+    initialTab: initialHistory?.open ? "jobs" : "session",
+    initialOffset: initialHistory?.offset ?? 0,
     transport: historyActions ? createHistoryTransport(historyActions) : unavailableHistory,
     onReuseDraft: async (draft, signal) => {
       if (!admitted || busy || continuationPending || maskEditor) throw new Error("Create is busy.");
@@ -1643,7 +1645,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
           <div className={columns.historySlot}>
             {historyActions && desktop ? <CreateHistoryPanel state={historyRead} showHeading={false} /> : <>
               <h3>Prompt and job history</h3>
-              <p>Not available here yet. Activity remains available.</p>
+              {initialHistory?.open && !admitted ? <p>Sign in to view History</p> : <p>History is unavailable in this workspace.</p>}
             </>}
           </div>
           {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}

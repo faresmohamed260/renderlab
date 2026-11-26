@@ -1,3 +1,4 @@
+import { parseHistoryEntry, type HistoryEntryParams } from "@/features/create/history/history-entry";
 import { cookies } from "next/headers";
 import { activityFixtures, activityIds, newAttempt } from "../../activity-fixtures";
 import { isActiveGenerationStatus } from "@/lib/api/generation-activity-contract";
@@ -5,7 +6,7 @@ import { CreatePreviewWorkspace } from "@/features/create/create-preview-workspa
 import type { HistoryReadActions } from "@/features/create/history/history-transport";
 import { createProps, fixtureJobId } from "../../fixtures";
 
-export default async function FixtureHistoryMount({ searchParams }: { searchParams: Promise<{ account?: string; matrix?: string }> }) {
+export default async function FixtureHistoryMount({ searchParams }: { searchParams: Promise<HistoryEntryParams> }) {
   const query = await searchParams;
   const account = query.account === "guest" ? null : query.account === "other" ? "fixture-other" : "fixture-owner";
   const matrix = query.matrix === "1";
@@ -40,6 +41,7 @@ export default async function FixtureHistoryMount({ searchParams }: { searchPara
       if (!account || (matrix ? account !== "fixture-owner" || ![activityIds.failed, activityIds.succeeded].includes(id) : id !== fixtureJobId)) return { ok: false, reason: "unavailable" };
       return { ok: true, draft: { mode: "generate", references: [], prompt: "Fixture editable draft", vgl: "", seed: "42", randomize: false, steps: 4, negativePrompt: "", aspectRatio: "1:1" } };
   }
+  const entry = parseHistoryEntry(query);
   const actions: HistoryReadActions = { readJobsAction, readPromptsAction, reuseAction };
-  return <CreatePreviewWorkspace {...createProps} key={account ?? "guest"} admitted={!!account} hostedAccountKey={account ?? undefined} hostedModel={account ? createProps.hostedModel : undefined} historyActions={actions} />;
+  return <CreatePreviewWorkspace {...createProps} key={(account ?? "guest") + ":" + (entry.open ? entry.offset : "session")} initialHistory={entry} admitted={!!account} hostedAccountKey={account ?? undefined} hostedModel={account ? createProps.hostedModel : undefined} historyActions={actions} />;
 }
