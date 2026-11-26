@@ -505,6 +505,9 @@
 }
 
 .create-preview-workspace .create-preview-generate {
+  min-block-size: var(--rl-hit-preferred);
+  /* Keep glyph contrast valid throughout disabled/enabled state changes. */
+  transition-property: box-shadow;
   background: var(--rl-gradient-primary);
   color: var(--rl-on-accent);
   box-shadow: var(--rl-elevation-primary);
