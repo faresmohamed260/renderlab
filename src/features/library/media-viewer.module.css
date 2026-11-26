@@ -628,3 +628,21 @@
 .detailGrid dd { font-variant-numeric: tabular-nums; }
 .panelHeading { text-wrap: balance; }
 .registerCopy p { text-wrap: pretty; }
+
+/* Durable Viewer: preserve comparison and actions, consume shared glass. */
+.workspace::before, .workspace::after, .stageShell::before { content: none; }
+.viewerObject { border-radius: var(--rl-radius-panel); border: 1px solid var(--rl-border-subtle); background: var(--rl-surface-panel-layered); box-shadow: var(--rl-elevation-panel); backdrop-filter: var(--rl-material-panel); }
+.stageShell, .registerShell { background: transparent; border-color: transparent; border-radius: 0; box-shadow: none; backdrop-filter: none; }
+.stageShell { padding: 16px; }
+.registerShell { border-top-color: var(--rl-border-subtle); }
+.mediaFrame { border-color: var(--rl-border-subtle); border-radius: var(--rl-radius-control); background: var(--rl-surface-base); box-shadow: none; }
+.mediaWell { background: var(--rl-surface-base); }
+.frameLabel { border-color: var(--rl-border-subtle); background: var(--rl-surface-overlay-layered); color: var(--rl-text-secondary); backdrop-filter: var(--rl-material-overlay); }
+.frameLabel strong, .title, .registerCopy strong, .detailGrid dd { color: var(--rl-text-primary); }
+.returnLink, .eyebrow, .meta, .registerCopy p, .panelHeading, .detailGrid dt, .promptSummaryLabel { color: var(--rl-text-secondary); }
+.promptSummary, .detailGrid > div { background: var(--rl-surface-control); border-color: var(--rl-border-subtle); }
+.promptCopy, .promptSummary p { color: var(--rl-text-primary); }
+.detailGrid > div { border-radius: var(--rl-radius-control); }
+.registration { color: var(--rl-text-quiet); }
+.cornerArc { display: none; }
+@media (max-width: 820px) { .viewerObject { border-radius: var(--rl-radius-panel); } .stageShell { padding: 12px; } }

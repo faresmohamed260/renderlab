@@ -1581,3 +1581,18 @@
   .phoneInspector .inspectorActions :global([data-slot="button"]) { min-height: 52px; border-radius: 18px; justify-content: start; }
   .phoneInspector .inspectorActions .createAction { justify-content: start; }
 }
+
+/* Library rail and inspector actions use existing live collection/search state. */
+.collectionHeading, .railShortcuts { display: none; }
+.collectionSwatch { flex: none; width: 14px; height: 14px; border-radius: 5px; background: var(--rl-accent-decorative-start); }
+@media (min-width: 75rem) {
+  .collectionHeading { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; color: var(--rl-text-secondary); font-size: 13px; font-weight: 600; }
+  .discovery .collectionHeading :global([data-slot="button"]) { min-height: 32px; width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); }
+  .collectionMenuTrigger { display: none !important; }
+  .organizationCell { gap: 12px; }
+  .collectionList { gap: 6px; }
+  .railShortcuts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; color: var(--rl-text-secondary); font-size: 12px; }
+  .railShortcuts kbd { margin-right: 4px; padding: 3px 6px; border-radius: 6px; background: var(--rl-surface-control); font: inherit; }
+}
+.phoneInspector .inspectorActions > .inspectorSecondary { margin-top: 4px; grid-template-columns: minmax(0,1fr); }
+.phoneInspector .inspectorActions .inspectorSecondary > :global([data-slot="button"]) { min-height: 44px; }

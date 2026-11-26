@@ -60,7 +60,7 @@ export function LibraryInspector({
       </dl>
     </>;
   }
-  function actions(manage: ReactNode, compact = false) {
+  function actions(manage: ReactNode, compact = false, rename?: ReactNode) {
     return (
       <div className={styles.inspectorActions}>
         {editHref ? (
@@ -71,6 +71,7 @@ export function LibraryInspector({
             </Link>
           </Button>
         ) : null}
+        {phone ? <><MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} stacked />{manage}</> : null}
         <div className={styles.inspectorSecondary}>
         {reuseRecipeJobId ? (
           <Button asChild variant="secondary" size="lg">
@@ -83,28 +84,26 @@ export function LibraryInspector({
             Open Viewer
           </Link>
         </Button>
+        {phone ? rename : null}
         </div>
         {compact ? (
           <div className="grid min-w-0 grid-cols-3 gap-2">
             <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} compact />
             {manage}
           </div>
-        ) : <>
+        ) : !phone ? <>
           <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} />
           {manage}
-        </>}
+        </> : null}
       </div>
     );
   }
   const manageProps = { assetId: asset.id, displayName: asset.displayName, fallbackTitle: title, onDeleted };
   return <>
     {preview}
-    {phone ? <>
-      {details()}
-      {actions(<MediaViewerManageActions {...manageProps} />)}
-    </> : <MediaViewerManageActions {...manageProps} renderLayout={({ rename, editor, remove }) => <>
-      {details(rename, editor)}
-      {actions(remove, true)}
-    </>} />}
+    <MediaViewerManageActions {...manageProps} stacked={phone} renderLayout={({ rename, editor, remove }) => <>
+      {details(phone ? undefined : rename, editor)}
+      {actions(remove, !phone, phone ? rename : undefined)}
+    </>} />
   </>;
 }
