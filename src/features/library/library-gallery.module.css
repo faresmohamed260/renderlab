@@ -1522,3 +1522,62 @@
     transition-timing-function: var(--rl-ease-out);
   }
 }
+
+/* UI rebuild — measured Library desktop and phone surfaces. Shared material
+   roles remain owned by the UI Lead. */
+.promptBlock { display: grid; gap: 4px; min-width: 0; }
+.promptBlock > span { color: var(--rl-text-secondary); font-size: 13px; }
+.inspectorSecondary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.inspectorSecondary > :only-child { grid-column: 1 / -1; }
+@media (min-width: 75rem) {
+  .workspace { padding: 8px 24px 16px; background: transparent; }
+  .layout { height: max(42rem, calc(100svh - 92px)); grid-template-columns: minmax(220px,260px) minmax(0,1fr) minmax(290px,340px); }
+  .discovery { padding: 18px 14px; gap: 16px; }
+  .inspector { padding: 18px; gap: 12px; }
+  .sourceSwitch, .collectionList { gap: 6px; }
+  .sourceSwitch :global([data-slot="button"]), .collectionList :global([data-slot="button"]) { min-height: 44px; border-radius: 14px; }
+  .searchForm { min-height: 42px; border-radius: 21px; }
+  .centerToolbar { min-height: 62px; padding-block: 4px 18px; gap: 10px; }
+  .desktopContext h3 { font-size: 22px; line-height: 28px; }
+  .desktopContext span { font-size: 14px; }
+  .centerToolbar .kindCell { flex: 0 1 auto; order: 0; }
+  .centerToolbar .actionCell :global([data-slot="button"]), .sortWrap :global([data-slot="button"]) { min-height: 40px; border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); }
+  .density { padding: 4px; gap: 2px; border-radius: 20px; background: var(--rl-surface-control); }
+  .density :global([data-slot="button"]) { min-height: 32px; width: 35px; height: 32px; border-radius: var(--rl-radius-pill); }
+  .cardLink, .cardShell[data-pointer="active"] .cardLink { border: 0; border-radius: 20px; }
+  .cardShell[data-selected="true"] .cardLink, .cardShell[data-inspected="true"] .cardLink { outline: 3px solid var(--rl-border-action-selection); outline-offset: -3px; }
+  .inspectAction[data-slot="button"] { opacity: 0; }
+  .cardShell:focus-within .inspectAction[data-slot="button"], .cardShell[data-inspected="true"] .inspectAction[data-slot="button"] { opacity: 1; }
+  @media (hover: hover) and (pointer: fine) { .cardShell:hover .inspectAction[data-slot="button"] { opacity: 1; } }
+  .commandSurface[data-selection="on"] .selectionMode { min-height: 58px; margin-block: 16px 18px; padding: 8px 12px; border-radius: var(--rl-radius-pill); }
+  .selectionActions :global([data-slot="button"]) { min-height: 40px; border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); }
+  .inspectorPreview { aspect-ratio: 302 / 230; border-radius: 22px; }
+  .inspectorHeader h3 { font-size: 18px; line-height: 24px; }
+  .inspectorPrompt, .inspectorFacts { font-size: 13px; line-height: 19px; }
+  .inspectorActions .createAction { min-height: 52px; border-radius: 18px; }
+  .inspectorSecondary :global([data-slot="button"]) { min-height: 44px; }
+}
+@media (max-width: 760px) {
+  .workspace { padding-inline: 12px; background: transparent; }
+  .workspace::before, .workspace::after { content: none; }
+  .title { font-size: 30px; line-height: 36px; }
+  .mediaGrid { gap: 10px; }
+  .cardLink { border: 0; border-radius: 22px; }
+  .phoneFilters, .phoneFilters .kindSwitch, .phoneFilters .organizationCell { gap: 8px; }
+  .phoneFilters :global([data-slot="button"]) { min-height: 44px; padding-inline: 16px; }
+  .selectionCheckboxWrap { inset: 1px 1px auto auto; }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before { width: 30px; height: 30px; }
+  .inspectAction[data-slot="button"] { opacity: 0; }
+  .cardShell:focus-within .inspectAction[data-slot="button"] { opacity: 1; }
+  .commandSurface[data-selection="on"] .selectionMode { min-height: 66px; padding: 8px 12px; bottom: max(18px, env(safe-area-inset-bottom)); border-radius: 33px; }
+  .selectionActions :global([data-slot="button"]) { min-height: 48px; width: 48px; background: var(--rl-surface-control); }
+  .phoneInspector { height: 92dvh; max-height: 92dvh; padding: 8px 16px max(16px,env(safe-area-inset-bottom)); border-radius: 34px 34px 0 0; background: var(--rl-surface-overlay-layered); backdrop-filter: var(--rl-material-overlay); }
+  .sheetHandle { width: 36px; height: 5px; border-radius: var(--rl-radius-pill); margin: 0 auto 4px; background: var(--rl-text-quiet); opacity: .5; order: -2; flex-shrink: 0; }
+  .phoneInspector .inspectorHeader { min-height: 44px; order: -1; }
+  .phoneInspector .inspectorHeader h3 { font-size: 20px; line-height: 28px; }
+  .phoneInspector .inspectorPreview { height: min(300px, 36dvh); max-height: none; aspect-ratio: auto; border-radius: 26px; }
+  .phoneInspector .inspectorPrompt { font-size: 15px; line-height: 22px; }
+  .phoneInspector .inspectorFacts { font-size: 12px; }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) { min-height: 52px; border-radius: 18px; justify-content: start; }
+  .phoneInspector .inspectorActions .createAction { justify-content: start; }
+}

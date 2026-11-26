@@ -235,7 +235,7 @@ export function LibraryView({
           name="q"
           defaultValue={searchQuery ?? ""}
           maxLength={MEDIA_ASSET_SEARCH_MAX_LENGTH}
-          placeholder="Search Library"
+          placeholder="Search your library"
           className={styles.searchInput}
         />
       </label>
