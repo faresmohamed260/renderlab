@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CircleHelp, House, Images, Menu, Settings, Shield, SlidersHorizontal, Sparkles, UserRound, X } from "lucide-react";
+import { CircleHelp, Clock, House, Images, Menu, Search, Settings, Shield, SlidersHorizontal, Sparkles, UserRound, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { RenderLabMark } from "@/components/brand/renderlab-brand";
 
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { springOptions } from "@/lib/ui/spring-roles";
 import styles from "./phone-navigation.module.css";
+import { CommandPalette } from "./command-palette";
+import { useCreateCommands } from "@/lib/create-commands";
 
 const pillTop = 17;
 const pillHeight = 40;
@@ -222,12 +224,11 @@ const destinations = [
   { href: "/", label: "Home", icon: House },
   { href: "/create", label: "Create", icon: Sparkles },
   { href: "/library", label: "Library", icon: Images },
-  { href: "/activity", label: "Activity", icon: Activity },
 ];
 
 const navigationGroups = [
   { title: "Workspace", destinations: destinations.slice(0, 2) },
-  { title: "Media & history", destinations: destinations.slice(2, 4) },
+  { title: "Media & history", destinations: destinations.slice(2) },
 ];
 
 
@@ -291,8 +292,8 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
   return <div className={styles.mobileNavigation}>
     <Sheet open={open} onOpenChange={changeOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="lg" className={styles.logo} aria-label="RenderLab — Open navigation">
-          <RenderLabMark className="size-6" /><span>RenderLab</span>
+        <Button variant="ghost" size="lg" className={styles.logo + (pathname.startsWith("/create") ? " " + styles.createLogo : "")} aria-label="RenderLab — Open navigation">
+          <RenderLabMark className="size-7" /><span>RenderLab</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" showCloseButton={false} className={styles.sidebar}
@@ -304,7 +305,7 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
           }
         }}>
         <div className={styles.heading}>
-          <SheetTitle className={styles.title}><RenderLabMark tone="mono" className="size-6" /><span>RenderLab navigation</span></SheetTitle>
+          <SheetTitle className={styles.title}><RenderLabMark className="size-[30px]" /><span>RenderLab</span></SheetTitle>
           <SheetClose asChild><Button variant="secondary" size="icon-lg" className={styles.close} aria-label="Close navigation"><X aria-hidden="true" /></Button></SheetClose>
         </div>
         <SheetDescription className={styles.description}>Choose a workspace or open account settings.</SheetDescription>
@@ -321,9 +322,9 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
         </nav>
         <Button asChild variant="secondary" size="lg" className={styles.profile}>
           <Link data-shell-profile="" href={settingsPath} onNavigate={closeImmediately} aria-current={isSettingsRoute(pathname) ? "page" : undefined}>
-            <UserRound aria-hidden="true" />
+            <ProfileAvatar profile={accountId ? profile : null} size={46} />
             <span className={styles.profileText}><span>{name}</span>{" "}<span className={styles.profileMeta}>Settings</span></span>
-            <Settings aria-hidden="true" className={styles.settingsIcon} />
+            <span className={styles.settingsIcon}><Settings size={20} aria-hidden="true" /></span>
           </Link>
         </Button>
       </SheetContent>
@@ -331,10 +332,47 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
   </div>;
 }
 
+function ProfileAvatar({ profile, size }: { profile: ShellProfile | null; size: number }) {
+  const [failed, setFailed] = useState(false);
+  return <span className="rebuild-profile-avatar" style={{ width: size, height: size }}>
+    {profile?.avatarUrl && !failed
+      ? <Image src={profile.avatarUrl} width={size} height={size} alt="" unoptimized onError={() => setFailed(true)} />
+      : <UserRound size={20} aria-hidden="true" />}
+  </span>;
+}
+
+function UtilitySidebar({ pathname, accountId, profile, showAdmin }: { pathname: string; accountId: string | null; profile: ShellProfile | null; showAdmin: boolean }) {
+  const links = [...destinations.slice(1), { href: settingsPath, label: "Settings", icon: Settings },
+    ...(showAdmin && accountId ? [{ href: "/admin", label: "Admin", icon: Shield }] : [])];
+  return <aside className="rebuild-utility-sidebar">
+    <Link href="/" className="rebuild-utility-brand" aria-label="RenderLab home"><RenderLabMark className="size-[30px]" /><span>RenderLab</span></Link>
+    <nav aria-label="Primary navigation">
+      {links.map(({ href, label, icon: Icon }) => <Link key={href} href={href}
+        aria-current={pathname === href || pathname.startsWith(href + "/") ? "page" : undefined}><Icon size={20} aria-hidden="true" />{label}</Link>)}
+    </nav>
+    <Link href={settingsPath} className="rebuild-utility-profile" data-shell-profile="" aria-label="Account settings">
+      <ProfileAvatar profile={accountId ? profile : null} size={38} />
+      <span><strong>{accountId ? profile?.displayName || "RenderLab account" : "Guest"}</strong><small>{showAdmin && accountId ? "Owner" : "Settings"}</small></span>
+    </Link>
+  </aside>;
+}
+
+function RegistryHeaderAction({ id, phone = false }: { id: "open-queue" | "open-history" | "library-search"; phone?: boolean }) {
+  const command = useCreateCommands().find(item => item.id === id && item.enabled);
+  if (!command) return null;
+  return <button type="button" className={phone ? "rebuild-phone-action" : "rebuild-queue-pill"}
+    aria-label={id === "open-history" ? "Session and prompt history" : id === "library-search" ? "Search the Library" : "Queue"}
+    onClick={() => { void command.run(); }}>
+    {id === "open-history" ? <Clock size={20} aria-hidden="true" /> : id === "library-search" ? <Search size={20} aria-hidden="true" /> : "Queue"}
+  </button>;
+}
+
 export function PreviewNavigationShell({ children, accountId, profile = null, showAdmin = false }: { children: ReactNode; accountId: string | null; hostedProfile?: boolean; profile?: ShellProfile | null; showAdmin?: boolean }) {
   const pathname = usePathname();
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
   const legacy = pathname === "/";
+  const surface = legacy ? "landing" : isSettingsRoute(pathname) ? "settings" : pathname.startsWith("/admin") ? "admin" : current?.label.toLowerCase() ?? "other";
+  const utility = surface === "settings" || surface === "admin";
   // Preserve isolation throughout the phone modal's lifetime, including its
   // closing spring. Live-region ancestor paths can survive Radix hideOthers.
   const [phoneOpenPath, setPhoneOpenPath] = useState<string | null>(null);
@@ -390,13 +428,14 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
   if (legacy && !accountId) return <>{children}</>;
 
   return (
-    <div ref={shellRoot} className="preview-navigation-shell">
+    <div ref={shellRoot} className="preview-navigation-shell" data-shell-surface={surface}>
+      {utility && <UtilitySidebar pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} />}
       <header className={"preview-navigation-header" + (legacy ? "" : " " + styles.applicationHeader)} data-p6-desktop={legacy ? undefined : "true"}>
         {!legacy && <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} openPath={phoneOpenPath} setOpenPath={setPhoneOpenPath} />}
         {!legacy && <div className="p6-desktop-navigation">
-          <Button asChild variant="ghost" size="lg" className="p6-desktop-brand"><Link href="/" aria-label="RenderLab home"><RenderLabMark className="size-6" /><span>RenderLab</span></Link></Button>
+          <Link href="/" className="p6-desktop-brand" aria-label="RenderLab home"><RenderLabMark className="size-[26px]" /><span>RenderLab</span></Link>
           <nav aria-label="Primary navigation" className="p6-desktop-links">
-            {destinations.slice(1).map(({ href, label }) => <Button asChild key={href} variant="ghost" size="lg" className="p6-desktop-link"><Link href={href} aria-current={current?.href === href ? "page" : undefined}>{label}</Link></Button>)}
+            {destinations.slice(1).map(({ href, label }) => <Link key={href} className="p6-desktop-link" href={href} aria-current={current?.href === href ? "page" : undefined}>{label}</Link>)}
           </nav>
         </div>}
         {legacy && <div ref={disclosure} className="preview-section-disclosure"
@@ -448,7 +487,15 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
             ))}
           </animated.nav>
         </div>}
-        <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={legacy} />
+        {legacy ? <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy /> : <>
+          <div className="rebuild-header-actions">
+            <CommandPalette showAdmin={Boolean(showAdmin && accountId)} />
+            <RegistryHeaderAction id="open-queue" />
+            <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={false} />
+          </div>
+          {surface === "create" && <RegistryHeaderAction id="open-history" phone />}
+          {surface === "library" && <RegistryHeaderAction id="library-search" phone />}
+        </>}
       </header>
       <div className="preview-navigation-content" inert={phoneModalOpen} aria-hidden={phoneModalOpen || undefined}>{children}</div>
     </div>
