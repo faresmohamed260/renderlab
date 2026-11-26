@@ -1,14 +1,13 @@
 import { test, expect } from "./isolated-io";
-import { fixtureJobId } from "../component-app/fixtures";
 
 for (const reducedMotion of ["reduce", "no-preference"] as const) {
   for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 700 }]) {
     test("Create prompt and Generate fit the first phone screen " + viewport.width + " " + reducedMotion, async ({ page }) => {
       await page.setViewportSize(viewport);
       await page.emulateMedia({ reducedMotion });
-      await page.goto("/create?recipe=" + fixtureJobId);
+      await page.goto("/create");
       const workspace = page.getByRole("region", { name: "Create with FIBO" });
-      await expect(workspace.getByRole("button", { name: "Remove source image" })).toBeVisible();
+      await expect(workspace.locator(".create-preview-stage-surface")).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       const prompt = workspace.getByRole("textbox", { name: "Prompt" });
       const generate = workspace.getByRole("button", { name: "Generate" });
