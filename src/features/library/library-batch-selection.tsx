@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { CheckSquare2, FolderOpen, Minus, Plus, Star, Trash2, Video, X } from "lucide-react";
+import { Check, CheckSquare2, Eye, FolderOpen, Grid2X2, Grid3X3, Minus, Plus, Search, Star, Trash2, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -23,7 +23,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Field, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import styles from "@/features/library/library-gallery.module.css";
+import { LibraryInspector } from "@/features/library/library-inspector";
 import type {
   BatchDeleteMediaAssetsResponse,
   BatchFavoriteMediaAssetsResponse,
@@ -60,6 +62,7 @@ function MediaPreview({ asset }: { asset: PublicMediaAsset }) {
         src={asset.thumbnailUrl ?? asset.contentUrl}
         alt=""
         loading="lazy"
+        decoding="async"
         className="kinetic-media-preview size-full object-cover"
       />
     );
@@ -97,25 +100,60 @@ function itemCountLabel(count: number) {
 }
 
 export function LibraryBatchSelection({
+  heading,
   items,
   collections,
   sourceControls,
   searchControls,
-  filterControls,
+  organizationControls,
+  kindControls,
+  sortControl,
   uploadAction,
   mediaContextLabel,
   dropHint,
+  viewTitle,
+  viewHref,
+  showCount,
+  inspectedAssetId,
+  reuseRecipeJobId,
+  children,
 }: {
+  heading: ReactNode;
   items: PublicMediaAsset[];
   collections: PublicMediaCollection[];
   sourceControls: ReactNode;
   searchControls: ReactNode;
-  filterControls: ReactNode;
+  organizationControls: ReactNode;
+  kindControls: ReactNode;
+  sortControl: ReactNode;
   uploadAction: ReactNode;
   mediaContextLabel: string;
   dropHint: string | null;
+  viewTitle: string;
+  viewHref: string;
+  showCount: boolean;
+  inspectedAssetId: string | null;
+  reuseRecipeJobId: string | null;
+  children: ReactNode;
 }) {
   const router = useRouter();
+  const [compactGrid, setCompactGrid] = useState(false);
+  const [narrow, setNarrow] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchContainer = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (searchOpen && narrow) searchContainer.current?.querySelector<HTMLInputElement>("input[type=search]")?.focus({ preventScroll: true });
+  }, [searchOpen, narrow]);
+  useEffect(() => {
+    const query = matchMedia("(max-width: 1199px)");
+    const update = () => setNarrow(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  const inspectTrigger = useRef<HTMLAnchorElement>(null);
+  const phoneInspectorTrigger = useRef<HTMLAnchorElement>(null);
+  const galleryHeading = useRef<HTMLHeadingElement>(null);
   const collectionSelectId = useId();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -123,6 +161,7 @@ export function LibraryBatchSelection({
   const [dialogOpen, setDialogOpen] = useState(false);
   const selectTrigger = useRef<HTMLButtonElement>(null);
   const returnToSelect = useRef(false);
+  const returnAfterCancel = useRef(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [organizeOpen, setOrganizeOpen] = useState(false);
@@ -145,6 +184,7 @@ export function LibraryBatchSelection({
   }, [collections]);
 
   const visibleItems = items.filter((item) => !hiddenDeletedIds.has(item.id));
+  const inspected = visibleItems.find((item) => item.id === inspectedAssetId);
   const selectedCount = selectedIds.size;
   const allSelected = visibleItems.length > 0 && selectedCount === visibleItems.length;
   const busy = deleting || organizingAction !== null;
@@ -164,7 +204,14 @@ export function LibraryBatchSelection({
     setDeleteError(null);
     setOrganizationError(null);
     setOrganizeOpen(false);
+    returnAfterCancel.current = true;
   }
+
+  useEffect(() => {
+    if (selectionMode || !returnAfterCancel.current) return;
+    returnAfterCancel.current = false;
+    selectTrigger.current?.focus({ preventScroll: true });
+  }, [selectionMode]);
 
   function toggleAsset(assetId: string, checked: boolean) {
     setFeedback(null);
@@ -325,28 +372,74 @@ export function LibraryBatchSelection({
     delete node.dataset.pointer;
   }
 
+  function dismissInspector(deletedId?: string) {
+    if (deletedId) {
+      setHiddenDeletedIds((previous) => new Set([...previous, deletedId]));
+      setSelectedIds((previous) => new Set([...previous].filter((id) => id !== deletedId)));
+      phoneInspectorTrigger.current = null;
+      galleryHeading.current?.focus({ preventScroll: true });
+    } else {
+      inspectTrigger.current?.focus({ preventScroll: true });
+    }
+    router.replace(viewHref, { scroll: false });
+  }
+
   return (
-    <>
+    <div className={styles.layout}>
       <div
         className={styles.commandSurface}
         data-library-gallery-rail="true"
         data-selection={selectionMode ? "on" : "off"}
       >
-        <div
-          className={styles.defaultControls}
-          data-library-default-controls="true"
-          aria-hidden={selectionMode ? "true" : undefined}
-        >
-          <div className={styles.sourceCell}>{sourceControls}</div>
-          <div className={styles.searchCell}>{searchControls}</div>
-          <div className={styles.actionCell}>
-            {uploadAction}
-            <Button ref={selectTrigger} type="button" variant="ghost" size="sm" onClick={enterSelectionMode}>
-              <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-              Select
-            </Button>
+        <div className={styles.defaultControls} data-library-default-controls="true">
+          {heading}
+          <aside className={styles.discovery} aria-label="Library discovery">
+            <div ref={searchContainer} className={styles.searchCell} data-phone-search-open={searchOpen}>{searchControls}</div>
+            <div className={styles.sourceCell}>{sourceControls}</div>
+            {!narrow ? organizationControls : null}
+          </aside>
+
+          <div className={styles.centerToolbar}>
+            <div className={styles.desktopContext}>
+              <h3 ref={galleryHeading} tabIndex={-1}>{viewTitle}</h3>
+              {showCount ? <span>{itemCountLabel(visibleItems.length)} on this page</span> : null}
+            </div>
+            <div className={styles.actionCell}>
+              {narrow ? <Button type="button" variant="ghost" size="icon-lg" aria-label="Search the Library" aria-expanded={searchOpen} onClick={() => setSearchOpen(open => !open)}><Search aria-hidden="true" /></Button> : null}
+              {uploadAction}
+              {visibleItems.length || items.length ? (
+                <Button
+                  ref={selectTrigger}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    if (selectionMode) cancelSelection();
+                    else if (visibleItems.length > 0) enterSelectionMode();
+                  }}
+                  aria-disabled={busy || visibleItems.length === 0 || undefined}
+                  aria-pressed={selectionMode}
+                >
+                  <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
+                  Select
+                </Button>
+              ) : null}
+            </div>
+            <div className={styles.kindCell}>
+              {narrow ? <section className={styles.phoneFilters} aria-label="Library filters">{kindControls}{organizationControls}</section> : kindControls}
+            </div>
+            <div className={styles.sortWrap}>{sortControl}</div>
+            {visibleItems.length > 0 ? (
+              <div className={styles.density} role="group" aria-label="Grid size">
+                <Button type="button" variant="secondary" size="icon-lg" aria-label="Compact grid" aria-pressed={compactGrid} onClick={() => setCompactGrid(true)}>
+                  <Grid3X3 aria-hidden="true" />
+                </Button>
+                <Button type="button" variant="secondary" size="icon-lg" aria-label="Large grid" aria-pressed={!compactGrid} onClick={() => setCompactGrid(false)}>
+                  <Grid2X2 aria-hidden="true" />
+                </Button>
+              </div>
+            ) : null}
           </div>
-          <div className={styles.filterCell}>{filterControls}</div>
         </div>
 
         <Collapsible
@@ -362,23 +455,26 @@ export function LibraryBatchSelection({
           aria-hidden={selectionMode ? undefined : "true"}
         >
           <div className={styles.selectionMain}>
-            <div className={styles.selectionSummary}>
+            <div className={`${styles.selectionSummary} min-[75rem]:!min-w-0 min-[75rem]:!pr-2`}>
               <span className={styles.selectionEyebrow}>SELECTION</span>
               <strong role="status" aria-live="polite">
-                {selectedCount === 0 ? "Select media on this page" : `${selectedCount} selected on this page`}
+                {selectedCount === 0 ? (narrow ? "Select media" : "Select media on this page") : narrow ? `${selectedCount} selected` : `${selectedCount} selected`}
               </strong>
-              <small>{itemCountLabel(visibleItems.length)} visible</small>
+              <small className="min-[75rem]:hidden">{itemCountLabel(visibleItems.length)} visible</small>
             </div>
 
-            <div className={styles.selectionActions}>
+            <div className={`${styles.selectionActions} min-[75rem]:items-start! min-[75rem]:[&>[data-slot=button]]:h-[var(--rl-hit-preferred)]! min-[75rem]:[&>[data-slot=button]]:min-h-[var(--rl-hit-preferred)]!`}>
               <Button type="button" variant="ghost" size="sm" onClick={togglePageSelection} disabled={busy}>
                 <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-                {allSelected ? "Clear page" : `Select page (${visibleItems.length})`}
+                <span className={`${styles.selectionLabel} min-[75rem]:sr-only`}>{allSelected ? "Clear page" : `Select page (${visibleItems.length})`}</span>
               </Button>
+              {<Button type="button" variant="ghost" size="sm" disabled={selectedCount === 0 || busy} onClick={() => void setSelectedFavorite(true)}>
+                <Star aria-hidden="true" data-icon="inline-start" /> <span className={styles.selectionLabel}>Favorite</span>
+              </Button>}
               <CollapsibleTrigger asChild>
                 <Button type="button" variant={organizeOpen ? "secondary" : "ghost"} size="sm" disabled={selectedCount === 0 || busy}>
                   <FolderOpen aria-hidden="true" data-icon="inline-start" />
-                  Organize
+                  <span className={styles.selectionLabel}>Organize</span>
                 </Button>
               </CollapsibleTrigger>
               <AlertDialog
@@ -393,7 +489,7 @@ export function LibraryBatchSelection({
                 <AlertDialogTrigger asChild>
                   <Button type="button" variant="destructive" size="sm" disabled={selectedCount === 0 || busy}>
                     <Trash2 aria-hidden="true" data-icon="inline-start" />
-                    Delete {selectedCount || ""}
+                    <span className={styles.selectionLabel}>Delete {selectedCount || ""}</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent onCloseAutoFocus={(event) => {
@@ -429,7 +525,7 @@ export function LibraryBatchSelection({
               </AlertDialog>
               <Button type="button" variant="ghost" size="sm" onClick={cancelSelection} disabled={busy}>
                 <X aria-hidden="true" data-icon="inline-start" />
-                Cancel
+                <span className={`${styles.selectionLabel} min-[75rem]:sr-only`}>Cancel</span>
               </Button>
             </div>
           </div>
@@ -494,63 +590,109 @@ export function LibraryBatchSelection({
         </Collapsible>
       </div>
 
-      {feedback ? (
-        <Alert variant={feedback.variant} className={styles.feedback} role="status">
-          <AlertDescription>{feedback.message}</AlertDescription>
-        </Alert>
-      ) : null}
+      <section className={styles.gallery} aria-label="Library media grid">
+        {feedback ? (
+          <Alert variant={feedback.variant} className={styles.feedback} role="status">
+            <AlertDescription>{feedback.message}</AlertDescription>
+          </Alert>
+        ) : null}
 
-      <div className={styles.mediaHead} data-library-media-head="true">
-        <div className={styles.mediaContext}>
-          <span className={styles.mediaEyebrow}>{mediaContextLabel}</span>
-          <strong>{selectionMode ? `${selectedCount} of ${visibleItems.length} selected` : itemCountLabel(visibleItems.length)}</strong>
+        <div hidden={items.length === 0} className={styles.mediaHead} data-library-media-head="true">
+          <div className={styles.mediaContext}>
+            <span className={styles.mediaEyebrow}>{mediaContextLabel}</span>
+            <strong>{selectionMode ? `${selectedCount} of ${visibleItems.length} selected` : itemCountLabel(visibleItems.length)}</strong>
+          </div>
+          {dropHint ? <p className={styles.dropNote}>{dropHint}</p> : null}
         </div>
-        {dropHint ? <p className={styles.dropNote}>{dropHint}</p> : null}
-      </div>
 
-      <div className={styles.mediaGrid} data-library-media-grid="true">
-        {visibleItems.map((asset) => {
-          const title = assetTitle(asset);
-          const selected = selectedIds.has(asset.id);
-          return (
-            <div
-              key={asset.id}
-              className={styles.cardShell}
-              data-selected={selected ? "true" : "false"}
-              onPointerMove={updateCardPointer}
-              onPointerLeave={clearCardPointer}
-            >
-              <Link
-                href={`/library/${encodeURIComponent(asset.id)}`}
-                className={styles.cardLink}
+        <div className={styles.mediaGrid} data-library-media-grid="true" data-compact={compactGrid}>
+          {visibleItems.map((asset) => {
+            const title = assetTitle(asset);
+            const selected = selectedIds.has(asset.id);
+            return (
+              <div
+                key={asset.id}
+                className={styles.cardShell}
                 data-selected={selected ? "true" : "false"}
-                aria-label={`Open ${title}`}
+                data-inspected={inspected?.id === asset.id}
+                onPointerMove={updateCardPointer}
+                onPointerLeave={clearCardPointer}
               >
-                <div className={styles.mediaFrame} data-library-media-frame="true">
-                  <MediaPreview asset={asset} />
-                </div>
-                <div className={styles.mediaMeta} data-library-media-meta="true">
-                  <strong title={title}>{title}</strong>
-                  <span>{asset.kind}</span>
-                  <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
-                </div>
-              </Link>
+                <Link
+                  href={narrow ? `${viewHref}${viewHref.includes("?") ? "&" : "?"}inspect=${encodeURIComponent(asset.id)}` : `/library/${encodeURIComponent(asset.id)}`}
+                  scroll={!narrow}
+                  prefetch={narrow ? false : undefined}
+                  onClick={event => { if (narrow) phoneInspectorTrigger.current = event.currentTarget; }}
+                  className={styles.cardLink}
+                  data-selected={selected ? "true" : "false"}
+                  aria-label={`Open ${title} ${asset.kind} ${createdLabel(asset.createdAt)}`}
+                >
+                  <div className={styles.mediaFrame} data-library-media-frame="true">
+                    <MediaPreview asset={asset} />
+                  </div>
+                  <div className={styles.mediaMeta} data-library-media-meta="true">
+                    <strong title={title}>{title}</strong>
+                    <span>{asset.kind}</span>
+                    <time dateTime={asset.createdAt}>{createdLabel(asset.createdAt)}</time>
+                  </div>
+                </Link>
 
-              {selectionMode ? (
-                <div className={styles.selectionCheckboxWrap}>
-                  <Checkbox
-                    className="kinetic-selection-checkbox size-11"
-                    aria-label={`Select ${title}`}
-                    checked={selected}
-                    disabled={busy}
-                    onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
-                  />
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </>
+                <Button asChild variant="secondary" size="icon-lg" className={styles.inspectAction}>
+                  <Link
+                    ref={inspected?.id === asset.id ? inspectTrigger : undefined}
+                    href={`${viewHref}${viewHref.includes("?") ? "&" : "?"}inspect=${encodeURIComponent(asset.id)}`}
+                    scroll={false}
+                    prefetch={false}
+                    onClick={event => { if (narrow) phoneInspectorTrigger.current = event.currentTarget; }}
+                    aria-current={inspected?.id === asset.id ? "true" : undefined}
+                    aria-label={`Inspect ${title}`}
+                  >
+                    {inspected?.id === asset.id ? <Check aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                  </Link>
+                </Button>
+
+                {selectionMode ? (
+                  <div className={styles.selectionCheckboxWrap}>
+                    <Checkbox
+                      className="kinetic-selection-checkbox size-11"
+                      aria-label={`Select ${title}`}
+                      checked={selected}
+                      disabled={busy}
+                      onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        {children}
+      </section>
+
+      {narrow ? <Sheet open={!!inspected} onOpenChange={open => { if (!open) dismissInspector(); }}>
+        {inspected ? <SheetContent side="bottom" className={styles.phoneInspector} showCloseButton={false} onCloseAutoFocus={event => {
+          event.preventDefault();
+          const target = phoneInspectorTrigger.current ?? inspectTrigger.current;
+          if (target?.isConnected) target.focus({ preventScroll: true });
+          else (selectTrigger.current ?? galleryHeading.current)?.focus({ preventScroll: true });
+        }}>
+          <SheetTitle className="sr-only">Media inspector</SheetTitle>
+          <SheetDescription className="sr-only">Details and actions for selected Library media.</SheetDescription>
+          <LibraryInspector phone key={inspected.id} asset={inspected} reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null} onClose={() => dismissInspector()} onDeleted={() => dismissInspector(inspected.id)} />
+        </SheetContent> : null}
+      </Sheet> : <aside className={styles.inspector} aria-label="Media inspector">
+        {inspected ? (
+          <LibraryInspector
+            key={inspected.id}
+            asset={inspected}
+            reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null}
+            onClose={() => dismissInspector()}
+            onDeleted={() => dismissInspector(inspected.id)}
+          />
+        ) : (
+          <p className={styles.inspectorEmpty}>Select media to inspect</p>
+        )}
+      </aside>}
+    </div>
   );
 }

@@ -1,4 +1,9 @@
 .page {
+  /* Local source plates remain unchanged. The existing Next image optimizer
+     negotiates WebP with supporting browsers and caps resizing at the source.
+     Keep high-resolution plates for tall scrolling cover surfaces. */
+  --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1920&q=90");
+  --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=1920&q=90");
   min-height: 100dvh;
   overflow-x: clip;
   color: var(--color-text);
@@ -8,7 +13,7 @@
 .page::after {
   position: fixed;
   inset: 0;
-  z-index: 999;
+  z-index: var(--rl-z-grain);
   pointer-events: none;
   content: "";
   opacity: 0.08;
@@ -25,7 +30,7 @@
 .nav {
   position: fixed;
   inset: 0 0 auto;
-  z-index: 100;
+  z-index: var(--rl-z-navigation);
   display: flex;
   align-items: center;
   height: 80px;
@@ -62,11 +67,13 @@
   box-shadow: 0 12px 42px rgb(255 255 255 / 8%), 0 0 42px rgb(87 169 255 / 9%);
 }
 
-.openButton:hover,
-.heroPrimary:hover,
-.resolvePrimary:hover {
-  color: #090b0f;
-  background: #fff;
+@media (hover: hover) and (pointer: fine) {
+  .openButton:hover,
+  .heroPrimary:hover,
+  .resolvePrimary:hover {
+    color: #090b0f;
+    background: #fff;
+  }
 }
 
 .eyebrow {
@@ -84,6 +91,7 @@
   color: #b6c0cf;
   font-size: 16px;
   line-height: 1.68;
+  text-wrap: pretty;
 }
 
 .truth,
@@ -101,7 +109,7 @@
   min-height: 100svh;
   padding: 104px 54px 34px;
   overflow: hidden;
-  background-image: linear-gradient(90deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 38%) 41%, rgb(2 6 11 / 5%) 72%), url("/landing/hero-atmosphere-v2.png");
+  background-image: linear-gradient(90deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 38%) 41%, rgb(2 6 11 / 5%) 72%), var(--landing-hero-atmosphere);
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
@@ -162,10 +170,13 @@
   min-height: 50px;
   padding-inline: 24px;
   box-shadow: 0 14px 48px rgb(255 255 255 / 13%), 0 0 54px rgb(87 169 255 / 20%);
-  transition: transform 220ms ease, box-shadow 220ms ease, background 220ms ease;
+  transition: transform 110ms var(--rl-ease-out), box-shadow 220ms var(--rl-ease-out), background 220ms var(--rl-ease-out);
 }
 
-.heroPrimary:hover { transform: translateY(-2px); box-shadow: 0 18px 54px rgb(255 255 255 / 17%), 0 0 70px rgb(87 169 255 / 28%); }
+@media (hover: hover) and (pointer: fine) {
+  .heroPrimary:hover { transform: translateY(-2px); box-shadow: 0 18px 54px rgb(255 255 255 / 17%), 0 0 70px rgb(87 169 255 / 28%); }
+}
+.heroPrimary:active { transform: scale(0.97); }
 .heroActions .truth { padding-left: 18px; border-left: 1px solid rgb(255 255 255 / 16%); }
 
 .heroMatrixWrap {
@@ -392,7 +403,7 @@
 .thread {
   position: relative;
   min-height: 285vh;
-  background-image: linear-gradient(180deg, rgb(4 8 14 / 76%) 0%, rgb(5 10 17 / 56%) 56%, rgb(3 7 12 / 72%) 100%), url("/landing/hero-atmosphere-v2.png");
+  background-image: linear-gradient(180deg, rgb(4 8 14 / 76%) 0%, rgb(5 10 17 / 56%) 56%, rgb(3 7 12 / 72%) 100%), var(--landing-hero-atmosphere);
   background-position: center center;
   background-size: cover;
   background-attachment: fixed;
@@ -641,7 +652,7 @@
 .libraryStackMini i:nth-child(1) { transform: translate(-24px, 20px) scale(0.9); opacity: 0.4; }
 .libraryStackMini i:nth-child(2) { transform: translate(-12px, 10px) scale(0.95); opacity: 0.65; }
 .savedChip { position: absolute; right: 22px; bottom: 22px; display: grid; grid-template-columns: auto 1fr; gap: 1px 9px; align-items: center; padding: 12px 14px; border: 1px solid rgb(255 255 255 / 15%); border-radius: 12px; background: rgb(5 8 13 / 72%); }.savedChip > i { grid-row: 1 / 3; width: 7px; height: 7px; border-radius: 999px; background: var(--color-success); box-shadow: 0 0 12px rgb(63 191 138 / 55%); }.savedChip span { font-size: 10px; font-weight: 700; }.savedChip small { color: #838e9e; font-size: 9px; }
-.threadMeta { display: flex; justify-content: space-between; padding: 12px 2px 0; color: #5b6675; font-size: 8px; font-weight: 700; letter-spacing: 0.15em; }
+.threadMeta { display: flex; justify-content: space-between; padding: 12px 2px 0; color: var(--rl-text-secondary); font-size: 8px; font-weight: 700; letter-spacing: 0.15em; }
 
 .library {
   position: relative;
@@ -657,7 +668,7 @@
   inset: 0 calc((100vw - 100%) / -2);
   z-index: -1;
   content: "";
-  background-image: linear-gradient(180deg, rgb(3 8 14 / 86%) 0%, rgb(3 8 14 / 36%) 47%, rgb(3 7 12 / 54%) 100%), url("/landing/hero-atmosphere-v2.png");
+  background-image: linear-gradient(180deg, rgb(3 8 14 / 86%) 0%, rgb(3 8 14 / 36%) 47%, rgb(3 7 12 / 54%) 100%), var(--landing-hero-atmosphere);
   background-position: center 58%;
   background-size: cover;
   background-attachment: fixed;
@@ -699,7 +710,9 @@
   white-space: normal;
 }
 
-.libraryCard:hover { background: #0d1219; }
+@media (hover: hover) and (pointer: fine) {
+  .libraryCard:hover { background: #0d1219; }
+}
 .activeLibraryCard { z-index: 6; opacity: 1; border-color: rgb(145 220 255 / 98%); box-shadow: 0 36px 100px rgb(0 0 0 / 58%), 0 0 52px rgb(71 156 255 / 38%), 0 0 2px rgb(222 247 255 / 72%); }
 .libraryCard > img { position: absolute; inset: 0; filter: saturate(1.09) contrast(1.05); }
 .libraryCard > b,.libraryCard > small,.libraryCard > strong { position: absolute; z-index: 4; left: 12px; text-align: left; text-shadow: 0 1px 14px #000; }
@@ -733,7 +746,7 @@
   position: relative;
   min-height: 220vh;
   border-top: 1px solid rgb(255 255 255 / 5.5%);
-  background-image: linear-gradient(180deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 45%) 52%, rgb(2 6 11 / 64%) 100%), linear-gradient(90deg, rgb(2 6 11 / 98%) 0%, rgb(2 6 11 / 86%) 43%, rgb(2 6 11 / 52%) 78%), url("/landing/resolve-atmosphere-v2.png");
+  background-image: linear-gradient(180deg, rgb(2 6 11 / 70%) 0%, rgb(2 6 11 / 45%) 52%, rgb(2 6 11 / 64%) 100%), linear-gradient(90deg, rgb(2 6 11 / 98%) 0%, rgb(2 6 11 / 86%) 43%, rgb(2 6 11 / 52%) 78%), var(--landing-resolve-atmosphere);
   background-position: center;
   background-size: cover;
 }
@@ -872,6 +885,7 @@
   .page *::before,
   .page *::after { animation: none !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
   .heroCell,.threadMediaShell,.libraryCard,.resolveTile { transform: none !important; }
+  .heroPrimary:active { transform: none; }
 }
 
 @media (min-width: 1800px) and (min-height: 900px) {
@@ -910,4 +924,133 @@
   .resolveCopy .dek { max-width: 560px; }
   .resolveCaption { font-size: 9px; }
   .siteFooter { width: min(100%, 1900px); font-size: 10px; }
+}
+
+/* The fixed desktop hero/thread/library plates cover the viewport rather
+   than each section's full scroll height. Smaller 1x desktop viewports can
+   request a smaller derivative; tall/scrolling/high-density surfaces retain
+   the full-size candidate. Never modify crop, gradients or brand geometry. */
+@media (min-width: 901px) and (max-width: 1200px) and (max-height: 720px) and (max-resolution: 1dppx) {
+  .page {
+    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=1200&q=90");
+  }
+}
+@media (min-width: 1921px) {
+  .page {
+    --landing-hero-atmosphere: url("/_next/image?url=%2Flanding%2Fhero-atmosphere-v2.png&w=3840&q=90");
+    --landing-resolve-atmosphere: url("/_next/image?url=%2Flanding%2Fresolve-atmosphere-v2.png&w=3840&q=90");
+  }
+}
+
+/* Round 3 approved hero only. Keep the underlying optimized atmosphere plate
+ * and the existing thread / library / resolve compositions. */
+.nav {
+  background: color-mix(in srgb, var(--rl-canvas) 86%, transparent);
+  border-bottom-color: transparent;
+  padding-inline: var(--rl-space-48);
+}
+.nav .signInButton,.nav .openButton {
+  display: inline-flex; min-height: var(--rl-hit-preferred); padding-inline: var(--rl-space-16);
+  color: var(--rl-text-primary); background: var(--rl-surface-control);
+  border: 1px solid var(--rl-border-subtle); border-radius: var(--rl-radius-pill);
+  box-shadow: none;
+}
+.nav .openButton { background: var(--rl-surface-hover); }
+@media (hover: hover) and (pointer: fine) {
+  .nav .signInButton:hover,.nav .openButton:hover { background: var(--rl-surface-selected); }
+}
+.hero {
+  display: grid; align-content: space-between; gap: var(--rl-space-32);
+  min-height: 100svh; padding: 96px var(--rl-space-48) var(--rl-space-48);
+  background-color: var(--rl-canvas);
+  background-image: linear-gradient(color-mix(in srgb,var(--rl-canvas) 95%,transparent),color-mix(in srgb,var(--rl-canvas) 95%,transparent)), var(--landing-hero-atmosphere);
+}
+.hero::before {
+  inset: 0; background-image: var(--rl-atmosphere-scene); background-size: cover; mask-image: none; opacity: 1;
+}
+.heroGrid {
+  position: relative; width: min(100%,1840px); min-height: 0;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0,1.05fr);
+  gap: var(--rl-space-48); align-items: center;
+}
+.heroCopy { max-width: 560px; min-width: 0; margin-inline-start: var(--rl-space-48); transform: none; }
+.hero .eyebrow { color: var(--rl-text-secondary); font-size: var(--rl-type-label); letter-spacing: .14em; }
+.hero h1 { color: var(--rl-text-primary); font-size: clamp(3rem,5.35vw,5.5rem); font-weight: 700; line-height: 1.02; letter-spacing: -.035em; }
+.hero h1 span { white-space: normal; overflow-wrap: anywhere; }
+.hero .dek { margin-top: var(--rl-space-24); color: var(--rl-text-secondary); font-size: var(--rl-type-section); line-height: var(--rl-leading-body); }
+.heroActions { gap: var(--rl-space-16); margin-top: var(--rl-space-32); }
+.hero .heroPrimary { min-height: 56px; padding-inline: var(--rl-space-24); color: var(--rl-on-accent); background: var(--rl-gradient-primary); box-shadow: var(--rl-elevation-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .hero .heroPrimary:hover { color: var(--rl-on-accent); background: var(--rl-gradient-hover); box-shadow: var(--rl-elevation-primary); transform: none; }
+}
+.hero .heroPrimary:active { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .hero .heroPrimary:active { transform: none; }
+}
+.heroActions .truth { padding: 0; border: 0; color: var(--rl-text-secondary); font-size: var(--rl-type-label); font-weight: var(--rl-weight-body); letter-spacing: normal; text-transform: none; }
+.heroMatrixWrap { min-width: 0; min-height: 0; width: 100%; }
+.heroPreview {
+  position: relative; width: 100%; min-width: 0; aspect-ratio: 672 / 620;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0,4.2fr);
+  grid-template-rows: auto minmax(0,1fr) auto; gap: var(--rl-space-12);
+  padding: var(--rl-space-16); color: var(--rl-text-primary);
+  background: var(--rl-surface-panel-layered); border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-sheet); box-shadow: var(--rl-elevation-panel);
+  backdrop-filter: var(--rl-material-panel); overflow: hidden;
+}
+.previewDots { grid-column: 1/-1; display: flex; align-items: center; gap: var(--rl-space-8); min-height: var(--rl-space-24); }
+.previewDots i { width: var(--rl-space-8); height: var(--rl-space-8); border-radius: var(--rl-radius-pill); background: var(--rl-border-boundary); }
+.previewThumbnails { grid-column: 1; grid-row: 2/4; min-width: 0; display: grid; align-content: start; gap: var(--rl-space-8); }
+.previewThumbnails svg { display: block; width: 100%; height: auto; aspect-ratio: 1.5; border-radius: var(--rl-radius-control); overflow: hidden; }
+.previewArtwork { grid-column: 2; grid-row: 2; min-width: 0; min-height: 0; overflow: hidden; border-radius: var(--rl-radius-panel); }
+.previewArtwork svg { display: block; width: 100%; height: 100%; }
+.previewComposer {
+  grid-column: 2; grid-row: 3; display: flex; align-items: center; min-width: 0;
+  gap: var(--rl-space-12); padding: var(--rl-space-12);
+  border: 1px solid var(--rl-border-subtle); border-radius: var(--rl-radius-panel);
+  background: var(--rl-surface-overlay-layered); backdrop-filter: var(--rl-material-overlay);
+  color: var(--rl-text-primary); font-size: var(--rl-type-label);
+}
+.previewComposer span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.previewComposer i { display: grid; place-items: center; flex: none; width: var(--rl-control-large); height: var(--rl-control-large); border-radius: var(--rl-radius-pill); background: var(--rl-gradient-primary); color: var(--rl-on-accent); }
+.previewComposer i svg { width: var(--rl-space-16); height: var(--rl-space-16); transform: rotate(-90deg); }
+.heroFoot {
+  position: relative; inset: auto; transform: none; width: min(100%,1840px); margin: 0 auto;
+  padding-inline: var(--rl-space-48); display: flex; flex-wrap: wrap; gap: var(--rl-space-12);
+  list-style: none; color: var(--rl-text-secondary); font-size: var(--rl-type-caption); letter-spacing: .04em;
+}
+.heroFoot li { display: flex; align-items: center; min-height: var(--rl-control-regular); max-width: 100%; padding: var(--rl-space-8) var(--rl-space-16); border: 1px solid var(--rl-border-subtle); border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); text-transform: uppercase; overflow-wrap: anywhere; }
+.hero :is(h1,span,p,a) { scroll-margin-top: 80px; }
+@media (max-width: 900px) {
+  .nav { padding-inline: var(--rl-space-16); }
+  .nav .brandLink { border: 1px solid var(--rl-border-subtle); border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); padding-inline: var(--rl-space-8); }
+  .nav .openButton { display: none; }
+  .hero { padding: 92px var(--rl-space-24) var(--rl-space-32); gap: var(--rl-space-16); align-content: start; }
+  .heroGrid { grid-template-columns: minmax(0,1fr); gap: var(--rl-space-48); }
+  .heroCopy { margin: 0; max-width: none; }
+  .hero .eyebrow { font-size: var(--rl-type-caption); }
+  .hero h1 { font-size: clamp(2rem,11.8vw,3.5rem); }
+  .hero .dek { font-size: var(--rl-type-body); margin-top: var(--rl-space-16); }
+  .heroActions { display: grid; margin-top: var(--rl-space-24); gap: var(--rl-space-8); text-align: center; }
+  .hero .heroPrimary { width: 100%; }
+  .heroPreview { display: block; aspect-ratio: 342 / 236; padding: 0; }
+  .previewArtwork { position: absolute; inset: 0; border-radius: 0; }
+  .previewDots,.previewThumbnails { display: none; }
+  .previewComposer { position: absolute; inset: auto var(--rl-space-12) var(--rl-space-12); padding: var(--rl-space-8); border-radius: var(--rl-radius-panel); font-size: var(--rl-type-caption); }
+  .previewComposer i { width: var(--rl-control-regular); height: var(--rl-control-regular); }
+  .heroFoot { padding: 0; gap: var(--rl-space-8); }
+  .heroFoot li { padding-inline: var(--rl-space-12); min-height: var(--rl-control-compact); }
+}
+@media (max-width: 280px) {
+  .nav { padding-inline: var(--rl-space-4); gap: var(--rl-space-4); }
+  .nav .brandLink,.nav .signInButton { padding-inline: var(--rl-space-4); font-size: var(--rl-type-caption); }
+  .nav .brandLink svg { width: var(--rl-space-16); height: var(--rl-space-16); }
+  .nav .brandLink span { font-size: var(--rl-type-caption); }
+  .navActions { gap: 0; }
+  .hero { padding-inline: var(--rl-space-12); }
+  .heroGrid { gap: var(--rl-space-24); }
+  .hero h1 { font-size: var(--rl-type-display); }
+  .hero .heroPrimary { white-space: normal; padding-inline: var(--rl-space-8); }
+  .heroPreview { min-height: 128px; }
+  .previewComposer { inset-inline: var(--rl-space-4); padding: var(--rl-space-4); }
 }

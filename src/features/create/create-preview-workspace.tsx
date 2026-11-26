@@ -1,23 +1,35 @@
 "use client";
 
+import columns from "./create-desktop-columns.module.css";
+
 import { animated, useSpring } from "@react-spring/web";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import { Clock, Dice5, ImagePlus, Keyboard, Pencil, ListOrdered, Plus, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { nextResultIndex, useCreateShortcuts } from "./use-create-shortcuts";
+import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import phoneStyles from "./create-phone-composer.module.css";
+import { springOptions } from "@/lib/ui/spring-roles";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { nextCreateToolbarPopover, type CreateToolbarPopover } from "./create-toolbar-popover-state";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { CreatePreviewMaskEditor } from "./create-preview-mask-editor";
+import { DeferredMaskEditor as CreatePreviewMaskEditor } from "./create-preview-deferred-mask-editor";
 import { clearSavedEdits, readSavedEdits, saveEdits } from "./create-preview-saved-edits";
 import { CreatePreviewStage, type StageTurn } from "./create-preview-stage";
 import { previewImageSizes } from "./create-preview-sizes";
 import { loadCreateResultSource } from "./create-result-source";
 import { fetchHostedCreateCapabilities, rejectUnavailableInspirationDrop, type HostedCreateCapabilities } from "./create-hosted-capabilities";
 import { loadContinuationFiles, type CreateContinuationPlan } from "./create-continuation";
+import { CreateHistoryPanel, CreateHistorySheet } from "./history/create-history-panel";
+import { createHistoryTransport, type HistoryReadActions } from "./history/history-transport";
+import type { HistoryTransport } from "./history/history-contract";
+import { useCreateHistory } from "./history/use-create-history";
 
 import { fiboImageAspectRatios, type AspectRatio, type PresetAspectRatio, type GenerationModel, type GenerationInput, type GenerationJob } from "@/lib/capabilities/generation";
 import { isMediaUploadMimeType } from "@/lib/api/media-upload-contract";
@@ -25,6 +37,11 @@ import type { PublicMediaAsset } from "@/lib/api/media-assets-contract";
 import { uploadFiboMaskFile } from "@/lib/browser/fibo-mask-upload-client";
 import { normalizeFiboVgl, resolveFiboVglReferences } from "@/lib/capabilities/fibo-vgl";
 import { uploadPersistentImageFile } from "@/lib/browser/media-upload-client";
+
+const unavailableHistory: HistoryTransport = {
+  readJobs: async () => ({ state: "private" }), readPrompts: async () => ({ items: [], nextCursor: null }),
+  mutate: async () => ({ ok: false, message: "History is unavailable." }), reuse: async () => ({ ok: false, reason: "unavailable" }),
+};
 
 const hostedJobId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const hostedRatios = fiboImageAspectRatios;
@@ -36,8 +53,15 @@ async function hostedRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+function formatResultDimensions(width: number, height: number) {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) return "";
+  let a = width, b = height;
+  while (b) { const remainder = a % b; a = b; b = remainder; }
+  return (width / a) + ":" + (height / a) + " · " + width + " × " + height;
+}
+
 function hostedResult(asset: PublicMediaAsset): Result {
-  return { image_data: "/api/media/assets/" + asset.id + "/content", assetId: asset.id,
+  return { image_data: "/api/media/assets/" + asset.id + "/content", assetId: asset.id, isFavorite: asset.isFavorite, width: asset.width ?? undefined, height: asset.height ?? undefined, promptUsed: asset.prompt ?? undefined,
     filename: asset.originalFilename ?? "result.png", seed: 0, batchId: asset.generationJobId ?? asset.id,
     aspect: asset.width && asset.height ? asset.width / asset.height : undefined };
 }
@@ -46,7 +70,7 @@ const api = "/create-preview/";
 const slotMarker = (index: number) => "\uE000" + index + "\uE001";
 const slotMarkers = /\uE000([0-3])\uE001/g;
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { assetId?: string; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
+type Result = { promptUsed?: string; assetId?: string; isFavorite?: boolean; width?: number; height?: number; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
@@ -132,7 +156,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null }: { initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null, historyActions }: { historyActions?: HistoryReadActions; initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const hosted = hostedOnly || !!hostedModel;
   const [hostedCapabilities, setHostedCapabilities] = useState<HostedCreateCapabilities>();
   const [capabilityReadFailed, setCapabilityReadFailed] = useState(false);
@@ -161,13 +185,6 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [continuationPending, setContinuationPending] = useState(!!initialContinuation);
   const [continuationError, setContinuationError] = useState(initialContinuationError);
   const [reducedMotion, setReducedMotion] = useState(true);
-  useEffect(() => {
-    const query = matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
   const modeSpring = useSpring({
     position: mode === "edit" ? 1 : 0,
     config: { mass: 1, tension: 220, friction: 22 },
@@ -208,8 +225,89 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }
   const [steps, setSteps] = useState(4);
   const [previews, setPreviews] = useState<(string | undefined)[]>([]);
-  const [resultActions, setResultActions] = useState<HTMLDivElement | null>(null);
   const [desktop, setDesktop] = useState(false);
+  const [phone, setPhone] = useState(false);
+  const [advancedSheetOpen, setAdvancedSheetOpen] = useState(false);
+  const advancedTrigger = useRef<HTMLButtonElement>(null);
+  const [advancedOffset, setAdvancedOffset] = useState(0);
+  const advancedClosing = useRef(false);
+  const [, advancedSpring] = useSpring(() => ({ offset: 0 }), []);
+  const finishAdvancedClose = useCallback(() => {
+    advancedClosing.current = false;
+    // Remove the portal in one commit; the phone composer stays compact.
+    // Flush Radix's focus trap cleanup and return focus in the same browser task.
+    flushSync(() => {
+      setAdvancedSheetOpen(false);
+      setAdvancedOffset(0);
+    });
+    const root = workspaceRoot.current;
+    const destination = matchMedia("(min-width: 701px)").matches
+      ? root?.querySelector<HTMLElement>("#create-preview-prompt")
+      : advancedTrigger.current;
+    destination?.focus({ preventScroll: true });
+    if (document.activeElement === document.body) root?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    const query = matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      setReducedMotion(query.matches);
+      if (query.matches && advancedClosing.current) finishAdvancedClose();
+    };
+    setReducedMotion(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, [finishAdvancedClose]);
+
+  function changeAdvancedOpen(next: boolean) {
+    if (next) {
+      advancedClosing.current = false;
+      advancedSpring.stop();
+      setAdvancedOffset(reducedMotion ? 0 : 100);
+      setAdvancedSheetOpen(true);
+    } else if (reducedMotion) {
+      finishAdvancedClose();
+    } else if (!advancedClosing.current) {
+      advancedClosing.current = true;
+      void advancedSpring.start({ to: { offset: 100 }, ...springOptions("smooth", false),
+        onChange: result => setAdvancedOffset(result.value.offset),
+        onRest: result => {
+          if (result.finished && advancedClosing.current) finishAdvancedClose();
+        } });
+    }
+  }
+  // Start after the open state has committed. Drive the actual Sheet's style
+  // declaratively so a delayed portal/ref mount cannot leave it offscreen.
+  useEffect(() => {
+    if (!advancedSheetOpen) return;
+    if (reducedMotion) {
+      advancedSpring.stop();
+      advancedSpring.set({ offset: 0 });
+      setAdvancedOffset(0);
+      return;
+    }
+    void advancedSpring.start({ from: { offset: 100 }, to: { offset: 0 }, reset: true,
+      ...springOptions("smooth", false),
+      onChange: result => setAdvancedOffset(result.value.offset),
+      onRest: result => { if (result.finished && !advancedClosing.current) setAdvancedOffset(0); } });
+    return () => { advancedSpring.stop(); };
+  }, [advancedSheetOpen, reducedMotion, advancedSpring, finishAdvancedClose]);
+  useEffect(() => {
+    if (!advancedSheetOpen) return;
+    const query = matchMedia("(min-width: 701px)");
+    const closeOnWide = () => {
+      if (query.matches) finishAdvancedClose();
+    };
+    query.addEventListener("change", closeOnWide);
+    return () => query.removeEventListener("change", closeOnWide);
+  }, [advancedSheetOpen, finishAdvancedClose]);
+  useEffect(() => {
+    const query = matchMedia("(max-width: 700px)");
+    const update = () => setPhone(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   useEffect(() => {
     const query = matchMedia("(min-width: 1025px)");
     const update = () => setDesktop(query.matches);
@@ -231,6 +329,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [waitingReady, setWaitingReady] = useState(false);
   const [queueNotice, setQueueNotice] = useState("");
   const queueCount = Number(busy) + waiting.length;
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [historySelection, setHistorySelection] = useState<{ image: Result }>();
   const [historyRail, setHistoryRail] = useState<HTMLDivElement | null>(null);
   const [result, setResult] = useState<Result>();
@@ -244,6 +343,23 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [savedEdits, setSavedEdits] = useState<Result[]>([]);
   const [savingEdits, setSavingEdits] = useState(false);
   const [savedStatus, setSavedStatus] = useState("");
+  const historyRead = useCreateHistory({
+    accountKey: historyActions && admitted ? hostedAccountKey ?? null : null,
+    visible: !!historyActions && (desktop || historyOpen),
+    transport: historyActions ? createHistoryTransport(historyActions) : unavailableHistory,
+    onReuseDraft: async (draft, signal) => {
+      if (!admitted || busy || continuationPending || maskEditor) throw new Error("Create is busy.");
+      const loaded = await readContinuationFiles(draft, signal);
+      signal?.throwIfAborted();
+      if (active.current || preparing.current) throw new Error("Create is busy.");
+      applyContinuation(draft, loaded);
+      setHistoryOpen(false);
+    },
+    onPrompt: (value) => { if (!busy && !continuationPending) { setPrompt(value); setHistoryOpen(false); } },
+    onSessionResult: (entry) => { void selectHistoryResult(entry.id); },
+  });
+  const historySelectionRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => historySelectionRequest.current?.abort(), [hostedAccountKey, admitted]);
   const matchesImage = (image: Result, item: Result) => image.batchId === item.batchId && image.filename === item.filename;
   const history = [...sessionHistory.map((image) => image.run ? image : savedEdits.find((item) => matchesImage(image, item)) ?? image),
     ...savedEdits.filter((item) => !sessionHistory.some((image) => matchesImage(image, item)))];
@@ -305,7 +421,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   }, [admitted, savedEditsAccount, stageReady]);
 
   useEffect(() => {
-    if (!hostedModel) return;
+    if (!hostedModel || historyActions) return;
     const controller = new AbortController();
     void hostedRequest<{ items: PublicMediaAsset[] }>("/api/media/assets?kind=image&origin=generated&limit=48", { signal: controller.signal })
       .then(({ items }) => {
@@ -315,7 +431,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       })
       .catch(() => { if (!controller.signal.aborted) setSavedStatus("Hosted History could not be loaded."); });
     return () => controller.abort();
-  }, [hostedModel]);
+  }, [hostedModel, historyActions]);
 
   async function saveEdit(image?: Result) {
     if (!admitted || !savedEditsAccount || savingEdits || image && image.run?.mode !== "edit") return;
@@ -369,6 +485,56 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     setPreviews(urls);
     return () => urls.forEach((url) => { if (url) URL.revokeObjectURL(url); });
   }, [files]);
+
+  function readContinuationFiles(draft: CreateContinuationPlan, signal?: AbortSignal) {
+    const requestSignal = signal ?? new AbortController().signal;
+    return loadContinuationFiles(draft, requestSignal, async (reference, signal) => {
+      if (reference.source.type === "media-asset") {
+        return loadCreateResultSource({ assetId: reference.source.id, image_data: "", filename: reference.label }, signal, isMediaUploadMimeType);
+      }
+      const response = await fetch("/api/assets/reference/" + encodeURIComponent(reference.source.id) + "/content?source=1", { signal, cache: "no-store" });
+      if (!response.ok) throw new Error("Reference is unavailable.");
+      const blob = await response.blob();
+      if (!blob.size || !isMediaUploadMimeType(blob.type)) throw new Error("Invalid reference image.");
+      return new File([blob], reference.label, { type: blob.type });
+    });
+  }
+
+  function applyContinuation(draft: CreateContinuationPlan, loaded: Awaited<ReturnType<typeof readContinuationFiles>>) {
+    for (const { source, file } of loaded) sourceAssets.current.set(file, source);
+    setFiles(loaded.map(({ file }) => file));
+    setResult(undefined);
+    setSelection(undefined);
+    setMaskEditor(undefined);
+    setMode(draft.mode);
+    setEditAspectRatio(draft.mode === "edit" ? draft.aspectRatio : "original");
+    if (draft.aspectRatio !== "original") setSizeIndex(Math.max(0, hostedRatios.indexOf(draft.aspectRatio)));
+    setSteps(draft.steps);
+    updateDraft(draft.mode, {
+      prompt: draft.prompt, seed: draft.seed, randomize: draft.randomize,
+      negativePrompt: draft.negativePrompt, negativeOpen: !!draft.negativePrompt,
+      vgl: draft.vgl, vglOpen: !!draft.vgl, generatedVgl: false, imageCount: "1",
+    });
+    setStatus(draft.references.length ? "Source image attached." : "Saved settings loaded.");
+  }
+
+  async function selectHistoryResult(id: string) {
+    if (!admitted || busy || !hostedJobId.test(id)) return;
+    historySelectionRequest.current?.abort();
+    const controller = new AbortController();
+    historySelectionRequest.current = controller;
+    try {
+      const { asset } = await hostedRequest<{ asset: PublicMediaAsset }>("/api/media/assets/" + encodeURIComponent(id), { signal: controller.signal });
+      if (controller.signal.aborted || active.current || preparing.current || asset.id !== id || asset.kind !== "image") return;
+      setMaskEditor(undefined);
+      setHistorySelection({ image: hostedResult(asset) });
+      setHistoryOpen(false);
+    } catch {
+      if (!controller.signal.aborted) setStatus("This result is no longer available.");
+    } finally {
+      if (historySelectionRequest.current === controller) historySelectionRequest.current = null;
+    }
+  }
 
   // Explicit navigation waits for any bookmarked in-flight render to settle.
   // Do not let a restored result overwrite the requested draft or re-upload owned files.
@@ -651,6 +817,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               return true;
             });
           });
+          if (!restoring) for (const image of images) {
+            if (image.assetId) historyRead.recordResult({ id: image.assetId, label: run?.prompt?.trim() || image.filename || "Generated result", createdAt: new Date().toISOString() });
+          }
+          historyRead.refresh();
           setStatus(update.error ?? (images.length === 1 ? "Render complete." : images.length + " images ready in History."));
           if (restoring) setStageReady(true);
           return { images, error: update.error };
@@ -1065,16 +1235,97 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       }} />
   );
 
+  // These controlled fields have a single draft owner. On phones they are
+  // rendered only in Advanced; wider layouts keep their existing inline access.
+  const structuredFields = (<div className="create-preview-extra" key={mode}>
+              <details open={negativeOpen} onToggle={(event) => {
+                if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
+              }}>
+                <summary id="create-preview-negative-label">Negative prompt{!negativeConditioningEnabled && " · unavailable"}</summary>
+                {!negativeConditioningEnabled && <p id="create-preview-negative-unavailable" className="create-preview-caption">FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.</p>}
+                <Textarea aria-labelledby="create-preview-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
+                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy || !negativeConditioningEnabled}
+                  aria-describedby={!negativeConditioningEnabled ? "create-preview-negative-unavailable" : undefined}
+                  onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
+              </details>
+              <details open={vglOpen} onToggle={(event) => {
+                if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
+              }}>
+                <summary id="create-preview-vgl-label">{hosted ? "Manual VGL JSON" : "VGL JSON"}</summary>
+                {hosted && <p className="create-preview-caption">{generatedVglNotice}</p>}
+                <Textarea aria-labelledby="create-preview-vgl-label" className="create-preview-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
+                  placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
+                  title={!vglValid ? "Enter a non-empty JSON object." : undefined}
+                  aria-describedby={!vglValid ? "create-preview-vgl-invalid" : undefined}
+                  onChange={(event) => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
+                {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
+              </details>
+            </div>);
+  const imageCountField = multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
+    disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : null;
+  const seedField = (<div className={"create-preview-render-field" + (!advancedSheetOpen ? " " + phoneStyles.inlineAdvanced : "")}>
+                <label htmlFor="create-preview-seed">Seed</label>
+                <div className="create-preview-seed">
+                  <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
+                    required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
+                  <label className="create-preview-seed-dice" title="Randomize seed each time">
+                    <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
+                      onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />
+                    <Dice5 aria-hidden="true" />
+                  </label>
+                </div>
+              </div>);
+  const stepsField = (<label className={"create-preview-steps" + (!advancedSheetOpen ? " " + phoneStyles.inlineAdvanced : "")} htmlFor="create-preview-steps">
+                <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
+                <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
+                  disabled={busy}
+                  title={variableSteps ? undefined : "The current worker renders at 4 steps"}
+                  onChange={(event) => setSteps(event.target.valueAsNumber)} />
+              </label>);
+  function resetAdvanced() {
+    if (busy) return;
+    updateDraft(mode, { seed: emptyDraft.seed, randomize: emptyDraft.randomize,
+      negativePrompt: emptyDraft.negativePrompt, negativeOpen: emptyDraft.negativeOpen,
+      vgl: emptyDraft.vgl, vglOpen: emptyDraft.vglOpen, generatedVgl: false });
+    setSteps(4);
+  }
+
+  const shortcutResults = historyGroups.flat();
+  const selectedResultIndex = result ? shortcutResults.findIndex(image => image === result || matchesImage(image, result)) : -1;
+  const shortcuts = useCreateShortcuts({
+    root: workspaceRoot,
+    overlay: advancedSheetOpen || toolbarPopover !== null || maskOpen,
+    canGenerate: canSubmit,
+    canStep: !busy && !continuationPending && shortcutResults.length > 1,
+    step: direction => {
+      const next = nextResultIndex(selectedResultIndex, direction, shortcutResults.length);
+      if (next >= 0) setHistorySelection({ image: shortcutResults[next] });
+    },
+  });
+
+  function preserveToolbarFocus(event: Event) {
+    // Radix returns focus after portal teardown. Preserve any newer focus and
+    // otherwise let Radix decide whether this dismissal should focus the trigger.
+    const { activeElement, body, documentElement } = document;
+    if (activeElement?.isConnected && activeElement !== body && activeElement !== documentElement) {
+      event.preventDefault();
+    }
+  }
+
   return (
-    <section ref={workspaceRoot} tabIndex={-1} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
+    <section ref={workspaceRoot} tabIndex={-1} onKeyDown={shortcuts.onKeyDown} className="create-preview-workspace mx-auto w-full" aria-label="Create with FIBO">
       <p className="sr-only" role="status" aria-live="polite">{maskAnnouncement}</p>
+      <p className="sr-only" role="status" aria-live="polite" data-create-shortcut-announcement>{selectedResultIndex >= 0 ? "Result " + (selectedResultIndex + 1) + " of " + shortcutResults.length : ""}</p>
       <div className="create-preview-toolbar">
         <div className="create-preview-tools">
+          {historyActions && !desktop && <CreateHistorySheet state={historyRead} open={historyOpen} onOpenChange={setHistoryOpen}
+            trigger={<Button type="button" variant="ghost" className="create-preview-toolbar-trigger" aria-label="Open History"><Clock size={16} aria-hidden="true" /> History</Button>} />}
           <Popover open={toolbarPopover === "queue"} onOpenChange={(open) => setToolbarPopover((current) => nextCreateToolbarPopover(current, "queue", open))}>
             <PopoverTrigger asChild>
               <Button ref={queue} type="button" variant="ghost" className="create-preview-toolbar-trigger"><ListOrdered size={16} aria-hidden="true" /> Queue{queueCount > 0 && <span>{queueCount}</span>}</Button>
             </PopoverTrigger>
-            <PopoverContent aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs">
+            <PopoverContent data-create-shortcut-overlay="" aria-label="Queue" className="create-preview-toolbar-popover create-preview-queue-jobs"
+              onCloseAutoFocus={preserveToolbarFocus}>
               <div role="status">{queueNotice || (busy ? status : "No active render in this workspace.")}</div>
               <div className="create-preview-caption">Waiting requests keep their prompt and inputs in this preview until they start, are removed, or expire.</div>
               {busy && activeCancel && <Button type="button" variant="ghost" size="sm"
@@ -1094,35 +1345,39 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             <PopoverTrigger asChild>
               <Button type="button" variant="ghost" className="create-preview-toolbar-trigger"><Keyboard size={16} aria-hidden="true" /> Shortcuts</Button>
             </PopoverTrigger>
-            <PopoverContent aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover">
-              <p>Ctrl + Enter to generate when the form is ready.</p>
+            <PopoverContent data-create-shortcut-overlay="" aria-label="Shortcuts" className="create-preview-toolbar-popover create-preview-shortcuts-popover"
+              onCloseAutoFocus={preserveToolbarFocus}>
+              <p>/ to focus the prompt.</p>
+              <p>{shortcuts.modifierHint} + Enter to generate when the form is ready.</p>
+              <p>[ and ] to step through results.</p>
+              <p>Esc to dismiss the active overlay.</p>
+              <label className="flex flex-wrap items-center gap-2">
+                <Switch checked={shortcuts.enabled} onCheckedChange={shortcuts.changeEnabled} aria-label="Keyboard shortcuts" />
+                <span>Keyboard shortcuts {shortcuts.enabled ? "on" : "off"}</span>
+              </label>
             </PopoverContent>
           </Popover>
         </div>
       </div>
       {continuationPending && <p className="create-preview-caption" role="status">Loading saved starting point…</p>}
       {continuationError && <p className="create-preview-caption" role="alert">{continuationError}</p>}
-      <div className="create-preview-grid">
-        <form inert={continuationPending} className="create-preview-controls" noValidate onSubmit={submit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && event.ctrlKey && !event.nativeEvent.isComposing && canSubmit) {
-              event.preventDefault();
-              event.currentTarget.requestSubmit();
-            }
-          }}>
+      <div className={"create-preview-grid " + columns.grid}>
+        <form inert={continuationPending} className={"create-preview-controls " + phoneStyles.composer} noValidate onSubmit={submit}>
           <div className="create-preview-fields">
             <div className="create-preview-modes" role="group" aria-label="Workflow">
               <animated.span className="create-preview-mode-highlight" aria-hidden="true"
-                style={{ transform: modeSpring.position.to((position) => "translateX(" + (position * 44) + "px)") }} />
+                style={{ transform: modeSpring.position.to((position) => "translateX(calc(" + (position * 100) + "% + " + (position * 4) + "px))") }} />
               <Button type="button" variant="ghost" aria-label="Text to Image" title="Text to Image"
                 aria-pressed={mode === "generate"} disabled={busy}
                 onClick={() => { setMaskEditor(undefined); setMode("generate"); }}>
                 <ImagePlus aria-hidden="true" />
+                <span>Text to image</span>
               </Button>
               <Button type="button" variant="ghost" aria-label="Image Editing" title="Image Editing"
                 aria-pressed={mode === "edit"} disabled={busy}
                 onClick={() => { setMode("edit"); }}>
                 <Pencil aria-hidden="true" />
+                <span>Image Editing</span>
               </Button>
             </div>
             <section aria-labelledby="create-preview-setup">
@@ -1160,7 +1415,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     </div>
                   ))}
                 </div>
-                <div className="create-preview-size" inert={mode !== "generate"}>
+                <div className="create-preview-size" data-inspiration-available={inspirationEnabled} inert={mode !== "generate"}>
                   {inspirationEnabled ? <div className="create-preview-tile" {...uploadDropTarget(4)}>
                     <Button type="button" variant="outline" disabled={!admitted || busy}
                       aria-label="Choose reference image" onClick={() => chooseImage(4)}>
@@ -1169,7 +1424,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                     </Button>
                     {inspiration && <Button type="button" variant="secondary" size="icon-sm" className="create-preview-remove"
                       aria-label="Remove reference image" disabled={busy} onClick={() => setReference()}><X /></Button>}
-                  </div> : <div className="create-preview-tile" {...uploadDropTarget(4)}><Button type="button" variant="outline" disabled aria-label="Inspiration unavailable" aria-describedby="create-preview-inspiration-unavailable"><span>Inspiration</span></Button></div>}
+                  </div> : null}
                   <label className="create-preview-aspect">Aspect ratio
                     <span className="create-preview-aspect-preview" aria-hidden="true"><span style={{ "--create-aspect": size.width / size.height } as CSSProperties} /></span>
                     <NativeSelect size="sm" value={sizeIndex} disabled={busy} onChange={(event) => setSizeIndex(Number(event.target.value))}>
@@ -1225,7 +1480,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             </div>
             {richPrompt ? (
               <div ref={promptEditor} id="create-preview-prompt" className="create-preview-rich-prompt"
-                role="textbox" aria-labelledby="create-preview-main-prompt-label" aria-multiline="true"
+                role="textbox" aria-labelledby="create-preview-main-prompt-label" aria-multiline="true" aria-keyshortcuts={shortcuts.enabled ? "/" : undefined} title={shortcuts.enabled ? "Focus prompt: /" : undefined}
                 aria-disabled={promptDisabled} aria-placeholder={placeholder} data-empty={!promptDraft.trim()}
                 contentEditable={!promptDisabled} spellCheck autoCorrect="on"
                 onInput={readPromptEditor}
@@ -1235,68 +1490,48 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 }}
                 onDrop={(event) => event.preventDefault()} />
             ) : (
-              <Textarea id="create-preview-prompt" required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
+              <Textarea id="create-preview-prompt" aria-keyshortcuts={shortcuts.enabled ? "/" : undefined} title={shortcuts.enabled ? "Focus prompt: /" : undefined} required spellCheck autoCorrect="on" value={prompt} disabled={promptDisabled}
                 maxLength={4000} placeholder={placeholder} onChange={(event) => setPrompt(event.target.value)} />
             )}
-            <div className="create-preview-extra" key={mode}>
-              <details open={negativeOpen} onToggle={(event) => {
-                if (event.currentTarget.open !== negativeOpen) updateDraft(mode, { negativeOpen: event.currentTarget.open });
-              }}>
-                <summary id="create-preview-negative-label">Negative prompt{!negativeConditioningEnabled && " · unavailable"}</summary>
-                {!negativeConditioningEnabled && <p id="create-preview-negative-unavailable" className="create-preview-caption">FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.</p>}
-                <Textarea aria-labelledby="create-preview-negative-label" rows={3} maxLength={4000} spellCheck autoCorrect="on"
-                  placeholder="What should the image avoid?" value={negativePrompt} disabled={busy || !negativeConditioningEnabled}
-                  aria-describedby={!negativeConditioningEnabled ? "create-preview-negative-unavailable" : undefined}
-                  onChange={(event) => updateDraft(mode, { negativePrompt: event.target.value })} />
-              </details>
-              <details open={vglOpen} onToggle={(event) => {
-                if (event.currentTarget.open !== vglOpen) updateDraft(mode, { vglOpen: event.currentTarget.open });
-              }}>
-                <summary id="create-preview-vgl-label">{hosted ? "Manual VGL JSON" : "VGL JSON"}</summary>
-                {hosted && <p className="create-preview-caption">{generatedVglNotice}</p>}
-                <Textarea aria-labelledby="create-preview-vgl-label" className="create-preview-vgl" rows={5} maxLength={8192} spellCheck={false} autoCorrect="off" autoCapitalize="off"
-                  placeholder="Enter VGL JSON…" value={vgl} disabled={busy} aria-invalid={!vglValid}
-                  title={!vglValid ? "Enter a non-empty JSON object." : undefined}
-                  aria-describedby={!vglValid ? "create-preview-vgl-invalid" : undefined}
-                  onChange={(event) => updateDraft(mode, { vgl: event.target.value, generatedVgl: false })} />
-                {!vglValid && <span id="create-preview-vgl-invalid" className="sr-only">Enter a non-empty JSON object.</span>}
-              </details>
-            </div>
+            {!phone && !advancedSheetOpen && <div className={phoneStyles.inlineStructured}>{structuredFields}</div>}
           </div>
           <div className="create-preview-dock">
-            <div className="create-preview-settings">
-              <div className="create-preview-render-field">
-                <label htmlFor="create-preview-seed">Seed</label>
-                <div className="create-preview-seed">
-                  <Input id="create-preview-seed" type="text" inputMode="numeric" spellCheck={false} autoCorrect="off" autoCapitalize="off" maxLength={10}
-                    required={!randomize} value={seed} disabled={busy || randomize} onChange={(event) => updateDraft(mode, { seed: event.target.value })} />
-                  <label className="create-preview-seed-dice" title="Randomize seed each time">
-                    <Input type="checkbox" aria-label="Randomize seed each time" checked={randomize} disabled={busy}
-                      onChange={(event) => updateDraft(mode, { randomize: event.target.checked })} />
-                    <Dice5 aria-hidden="true" />
-                  </label>
-                </div>
-              </div>
+            <Sheet open={advancedSheetOpen} onOpenChange={changeAdvancedOpen}>
+              <SheetTrigger asChild>
+                <Button ref={advancedTrigger} type="button" variant="secondary" size="lg" className={phoneStyles.advancedTrigger}>Advanced</Button>
+              </SheetTrigger>
+              {advancedSheetOpen && (
+                <SheetContent data-create-shortcut-overlay="" side="bottom" showCloseButton={false} className={phoneStyles.sheet}
+                  style={{ transform: `translateY(${reducedMotion ? 0 : advancedOffset}%)` }}
+                  onCloseAutoFocus={event => event.preventDefault()}>
+                  <div className={phoneStyles.heading}>
+                    <SheetTitle>Advanced</SheetTitle>
+                    <SheetClose asChild><Button type="button" variant="ghost" size="lg">Done</Button></SheetClose>
+                  </div>
+                  <SheetDescription>Settings for your next image. Mode, shape and references stay in the composer.</SheetDescription>
+                  <div className={phoneStyles.settings}>
+                    {seedField}{stepsField}{structuredFields}
+                  </div>
+                  <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={resetAdvanced}>Reset to defaults</Button>
+                </SheetContent>
+              )}
+            </Sheet>
+            <div className="create-preview-settings" data-multi-output-available={multiOutputEnabled}>
+              {!phone && !advancedSheetOpen && seedField}
               {mode === "edit" && editAspectRatio !== "original" && <span className="create-preview-caption">Saved size: {editAspectRatio}</span>}
-              <label className="create-preview-render-field" htmlFor="create-preview-count">Images
-                {multiOutputEnabled ? <Input id="create-preview-count" type="number" min={1} max={4} step={1} required value={imageCount}
-                  disabled={busy} onChange={(event) => updateDraft(mode, { imageCount: event.target.value })} /> : <Input id="create-preview-count" type="number" value="1" disabled aria-describedby="create-preview-single-output" />}
-                {!multiOutputEnabled && <span id="create-preview-single-output" className="create-preview-caption">One image per render.</span>}
-              </label>
-              <label className="create-preview-steps" htmlFor="create-preview-steps">
-                <span>Steps <output htmlFor="create-preview-steps">{steps}</output></span>
-                <Input id="create-preview-steps" type="range" min={1} max={8} step={1} value={steps}
-                  disabled={busy}
-                  title={variableSteps ? undefined : "The current worker renders at 4 steps"}
-                  onChange={(event) => setSteps(event.target.valueAsNumber)} />
-              </label>
+              {imageCountField && <label className="create-preview-render-field" htmlFor="create-preview-count">Images
+                {imageCountField}
+              </label>}
+              {phone && !multiOutputEnabled && <span className="create-preview-caption create-preview-output-note">One image per render.</span>}
+              {!phone && !advancedSheetOpen && stepsField}
             </div>
             <p className="create-preview-caption create-preview-worker-note" role="status">{hostedBlocker || cancelError || (sendingCancel || activeCancel?.pending ? "Cancelling…" : liveCaption ?? status)}</p>
             <span id="create-preview-blocker" className="sr-only">{blocker}</span>
             <div className="create-preview-submit-actions">
               <Button type="submit" className="create-preview-generate" disabled={!canSubmit}
-                title={blocker || undefined} aria-describedby={blocker ? "create-preview-blocker" : undefined}>
-                <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}<kbd aria-hidden="true">Ctrl + Enter</kbd>
+                aria-keyshortcuts={shortcuts.enabled ? "Control+Enter Meta+Enter" : undefined}
+                title={blocker || (shortcuts.enabled ? shortcuts.modifierHint + " + Enter" : undefined)} aria-describedby={blocker ? "create-preview-blocker" : undefined}>
+                <Sparkles aria-hidden="true" />{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}{shortcuts.enabled && <kbd aria-hidden="true">{shortcuts.modifierHint} + Enter</kbd>}
               </Button>
               {busy && activeCancel && <Button type="button" variant="outline"
                 disabled={sendingCancel || activeCancel.pending} onClick={() => void cancelActiveRender()}
@@ -1306,9 +1541,9 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             </div>
           </div>
         </form>
-        <section inert={continuationPending && !busy} className="create-preview-canvas" aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
+        <section inert={continuationPending && !busy} className={"create-preview-canvas" + (desktop && result && !busy ? " " + columns.withMetadata : "")} aria-label="Canvas" {...(!desktop && uploadDropTarget("canvas"))}>
+            <div className={columns.stageRegion}>
             {stageReady && <CreatePreviewStage
-              desktopResultActions={desktop ? resultActions : undefined}
               workflow={mode}
               turns={turns[mode]}
               inlineMask={maskEditor === "inline" ? maskEditorNode : undefined}
@@ -1321,7 +1556,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
               result={busy ? inspected : result}
               history={historyGroups.map((group) => group[0])}
               historySelection={historySelection}
+              resultPosition={selectedResultIndex >= 0 ? { index: selectedResultIndex, count: shortcutResults.length } : undefined}
               desktopArrows={desktop && !maskEditor}
+              desktopActions={desktop && !maskEditor && !busy}
+              onFavoriteChange={(id, favorite) => {
+                setHistory(items => items.map(image => image.assetId === id ? { ...image, isFavorite: favorite } : image));
+                setResult(image => image?.assetId === id ? { ...image, isFavorite: favorite } : image);
+              }}
               dropTarget={desktop && !maskEditor ? uploadDropTarget("canvas") : undefined}
               onRestore={restoreRun}
               onSaveEdit={savedEditsAccount ? (image) => void saveEdit(image) : undefined}
@@ -1391,10 +1632,17 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 }
               }}
             />}
+            </div>
+            {desktop && result && !busy && <section aria-label="Prompt used" className={columns.promptUsed}>
+              <h2>Prompt used</h2>
+              <p>{result.run?.prompt ?? result.promptUsed ?? "Prompt not available for this result."}</p>
+              {result.width && result.height && <p>{formatResultDimensions(result.width, result.height)}</p>}
+              {!result.assetId && result.run && <p>Seed {result.seed} · {result.run.steps} steps</p>}
+            </section>}
             {maskEditor === "dialog" && maskEditorNode}
             {!admitted && <Link href="/settings" className="create-preview-stage-sign-in">Sign in to upload</Link>}
         </section>
-        <aside className="create-preview-history" aria-labelledby="create-preview-history-title"
+        <aside className="create-preview-history" aria-labelledby="create-preview-history-title" aria-keyshortcuts={shortcuts.enabled ? "[ ]" : undefined} title={shortcuts.enabled ? "Previous result: [ · Next result: ]" : undefined}
           onKeyDown={(event) => {
             if (busy || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
             const direction = ["ArrowUp", "ArrowLeft"].includes(event.key) ? -1 : ["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : 0;
@@ -1407,7 +1655,12 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             next.click();
           }}>
           <h2 id="create-preview-history-title">History</h2>
-          <div ref={setResultActions} className="create-preview-history-result-actions" />
+          <div className={columns.historySlot}>
+            {historyActions && desktop ? <CreateHistoryPanel state={historyRead} showHeading={false} /> : <>
+              <h3>Prompt and job history</h3>
+              <p>Not available here yet. Activity remains available.</p>
+            </>}
+          </div>
           {!!savedEdits.length && <Button type="button" variant="ghost" size="sm" disabled={savingEdits || busy}
             onClick={() => void saveEdit()}>Clear saved edits</Button>}
           {savedStatus && <p className="create-preview-caption" role="status">{savedStatus}</p>}
@@ -1422,7 +1675,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
             {historyGroups.length ? historyGroups.map((group, index) => {
               const image = group[0];
               return <Button key={image.batchId ?? image.filename ?? index} data-create-history-image type="button" variant="ghost"
-                className="create-preview-history-cover" disabled={busy} aria-current={!!result && group.includes(result)}
+                className="create-preview-history-cover" disabled={busy} aria-current={!!result && group.some(item => item === result || (!!item.assetId && item.assetId === result.assetId))}
                 aria-label={"Open render " + (historyGroups.length - index) + ", seed " + image.seed + ", " + group.length + (group.length === 1 ? " image" : " images")}
                 onClick={() => { setMaskEditor(undefined); setHistorySelection({ image }); }}>
                 <img src={image.image_data} alt="" draggable={false} loading="lazy" />

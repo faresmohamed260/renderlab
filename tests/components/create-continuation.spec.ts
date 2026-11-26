@@ -25,18 +25,25 @@ test("Viewer Reuse settings hydrates the saved draft, image and advanced setting
   await expect(create.getByRole("button", { name: "Remove source image" })).toBeVisible();
   await expect(create.getByRole("button", { name: "Image Editing", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(create.getByRole("textbox", { name: "Prompt", exact: true })).toHaveValue("Edit @image1");
-  await expect(create.getByRole("textbox", { name: "Seed", exact: true })).toHaveValue("1234");
-  await expect(create.getByRole("checkbox", { name: "Randomize seed each time" })).not.toBeChecked();
-  await expect(create.getByRole("slider", { name: /Steps/ })).toHaveValue("7");
+  const opener = create.getByRole("button", { name: "Advanced", exact: true });
+  await opener.press("Enter");
+  const advanced = page.getByRole("dialog", { name: "Advanced" });
+  await expect(advanced).toBeVisible();
+  await expect(advanced.getByRole("textbox", { name: "Seed", exact: true })).toHaveValue("1234");
+  await expect(advanced.getByRole("checkbox", { name: "Randomize seed each time" })).not.toBeChecked();
+  await expect(advanced.getByRole("slider", { name: /Steps/ })).toHaveValue("7");
   // #681: hosted FIBO preserves saved negative conditioning for reference only.
-  const negative = create.getByRole("textbox", { name: "Negative prompt · unavailable", exact: true });
+  const negative = advanced.getByRole("textbox", { name: "Negative prompt · unavailable", exact: true });
   await expect(negative).toHaveValue("blur");
   await expect(negative).toBeDisabled();
   await expect(negative).toHaveAccessibleDescription("FIBO Edit Turbo does not apply independent negative conditioning. Saved negative prompts are shown for reference only and are not sent.");
   // #681: hosted VGL is explicitly manual, not generated.
-  const vgl = create.getByRole("textbox", { name: "Manual VGL JSON", exact: true });
+  const vgl = advanced.getByRole("textbox", { name: "Manual VGL JSON", exact: true });
   await expect(vgl).toBeVisible();
   expect(JSON.parse(await vgl.inputValue())).toEqual({ scene: "<image_1>" });
+  await page.keyboard.press("Escape");
+  await expect(advanced).toHaveCount(0);
+  await expect(opener).toBeFocused();
   await expect(create.getByText("Saved size: 4:3", { exact: true })).toBeVisible();
   await expect.poll(() => io.includes("GET continuation source")).toBe(true);
   await expect.poll(() => io.includes("GET capabilities")).toBe(true);

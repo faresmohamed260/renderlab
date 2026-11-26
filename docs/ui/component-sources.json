@@ -30,7 +30,7 @@
       "expectedVersion": "1.6.7",
       "licenseStatus": "lockfile-verified",
       "licenseSpdx": "MIT",
-      "notes": "Active maintained primitives: src/components/ui/button.tsx imports Slot; other shared wrappers use Radix mechanics. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy. Popover uses locked @radix-ui/react-popover 1.1.23 (MIT declaration); no new dependency.",
+      "notes": "Active maintained primitives: src/components/ui/button.tsx imports Slot; other shared wrappers use Radix mechanics. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy. Popover uses locked @radix-ui/react-popover 1.1.23 (MIT declaration); no new dependency. P6-03b uses existing locked Dialog 1.1.23, Tooltip 1.2.16, Slider 1.4.7 and Switch 1.3.7 (MIT declarations) via radix-ui for shared Sheet, Tooltip, Slider and Switch; existing Popover retained. Skeleton is locally composed CSS, not a Radix export. No package change.",
       "searchLabel": "shadcn/ui + Radix"
     },
     {
@@ -126,7 +126,7 @@
       "expectedVersion": "10.1.2",
       "licenseStatus": "lockfile-verified",
       "licenseSpdx": "MIT",
-      "notes": "Active in src/components/shell/preview-navigation-shell.tsx and src/features/create/create-preview-workspace.tsx; UI-083 governs application springs. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy.",
+      "notes": "Active in src/components/shell/preview-navigation-shell.tsx and src/features/create/create-preview-workspace.tsx; UI-083 governs application springs. Exact version and SPDX declaration verified against package.json and package-lock.json; not a full license-text, transitive or copied-source review. New adoption remains subject to source policy. P6-03a merged the canonical named springRoles/springOptions owner at src/lib/ui/spring-roles.ts; unmigrated local motion remains legacy.",
       "searchLabel": null
     },
     {

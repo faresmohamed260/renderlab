@@ -13,9 +13,11 @@ function displayInitials(displayName: string | null) {
 export function AccountProfileIdentity({
   profile,
   large = false,
+  overviewEmail,
 }: {
   profile: RenderLabAccountProfile;
   large?: boolean;
+  overviewEmail?: string;
 }) {
   const initials = displayInitials(profile.displayName);
   const avatarSrc = profile.avatarUrl
@@ -24,7 +26,7 @@ export function AccountProfileIdentity({
 
   return (
     <div className={styles.profileIdentity} data-large={large ? "true" : undefined}>
-      <div className={styles.profileAvatar} aria-label={avatarSrc ? "Current profile picture" : "Profile picture placeholder"}>
+      <div className={styles.profileAvatar} role="img" aria-label={avatarSrc ? "Current profile picture" : "Profile picture placeholder"}>
         {avatarSrc ? (
           <img className={styles.profileAvatarImage} src={avatarSrc} alt="" />
         ) : initials ? (
@@ -34,9 +36,9 @@ export function AccountProfileIdentity({
         )}
       </div>
       <div className={styles.valueStack}>
-        <p className={styles.valueLabel}>Profile</p>
+        {overviewEmail === undefined ? <p className={styles.valueLabel}>Profile</p> : null}
         <p className={styles.profileName}>{profile.displayName ?? "No display name"}</p>
-        <p className={styles.helper}>Display identity only. It does not change sign-in, access, role or ownership.</p>
+        {overviewEmail !== undefined ? <p className={styles.helper}>{overviewEmail}</p> : <p className={styles.helper}>Display identity only. It does not change sign-in, access, role or ownership.</p>}
       </div>
     </div>
   );

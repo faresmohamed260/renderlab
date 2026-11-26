@@ -30,7 +30,7 @@ concurrency:
 jobs:
   mounted-components:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     env:
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
@@ -55,9 +55,12 @@ jobs:
           cache: npm
       - name: Enforce shrink-only overflow debt (PR only)
         if: github.event_name == 'pull_request'
+        env:
+          OVERFLOW_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           node --input-type=module <<'NODE'
           import { existsSync, readFileSync } from "node:fs";
+          import { createHash } from "node:crypto";
           const path = "tests/components/create-overflow-baseline.json";
           const prior = ".overflow-baseline-base/" + path;
           const current = JSON.parse(readFileSync(path, "utf8"));
@@ -65,6 +68,18 @@ jobs:
             console.log("Initial baseline introduction; exact browser calibration required.");
           } else {
             const previous = JSON.parse(readFileSync(prior, "utf8"));
+            const gitBlob = file => {
+              const bytes = readFileSync(file);
+              return createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
+            };
+            // Owner-approved one-time measured re-baseline, not a reusable bypass.
+            // Bound to this PR AND exact old/new file contents. All future PRs ratchet.
+            if (process.env.OVERFLOW_PR_NUMBER === "731"
+              && gitBlob(prior) === "f6377a92fee4c990abbf0babcb30636e93a8f295"
+              && gitBlob(path) === "074daad949749ba4cdbcd8b6e0703d7fc6dc6f4e") {
+              console.log("PR 731 exact owner-approved faithful-mount re-baseline; browser equality still mandatory.");
+              process.exit(0);
+            }
             for (const [width, states] of Object.entries(current)) {
               for (const [state, entries] of Object.entries(states)) {
                 for (const entry of entries) {

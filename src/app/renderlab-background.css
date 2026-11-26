@@ -213,7 +213,12 @@
   font-weight: 500;
 }
 .preview-account-row svg { flex: none; opacity: .8; }
-.preview-account-settings:is(:hover, :focus-visible, [aria-current="page"]) svg { opacity: 1; }
+.preview-account-settings:is(:focus-visible, :focus-visible, [aria-current="page"]) svg { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .preview-account-settings:is(:hover, :focus-visible, [aria-current="page"]) svg { opacity: 1; }
+}
+
 .preview-account-row-meta {
   margin-inline-start: auto;
   flex: none;
@@ -238,9 +243,16 @@
 :is(.preview-account-settings, .preview-section-group a)[aria-current="page"] {
   --preview-row-highlight: rgb(221 211 255 / 16%);
 }
-:is(.preview-account-settings, .preview-section-group a):is(:hover, :focus-visible) {
+:is(.preview-account-settings, .preview-section-group a):is(:focus-visible, :focus-visible) {
   --preview-row-highlight: rgb(221 211 255 / 23%);
 }
+
+@media (hover: hover) and (pointer: fine) {
+  :is(.preview-account-settings, .preview-section-group a):is(:hover, :focus-visible) {
+  --preview-row-highlight: rgb(221 211 255 / 23%);
+}
+}
+
 :is(.preview-account-settings, .preview-section-group a):active {
   --preview-row-highlight: rgb(221 211 255 / 30%);
 }
@@ -321,29 +333,40 @@
 .create-preview-modes {
   position: relative;
   display: flex;
-  inline-size: max-content;
-  gap: 4px;
-  padding: 4px;
+  inline-size: 100%;
+  min-inline-size: 0;
+  gap: var(--rl-space-4);
+  padding: var(--rl-space-4);
   margin-block-end: 14px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 5%);
+  border-radius: var(--rl-radius-control);
+  background: var(--rl-surface-control);
 }
 .create-preview-mode-highlight {
   position: absolute;
-  inset: 4px auto 4px 4px;
-  inline-size: 40px;
-  border-radius: 999px;
+  inset: var(--rl-space-4) auto var(--rl-space-4) var(--rl-space-4);
+  inline-size: calc((100% - 3 * var(--rl-space-4)) / 2);
+  border-radius: var(--rl-radius-micro);
   pointer-events: none;
-  background: rgb(175 146 255 / 23%);
+  background: var(--rl-surface-selected);
 }
-.create-preview-modes button {
+.create-preview-workspace .create-preview-modes button {
   position: relative;
-  inline-size: 40px;
-  block-size: 38px;
-  min-block-size: 38px;
-  padding: 0;
+  flex: 1 1 0;
+  min-inline-size: var(--rl-hit-preferred);
+  min-block-size: var(--rl-hit-preferred);
+  block-size: auto;
+  padding: var(--rl-space-4);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: var(--rl-type-caption);
+  line-height: var(--rl-leading-caption);
+  color: var(--rl-text-secondary);
 }
-.create-preview-modes button[aria-pressed="true"] { color: #f6f2ff; }
+.create-preview-modes button[aria-pressed="true"] { color: var(--rl-text-selected); }
+@media (max-width: 700px) {
+  .create-preview-modes button > svg { display: none; }
+}
 .create-preview-tools { display: flex; gap: 4px; align-items: center; position: absolute; inset-inline-end: 0; inset-block-start: 0; }
 .create-preview-workspace summary { cursor: pointer; }
 .create-preview-workspace .create-preview-toolbar-trigger { display: flex; align-items: center; gap: 6px; padding: 7px 9px; min-block-size: 38px; font-size: 12px; font-weight: normal; color: inherit; }
@@ -436,7 +459,8 @@
 }
 @media (max-width: 700px) {
   .create-preview-grid { grid-template-columns: minmax(0, 1fr); min-block-size: 0; }
-  .create-preview-canvas { order: -1; inline-size: min(80%, 336px); }
+  /* Use the phone grid's available width; the stage document still constrains media by aspect ratio. */
+  .create-preview-canvas { order: -1; inline-size: 100%; }
   .create-preview-toolbar { flex-wrap: wrap; align-items: center; }
   .create-preview-tools { position: relative; inset: auto; }
 }
@@ -459,9 +483,12 @@
   background: rgb(255 255 255 / 5%);
   box-shadow: none;
 }
-.create-preview-workspace :is(button, summary):not(:disabled):hover {
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace :is(button, summary):not(:disabled):hover {
   background-color: rgb(255 255 255 / 9%);
 }
+}
+
 /* FIBO Studio uses a light wash on buttons, but only an accent color on summaries. */
 .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select, .create-preview-recents summary) {
   background: rgb(255 255 255 / 4.5%);
@@ -472,18 +499,31 @@
 .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select) {
   transition: background-color .16s, color .16s;
 }
-.create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select):not(:disabled):hover {
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select):not(:disabled):hover {
   cursor: pointer;
   background-color: rgb(235 232 255 / 9%);
   color: #dedbed;
 }
-.create-preview-workspace .create-preview-recents summary:hover {
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-recents summary:hover {
   background: rgb(255 255 255 / 4.5%);
   color: #a5b4fc;
 }
-.create-preview-workspace .create-preview-recents button:not(:disabled):is(:hover, :focus-visible) {
+}
+
+.create-preview-workspace .create-preview-recents button:not(:disabled):is(:focus-visible, :focus-visible) {
   background-color: rgb(233 217 255 / 9%);
 }
+
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-recents button:not(:disabled):is(:hover, :focus-visible) {
+  background-color: rgb(233 217 255 / 9%);
+}
+}
+
 .create-preview-workspace :is(.create-preview-tile > button:first-child, .create-preview-aspect select, .create-preview-recents summary):focus-visible {
   outline: 2px solid #a5b4fc;
   outline-offset: 3px;
@@ -493,12 +533,21 @@
 }
 
 .create-preview-workspace .create-preview-generate {
-  background: linear-gradient(175deg, #755ed2, #5140aa);
-  color: #fff;
-  box-shadow: 0 4px 16px rgb(107 80 219 / 22%);
+  min-block-size: var(--rl-hit-preferred);
+  /* Keep glyph contrast valid throughout disabled/enabled state changes. */
+  transition-property: box-shadow;
+  background: var(--rl-gradient-primary);
+  color: var(--rl-on-accent);
+  box-shadow: var(--rl-elevation-primary);
 }
-.create-preview-workspace .create-preview-generate:not(:disabled):hover {
-  background: linear-gradient(175deg, #816bdb, #5a48b6);
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-generate:not(:disabled):hover {
+  background: var(--rl-gradient-hover);
+}
+}
+
+.create-preview-workspace .create-preview-generate:not(:disabled):active {
+  background: var(--rl-gradient-pressed);
 }
 .create-preview-workspace .create-preview-canvas-upload { border-radius: inherit; }
 .create-preview-workspace :is(button, summary, input, textarea):focus-visible {
@@ -532,6 +581,7 @@
   gap: 6px;
 }
 .create-preview-aspect { grid-column: 2 / -1; min-inline-size: 0; display: grid; gap: 4px; font-size: 12px; color: #bbb4ca; }
+.create-preview-size[data-inspiration-available="false"] .create-preview-aspect { grid-column: 1 / -1; }
 .create-preview-aspect select {
   inline-size: 100%;
   min-block-size: 32px;
@@ -556,10 +606,13 @@
     padding-block: 12px;
   }
 }
-.create-preview-workspace .create-preview-extra summary:hover {
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-extra summary:hover {
   color: #a5b4fc;
   background: transparent;
 }
+}
+
 .create-preview-extra details[open] > summary { margin-block-end: 12px; }
 .create-preview-workspace .create-preview-extra textarea {
   display: block;
@@ -578,6 +631,8 @@
 .create-preview-extra .create-preview-vgl[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--color-danger); }
 /* FIBO fields use rounded glass rather than pills; the dice alone is a pill. */
 .create-preview-settings { column-gap: 16px; }
+.create-preview-settings > .create-preview-output-note { grid-column: 1 / -1; }
+.create-preview-settings[data-multi-output-available="false"] > :is(.create-preview-render-field:has(#create-preview-seed), .create-preview-seed-reserve) { grid-column: 1 / -1; }
 .create-preview-render-field {
   display: flex;
   flex-direction: column;
@@ -631,11 +686,16 @@
   white-space: nowrap;
   padding: 3px 6px;
   border-radius: 7px;
-  background: rgb(22 15 62 / 32%);
+  background: var(--rl-surface-raised);
   font: inherit;
   font-size: 10px;
 }
-.create-preview-workspace .create-preview-generate:disabled { opacity: .68; }
+.create-preview-workspace .create-preview-generate:disabled {
+  background: var(--rl-surface-disabled);
+  color: var(--rl-text-disabled);
+  opacity: 1;
+  box-shadow: none;
+}
 
 .create-preview-workspace .create-preview-tile[data-drag-over="true"] > button:first-child,
 .create-preview-workspace .create-preview-canvas[data-drag-over="true"],
@@ -651,10 +711,11 @@
   backdrop-filter: none;
 }
 @media (min-width: 1025px) {
-  /* Match the live Studio preview's viewport-relative side rails and 18px
-     insets. The centered workspace cap otherwise clips wide results. */
-  .create-preview-workspace:has(.create-preview-stage-frame) { max-inline-size: none; }
-  .create-preview-grid:has(.create-preview-stage-frame) {
+  /* Reserve the final desktop grid on the server-rendered workspace, before
+     bookmark restoration mounts the stage. Never change rail widths or gutters
+     solely because the stage's async content becomes available. */
+  .create-preview-workspace { max-inline-size: none; }
+  .create-preview-grid {
     margin-inline: calc(12px - var(--create-gutter));
     column-gap: 18px;
     grid-template-columns:
@@ -662,7 +723,7 @@
       minmax(0, 1fr)
       calc(clamp(144px, 14vw, 214px) - 12px);
   }
-  .create-preview-grid > .create-preview-canvas:has(.create-preview-stage-frame) {
+  .create-preview-grid > .create-preview-canvas {
     place-self: stretch;
     inline-size: auto;
     aspect-ratio: auto;
@@ -731,7 +792,10 @@
   text-decoration: underline;
   color: #bbb4ca;
 }
-.create-preview-workspace .create-preview-stage-surface .create-preview-canvas-upload:not(:disabled):hover { background: rgb(255 255 255 / 3.5%); }
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-stage-surface .create-preview-canvas-upload:not(:disabled):hover { background: rgb(255 255 255 / 3.5%); }
+}
+
 .create-preview-stage-surface {
   position: absolute;
   inset: 0;
@@ -816,7 +880,12 @@
   background: transparent;
   font-size: 12px;
 }
-.create-preview-workspace .create-preview-stage-tools :is(button, a):is(:hover, [aria-pressed="true"]) { color: white; background: transparent; }
+.create-preview-workspace .create-preview-stage-tools :is(button, a):is(:focus-visible, [aria-pressed="true"]) { color: white; background: transparent; }
+
+@media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-stage-tools :is(button, a):is(:hover, [aria-pressed="true"]) { color: white; background: transparent; }
+}
+
 .create-preview-canvas .create-preview-stage-surface > .create-preview-stage-live {
   position: absolute;
   inset: 0;
@@ -951,7 +1020,13 @@
     font-weight: 600;
   }
   .create-preview-workspace .create-preview-stage-surface > .create-preview-stage-tools
+    :is(button, a):is(:focus-visible, [aria-pressed="true"]) { color: #fff; }
+
+  @media (hover: hover) and (pointer: fine) {
+  .create-preview-workspace .create-preview-stage-surface > .create-preview-stage-tools
     :is(button, a):is(:hover:not(:disabled), [aria-pressed="true"]) { color: #fff; }
+}
+
 }
 .create-preview-stage-batch button[aria-current="true"] {
   outline: 2px solid #a5b4fc;
@@ -1009,7 +1084,10 @@
     background: transparent;
     border-radius: 0;
   }
+  @media (hover: hover) and (pointer: fine) {
   .create-preview-workspace .create-preview-stage-open:hover { background: transparent; }
+}
+
 }
 @media (prefers-reduced-motion: reduce) {
   .create-preview-stage-tools::before { transition: none; }
@@ -1325,14 +1403,23 @@
     position: absolute;
     inset: 0;
     display: grid;
+    /* Size the label track from the tile's available width, including when
+       the composer reserves space for a vertical scrollbar. */
+    grid-template-columns: minmax(0, 1fr);
     place-content: center;
     justify-items: center;
-    gap: 5px;
+    gap: var(--rl-space-4);
     min-block-size: 0;
-    padding: 5px 2px;
+    padding: var(--rl-space-4) 2px;
     overflow: hidden;
     font-size: clamp(11px, 1vw, 13px);
     line-height: 1.2;
+  }
+  .create-preview-tile > button:first-child > span:not(.create-preview-tile-tag) {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+    text-align: center;
   }
   .create-preview-tile > button:first-child > svg { color: #a5b4fc; inline-size: 18px; block-size: 18px; }
   .create-preview-tile img {
@@ -1383,7 +1470,12 @@
     padding: 2px;
     border-radius: 10px;
   }
+  .create-preview-recents-row:is(:focus-visible, :focus-within) { background: rgb(233 217 255 / 9%); }
+
+  @media (hover: hover) and (pointer: fine) {
   .create-preview-recents-row:is(:hover, :focus-within) { background: rgb(233 217 255 / 9%); }
+}
+
   .create-preview-recents-row > button:first-child {
     white-space: normal;
     block-size: auto;
@@ -1399,7 +1491,7 @@
     line-height: 1.6;
     background-color: rgb(255 255 255 / 4.5%);
   }
-  .create-preview-fields #create-preview-prompt::placeholder { color: #878794; }
+  .create-preview-fields #create-preview-prompt::placeholder { color: var(--rl-text-placeholder); }
   .create-preview-fields #create-preview-prompt:focus { background-color: rgb(255 255 255 / 7%); }
   .create-preview-aspect { position: relative; padding-inline-end: 44px; }
   .create-preview-aspect-preview {
@@ -1434,7 +1526,7 @@
   position: absolute;
   inset: 10px 11px auto;
   content: attr(aria-placeholder);
-  color: #878794;
+  color: var(--rl-text-placeholder);
   pointer-events: none;
   user-select: none;
 }
@@ -1514,4 +1606,178 @@
   .create-preview-controls :is(p, label, summary) { overflow-wrap: anywhere; }
   .create-preview-workspace .create-preview-history button { white-space: normal; overflow-wrap: anywhere; }
   .create-preview-workspace .create-preview-canvas-upload { white-space: normal; overflow-wrap: anywhere; }
+}
+
+/* P6-03c desktop shell only. Existing Landing header and narrow disclosure stay
+ * intact until the independently reviewed sidebar slice. The temporary Activity
+ * destination is intentional until History/Queue parity. */
+.p6-desktop-navigation { display: none; }
+@media (min-width: 701px) {
+  .preview-navigation-header[data-p6-desktop="true"] > .preview-section-disclosure { display: none; }
+  .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    padding-block: 13px;
+  }
+  .p6-desktop-brand { gap: var(--rl-space-8, 8px); padding-inline: var(--rl-space-12, 12px); color: var(--rl-text-primary, var(--color-text)); }
+  .p6-desktop-links { position: absolute; inset-inline-start: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: var(--rl-space-4, 4px); }
+  .p6-desktop-links .p6-desktop-link { min-block-size: var(--rl-hit-preferred, 44px); border-radius: var(--rl-radius-pill, 999px); color: var(--rl-text-secondary, var(--color-text-muted)); padding-inline: var(--rl-space-12, 12px); }
+  .p6-desktop-links .p6-desktop-link[aria-current="page"] { color: var(--rl-text-primary, var(--color-text)); background: var(--rl-surface-selected, var(--color-surface-3)); }
+  @media (hover: hover) and (pointer: fine) {
+  .p6-desktop-links .p6-desktop-link:hover { background: var(--rl-surface-hover, var(--color-surface-2)); color: var(--rl-text-primary, var(--color-text)); }
+}
+
+  .p6-desktop-navigation :focus-visible { outline: var(--rl-focus-width, 2px) solid var(--rl-focus, var(--color-accent-bright)); outline-offset: var(--rl-focus-offset, 3px); }
+}
+
+/* P6 shell contrast: retained legacy narrow disclosure only. Keep its existing
+ * silhouette and interaction; use the shared opaque overlay fallback behind
+ * text rather than a low-alpha wash over unpredictable content. */
+@media (max-width: 700px) {
+  .preview-section-panel {
+    /* Reserve the actual header footprint, including its visible focus ring.
+     * Fixed 73px padding left the first title under the enlarged trigger. */
+    padding-block-start: max(73px, calc(var(--preview-section-header-block, 89px) + var(--rl-space-4, 4px)));
+  }
+  .preview-section-panel > .preview-menu-glass { background: var(--rl-surface-overlay); }
+  .preview-section-panel .preview-section-title {
+    /* The animated mask does not cover every heading pixel at its shoulder.
+     * Give the text its own semantic opaque backing, independent of the mask. */
+    color: var(--rl-text-primary);
+    background: var(--rl-surface-overlay);
+    border-radius: var(--rl-radius-micro);
+    position: relative;
+  }
+  .preview-section-panel .preview-section-group a { color: var(--rl-text-primary); }
+}
+
+
+/* Enabled reference labels fail on both phone and desktop glass. Preserve
+ * geometry and use semantic foreground instead of the legacy alpha tint. */
+.create-preview-workspace .create-preview-tile > button:first-child:not(:disabled) > span:not(.create-preview-tile-tag) {
+  color: var(--rl-text-secondary);
+}
+
+
+/* Header disclosures are above the route in the paint order. Reserve their
+ * measured overhang only while open, rather than leaving the Create tools
+ * underneath or raising the tools above the disclosure's own controls.
+ * Closed desktop alignment and baseline geometry remain unchanged. */
+.preview-navigation-shell:has(.create-preview-workspace) {
+  --create-open-section-clearance: 0px;
+  --create-open-account-clearance: 0px;
+}
+.preview-navigation-shell:has(> .preview-navigation-header .preview-section-panel[data-open="true"]) {
+  --create-open-section-clearance: var(--create-section-menu-clearance, 0px);
+}
+.preview-navigation-shell:has(> .preview-navigation-header .preview-account-menu[aria-hidden="false"]) {
+  --create-open-account-clearance: var(--create-account-menu-clearance, 0px);
+}
+.preview-navigation-shell:has(> .preview-navigation-header :is(.preview-section-panel[data-open="true"], .preview-account-menu[aria-hidden="false"])) .create-preview-toolbar {
+  margin-block-start: calc(max(var(--create-open-section-clearance), var(--create-open-account-clearance)) + var(--rl-space-8));
+}
+/* P6 axe phone targets: the visual outline must not cut into the usable hit
+ * area. Keep desktop geometry unchanged and preserve the narrow two-column reflow. */
+@media (max-width: 700px) {
+  .create-preview-workspace .create-preview-tile > button:first-child {
+    min-block-size: var(--rl-hit-preferred);
+    border-radius: var(--rl-radius-micro);
+  }
+}
+
+
+/* Reserve the full ratio-sized canvas row before the composer. The stage's
+ * absolute upload control otherwise extends into the following mode control.
+ * Keep the other two tracks and their existing lazy-media behavior intact. */
+@media (max-width: 700px) {
+  .create-preview-grid {
+    grid-template-rows: max-content auto auto;
+  }
+  .create-preview-grid > .create-preview-canvas {
+    align-self: start;
+  }
+  .create-preview-stage-surface > .create-preview-canvas-upload {
+    box-sizing: border-box;
+    min-inline-size: 0;
+    min-block-size: 0;
+    max-inline-size: 100%;
+    max-block-size: 100%;
+  }
+}
+
+/* Keep the Create content in its ordinary slots while the server reads.
+   The real shell stays outside Suspense. Only data placeholders shimmer. */
+.create-preview-loading-toolbar { visibility: hidden; }
+.create-preview-loading-toolbar .create-preview-toolbar-trigger > span {
+  inline-size: var(--rl-space-16);
+}
+.create-preview-loading :is(.create-preview-controls, .create-preview-history) {
+  background: var(--rl-surface-panel-layered);
+  border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-panel);
+  box-shadow: var(--rl-elevation-panel);
+  backdrop-filter: var(--rl-material-panel);
+  gap: var(--rl-space-16);
+}
+.create-preview-loading-fields {
+  display: grid;
+  gap: var(--rl-space-16);
+  min-inline-size: 0;
+}
+.create-preview-loading-mode {
+  inline-size: var(--rl-space-64);
+  block-size: var(--rl-control-regular);
+  border-radius: var(--rl-radius-pill);
+}
+.create-preview-loading-prompt {
+  block-size: var(--rl-space-64);
+  border-radius: var(--rl-radius-field);
+}
+.create-preview-loading-references {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--rl-space-8);
+}
+.create-preview-loading-references > div {
+  aspect-ratio: 1;
+  border-radius: var(--rl-radius-control);
+}
+.create-preview-loading .create-preview-stage-frame { --stage-media-ratio: .75; }
+.create-preview-loading .create-preview-stage-surface {
+  background: var(--rl-surface-control);
+  border-radius: var(--rl-radius-panel);
+}
+.create-preview-loading-action {
+  border-radius: var(--rl-radius-control);
+  background: var(--rl-surface-disabled);
+  block-size: var(--rl-control-large);
+}
+.create-preview-loading-history-row {
+  display: grid;
+  grid-template-columns: minmax(0, var(--rl-space-48)) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--rl-space-8);
+}
+.create-preview-loading-thumbnail { aspect-ratio: 1; }
+.create-preview-loading-line { block-size: var(--rl-space-12); }
+.create-preview-history > .create-preview-loading-line { inline-size: 60%; }
+@media (min-width: 1025px) {
+  .create-preview-loading-prompt {
+    block-size: calc(var(--rl-space-64) + var(--rl-space-64));
+  }
+}
+@media (max-width: 700px) {
+  .create-preview-loading .create-preview-controls { border-radius: var(--rl-radius-sheet); }
+  .create-preview-loading .create-preview-controls .rl-skeleton::after { content: none; }
+  .create-preview-loading .create-preview-history { display: none; }
+}
+
+@media (min-width: 1025px) {
+  .create-preview-loading .create-preview-grid {
+    grid-template-columns: calc(clamp(144px, 14vw, 214px) - 12px) minmax(0, 1fr) calc(clamp(300px, 26vw, 360px) - 12px);
+  }
+  .create-preview-loading .create-preview-grid > .create-preview-history { grid-column: 1; grid-row: 1; }
+  .create-preview-loading .create-preview-grid > .create-preview-canvas { grid-column: 2; grid-row: 1; }
+  .create-preview-loading .create-preview-grid > .create-preview-controls { grid-column: 3; grid-row: 1; }
 }

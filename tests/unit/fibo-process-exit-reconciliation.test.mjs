@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { registerHooks } from "node:module";
 import test from "node:test";
+import { Suspense } from "react";
+import { renderToPipeableStream } from "react-dom/server";
+import { createServer, get } from "node:http";
+import { once } from "node:events";
 import sharp from "sharp";
 import { transformSync } from "next/dist/build/swc/index.js";
 
@@ -23,8 +27,14 @@ registerHooks({
         + " ?? globalThis[Symbol.for('renderlab.owner-settlement.after')])(callback); }");
     }
     if (specifier === "@/lib/supabase/server") {
-      return stub(`export async function getCurrentRenderLabAccount() { return { id: "${ownerId}" }; }
+      return stub(`export async function getCurrentRenderLabAccount() { return globalThis[Symbol.for("renderlab.p603c.fixture.account")] === undefined ? { id: "${ownerId}" } : globalThis[Symbol.for("renderlab.p603c.fixture.account")]; }
         export const getCurrentRenderLabIdentity = getCurrentRenderLabAccount;`);
+    }
+    // The route only passes these references across the stubbed client boundary.
+    // If it invokes History IO during SSR, fail rather than silently returning data.
+    if (specifier === "@/server/generation/history/history-actions") {
+      return stub("const unexpected = () => { throw new Error('Unexpected History action during route render'); };"
+        + " export const readCreateHistoryJobs = unexpected, readCreateHistoryPrompts = unexpected, loadCreateHistoryReuse = unexpected;");
     }
     if (specifier === "@/server/hosted-create") {
       return stub("export const getCreatePreviewOwner = () => null, getHostedCreateMedia = () => null,"
@@ -38,6 +48,7 @@ registerHooks({
       "@/features/activity/activity-view": "ActivityView",
       "@/features/create/create-workspace": "CreateWorkspace",
       "@/features/create/create-preview-workspace": "CreatePreviewWorkspace",
+      "@/components/shell/route-loading": "RouteLoading",
     };
     if (views[specifier]) {
       return stub(`export function ${views[specifier]}() {}`);
@@ -76,7 +87,7 @@ const { pollNativeGeneration } = await import("../../src/server/generation/nativ
 const { adminDiagnosticProjection } = await import("../../src/server/observability/diagnostic-store.ts");
 const { POST: submitRoute } = await import("../../src/app/api/generation/jobs/route.ts");
 const { default: loadCreate, maxDuration: createDuration } = await import("../../src/app/(app)/create/page.tsx");
-const { default: loadLibrary, maxDuration: libraryDuration } = await import("../../src/app/(app)/library/page.tsx");
+const { default: loadLibraryPage, maxDuration: libraryDuration } = await import("../../src/app/(app)/library/page.tsx");
 const { default: loadActivity, maxDuration: activityDuration } = await import("../../src/app/(app)/activity/page.tsx");
 const { settleOwnerGenerationWithinResponse } = await import("../../src/server/generation/owner-generation-settlement.ts");
 const png = await sharp({
@@ -547,6 +558,17 @@ function pageInput() {
   return { searchParams: Promise.resolve({}) };
 }
 
+// The admitted Library route now returns a content Suspense boundary. Execute
+// its real async child, as the Create and Activity tests do, rather than
+// mistaking the returned boundary for the settled view.
+async function loadLibrary(input) {
+  const boundary = await loadLibraryPage(input);
+  assert.equal(boundary.type, Suspense);
+  assert.equal(boundary.props.fallback.props.surface, "library");
+  assert.equal(typeof boundary.props.children.type, "function");
+  return boundary.props.children.type(boundary.props.children.props);
+}
+
 function submitAnotherGeneration() {
   const origin = "https://renderlab.example.invalid";
   return submitRoute(new Request(origin + "/api/generation/jobs", {
@@ -587,7 +609,8 @@ test("production Create returns before settling the owner's result", async (t) =
   });
 
   const page = await loadCreate(pageInput());
-  const pageShell = page.type(page.props);
+  const pageShell = await page.type(page.props);
+  assert.equal(pageShell.type, Suspense);
   const view = await pageShell.props.children.type(pageShell.props.children.props);
 
   assert.equal(createDuration, 30);
@@ -605,7 +628,9 @@ test("production Create returns before settling the owner's result", async (t) =
 test("Activity bounds reconciliation and lists a fresh successful result", async (t) => {
   const job = fixture(t);
   job.respond(pngResult());
-  const view = await loadActivity(pageInput());
+  const boundary = await loadActivity(pageInput());
+  assert.equal(boundary.type, Suspense);
+  const view = await boundary.props.children.type(boundary.props.children.props);
 
   assert.equal(activityDuration, 30);
   assert.equal(view.props.available, true);
@@ -640,7 +665,7 @@ test("concurrent Library responses use one claim, asset, primary write and relea
   job.respond(() => { startRead(); return result; });
 
   const first = loadLibrary(pageInput());
-  await reading;
+  await Promise.race([reading, first.then(() => assert.fail("Library completed before provider read started"))]);
   const second = await loadLibrary(pageInput());
   assert.equal(second.props.available, true);
   assert.deepEqual(second.props.items, []);
@@ -664,7 +689,7 @@ test("Library returns normally at six seconds while the claimed PNG write finish
   job.respond(pngResult());
 
   const page = loadLibrary(pageInput());
-  await writing;
+  await Promise.race([writing, page.then(() => assert.fail("Library completed before primary write started"))]);
   t.mock.timers.tick(6_000);
   const view = await page;
   assert.equal(view.props.available, true);
@@ -682,7 +707,9 @@ test("Library returns normally at six seconds while the claimed PNG write finish
 
 test("lookup failure leaves Activity available without a second provider poll", async (t) => {
   const job = fixture(t, { lookupError: () => Response.json({ message: "private-error" }, { status: 503 }) });
-  const view = await loadActivity(pageInput());
+  const boundary = await loadActivity(pageInput());
+  assert.equal(boundary.type, Suspense);
+  const view = await boundary.props.children.type(boundary.props.children.props);
 
   assert.equal(view.props.available, true);
   assert.equal(view.props.items[0].status, "running");
@@ -722,3 +749,119 @@ test("a confirmed expired result releases an occupied slot without producing med
   assert.equal(job.releases, 1);
   assert.deepEqual(job.media, []);
 });
+
+for (const session of ["signed-out", "suspended", "denied"]) {
+  test("P6-03c " + session + " pages retain denied content outside Suspense", async (t) => {
+    // The production account helper maps all three denied states to null.
+    const key = Symbol.for("renderlab.p603c.fixture.account");
+    globalThis[key] = null;
+    const oldEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    t.after(() => {
+      delete globalThis[key];
+      if (oldEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = oldEnv;
+    });
+    t.mock.method(globalThis, "fetch", async () => assert.fail("Denied page performed provider or private data I/O"));
+    const create = await loadCreate(pageInput());
+    const view = await create.type(create.props);
+    assert.notEqual(view.type, Suspense);
+    assert.equal(view.props.admitted, false);
+    assert.equal(view.props.hostedModel, undefined);
+    assert.equal(view.props.hostedAccountKey, undefined);
+    const library = await loadLibraryPage(pageInput());
+    assert.notEqual(library.type, Suspense);
+    assert.equal(library.props.accountAvailable, false);
+    assert.deepEqual(library.props.items, []);
+    assert.equal(library.props.hasMore, false);
+    const activity = await loadActivity(pageInput());
+    assert.notEqual(activity.type, Suspense);
+    assert.equal(activity.props.accountAvailable, false);
+    assert.deepEqual(activity.props.items, []);
+    assert.equal(activity.props.hasActive, false);
+    assert.equal(activity.props.hasMore, false);
+  });
+}
+
+// HTTP transport of the real page functions with the same exact offline import
+// stubs above. This is not a Next routing/proxy integration test: it exercises
+// page control flow and React SSR without credentials or external I/O.
+function pageResponse(url) {
+  return new Promise((resolve, reject) => {
+    get(url, res => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", chunk => { body += chunk; });
+      res.on("end", () => resolve({ status: res.statusCode, location: res.headers.location, body }));
+      res.on("error", reject);
+    }).on("error", reject);
+  });
+}
+
+function sendPageError(error, response) {
+  const digest = typeof error?.digest === "string" ? error.digest : "";
+  // Preserve Next control-flow status and Location instead of following a redirect.
+  const redirect = /^NEXT_REDIRECT;(?:push|replace);(.*);(307|308);$/.exec(digest);
+  if (redirect) {
+    response.writeHead(Number(redirect[2]), { Location: redirect[1] });
+    response.end();
+  } else if (digest === "NEXT_HTTP_ERROR_FALLBACK;404") {
+    response.writeHead(404);
+    response.end();
+  } else {
+    response.writeHead(500);
+    response.end("Page rendering failed");
+  }
+}
+
+for (const session of ["signed-out", "suspended", "denied"]) {
+  test("P6-03c HTTP " + session + " Create and Activity preserve denied response status and Location", async (t) => {
+    const key = Symbol.for("renderlab.p603c.fixture.account");
+    globalThis[key] = null;
+    const oldEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    t.after(() => {
+      delete globalThis[key];
+      if (oldEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = oldEnv;
+    });
+    t.mock.method(globalThis, "fetch", async () => assert.fail("Denied page performed outbound or private data I/O"));
+    const server = createServer(async (request, response) => {
+      try {
+        const create = request.url === "/create";
+        const node = create ? await loadCreate(pageInput()) : await loadActivity(pageInput());
+        const view = create ? await node.type(node.props) : node;
+        assert.notEqual(view.type, Suspense);
+        assert.equal(create ? view.props.admitted : view.props.accountAvailable, false);
+        if (create) assert.equal(view.props.hostedAccountKey, undefined);
+        else assert.deepEqual(view.props.items, []);
+        let didError = false;
+        const stream = renderToPipeableStream(view, {
+          onShellReady() {
+            if (didError) return;
+            response.setHeader("Content-Type", "text/html; charset=utf-8");
+            stream.pipe(response);
+          },
+          onShellError(error) { didError = true; sendPageError(error, response); },
+          onError() { didError = true; },
+        });
+      } catch (error) { sendPageError(error, response); }
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    try {
+      const origin = "http://127.0.0.1:" + server.address().port;
+      for (const route of ["/create", "/activity"]) {
+        const response = await pageResponse(origin + route);
+        // The pre-change denied pages rendered their private/guest view with
+        // HTTP 200, no Location, and no redirect/not-found control flow.
+        assert.equal(response.status, 200, route);
+        assert.equal(response.location, undefined, route);
+        assert.doesNotMatch(response.body, /Loading content|\$\?/, route);
+      }
+    } finally {
+      server.closeAllConnections();
+      await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+    }
+  });
+}

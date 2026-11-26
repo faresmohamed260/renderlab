@@ -66,7 +66,7 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "engineering",
-      "lastReviewed": "2026-11-24",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []
@@ -268,7 +268,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-11-17",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 30,
       "supersedes": [
         "docs/archive/UI_MIGRATION_PRE_HISTORY_SEPARATION_2026-10-10.md"
@@ -281,7 +281,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-11-17",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 30,
       "supersedes": [],
       "supersededBy": []
@@ -292,7 +292,7 @@
       "authority": "current-state",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-10-09",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 60,
       "supersedes": [],
       "supersededBy": []
@@ -303,7 +303,7 @@
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "product-design",
-      "lastReviewed": "2026-11-24",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 60,
       "supersedes": [],
       "supersededBy": []
@@ -481,11 +481,70 @@
     },
     {
       "path": "docs/ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md",
+      "kind": "historical-evidence",
+      "authority": "historical",
+      "lifecycle": "superseded",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-24",
+      "reviewIntervalDays": null,
+      "supersedes": [],
+      "supersededBy": [
+        "docs/ui/P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md"
+      ]
+    },
+    {
+      "path": "docs/ui/P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md",
       "kind": "implementation-contract",
       "authority": "normative",
       "lifecycle": "current",
       "ownerRole": "product-design",
       "lastReviewed": "2026-11-24",
+      "reviewIntervalDays": 90,
+      "supersedes": [
+        "docs/ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md"
+      ],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/P6_04_CREATE_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-25",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/P6_05_LIBRARY_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-25",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/P6_06_ADMIN_OBSERVE_CONTRACT.md",
+      "kind": "implementation-contract",
+      "authority": "normative",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-25",
+      "reviewIntervalDays": 90,
+      "supersedes": [],
+      "supersededBy": []
+    },
+    {
+      "path": "docs/ui/P6_06B_ADMIN_CONTROL_PROPOSAL.md",
+      "kind": "reference-guide",
+      "authority": "reference",
+      "lifecycle": "current",
+      "ownerRole": "product-design",
+      "lastReviewed": "2026-11-25",
       "reviewIntervalDays": 90,
       "supersedes": [],
       "supersededBy": []

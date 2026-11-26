@@ -1,6 +1,6 @@
 # Documentation Index and Authority Taxonomy
 
-Updated: 2026-11-23
+Updated: 2026-11-25
 
 This file is the repository-wide navigation and documentation taxonomy for RenderLab. It explains what each class of document means, how apparently conflicting records are resolved, and what does or does not establish backlog authority. It does not replace the domain-specific authorities it points to.
 
@@ -196,6 +196,7 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/architecture/ARCHITECTURE_DECISIONS.md` — durable non-UI cross-cutting architecture decision and supersession authority.
 - `docs/architecture/FRONTEND_ARCHITECTURE.md` — frontend architecture/current implementation authority.
 - `docs/architecture/FRONTEND_TEST_STRATEGY.md` — proposed integration-first frontend testing/accessibility strategy; reference, not a release or required-check policy.
+- [History Jobs keyset cursor design note](architecture/HISTORY_JOBS_KEYSET_CURSOR_NOTE.md) — advisory design for pagination and legacy links after Activity successor parity.
 - `docs/architecture/BACKEND_ARCHITECTURE_OVERVIEW.md` — two-page browser-to-provider backend context, lifecycle, trust boundaries and local verification entry point.
 - `docs/architecture/NATIVE_GENERATION_LIFECYCLE_SPLIT_PLAN.md` — planned staged native-generation extraction boundaries, compatibility exports, and safety gates; not a release.
 - `docs/architecture/OBSERVABILITY_METRICS_DESIGN.md` — proposed bounded FIBO job metrics, trace context, free-tier feasibility and incident-detection design; **not implemented**.
@@ -224,8 +225,14 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/ui/component-sources.json` — machine-readable external component-source tier/adoption/dependency/license-review registry.
 - `docs/ui/UI_DECISIONS.md` — accepted UI decision/precedent authority. Keep durable decision/status/reason/consequence/supersession content current here; move detailed run/artifact/merge/deployment chronology to historical evidence and retain only concise evidence links when useful.
 - `docs/ui/UI_SYSTEM.md` — normative UI-system rules; existing runtime baseline until reviewed V2 implementation.
-- [Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — Phase 6 design-only specification, P6-01 contract and high-level roadmap; no runtime authorization.
-- [P6-02a shared-primitives and Create prototype contract](ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) — isolated design checkpoint; owner review and contract merge before prototype code, no production implementation.
+- [Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — Phase 6 approved visual direction, candidate glass tokens/springs and high-level roadmap; no runtime authorization.
+- [P6-03 shared tokens, primitives and shell contract](ui/P6_03_SHARED_PRIMITIVES_SHELL_CONTRACT.md) — governs shared foundations and shell composition acceptance.
+- [P6-04 Create contract](ui/P6_04_CREATE_CONTRACT.md) — current Create composition and History parity contract, including the gate for Activity retirement.
+- [P6-05 Library contract](ui/P6_05_LIBRARY_CONTRACT.md) — desktop Library and inspector execution contract with a proposed phone layout.
+- [P6-06 Admin Observe contract](ui/P6_06_ADMIN_OBSERVE_CONTRACT.md) — merged contract and read-only desktop Health slice; rendered acceptance remains open.
+- [P6-06B Admin Control proposal](ui/P6_06B_ADMIN_CONTROL_PROPOSAL.md) — advisory roadmap for owner review. Implementation requires separate authorization.
+- [Phase 6 validation lanes](ui/UI_MIGRATION.md#phase-6-validation-lanes) — implemented review, axe, Slow 4G and signed-out HTTP workflow coverage and acceptance boundaries.
+- [P6-02a shared-primitives and Create prototype contract](ui/P6_02A_SHARED_PRIMITIVES_CREATE_PROTOTYPE_CONTRACT.md) — superseded historical isolated design checkpoint; prototype #706 rejected.
 - `docs/ui/DESIGN_WORKFLOW.md` — normative design-to-implementation workflow.
 - `docs/ui/VISUAL_NORTH_STAR.md` — normative visual direction for authorized redesign work.
 - `docs/ui/BRAND_SYSTEM.md` and `docs/ui/CREATIVE_DEVELOPMENT.md` — accepted brand/creative-development guidance within their stated scopes.
@@ -237,6 +244,8 @@ Use this map to find the appropriate current authority without treating every Ma
 - `docs/production/current.json` — canonical machine-readable current-production application/deployment record.
 - `docs/STATUS.md` — concise current status/deployment summary validated against the production manifest; detailed domain authorities still govern their own non-production facts.
 - `docs/audits/**` — evidence and assessments. A current authority must explicitly identify an audit/assessment if its finding is meant to represent current accepted state.
+- [Repository branch hygiene snapshot, 2026-11-25](audits/2026-11-25-repository-branch-hygiene.md) — historical read-only branch/PR inventory and owner cleanup recommendations; no deletion authority.
+- [Release readiness inventory for main at 2fd33e7](audits/2026-11-25-release-readiness-main-2fd33e7.md) — historical comparison with recorded Batch G and outstanding release evidence.
 - `docs/archive/**` — historical journal/snapshot evidence only, including the pre-Checkpoint-6 Project/UI snapshots listed in `docs/archive/README.md`.
 - `docs/history/contracts/**` — relocated closed architecture/UI execution contracts; historical evidence only.
 - `docs/history/ui/**` — historical UI decision provenance/evidence, including pre-separation snapshots; never a competing current decision authority.
@@ -261,4 +270,4 @@ ChatGPT Project context and the current chat remain supplementary/temporary cont
 - [Phase 4 execution contract](architecture/BACKEND_P1_PHASE4_CONTRACT.md) and [Phase 3 closeout](audits/PHASE3_BACKEND_P0_CLOSEOUT_2026-11-23.md): historical planning and evidence baseline, not active work authority.
 - [P1-07 evidence pack](audits/P1_07_INDEPENDENT_REVIEW_EVIDENCE_PACK_2026-11-24.md) and [claims sheet](audits/P1_07_TRUTHFULNESS_CLAIMS_SHEET_2026-11-24.md): dated reviewer preparation, not current production status or human independent review certification. Third verification review pending.
 - [Phase 5 frontend polish contract](architecture/FRONTEND_PHASE5_POLISH_CONTRACT.md) — merged #677; correctness work remains Integration Mode. P5-03 deferred to later Admin Observe; QA gaps remain.
-- [Phase 6 Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — owner authorized site-wide visual/motion design; P6-01 documentation only. Audit [#686](https://github.com/faresmohamed260/renderlab/pull/686). No implementation until design review and separate contract.
+- [Phase 6 Design Language V2](ui/DESIGN_LANGUAGE_V2.md) — owner-approved static direction. The [current UI tracker](ui/UI_MIGRATION.md#current-migrationwork-state) records implementation and acceptance status.

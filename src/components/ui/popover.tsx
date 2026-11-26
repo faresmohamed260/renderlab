@@ -19,7 +19,7 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content data-slot="popover-content" align={align} sideOffset={sideOffset}
         collisionPadding={collisionPadding} avoidCollisions
-        className={cn("z-50 rounded-lg border border-border bg-surface-2 p-3 text-text shadow-xl focus-visible:ring-2 focus-visible:ring-accent", className)}
+        className={cn("z-50 rounded-[var(--rl-radius-panel)] border border-[color:var(--rl-border-subtle)] bg-[var(--rl-surface-overlay)] text-[color:var(--rl-text-primary)] shadow-[var(--rl-elevation-overlay)] p-3 max-w-[calc(100vw-1rem)] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-[var(--rl-focus-offset)] focus-visible:outline-[color:var(--rl-focus)]", className)}
         {...props} />
     </PopoverPrimitive.Portal>
   );

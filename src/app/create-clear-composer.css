@@ -32,10 +32,13 @@
   font-weight: 700;
 }
 
-.clear-create-workspace .clear-composer-reference-trigger:hover:not(:disabled) {
+@media (hover: hover) and (pointer: fine) {
+  .clear-create-workspace .clear-composer-reference-trigger:hover:not(:disabled) {
   border-color: rgb(255 255 255 / 24%) !important;
   background: #151d28 !important;
 }
+}
+
 
 .clear-create-workspace .clear-composer-reference-trigger:disabled {
   border-color: rgb(255 255 255 / 10%) !important;
@@ -96,10 +99,13 @@
   box-shadow: inset 0 1px rgb(255 255 255 / 86%), 0 10px 26px rgb(0 0 0 / 22%) !important;
 }
 
-.clear-create-workspace .clear-create-result-actions > button:first-child:hover:not(:disabled) {
+@media (hover: hover) and (pointer: fine) {
+  .clear-create-workspace .clear-create-result-actions > button:first-child:hover:not(:disabled) {
   background: #ffffff !important;
   color: #05070a !important;
 }
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   .clear-create-workspace .clear-create-stage[data-active="true"]::before {

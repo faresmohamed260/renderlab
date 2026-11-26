@@ -82,9 +82,12 @@
   transition: color 160ms ease;
 }
 
-.backLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .backLink:hover {
   color: var(--color-text);
 }
+}
+
 
 .surfaceWrap {
   display: grid;
@@ -270,9 +273,12 @@
   font-size: 0.8rem;
 }
 
-.recoveryButton:hover {
+@media (hover: hover) and (pointer: fine) {
+  .recoveryButton:hover {
   color: var(--color-text);
 }
+}
+
 
 .formActions {
   align-items: center;
@@ -689,5 +695,293 @@
   .backLink,
   .cropImage {
     transition: none;
+  }
+}
+
+/* Round 3 applies to the signed-in Settings overview only. Subpages and
+   signed-out flows retain their existing layout and security mechanics. */
+.round3 {
+  display: grid;
+  min-width: 0;
+  gap: var(--rl-space-16);
+  color: var(--rl-text-primary);
+}
+.settingsSections {
+  display: none;
+}
+.settingsCards {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rl-space-16);
+}
+.settingsCards > .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  min-width: 0;
+  border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-panel);
+  background: var(--rl-surface-panel-layered);
+  backdrop-filter: var(--rl-material-panel, none);
+}
+.settingsCards .labelCell {
+  display: block;
+  padding: var(--rl-space-16) var(--rl-space-16) 0;
+  border: 0;
+  background: none;
+}
+.settingsCards .index {
+  display: none;
+}
+.settingsCards .sectionTitle {
+  color: var(--rl-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.settingsCards .valueCell {
+  padding: var(--rl-space-12) var(--rl-space-16) var(--rl-space-16);
+}
+.settingsCards .valueLabel {
+  color: var(--rl-text-primary);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.settingsCards .emailValue {
+  color: var(--rl-text-primary);
+  font-family: inherit;
+}
+.settingsCards .helper, .settingsCards .sessionTimes {
+  color: var(--rl-text-secondary);
+  overflow-wrap: anywhere;
+}
+.settingsCards .actionRow, .settingsCards .factorRow, .settingsCards .valueHeader, .settingsCards .sessionHeader {
+  flex-wrap: wrap;
+  gap: var(--rl-space-8);
+}
+.settingsCards .actionRow > :first-child, .settingsCards .factorRow > :first-child {
+  flex: 1 1 9rem;
+  min-width: 0;
+}
+.settingsCards .factorRow {
+  border-color: var(--rl-border-subtle);
+}
+.settingsCards .sessionItem {
+  min-width: 0;
+  border: 1px solid var(--rl-border-subtle);
+  border-radius: var(--rl-radius-control);
+  background: var(--rl-surface-control);
+  padding: var(--rl-space-12);
+}
+.settingsCards .status, .settingsCards .currentSession {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  border-radius: var(--rl-radius-pill);
+  background: var(--rl-surface-control);
+  color: var(--rl-text-primary);
+  border-color: var(--rl-border-subtle);
+}
+.settingsCards .status[data-access-state="active"] { color: var(--rl-success); }
+.settingsCards .status[data-access-state="suspended"] { color: var(--rl-warning); }
+.settingsCards .status[data-access-state="invitation-required"] { color: var(--rl-danger); }
+.settingsCards .profileAvatar {
+  border-radius: var(--rl-radius-pill);
+  background: var(--rl-surface-raised);
+  border-color: var(--rl-border-subtle);
+}
+.settingsCards .profileName { color: var(--rl-text-primary); }
+.settingsCards [data-slot="button"] {
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: var(--rl-control-large);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+@media (min-width: 1025px) {
+  .round3 {
+    grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--rl-space-24);
+  }
+  .settingsSections {
+    display: grid;
+    gap: var(--rl-space-4);
+    padding: var(--rl-space-12);
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-panel-layered);
+    backdrop-filter: var(--rl-material-panel, none);
+  }
+  .settingsSections a {
+    display: flex;
+    align-items: center;
+    min-height: var(--rl-control-large);
+    padding: var(--rl-space-8) var(--rl-space-12);
+    border-radius: var(--rl-radius-control);
+    color: var(--rl-text-primary);
+    text-decoration: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+  .settingsSections a:hover { background: var(--rl-surface-hover); }
+}
+
+  .settingsSections a:focus-visible {
+    outline: var(--rl-focus-width) solid var(--rl-focus);
+    outline-offset: var(--rl-focus-offset);
+  }
+  .settingsCards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settingsCards > [id="settings-privacy"], .settingsCards > [id="settings-admin"] { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .settingsCards { gap: var(--rl-space-12); }
+  .settingsCards > .row { border-radius: var(--rl-radius-control); }
+  .settingsCards .actionRow > :first-child, .settingsCards .factorRow > :first-child { flex: auto; }
+  .settingsCards .valueCell { padding-inline: var(--rl-space-12); }
+  .settingsCards .labelCell { padding-inline: var(--rl-space-12); }
+  .settingsCards .profileIdentity { flex-wrap: wrap; }
+}
+
+.settingsCards .phoneSignOut {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .settingsCards .desktopSignOut {
+    display: none;
+  }
+  .settingsCards .phoneSignOut {
+    display: grid;
+  }
+  .settingsCards .phoneSignOut [data-slot="button"] {
+    width: 100%;
+    border-radius: var(--rl-radius-pill);
+    background: var(--rl-surface-panel-layered);
+  }
+}
+
+/* Round 3: content-height desktop cards, compact grouped rows on phone. */
+.settingsCards { align-items: start; }
+.settingsCards .phoneChevron, .settingsCards .phoneActionLabel { display: none; }
+.settingsCards .mfaStatus {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  padding: var(--rl-space-4) var(--rl-space-8);
+  border-radius: var(--rl-radius-pill);
+  background: var(--rl-surface-control);
+  color: var(--rl-text-secondary);
+  font-size: var(--rl-type-caption);
+}
+.settingsCards .mfaStatus[data-mfa-state="verified"] { color: var(--rl-success); }
+.settingsCards .mfaStatus[data-mfa-state="verification-required"] { color: var(--rl-warning); }
+@media (max-width: 1024px) {
+  .settingsCards { gap: 0; }
+  .settingsCards > .row { border-radius: var(--rl-radius-panel); margin-block-end: var(--rl-space-16); }
+  .settingsCards > [id="settings-profile"] .labelCell { padding: 0; position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .settingsCards > [id="settings-email"] { margin-block-end: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .settingsCards > [id="settings-access"] { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+  .settingsCards > [id="settings-security"] { margin-block-end: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .settingsCards > [id="settings-sessions"] { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+  .settingsCards > [id="settings-access"] .labelCell, .settingsCards > [id="settings-sessions"] .labelCell {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0;
+  }
+  .settingsCards .actionRow, .settingsCards .factorRow, .settingsCards .valueHeader {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+  .settingsCards .actionRow > :first-child, .settingsCards .factorRow > :first-child, .settingsCards .valueHeader > :first-child { flex: 1 1 0; min-width: 0; }
+  .settingsCards .actionRow > [data-slot="button"], .settingsCards .factorRow > [data-slot="button"] {
+    width: auto;
+    flex: 0 1 auto;
+    min-width: var(--rl-control-large);
+    max-width: 48%;
+    background: transparent;
+    padding-inline: var(--rl-space-4);
+    color: var(--rl-text-primary);
+  }
+  @media (hover: hover) and (pointer: fine) {
+  .settingsCards .actionRow > [data-slot="button"]:hover, .settingsCards .factorRow > [data-slot="button"]:hover { background: var(--rl-surface-hover); }
+}
+
+  .settingsCards .desktopActionLabel { display: none; }
+  .settingsCards .phoneChevron, .settingsCards .phoneActionLabel { display: inline; }
+  .settingsCards .phoneActionLabel { color: var(--rl-text-selected); }
+  .settingsCards .profileIdentity { flex-wrap: nowrap; min-width: 0; align-items: center; }
+  .settingsCards .profileIdentity > :last-child { min-width: 0; overflow-wrap: anywhere; }
+  .settingsCards .profileAvatar { width: var(--rl-control-large); height: var(--rl-control-large); flex: none; }
+  .settingsCards .valueCell { padding: var(--rl-space-12); }
+  .settingsCards .labelCell { padding: var(--rl-space-12) var(--rl-space-12) 0; }
+  .settingsCards .sessionActions { display: grid; gap: var(--rl-space-4); }
+  .settingsCards .sessionActions [data-slot="button"]:not(.desktopSignOut) {
+    background: transparent; justify-content: start; text-align: start;
+  }
+}
+@media (max-width: 24rem) {
+  .settingsCards .profileIdentity { flex-wrap: wrap; }
+  .settingsCards .mfaStatus { overflow-wrap: anywhere; }
+}
+
+/* Keep intrinsic grid sizing from expanding the overview at very narrow
+   widths. At 195px the row actions need their own line, not clipping. */
+.round3 > .surfaceWrap {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 260px) {
+  .settingsCards .actionRow,
+  .settingsCards .factorRow,
+  .settingsCards .valueHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .settingsCards .actionRow > :first-child,
+  .settingsCards .factorRow > :first-child,
+  .settingsCards .valueHeader > :first-child {
+    flex: none;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .settingsCards .actionRow > [data-slot="button"],
+  .settingsCards .factorRow > [data-slot="button"] {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    justify-content: center;
+  }
+  .settingsCards .valueLabel,
+  .settingsCards .sectionTitle,
+  .settingsCards .sessionTimes,
+  .settingsCards .profileName {
+    overflow-wrap: anywhere;
+  }
+  .settingsCards .sessionStack,
+  .settingsCards .sessionList,
+  .settingsCards .passwordStack,
+  .settingsCards .valueStack {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settingsCards .sessionHeader {
+    flex-wrap: wrap;
+  }
+}
+
+.sessionTimes,
+.sessionCount,
+.index { font-variant-numeric: tabular-nums; }
+.sectionTitle { text-wrap: balance; }
+.helper { text-wrap: pretty; }
+@media (max-width: 700px) {
+  .workspace :global(input[data-slot="input"]),
+  .workspace :global(textarea[data-slot="textarea"]),
+  .workspace :global(select[data-slot="native-select"]) {
+    font-size: max(16px, var(--rl-type-body));
   }
 }

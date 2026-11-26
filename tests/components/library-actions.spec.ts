@@ -1,6 +1,26 @@
 import { test, expect } from "./library-io";
 import { firstAsset, secondAsset, collection } from "../component-app/library-fixtures";
 
+test("Library thumbnails keep lazy requests and decode asynchronously", async ({ page, io }) => {
+  await page.goto("/library");
+  const frame = page.getByRole("link", { name: "Open First image" }).locator("[data-library-media-frame]");
+  await expect(frame).toBeVisible();
+  await expect(frame).not.toHaveCSS("aspect-ratio", "auto");
+  const thumbnail = frame.locator("img");
+  await expect(thumbnail).toHaveAttribute("loading", "lazy");
+  await expect(thumbnail).toHaveAttribute("decoding", "async");
+  expect(io.calls).toEqual([]);
+});
+
+test("Viewer prioritizes its primary result image", async ({ page, io }) => {
+  await page.goto("/library/" + firstAsset.id);
+  const result = page.getByRole("img", { name: "First image", exact: true });
+  await expect(result).toBeVisible();
+  await expect(result).toHaveAttribute("fetchpriority", "high");
+  await expect(result).not.toHaveAttribute("loading", "lazy");
+  expect(io.calls).toEqual([]);
+});
+
 test("collection menu keyboard dismissal and menu-to-delete-dialog focus return", async ({ page, io }) => {
   await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();

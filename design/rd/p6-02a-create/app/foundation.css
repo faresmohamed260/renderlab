@@ -7,6 +7,9 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
+  background-color: var(--rlv2-canvas);
+  background-image: var(--rlv2-atmosphere-scene);
+  background-attachment: fixed;
   font-size: var(--rlv2-type-body);
   line-height: var(--rlv2-leading-body);
   font-weight: var(--rlv2-weight-body);
@@ -34,7 +37,8 @@ body {
 .rlv2-specimen {
   padding: var(--rlv2-space-16);
   margin-block-start: var(--rlv2-space-24);
-  background: var(--rlv2-surface-panel);
+  background: var(--rlv2-surface-panel-layered);
+  backdrop-filter: var(--rlv2-material-panel);
   border-radius: var(--rlv2-radius-panel);
   box-shadow: var(--rlv2-elevation-panel);
 }
@@ -132,13 +136,20 @@ body {
   background: var(--rlv2-surface-hover);
 }
 .p602a-control[data-variant="primary"]:not(:disabled) {
-  background: var(--rlv2-accent-primary);
+  background-color: var(--rlv2-accent-primary);
+  background-image: var(--rlv2-gradient-primary);
+  box-shadow: var(--rlv2-elevation-primary);
   color: var(--rlv2-on-accent);
   border-color: var(--rlv2-border-action-selection);
 }
 .p602a-control[data-variant="primary"]:not(:disabled):hover,
 .p602a-control[data-variant="primary"][data-pressed="true"] {
-  background: var(--rlv2-accent-hover);
+  background-color: var(--rlv2-accent-hover);
+  background-image: var(--rlv2-gradient-hover);
+}
+.p602a-control[data-variant="primary"][data-pressed="true"]:not(:disabled) {
+  background-color: var(--rlv2-accent-pressed);
+  background-image: var(--rlv2-gradient-pressed);
 }
 .p602a-control[data-variant="destructive"]:not(:disabled) {
   color: var(--rlv2-danger);
@@ -173,7 +184,7 @@ body {
 }
 .p602a-control:disabled, .p602a-menu-item[data-disabled] {
   color: var(--rlv2-text-disabled);
-  background: var(--rlv2-surface-control);
+  background: var(--rlv2-surface-disabled);
   border-color: var(--rlv2-border-boundary);
   cursor: not-allowed;
   opacity: 1;
@@ -216,7 +227,7 @@ body {
   z-index: 2;
 }
 .p602a-menu-item { justify-content: flex-start; text-align: start; }
-.p602a-overlay { position: fixed; inset: 0; background: var(--rlv2-surface-panel-layered); z-index: 3; }
+.p602a-overlay { position: fixed; inset: 0; background: var(--rlv2-modal-scrim); z-index: 3; }
 .p602a-dialog {
   position: fixed;
   inset: 50% auto auto 50%;

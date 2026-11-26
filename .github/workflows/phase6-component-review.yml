@@ -1,0 +1,80 @@
+name: Phase 6 Component Review (optional)
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/component-app/**"
+      - "tests/components/**"
+      - "tests/unit/phase6-review-index.test.mjs"
+      - "tests/unit/p6-composited-contrast.test.mjs"
+      - "scripts/lib/phase6-review-index.mjs"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/phase6-component-review.yml"
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: "Exact PR head SHA (40 hex characters); blank uses selected ref"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renderlab-phase6-component-review-${{ github.event.pull_request.number || inputs.head_sha || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  component-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      REVIEW_SOURCE_SHA: ${{ github.event.pull_request.head.sha || inputs.head_sha || github.sha }}
+    steps:
+      - name: Validate exact SHA
+        run: '[[ "$REVIEW_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]'
+      - name: Checkout exact head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.REVIEW_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Verify checkout
+        run: test "$(git rev-parse HEAD)" = "$REVIEW_SOURCE_SHA"
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Test bundle completeness
+        run: node --test tests/unit/phase6-review-index.test.mjs tests/unit/p6-composited-contrast.test.mjs
+      - name: Install Chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Stage real production static assets in nested fixture
+        run: |
+          mkdir -p tests/component-app/public
+          cp -a public/. tests/component-app/public/
+          cp src/app/icon.svg tests/component-app/app/icon.svg
+      - name: Build optimized fixture and capture real mounted components (loopback network namespace)
+        run: |
+          sudo unshare --net -- bash -c '
+            set -e
+            ip link set lo up
+            exec runuser -u "$1" -- env -i PATH="$2" HOME="$3" CI=true NEXT_TELEMETRY_DISABLED=1 REVIEW_SOURCE_SHA="$4" bash -c "node node_modules/next/dist/bin/next build tests/component-app && node node_modules/@playwright/test/cli.js test --config tests/components/playwright.review.config.ts"
+          ' _ "$(id -un)" "$PATH" "$HOME" "$REVIEW_SOURCE_SHA"
+      - name: Assemble and verify review bundle
+        if: always()
+        run: node scripts/lib/phase6-review-index.mjs
+      - name: Upload one downloadable review bundle
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: phase6-component-review-${{ env.REVIEW_SOURCE_SHA }}
+          path: artifacts/phase6-component-review/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -213,6 +214,7 @@ export function AccountSettings({
   if (identity) {
     const accessState = accessPresentation(access, enforcementEnabled);
     const mfa = mfaPresentation(mfaState);
+    const mfaStatus = mfaState === "verified" ? "Enabled" : mfaState === "verification-required" ? "Verify" : mfaState === "disabled" ? "Off" : "Unavailable";
     const adminReady = showAdminLink && mfaState === "verified";
     const adminHref = adminReady
       ? "/admin"
@@ -221,24 +223,29 @@ export function AccountSettings({
         : "/settings/mfa";
 
     return (
-      <div className={styles.surfaceWrap}>
-        <div className={styles.register} data-account-state="signed-in">
-          <span className={styles.signatureArc} aria-hidden="true" />
-
-          <RegisterRow index="01" title="Account">
-            <div className={styles.passwordStack}>
-              {access ? (
+      <div className={styles.round3}>
+        <nav className={styles.settingsSections} aria-label="Settings sections">
+          <a href="#settings-email">Account</a>
+          <a href="#settings-security">Security</a>
+          <a href="#settings-sessions">Sessions</a>
+          <a href="#settings-privacy">Data &amp; Privacy</a>
+          {access ? <a href="#settings-preferences">Create defaults</a> : null}
+          {showAdminLink ? <a href="#settings-admin">Admin operations</a> : null}
+        </nav>
+        <div className={styles.surfaceWrap}>
+        <div className={styles.settingsCards} data-account-state="signed-in">
+          {access ? <RegisterRow index="01" title="Profile" id="settings-profile">
+              {
                 profile ? (
                   <div className={styles.actionRow}>
-                    <AccountProfileIdentity profile={profile} />
+                    <AccountProfileIdentity profile={profile} overviewEmail={identity.email ?? "RenderLab account"} />
                     <Button asChild variant="secondary" size="lg">
-                      <Link href="/settings/profile">Edit profile</Link>
+                      <Link href="/settings/profile" aria-label="Edit profile"><span className={styles.desktopActionLabel}>Edit profile</span><span className={styles.phoneActionLabel}>Edit</span></Link>
                     </Button>
                   </div>
                 ) : mfaState === "verification-required" ? (
                   <div className={styles.actionRow}>
                     <div className={styles.valueStack}>
-                      <p className={styles.valueLabel}>Profile</p>
                       <p className={styles.helper}>Verify your authenticator before viewing or editing private profile identity.</p>
                     </div>
                     <Button asChild variant="secondary" size="lg">
@@ -247,25 +254,25 @@ export function AccountSettings({
                   </div>
                 ) : (
                   <div className={styles.valueStack}>
-                    <p className={styles.valueLabel}>Profile</p>
                     <p className={styles.helper}>Private profile information is temporarily unavailable.</p>
                   </div>
                 )
-              ) : null}
-              <div className={access ? styles.factorRow : styles.actionRow}>
+              }
+          </RegisterRow> : null}
+          <RegisterRow index="01" title="Account" id="settings-email">
+              <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Sign-in email</p>
                   <p className={styles.emailValue}>{identity.email ?? "RenderLab account"}</p>
                   <p className={styles.helper}>Used to sign in. Changing it keeps the same RenderLab account, access and ownership.</p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href="/settings/email">Change email</Link>
+                  <Link href="/settings/email" aria-label="Change email"><span className={styles.desktopActionLabel}>Change email</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
                 </Button>
               </div>
-            </div>
           </RegisterRow>
 
-          <RegisterRow index="02" title="Access">
+          <RegisterRow index="02" title="Access" id="settings-access">
             <div className={styles.valueStack}>
               <div className={styles.valueHeader}>
                 <div>
@@ -278,7 +285,7 @@ export function AccountSettings({
             </div>
           </RegisterRow>
 
-          <RegisterRow index="03" title="Security">
+          <RegisterRow index="03" title="Security" id="settings-security">
             <div className={styles.passwordStack}>
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
@@ -286,7 +293,11 @@ export function AccountSettings({
                   <p className={styles.helper}>{mfa.message}</p>
                 </div>
                 <Button asChild variant="secondary" size="lg" disabled={mfaState === "unavailable"}>
-                  <Link href={mfa.href}>{mfa.label}</Link>
+                  <Link href={mfa.href} aria-label={`${mfa.label} ${mfaStatus}`}>
+                    <span className={styles.desktopActionLabel}>{mfa.label}</span>{" "}
+                    <span className={styles.mfaStatus} data-mfa-state={mfaState}>{mfaStatus}</span>
+                    <ChevronRight className={styles.phoneChevron} aria-hidden="true" />
+                  </Link>
                 </Button>
               </div>
               <div className={styles.factorRow}>
@@ -297,13 +308,13 @@ export function AccountSettings({
                   </p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href="/settings/password">Change password</Link>
+                  <Link href="/settings/password" aria-label="Change password"><span className={styles.desktopActionLabel}>Change password</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
                 </Button>
               </div>
             </div>
           </RegisterRow>
 
-          <RegisterRow index="04" title="Sessions">
+          <RegisterRow index="04" title="Sessions" id="settings-sessions">
             <div className={styles.sessionStack}>
               <div className={styles.valueStack}>
                 <p className={styles.valueLabel}>Active RenderLab sessions</p>
@@ -343,7 +354,7 @@ export function AccountSettings({
                   {busyAction === "signout-others" ? <Spinner aria-hidden="true" /> : null}
                   Sign out other devices
                 </Button>
-                <Button variant="destructive" size="lg" onClick={() => handleSignOut("global")} disabled={busyAction !== null}>
+                <Button className={styles.desktopSignOut} variant="destructive" size="lg" onClick={() => handleSignOut("global")} disabled={busyAction !== null}>
                   {busyAction === "signout-global" ? <Spinner aria-hidden="true" /> : null}
                   Sign out everywhere
                 </Button>
@@ -351,12 +362,12 @@ export function AccountSettings({
             </div>
           </RegisterRow>
 
-          <RegisterRow index="05" title="Data & Privacy">
+          <RegisterRow index="05" title="Data & Privacy" id="settings-privacy">
             <AccountDataPrivacy />
           </RegisterRow>
 
           {access ? (
-            <RegisterRow index="06" title="Preferences">
+            <RegisterRow index="06" title="Create" id="settings-preferences">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Create defaults</p>
@@ -365,14 +376,14 @@ export function AccountSettings({
                   </p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href="/settings/preferences">Manage preferences</Link>
+                  <Link href="/settings/preferences" aria-label="Manage preferences"><span className={styles.desktopActionLabel}>Manage preferences</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
                 </Button>
               </div>
             </RegisterRow>
           ) : null}
 
           {showAdminLink ? (
-            <RegisterRow index="07" title="Admin">
+            <RegisterRow index="07" title="Admin" id="settings-admin">
               <div className={styles.actionRow}>
                 <div className={styles.valueStack}>
                   <p className={styles.valueLabel}>Admin operations</p>
@@ -383,11 +394,17 @@ export function AccountSettings({
                   </p>
                 </div>
                 <Button asChild variant="secondary" size="lg">
-                  <Link href={adminHref}>{adminReady ? "Open Admin" : "Secure Admin access"}</Link>
+                  <Link href={adminHref} aria-label={adminReady ? "Open Admin" : "Secure Admin access"}><span className={styles.desktopActionLabel}>{adminReady ? "Open Admin" : "Secure Admin access"}</span><ChevronRight className={styles.phoneChevron} aria-hidden="true" /></Link>
                 </Button>
               </div>
             </RegisterRow>
           ) : null}
+          <div className={styles.phoneSignOut}>
+            <Button variant="destructive" size="lg" onClick={() => handleSignOut("global")} disabled={busyAction !== null}>
+              {busyAction === "signout-global" ? <Spinner aria-hidden="true" /> : null}
+              Sign out everywhere
+            </Button>
+          </div>
         </div>
 
         {feedback ? (
@@ -395,6 +412,7 @@ export function AccountSettings({
             <AlertDescription>{feedback.message}</AlertDescription>
           </Alert>
         ) : null}
+        </div>
       </div>
     );
   }
@@ -450,9 +468,9 @@ export function AccountSettings({
   );
 }
 
-function RegisterRow({ index, title, children }: { index: string; title: string; children: ReactNode }) {
+function RegisterRow({ index, title, children, id }: { index: string; title: string; children: ReactNode; id?: string }) {
   return (
-    <section className={styles.row}>
+    <section className={styles.row} id={id}>
       <div className={styles.labelCell}>
         <span className={styles.index}>{index}</span>
         <h2 className={styles.sectionTitle}>{title}</h2>

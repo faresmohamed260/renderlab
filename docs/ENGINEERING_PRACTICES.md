@@ -40,3 +40,8 @@ Use `npm run test:unit:coverage` and `npm run verify:unit-coverage` for the Node
 ## Review and reporting
 
 [Contributing rules](../CONTRIBUTING.md), [PR checklist](../.github/PULL_REQUEST_TEMPLATE.md), and [non-sensitive issue templates](../.github/ISSUE_TEMPLATE/) guide ordinary changes. Report possible security issues **privately** under [SECURITY.md](../SECURITY.md), never in a public issue. [GOVERNANCE.md](../GOVERNANCE.md) assigns merge and release authority; a passing CI run or PR merge is not permission to deploy.
+
+
+### Vendored font dependency
+
+Approved Inter Latin variable WOFF2 from Fontsource 5.3.0, SIL OFL-1.1, copyright 2016 The Inter Project Authors. See [asset provenance](ui/BRAND_SYSTEM.md#local-inter-asset-p6-approved-2026-11-25) and [redistributed license](../public/licenses/inter-OFL.txt). No added package or external font fetch; update only with pinned provenance, licensing and reflow review.

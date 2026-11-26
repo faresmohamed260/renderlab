@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Check, Download, Pencil, Star, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -30,12 +30,19 @@ import {
 export function MediaViewerQuickActions({
   assetId,
   isFavorite,
+  compact = false,
 }: {
   assetId: string;
   isFavorite: boolean;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [favorite, setFavorite] = useState(isFavorite);
+  const [serverFavorite, setServerFavorite] = useState(isFavorite);
+  if (serverFavorite !== isFavorite) {
+    setServerFavorite(isFavorite);
+    setFavorite(isFavorite);
+  }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +69,7 @@ export function MediaViewerQuickActions({
   }
 
   return (
-    <div className="flex min-w-0 flex-wrap justify-end gap-2">
+    <div className={compact ? "contents" : "flex min-w-0 flex-wrap justify-end gap-2"}>
       <Button
         type="button"
         variant={favorite ? "secondary" : "outline"}
@@ -70,25 +77,25 @@ export function MediaViewerQuickActions({
         disabled={saving}
         aria-pressed={favorite}
         aria-label={saving ? "Saving favorite" : favorite ? "Favorited" : "Favorite"}
-        className="h-11 min-w-11 px-3 sm:min-w-0"
+        className={compact ? "h-11 w-full min-w-0 px-0" : "h-11 min-w-11 px-3 sm:min-w-0"}
       >
         {saving ? (
           <Spinner />
         ) : (
           <Star aria-hidden="true" className={favorite ? "fill-current" : undefined} />
         )}
-        <span className="hidden sm:inline">{saving ? "Saving…" : favorite ? "Favorited" : "Favorite"}</span>
+        <span className={compact ? "sr-only" : "hidden sm:inline"}>{saving ? "Saving…" : favorite ? "Favorited" : "Favorite"}</span>
       </Button>
-      <Button asChild variant="secondary" className="h-11 min-w-11 px-3 sm:min-w-0">
+      <Button asChild variant="secondary" className={compact ? "h-11 w-full min-w-0 px-0" : "h-11 min-w-11 px-3 sm:min-w-0"}>
         <a
           href={`/api/media/assets/${encodeURIComponent(assetId)}/download`}
           aria-label="Download"
         >
           <Download aria-hidden="true" />
-          <span className="hidden sm:inline">Download</span>
+          <span className={compact ? "sr-only" : "hidden sm:inline"}>Download</span>
         </a>
       </Button>
-      {error ? <p role="alert" className="basis-full text-right text-xs text-danger">{error}</p> : null}
+      {error ? <p role="alert" className="col-span-full basis-full text-right text-xs text-danger">{error}</p> : null}
     </div>
   );
 }
@@ -97,14 +104,18 @@ export function MediaViewerManageActions({
   assetId,
   displayName,
   fallbackTitle,
-  collections,
-  collectionsAvailable,
+  collections = [],
+  collectionsAvailable = false,
+  onDeleted,
+  renderLayout,
 }: {
   assetId: string;
   displayName: string | null;
   fallbackTitle: string;
-  collections: PublicMediaCollection[];
-  collectionsAvailable: boolean;
+  collections?: PublicMediaCollection[];
+  collectionsAvailable?: boolean;
+  onDeleted?: () => void;
+  renderLayout?: (parts: { rename: ReactNode; editor: ReactNode; remove: ReactNode }) => ReactNode;
 }) {
   const router = useRouter();
   const inputId = useId();
@@ -116,6 +127,7 @@ export function MediaViewerManageActions({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleted = useRef(false);
 
   function beginEditing() {
     setDraft(displayName ?? "");
@@ -170,9 +182,12 @@ export function MediaViewerManageActions({
         throw new Error(payload && !payload.ok ? payload.error.message : "Media could not be deleted.");
       }
 
+      deleted.current = true;
       setDeleteOpen(false);
-      router.push("/library");
-      router.refresh();
+      if (!onDeleted) {
+        router.push("/library");
+        router.refresh();
+      }
     } catch (deleteRequestError) {
       setDeleteError(deleteRequestError instanceof Error ? deleteRequestError.message : "Media could not be deleted.");
     } finally {
@@ -180,24 +195,22 @@ export function MediaViewerManageActions({
     }
   }
 
-  return (
-    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-      <MediaViewerCollections assetId={assetId} collections={collections} available={collectionsAvailable} />
-
-      <Button
+  const rename = (
+    <Button
         type="button"
         variant="secondary"
-        size="lg"
+        size={renderLayout ? "icon-lg" : "lg"}
         onClick={beginEditing}
         aria-expanded={editing}
         aria-controls={panelId}
-        className="w-full"
+        className={renderLayout ? "shrink-0" : "w-full"}
+        aria-label="Rename"
       >
         <Pencil aria-hidden="true" data-icon="inline-start" />
-        Rename
+        <span className={renderLayout ? "sr-only" : undefined}>Rename</span>
       </Button>
-
-      {editing ? (
+  );
+  const editor = editing ? (
         <form
           id={panelId}
           onSubmit={submitRename}
@@ -228,9 +241,9 @@ export function MediaViewerManageActions({
             </Button>
           </div>
         </form>
-      ) : null}
-
-      <AlertDialog
+      ) : null;
+  const remove = (
+    <AlertDialog
         open={deleteOpen}
         onOpenChange={(open) => {
           if (deleting) return;
@@ -243,13 +256,19 @@ export function MediaViewerManageActions({
             type="button"
             variant="ghost"
             size="lg"
-            className="w-full text-danger hover:text-danger sm:col-span-2"
+            className={renderLayout ? "h-11 w-full min-w-0 px-0 text-danger hover:text-danger" : "w-full text-danger hover:text-danger sm:col-span-2"}
+            aria-label="Delete"
           >
             <Trash2 aria-hidden="true" data-icon="inline-start" />
-            Delete
+            <span className={renderLayout ? "sr-only" : undefined}>Delete</span>
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={(event) => {
+          if (!onDeleted || !deleted.current) return;
+          event.preventDefault();
+          onDeleted();
+          router.refresh();
+        }}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete media?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -272,6 +291,14 @@ export function MediaViewerManageActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+  );
+  if (renderLayout) return <>{renderLayout({ rename, editor, remove })}</>;
+  return (
+    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+      {!onDeleted ? <MediaViewerCollections assetId={assetId} collections={collections} available={collectionsAvailable} /> : null}
+      {rename}
+      {editor}
+      {remove}
     </div>
   );
 }

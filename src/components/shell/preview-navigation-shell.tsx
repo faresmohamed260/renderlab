@@ -3,12 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, CircleHelp, House, Images, Menu, Settings, SlidersHorizontal, Sparkles, UserRound } from "lucide-react";
+import { Activity, CircleHelp, House, Images, Menu, Settings, Shield, SlidersHorizontal, Sparkles, UserRound, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { RenderLabMark } from "@/components/brand/renderlab-brand";
 
 import { animated, useSpring, type SpringValue } from "@react-spring/web";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { springOptions } from "@/lib/ui/spring-roles";
+import styles from "./phone-navigation.module.css";
 
 const pillTop = 17;
 const pillHeight = 40;
@@ -103,39 +106,29 @@ const accountOptions = [
   { label: "Help", icon: CircleHelp, separated: true },
 ];
 
-const profileEndpoint = "/api/preview-account/profile";
-async function loadProfileName(hostedProfile: boolean, signal: AbortSignal): Promise<string | null> {
-  const response = await fetch(hostedProfile ? profileEndpoint : "/api/account/profile", { cache: "no-store", signal });
-  if (!response.ok) return null;
-  const { profile } = await response.json();
-  return typeof profile?.displayName === "string" ? profile.displayName.trim() : null;
-}
+type ShellProfile = { displayName: string | null; avatarUrl: string | null };
 
-function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | null; hostedProfile: boolean }) {
+function PreviewAccountMenu({ accountId, profile, showAdmin, legacy }: { accountId: string | null; profile: ShellProfile | null; showAdmin: boolean; legacy: boolean }) {
   const pathname = usePathname();
+  const options = legacy ? accountOptions : [
+    { label: "Settings", icon: Settings, href: settingsPath, separated: false },
+    ...(showAdmin && accountId ? [{ label: "Admin", icon: Shield, href: "/admin", separated: false }] : []),
+  ];
   const [open, setOpen] = useState(false);
   const reduced = usePreviewReducedMotion();
   const panel = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
-  const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUnavailable, setAvatarUnavailable] = useState(false);
-  useEffect(() => {
-    if (!accountId) return;
-    const controller = new AbortController();
-    void loadProfileName(hostedProfile, controller.signal).then((value) => {
-      if (!controller.signal.aborted) setDisplayName(value);
-    }).catch(() => { /* The trigger retains a generic accessible label. */ });
-    return () => controller.abort();
-  }, [accountId, hostedProfile]);
 
-  const name = accountId ? displayName || "RenderLab account" : "Guest";
+  const name = accountId ? profile?.displayName || "RenderLab account" : "Guest";
   // Start the private thumbnail request from the server-rendered header, not after
   // hydration and a second profile lookup. The thumbnail route authorizes every read.
-  const avatarSrc = accountId && !avatarUnavailable ? (hostedProfile ? profileEndpoint : "/api/account/profile") + "/avatar" : null;
+  const avatarSrc = accountId && !avatarUnavailable ? profile?.avatarUrl ?? null : null;
   const id = useId();
   const card = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const visibleName = useRef<HTMLSpanElement>(null);
   const pinned = useRef(false);
+  const tabbing = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -147,7 +140,7 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
     }
     function escape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (card.current?.contains(document.activeElement)) trigger.current?.focus();
+      if (pinned.current || card.current?.contains(document.activeElement)) trigger.current?.focus();
       pinned.current = false;
       setOpen(false);
     }
@@ -165,8 +158,19 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse" && !pinned.current && !event.currentTarget.contains(document.activeElement)) setOpen(false);
       }}
+      onKeyDownCapture={(event) => {
+        tabbing.current = event.key === "Tab";
+        if (tabbing.current) requestAnimationFrame(() => { tabbing.current = false; });
+      }}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
+        const leaving = !event.currentTarget.contains(event.relatedTarget);
+        const tabExit = tabbing.current;
+        tabbing.current = false;
+        // A deliberately opened nonmodal disclosure is dismissed by an
+        // explicit Tab exit, outside pointer or Escape. A closing sibling
+        // popover can restore focus asynchronously after Enter; that transient
+        // programmatic blur must not undo the new user activation.
+        if (leaving && (!pinned.current || tabExit)) {
           pinned.current = false;
           setOpen(false);
         }
@@ -188,11 +192,11 @@ function PreviewAccountMenu({ accountId, hostedProfile }: { accountId: string | 
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>{name}</animated.span>
         <animated.ul aria-label="Account options" className="preview-account-options"
           style={{ opacity: panel.progress.to([0.84, 1], [0, 1], "clamp") }}>
-          {accountOptions.map(({ label, icon: Icon, href, separated }) => (
+          {options.map(({ label, icon: Icon, href, separated }) => (
             <li key={label} className={separated ? "preview-account-row-separated" : undefined}>
               {href ? (
                 <Link href={href} className="preview-account-row preview-account-settings"
-                  aria-current={isSettingsRoute(pathname) ? "page" : undefined}
+                  aria-current={(href === settingsPath ? isSettingsRoute(pathname) : pathname === href || pathname.startsWith(href + "/")) ? "page" : undefined}
                   onNavigate={() => {
                     trigger.current?.focus({ preventScroll: true });
                     pinned.current = false;
@@ -226,18 +230,160 @@ const navigationGroups = [
   { title: "Media & history", destinations: destinations.slice(2, 4) },
 ];
 
-export function PreviewNavigationShell({ children, accountId, hostedProfile }: { children: ReactNode; accountId: string | null; hostedProfile: boolean }) {
+
+function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, setOpenPath }: {
+  pathname: string; accountId: string | null; profile: ShellProfile | null; showAdmin: boolean;
+  openPath: string | null; setOpenPath: (path: string | null) => void;
+}) {
+  const open = openPath === pathname;
+  const reduced = usePreviewReducedMotion();
+  const [slide, api] = useSpring(() => ({ offset: -100 }));
+  const applyOffset = (offset: number) => {
+    if (surface.current) surface.current.style.transform = `translateX(${offset}%)`;
+  };
+  const closing = useRef(false);
+  const surface = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const query = matchMedia("(min-width: 701px)");
+    const resize = () => {
+      if (query.matches) {
+        api.stop();
+        closing.current = false;
+        setOpenPath(null);
+      }
+    };
+    query.addEventListener("change", resize);
+    return () => query.removeEventListener("change", resize);
+  }, [api]);
+
+  function closeImmediately() {
+    api.stop();
+    closing.current = false;
+    setOpenPath(null);
+  }
+
+  function changeOpen(next: boolean) {
+    if (next) {
+      closing.current = false;
+      api.stop();
+      api.set({ offset: -100 });
+      setOpenPath(pathname);
+      void api.start({ offset: 0, ...springOptions("smooth", reduced), onChange: result => applyOffset(result.value.offset) });
+    } else if (reduced) {
+      closeImmediately();
+    } else if (!closing.current) {
+      closing.current = true;
+      void api.start({
+        offset: -100, ...springOptions("smooth", false),
+        onChange: result => applyOffset(result.value.offset),
+        onRest: result => {
+          if (result.finished && closing.current) {
+            closing.current = false;
+            setOpenPath(null);
+          }
+        },
+      });
+    }
+  }
+
+  const name = accountId ? profile?.displayName || "RenderLab account" : "Guest";
+  return <div className={styles.mobileNavigation}>
+    <Sheet open={open} onOpenChange={changeOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="lg" className={styles.logo} aria-label="RenderLab — Open navigation">
+          <RenderLabMark className="size-6" /><span>RenderLab</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" showCloseButton={false} className={styles.sidebar}
+        ref={node => { surface.current = node; if (node) node.style.transform = `translateX(${slide.offset.get()}%)`; }}
+        onCloseAutoFocus={event => {
+          if (matchMedia("(min-width: 701px)").matches) {
+            event.preventDefault();
+            document.querySelector<HTMLAnchorElement>(".p6-desktop-brand")?.focus();
+          }
+        }}>
+        <div className={styles.heading}>
+          <SheetTitle className={styles.title}><RenderLabMark tone="mono" className="size-6" /><span>RenderLab navigation</span></SheetTitle>
+          <SheetClose asChild><Button variant="secondary" size="icon-lg" className={styles.close} aria-label="Close navigation"><X aria-hidden="true" /></Button></SheetClose>
+        </div>
+        <SheetDescription className={styles.description}>Choose a workspace or open account settings.</SheetDescription>
+        <nav aria-label="Workspace navigation" className={styles.links}>
+          {destinations.slice(1).map(({ href, label, icon: Icon }) => <Button asChild key={href} variant="ghost" size="lg" className={styles.link}>
+            <Link href={href} onNavigate={closeImmediately} aria-current={pathname === href || pathname.startsWith(href + "/") ? "page" : undefined}><Icon aria-hidden="true" />{label}</Link>
+          </Button>)}
+          {showAdmin && accountId && <div className={styles.admin}>
+            <span className={styles.adminLabel}>Owner only</span>
+            <Button asChild variant="ghost" size="lg" className={styles.link}>
+              <Link href="/admin" onNavigate={closeImmediately} aria-current={pathname === "/admin" || pathname.startsWith("/admin/") ? "page" : undefined}><Shield aria-hidden="true" />Admin</Link>
+            </Button>
+          </div>}
+        </nav>
+        <Button asChild variant="secondary" size="lg" className={styles.profile}>
+          <Link data-shell-profile="" href={settingsPath} onNavigate={closeImmediately} aria-current={isSettingsRoute(pathname) ? "page" : undefined}>
+            <UserRound aria-hidden="true" />
+            <span className={styles.profileText}><span>{name}</span>{" "}<span className={styles.profileMeta}>Settings</span></span>
+            <Settings aria-hidden="true" className={styles.settingsIcon} />
+          </Link>
+        </Button>
+      </SheetContent>
+    </Sheet>
+  </div>;
+}
+
+export function PreviewNavigationShell({ children, accountId, profile = null, showAdmin = false }: { children: ReactNode; accountId: string | null; hostedProfile?: boolean; profile?: ShellProfile | null; showAdmin?: boolean }) {
   const pathname = usePathname();
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
+  const legacy = pathname === "/";
+  // Preserve isolation throughout the phone modal's lifetime, including its
+  // closing spring. Live-region ancestor paths can survive Radix hideOthers.
+  const [phoneOpenPath, setPhoneOpenPath] = useState<string | null>(null);
+  const phoneModalOpen = !legacy && phoneOpenPath === pathname;
   const sectionLabel = isSettingsRoute(pathname) ? "Settings" : current?.label ?? "RenderLab";
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
   const pinnedPath = useRef<string | null>(null);
   const id = useId();
+  const shellRoot = useRef<HTMLDivElement>(null);
   const disclosure = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const reduced = usePreviewReducedMotion();
   const reveal = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
+
+  useEffect(() => {
+    const node = disclosure.current;
+    if (!node) return;
+    const measure = () => {
+      if (node.offsetHeight > 0) node.style.setProperty("--preview-section-header-block", node.offsetHeight + "px");
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  // The Create toolbar is a separate route surface. Its desktop negative
+  // margin aligns it with the header, but an expanded header disclosure can
+  // paint over the controls on either viewport. Measure the actual footprint;
+  // CSS reserves clearance only while that disclosure is open.
+  useEffect(() => {
+    const root = shellRoot.current;
+    if (!root) return;
+    const header = root.querySelector<HTMLElement>(".preview-navigation-header");
+    const section = header?.querySelector<HTMLElement>(".preview-section-panel");
+    const account = header?.querySelector<HTMLElement>(".preview-account-menu");
+    if (!header) return;
+    const measure = () => {
+      root.style.setProperty("--create-section-menu-clearance", Math.max(0, (section?.offsetHeight ?? 0) - header.offsetHeight) + "px");
+      root.style.setProperty("--create-account-menu-clearance", Math.max(0, (account?.offsetHeight ?? 0) - header.offsetHeight) + "px");
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    if (section) observer.observe(section);
+    if (account) observer.observe(account);
+    return () => observer.disconnect();
+  }, [pathname]);
 
   function close() {
     pinnedPath.current = null;
@@ -262,10 +408,21 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
     };
   }, [open]);
 
+  // The public Landing owns its approved brand and sign-in header. Keep the
+  // existing account menu for signed-in visitors and all workspace routes.
+  if (legacy && !accountId) return <>{children}</>;
+
   return (
-    <div className="preview-navigation-shell">
-      <header className="preview-navigation-header">
-        <div ref={disclosure} className="preview-section-disclosure"
+    <div ref={shellRoot} className="preview-navigation-shell">
+      <header className={"preview-navigation-header" + (legacy ? "" : " " + styles.applicationHeader)} data-p6-desktop={legacy ? undefined : "true"}>
+        {!legacy && <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} openPath={phoneOpenPath} setOpenPath={setPhoneOpenPath} />}
+        {!legacy && <div className="p6-desktop-navigation">
+          <Button asChild variant="ghost" size="lg" className="p6-desktop-brand"><Link href="/" aria-label="RenderLab home"><RenderLabMark className="size-6" /><span>RenderLab</span></Link></Button>
+          <nav aria-label="Primary navigation" className="p6-desktop-links">
+            {destinations.slice(1).map(({ href, label }) => <Button asChild key={href} variant="ghost" size="lg" className="p6-desktop-link"><Link href={href} aria-current={current?.href === href ? "page" : undefined}>{label}</Link></Button>)}
+          </nav>
+        </div>}
+        {legacy && <div ref={disclosure} className="preview-section-disclosure"
           onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpenPath(pathname); }}
           onPointerLeave={(event) => {
             // Route selection restores trigger focus; that alone must not lock a hover preview.
@@ -313,10 +470,10 @@ export function PreviewNavigationShell({ children, accountId, hostedProfile }: {
               </animated.section>
             ))}
           </animated.nav>
-        </div>
-        <PreviewAccountMenu key={accountId ?? "guest"} accountId={accountId} hostedProfile={hostedProfile} />
+        </div>}
+        <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={legacy} />
       </header>
-      <div className="preview-navigation-content">{children}</div>
+      <div className="preview-navigation-content" inert={phoneModalOpen} aria-hidden={phoneModalOpen || undefined}>{children}</div>
     </div>
   );
 }

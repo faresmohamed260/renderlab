@@ -5,6 +5,7 @@ import { CheckIcon, CircleIcon } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
+import styles from "./dropdown-menu.module.css";
 
 // Keep generic menu mechanics here; product-specific navigation/data contracts stay feature-owned.
 function DropdownMenu(props: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
@@ -30,7 +31,7 @@ function DropdownMenuContent({
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-40 overflow-hidden rounded-lg border border-border bg-surface-2 p-1 text-text shadow-xl outline-none",
+          "z-50 min-w-40 overflow-hidden rounded-[var(--rl-radius-panel)] border border-[color:var(--rl-border-subtle)] bg-[var(--rl-surface-overlay)] text-[color:var(--rl-text-primary)] shadow-[var(--rl-elevation-overlay)] p-1 max-w-[calc(100vw-1rem)] outline-none",
           className,
         )}
         {...props}
@@ -50,11 +51,13 @@ function DropdownMenuLabel({
   return (
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
-      className={cn("px-2 py-1.5 text-xs font-semibold text-text-muted", className)}
+      className={cn("px-2 py-1.5 text-xs font-semibold text-[color:var(--rl-text-quiet)]", className)}
       {...props}
     />
   );
 }
+
+const menuItemFocus = styles.itemFocus;
 
 function DropdownMenuItem({
   className,
@@ -68,7 +71,8 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-md px-2 py-2 text-sm outline-none transition-colors focus:bg-surface-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[variant=destructive]:text-danger [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] px-2 py-2 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] data-[variant=destructive]:text-[color:var(--rl-danger)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        menuItemFocus,
         className,
       )}
       {...props}
@@ -89,7 +93,8 @@ function DropdownMenuRadioItem({
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-md py-2 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-surface-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] py-2 pl-8 pr-2 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        menuItemFocus,
         className,
       )}
       {...props}
@@ -114,7 +119,8 @@ function DropdownMenuCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-md py-2 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-surface-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--rl-radius-micro)] py-2 pl-8 pr-2 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:text-[color:var(--rl-text-disabled)] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        menuItemFocus,
         className,
       )}
       checked={checked}
@@ -137,7 +143,7 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("-mx-1 my-1 h-px bg-border", className)}
+      className={cn("-mx-1 my-1 h-px bg-[var(--rl-border-subtle)]", className)}
       {...props}
     />
   );

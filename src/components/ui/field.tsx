@@ -11,7 +11,7 @@ function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
 }
 
 function FieldLegend({ className, ...props }: React.ComponentProps<"legend">) {
-  return <legend data-slot="field-legend" className={cn("text-sm font-semibold text-text", className)} {...props} />;
+  return <legend data-slot="field-legend" className={cn("text-sm font-semibold text-[color:var(--rl-text-primary)]", className)} {...props} />;
 }
 
 function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
@@ -49,7 +49,7 @@ function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>)
 }
 
 function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
-  return <p data-slot="field-description" className={cn("text-xs leading-5 text-text-muted", className)} {...props} />;
+  return <p data-slot="field-description" className={cn("text-xs leading-5 text-[color:var(--rl-text-quiet)]", className)} {...props} />;
 }
 
 function FieldError({ className, children, ...props }: React.ComponentProps<"div">) {
@@ -58,7 +58,7 @@ function FieldError({ className, children, ...props }: React.ComponentProps<"div
     <div
       role="alert"
       data-slot="field-error"
-      className={cn("text-xs leading-5 text-danger", className)}
+      className={cn("text-xs leading-5 text-[color:var(--rl-danger)]", className)}
       {...props}
     >
       {children}

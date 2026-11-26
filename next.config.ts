@@ -37,6 +37,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Preserve Next's default quality and allow the measured Landing candidate.
+  images: { qualities: [75, 90] },
   // Keep design-only files out of server packaging even when legacy preview traces are broad.
   outputFileTracingExcludes: { "/**": ["./design/rd/p6-02a-create/**/*", "./design/system/v2/**/*"] },
   ...(process.env.RENDERLAB_CREATE_PREVIEW === "1" ? { devIndicators: false as const } : {}),

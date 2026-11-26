@@ -140,17 +140,35 @@
   gap: 0.375rem;
 }
 
-.filterCell {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  min-width: 0;
-  padding-top: 0.375rem;
-  border-top: 1px solid rgb(255 255 255 / 7%);
+.discovery,
+.centerToolbar {
+  display: contents;
 }
 
+.desktopOnly,
+.desktopContext,
+.density,
+.collectionList,
+.inspector,
+.inspectAction[data-slot="button"] {
+  display: none;
+}
+
+.organizationCell,
+.kindCell,
+.sortWrap {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--rl-space-4);
+}
+
+.kindCell { grid-area: 2 / 1; }
+.organizationCell { grid-area: 2 / 2; flex-wrap: wrap; }
+.sortWrap { grid-area: 2 / 3; justify-content: end; }
+
 .sourceSwitch,
-.kindSwitch,
-.filterRow {
+.kindSwitch {
   display: flex;
   align-items: center;
 }
@@ -164,7 +182,6 @@
 }
 
 .sourceSwitch :global([data-slot="button"]),
-.filterRow :global([data-slot="button"]),
 .actionCell :global([data-slot="button"]) {
   min-height: 2.75rem;
 }
@@ -226,35 +243,6 @@
 .searchInput:focus-visible {
   outline: none;
   box-shadow: none;
-}
-
-.filterRow {
-  min-width: 0;
-  gap: 0.1875rem;
-}
-
-.kindSwitch {
-  flex: none;
-  gap: 0.125rem;
-}
-
-.filterDivider {
-  width: 1px;
-  height: 1.125rem;
-  margin-inline: 0.25rem;
-  flex: none;
-  background: rgb(255 255 255 / 10%);
-}
-
-.filterRow > :global(a),
-.filterRow > :global(button),
-.filterRow > :global(div) {
-  flex-shrink: 0;
-}
-
-.sortWrap {
-  margin-left: auto;
-  flex: none;
 }
 
 .selectionMode {
@@ -353,6 +341,10 @@
   justify-content: space-between;
   gap: 1rem;
   margin: 0.25rem 0 0.5625rem;
+}
+
+.mediaHead[hidden] {
+  display: none;
 }
 
 .mediaContext {
@@ -529,13 +521,6 @@
     font-size: 2.375rem;
   }
 
-  .support {
-    max-width: 20rem;
-    margin-top: 0.4375rem;
-    font-size: 0.75rem;
-    line-height: 1.45;
-  }
-
   .defaultControls {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-rows: auto auto auto;
@@ -559,11 +544,17 @@
     grid-row: 2;
   }
 
-  .filterCell {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    overflow: hidden;
-    padding-top: 0.3125rem;
+  .kindCell {
+    grid-area: 3 / 1 / 4 / -1;
+  }
+
+  .organizationCell {
+    grid-area: 4 / 1 / 5 / -1;
+  }
+
+  .sortWrap {
+    grid-area: 5 / 1 / 6 / -1;
+    justify-content: start;
   }
 
   .sourceSwitch {
@@ -574,23 +565,6 @@
     min-width: 4.625rem;
     flex: 1;
     padding-inline: 0.625rem;
-  }
-
-  .filterRow {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .filterRow::-webkit-scrollbar {
-    display: none;
-  }
-
-  .filterDivider {
-    display: none;
-  }
-
-  .sortWrap {
-    margin-left: 0;
   }
 
   .selectionMode {
@@ -690,12 +664,861 @@
     transition-duration: 0.001ms !important;
   }
 
-  .cardShell:hover .cardLink,
   .cardShell[data-pointer="active"] .cardLink {
     transform: none !important;
   }
 
+
+  @media (hover: hover) and (pointer: fine) {
+  .cardShell:hover .cardLink {
+    transform: none !important;
+  }
+}
+
+
   .mediaFrame::after {
     opacity: 0.72 !important;
+  }
+}
+
+@media (max-width: 24rem) {
+  .sourceSwitch,
+  .kindSwitch {
+    flex-wrap: wrap;
+  }
+
+  .defaultControls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .actionCell {
+    grid-column: 1;
+    grid-row: 6;
+    flex-wrap: wrap;
+    justify-content: start;
+  }
+}
+
+@media (min-width: 75rem) {
+  .workspace {
+    overflow: visible;
+    padding: var(--rl-space-16) var(--rl-space-24);
+    background: var(--rl-atmosphere-scene);
+  }
+
+  .workspace::before,
+  .workspace::after {
+    content: none;
+  }
+
+  .contextBlock[data-library-ready="true"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .layout {
+    display: grid;
+    height: max(42rem, calc(100svh - 6rem));
+    grid-template-columns: minmax(12rem, 1fr) minmax(0, 3.25fr) minmax(17rem, 1.36fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: var(--rl-space-16);
+    color: var(--rl-text-primary);
+  }
+
+  .commandSurface,
+  .commandSurface[data-selection="on"] .defaultControls {
+    display: contents;
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .defaultControls {
+    display: contents;
+    transition: none;
+  }
+
+  .discovery,
+  .inspector {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    flex-direction: column;
+    gap: var(--rl-space-12);
+    grid-row: 1 / -1;
+    padding: var(--rl-space-16);
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-panel-layered);
+    box-shadow: var(--rl-elevation-panel);
+    backdrop-filter: var(--rl-material-panel);
+  }
+
+  .discovery {
+    grid-column: 1;
+  }
+
+  .inspector {
+    grid-column: 3;
+  }
+
+  .searchForm {
+    border-color: transparent;
+    border-radius: var(--rl-radius-field);
+    background: var(--rl-surface-control);
+    overflow: visible;
+  }
+
+  .searchForm:focus-within {
+    border-color: transparent;
+    background: var(--rl-surface-field-focus);
+    outline: var(--rl-focus-width) solid var(--rl-focus);
+    outline-offset: var(--rl-focus-offset);
+  }
+
+  .searchSubmit,
+  .clearSearch {
+    color: var(--rl-text-quiet);
+  }
+
+  .searchInput {
+    color: var(--rl-text-primary);
+  }
+
+  .searchInput::placeholder {
+    color: var(--rl-text-placeholder);
+  }
+
+  .sourceSwitch,
+  .organizationCell,
+  .collectionList {
+    display: grid;
+    gap: var(--rl-space-4);
+  }
+
+  .sourceSwitch {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .discovery :global([data-slot="button"]):not(.searchSubmit, .clearSearch) {
+    min-height: var(--rl-hit-preferred);
+    justify-content: start;
+  }
+
+  .organizationCell > div {
+    align-items: stretch;
+  }
+
+  .organizationCell > div > :global([data-slot="button"]) {
+    width: 100%;
+    max-width: none;
+  }
+
+  .collectionList :global(a[aria-current="page"]) {
+    background: var(--rl-surface-selected);
+    color: var(--rl-text-selected);
+    box-shadow: inset 0 0 0 1px var(--rl-border-action-selection);
+  }
+
+  .desktopOnly {
+    display: inline;
+  }
+
+  .narrowOnly {
+    display: none;
+  }
+
+  .centerToolbar {
+    display: flex;
+    min-width: 0;
+    grid-area: 1 / 2;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--rl-space-8);
+    padding-block: 0 var(--rl-space-12);
+  }
+
+  .desktopContext {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--rl-space-8);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .desktopContext h3,
+  .inspectorHeader h3 {
+    margin: 0;
+    font-size: var(--rl-type-section);
+    font-weight: var(--rl-weight-heading);
+  }
+
+  .desktopContext span,
+  .inspectorEmpty {
+    color: var(--rl-text-quiet);
+    font-size: var(--rl-type-label);
+  }
+
+  .kindCell {
+    flex: 1 0 100%;
+    order: 1;
+  }
+
+  .sortWrap {
+    border-radius: var(--rl-radius-pill);
+    background: var(--rl-surface-control);
+  }
+
+  .density {
+    display: flex;
+    gap: var(--rl-space-4);
+  }
+
+  .actionCell :global([aria-pressed="true"]) {
+    background: var(--rl-surface-selected);
+    box-shadow: inset 0 0 0 1px var(--rl-border-action-selection);
+  }
+
+  .gallery {
+    min-width: 0;
+    min-height: 0;
+    grid-area: 2 / 2;
+    overflow: auto;
+    scroll-padding: var(--rl-space-8);
+  }
+
+  .mediaHead:not([hidden]) {
+    margin: 0 0 var(--rl-space-8);
+    min-height: 0;
+  }
+
+  .mediaContext {
+    display: none;
+  }
+
+  .dropNote {
+    color: var(--rl-text-quiet);
+  }
+
+  .mediaGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--rl-space-12);
+  }
+
+  .mediaGrid[data-compact="true"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .cardLink, .cardShell[data-pointer="active"] .cardLink {
+    border-color: var(--rl-border-subtle);
+    border-radius: var(--rl-radius-control);
+    background: var(--rl-surface-base);
+    box-shadow: none;
+    transform: none;
+    transition: none;
+  }
+
+
+  @media (hover: hover) and (pointer: fine) {
+  .cardShell:hover .cardLink {
+    border-color: var(--rl-border-subtle);
+    border-radius: var(--rl-radius-control);
+    background: var(--rl-surface-base);
+    box-shadow: none;
+    transform: none;
+    transition: none;
+  }
+}
+
+
+  .cardLink:focus-visible {
+    outline: var(--rl-focus-width) solid var(--rl-focus);
+    outline-offset: calc(-1 * var(--rl-focus-offset));
+  }
+
+  .cardShell[data-selected="true"] .cardLink,
+  .cardShell[data-inspected="true"] .cardLink {
+    border-color: var(--rl-border-action-selection);
+    box-shadow: inset 0 0 0 1px var(--rl-border-action-selection);
+  }
+
+  .mediaFrame {
+    aspect-ratio: 1;
+    border-radius: inherit;
+  }
+
+  .mediaFrame::after {
+    content: none;
+  }
+
+  .mediaMeta {
+    display: none;
+  }
+
+  .inspectAction[data-slot="button"] {
+    position: absolute;
+    inset: var(--rl-space-4) var(--rl-space-4) auto auto;
+    z-index: 1;
+    display: inline-flex;
+    background: var(--rl-surface-overlay);
+    color: var(--rl-text-primary);
+  }
+
+  .inspectAction[data-slot="button"][aria-current="true"] {
+    background: var(--rl-surface-selected);
+  }
+
+
+  @media (hover: hover) and (pointer: fine) {
+  .inspectAction[data-slot="button"]:hover {
+    background: var(--rl-surface-selected);
+  }
+}
+
+
+  .selectionMode {
+    display: none;
+  }
+
+  .commandSurface[data-selection="on"] .selectionMode {
+    display: flex;
+    min-height: 0;
+    max-height: 32svh;
+    grid-area: 3 / 2;
+    flex-direction: column;
+    align-items: stretch;
+    justify-self: center;
+    max-width: 100%;
+    margin-block: var(--rl-space-24) var(--rl-space-8);
+    padding: var(--rl-space-8) var(--rl-space-12);
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-overlay-layered);
+    box-shadow: var(--rl-elevation-overlay);
+    backdrop-filter: var(--rl-material-overlay);
+    transition: none;
+    transform: none;
+    clip-path: none;
+    overflow: auto;
+  }
+
+  .selectionMain,
+  .selectionActions {
+    flex-wrap: wrap;
+  }
+
+  .selectionSummary strong,
+  .selectionSummary small {
+    color: var(--rl-text-secondary);
+  }
+
+  .selectionEyebrow {
+    display: none;
+  }
+
+  .inspectorEmpty {
+    margin-block: auto;
+    text-align: center;
+  }
+
+  .inspectorPreview {
+    display: grid;
+    aspect-ratio: 4 / 3;
+    flex: none;
+    overflow: hidden;
+    place-items: center;
+    border-radius: var(--rl-radius-control);
+    background: var(--rl-surface-base);
+  }
+
+  .inspectorPreview > * {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: contain;
+  }
+
+  .inspectorHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rl-space-4);
+    overflow-wrap: anywhere;
+  }
+
+  .inspectorPrompt,
+  .inspectorFacts {
+    margin: 0;
+    color: var(--rl-text-secondary);
+    font-size: var(--rl-type-label);
+    line-height: var(--rl-leading-label);
+    overflow-wrap: anywhere;
+  }
+
+  .inspectorFacts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--rl-space-4) var(--rl-space-12);
+  }
+
+  .inspectorFacts dt {
+    color: var(--rl-text-quiet);
+  }
+
+  .inspectorFacts dd {
+    margin: 0;
+  }
+
+  .inspectorActions {
+    display: grid;
+    gap: var(--rl-space-8);
+    margin-top: auto;
+    padding-top: var(--rl-space-16);
+  }
+
+  .inspectorActions .createAction {
+    flex-wrap: wrap;
+    column-gap: var(--rl-space-8);
+    background: var(--rl-gradient-primary);
+    box-shadow: var(--rl-elevation-primary);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+  .inspectorActions .createAction:hover {
+    background: var(--rl-gradient-hover);
+  }
+}
+
+
+  .inspectorActions .createAction:active {
+    background: var(--rl-gradient-pressed);
+  }
+
+  .editLabel {
+    font-size: var(--rl-type-caption);
+    font-weight: var(--rl-weight-label);
+  }
+}
+
+/* Round 3 phone layout; desktop Gallery Rail remains unchanged. */
+@media (max-width: 1199px) {
+  .mediaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--rl-space-8);
+  }
+  .cardLink {
+    border-radius: var(--rl-radius-control);
+    border-color: var(--rl-border-subtle);
+    background: var(--rl-surface-base);
+  }
+  .mediaFrame {
+    aspect-ratio: 1;
+    border-radius: inherit;
+  }
+  .mediaMeta { display: none; }
+  .mediaFrame::after { content: none; }
+  .inspectAction[data-slot="button"] {
+    display: inline-flex;
+    position: absolute;
+    inset: var(--rl-space-4) var(--rl-space-4) auto auto;
+    background: var(--rl-surface-overlay);
+    color: var(--rl-text-primary);
+    z-index: 1;
+  }
+  .kindSwitch {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: 100%;
+    padding: var(--rl-space-4);
+    scroll-padding: var(--rl-space-4);
+    gap: var(--rl-space-4);
+  }
+  .kindSwitch :global([data-slot="button"]) {
+    min-height: var(--rl-control-large);
+    border-radius: var(--rl-radius-pill);
+    flex: none;
+  }
+  .phoneInspector {
+    max-height: 92dvh;
+    padding-bottom: max(var(--rl-space-16), env(safe-area-inset-bottom));
+    background: var(--rl-surface-overlay);
+  }
+  .phoneInspector .inspectorPreview {
+    display: grid;
+    flex: none;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    place-items: center;
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-base);
+  }
+  .phoneInspector .inspectorPreview > * {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: contain;
+  }
+  .phoneInspector .inspectorHeader {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rl-space-8);
+    overflow-wrap: anywhere;
+  }
+  .phoneInspector .inspectorPrompt, .phoneInspector .inspectorFacts {
+    margin: 0;
+    color: var(--rl-text-secondary);
+    overflow-wrap: anywhere;
+  }
+  .phoneInspector .inspectorFacts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--rl-space-4) var(--rl-space-8);
+  }
+  .phoneInspector .inspectorFacts dd { margin: 0; }
+  .phoneInspector .inspectorActions {
+    display: grid;
+    min-width: 0;
+    gap: var(--rl-space-8);
+  }
+  .phoneInspector .inspectorActions .createAction {
+    flex-wrap: wrap;
+    background: var(--rl-gradient-primary);
+    box-shadow: var(--rl-elevation-primary);
+  }
+  .phoneInspector :global([data-slot="button"]) {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 760px) {
+  .commandSurface[data-selection="on"] .selectionMode {
+    position: fixed;
+    inset: auto var(--rl-space-12) max(var(--rl-space-16), env(safe-area-inset-bottom));
+    z-index: 20;
+    max-height: 50dvh;
+    min-height: 0;
+    overflow: auto;
+    clip-path: none;
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-panel);
+    background: var(--rl-surface-overlay);
+    box-shadow: var(--rl-elevation-overlay);
+  }
+  .commandSurface[data-selection="on"] { overflow: visible; }
+  .commandSurface[data-selection="on"] ~ .gallery { padding-bottom: var(--rl-space-64); }
+  .selectionActions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .selectionActions :global([data-slot="button"]) {
+    min-height: var(--rl-control-large);
+    white-space: normal;
+  }
+  .selectionSummary { display: flex; flex-wrap: wrap; }
+}
+
+@media (min-width: 75rem) {
+  /* The command wrapper is display:contents here; its decorative pseudo
+     otherwise extends the workspace by its negative 1.5rem right inset. */
+  .commandSurface::after { content: none; }
+}
+@media (max-width: 1199px) {
+  .phoneFilters {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+    gap: var(--rl-space-4);
+    overflow-x: auto;
+    padding: var(--rl-space-8);
+    scroll-padding-inline: var(--rl-space-8);
+  }
+  .phoneFilters .kindSwitch,
+  .phoneFilters .organizationCell {
+    display: flex;
+    flex: none;
+    width: max-content;
+    max-width: none;
+    flex-wrap: nowrap;
+    overflow: visible;
+    padding: 0;
+  }
+  .phoneFilters :global([data-slot="button"]) {
+    min-height: var(--rl-control-large);
+    border-radius: var(--rl-radius-pill);
+    flex: none;
+  }
+  .kindCell { grid-column: 1 / -1; min-width: 0; }
+  .phoneInspector .inspectorActions > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) {
+    justify-content: start;
+    width: 100%;
+    min-height: var(--rl-control-large);
+  }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) > span {
+    display: inline;
+  }
+}
+@media (max-width: 760px) {
+  .commandSurface[data-selection="on"] {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .commandSurface[data-selection="on"] .selectionMode {
+    padding: var(--rl-space-8);
+    transition: none;
+    transform: none;
+    backdrop-filter: var(--rl-material-overlay);
+    background: var(--rl-surface-overlay-layered);
+  }
+  .commandSurface[data-selection="on"] ~ .gallery {
+    padding-bottom: 50dvh;
+  }
+  .selectionSummary {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: 0;
+  }
+  .selectionSummary strong { color: var(--rl-text-primary); }
+  .selectionSummary small, .selectionEyebrow { color: var(--rl-text-secondary); }
+}
+
+@media (max-width: 1199px) {
+  .contextBlock .eyebrow, .contextBlock .support { display: none; }
+  .contextBlock { margin-block-end: var(--rl-space-8); }
+  .title { font-size: var(--rl-type-page); color: var(--rl-text-primary); }
+  .commandSurface, .commandSurface[data-selection="on"] {
+    display: block;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .commandSurface::after { content: none; }
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto auto;
+    gap: var(--rl-space-4) var(--rl-space-8);
+    min-height: 0;
+    padding: 0;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    transition: none;
+  }
+  .desktopContext {
+    display: flex;
+    grid-area: 1 / 1;
+    align-items: center;
+    min-width: 0;
+    color: var(--rl-text-secondary);
+    font-size: var(--rl-type-label);
+    overflow-wrap: anywhere;
+  }
+  .desktopContext h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .actionCell { grid-area: 1 / 2; flex-wrap: wrap; }
+  .sourceCell { grid-area: 2 / 1; }
+  .sortWrap { grid-area: 2 / 2; }
+  .sourceSwitch {
+    width: auto;
+    border: 0;
+    background: none;
+    padding: 0;
+  }
+  .sourceSwitch :global([data-slot="button"]) {
+    min-width: 0;
+    min-height: var(--rl-control-large);
+    padding-inline: var(--rl-space-8);
+    border-radius: var(--rl-radius-pill);
+  }
+  .searchCell { grid-area: 3 / 1 / 4 / -1; }
+  .searchCell[data-phone-search-open="false"] { display: none; }
+  .kindCell { grid-area: 4 / 1 / 5 / -1; }
+  .phoneFilters { padding: var(--rl-space-4) 0; }
+  .phoneFilters :global([data-slot="button"]) { background: var(--rl-surface-control); }
+  .phoneFilters :global([aria-current="page"]) { background: var(--rl-surface-selected); color: var(--rl-text-selected); }
+  .mediaHead { display: none; }
+  .selectionMode { display: none; }
+  .commandSurface[data-selection="on"] .selectionMode {
+    display: flex;
+    position: fixed;
+    inset: auto var(--rl-space-12) max(var(--rl-space-16), env(safe-area-inset-bottom));
+    z-index: 20;
+    max-height: 50dvh;
+    min-height: 0;
+    padding: var(--rl-space-8);
+    border: 1px solid var(--rl-border-subtle);
+    border-radius: var(--rl-radius-pill);
+    background: var(--rl-surface-overlay-layered);
+    box-shadow: var(--rl-elevation-overlay);
+    backdrop-filter: var(--rl-material-overlay);
+    overflow: auto;
+    transform: none;
+    clip-path: none;
+    transition: none;
+  }
+  .selectionMain { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--rl-space-4); }
+  .selectionSummary { display: flex; flex: 1 1 4rem; min-width: 0; padding: 0; border: 0; }
+  .selectionSummary small, .selectionEyebrow { display: none; }
+  .selectionSummary strong { font-size: var(--rl-type-label); color: var(--rl-text-primary); }
+  .selectionActions { display: flex; flex-wrap: wrap; gap: var(--rl-space-4); }
+  .selectionActions :global([data-slot="button"]) {
+    flex: none;
+    width: var(--rl-control-large);
+    min-height: var(--rl-control-large);
+    padding: 0;
+    border-radius: var(--rl-radius-pill);
+  }
+  .selectionLabel { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .commandSurface[data-selection="on"] ~ .gallery { padding-bottom: 50dvh; }
+  .phoneInspector { overflow-y: auto; overscroll-behavior: contain; }
+  .phoneInspector > * { flex-shrink: 0; }
+  .phoneInspector .inspectorPreview { max-height: 24dvh; }
+  .phoneInspector .phoneDone[data-slot="button"] {
+    width: auto; color: var(--rl-text-selected); background: transparent; box-shadow: none;
+    padding-inline: var(--rl-space-8);
+  }
+  .phoneInspector .inspectorActions .createAction { justify-content: center; }
+}
+@media (max-width: 24rem) {
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls { grid-template-columns: minmax(0, 1fr); }
+  .desktopContext { grid-area: 1 / 1; }
+  .actionCell { grid-area: 2 / 1; justify-content: start; }
+  .sourceCell { grid-area: 3 / 1; }
+  .sortWrap { grid-area: 4 / 1; justify-content: start; }
+  .searchCell { grid-area: 5 / 1; }
+  .kindCell { grid-area: 6 / 1; }
+}
+
+/* Keep the page heading and truthful page count in the same compact row.
+   Narrow search remains a real, reachable Library action, not a shell overlay. */
+@media (max-width: 1199px) {
+  .workspace { padding-block-start: 0; }
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls {
+    grid-template-rows: auto auto auto auto auto;
+    gap: var(--rl-space-4) var(--rl-space-8);
+  }
+  .defaultControls > .contextBlock {
+    grid-area: 2 / 1;
+    margin: 0;
+    min-width: 0;
+  }
+  .title { margin: 0; line-height: var(--rl-leading-label); font-weight: var(--rl-weight-heading); }
+  .actionCell { grid-area: 1 / 1 / 2 / -1; }
+  .desktopContext { grid-area: 2 / 2; justify-content: end; }
+  .sourceCell { grid-area: 3 / 1; }
+  .sortWrap { grid-area: 3 / 2; }
+  .searchCell { grid-area: 4 / 1 / 5 / -1; }
+  .kindCell { grid-area: 5 / 1 / 6 / -1; }
+  .phoneFilters { padding-block: 0; }
+}
+@media (max-width: 24rem) {
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .defaultControls > .contextBlock { grid-area: 2 / 1; }
+  .desktopContext { grid-area: 3 / 1; justify-content: start; }
+  .sourceCell { grid-area: 4 / 1; }
+  .sortWrap { grid-area: 5 / 1; justify-content: start; }
+  .searchCell { grid-area: 6 / 1; }
+  .kindCell { grid-area: 7 / 1; }
+}
+
+/* Approved phone inspector: the asset header precedes the preview. The
+   visually-hidden SheetTitle still supplies the dialog's accessible name. */
+@media (max-width: 1199px) {
+  .phoneInspector .inspectorHeader { order: -1; }
+  .phoneInspector .inspectorPreview { max-height: none; }
+}
+@media (max-width: 24rem) {
+  .phoneInspector .inspectorPreview { max-height: 32dvh; }
+}
+
+/* Approved round selection marker; retain the full 44px shared Checkbox hit
+   target. In selection mode the independent inspector affordance moves to
+   the opposite lower edge, rather than being covered by the checkbox. */
+.selectionCheckboxWrap {
+  inset: var(--rl-space-4) var(--rl-space-4) auto auto;
+}
+.selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before {
+  width: var(--rl-space-24);
+  height: var(--rl-space-24);
+  border: 2px solid var(--rl-on-accent);
+  border-radius: var(--rl-radius-pill);
+  background: var(--rl-surface-overlay);
+  backdrop-filter: none;
+  /* The checkmark and fill represent one atomic selection state. Do not
+     animate the fill from the unselected surface after aria-checked changes. */
+  transition: none;
+}
+.selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"][aria-checked="true"])::before {
+  border-color: var(--rl-on-accent);
+  background: var(--rl-accent-primary);
+}
+.cardShell:has(.selectionCheckboxWrap) .inspectAction[data-slot="button"] {
+  inset: auto auto var(--rl-space-4) var(--rl-space-4);
+}
+@media (max-width: 15rem) {
+  .cardShell:has(.selectionCheckboxWrap) .inspectAction[data-slot="button"] {
+    inset: auto auto 0 0;
+  }
+}
+@media (forced-colors: active) {
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before {
+    border-color: ButtonText;
+    background: Canvas;
+  }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"][aria-checked="true"])::before {
+    border-color: Highlight;
+    background: Highlight;
+  }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"]) {
+    color: HighlightText;
+  }
+}
+
+/* Stable figures in status and selection feedback. */
+.mediaContext strong,
+.desktopContext span,
+.selectionSummary strong,
+.selectionSummary small,
+.inspectorFacts dd {
+  font-variant-numeric: tabular-nums;
+}
+.searchInput { font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) {
+  .searchInput { font-size: max(16px, var(--rl-type-body)); }
+}
+.inspectorHeader h3,
+.workspace :global([data-slot="empty-title"]) { text-wrap: balance; }
+.workspace :global([data-slot="empty-description"]) { text-wrap: pretty; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cardLink:active {
+    transform: scale(var(--rl-press-scale));
+    transition-property: transform;
+    transition-duration: var(--rl-duration-micro);
+    transition-timing-function: var(--rl-ease-out);
   }
 }

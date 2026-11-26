@@ -6,8 +6,9 @@ import type { Page } from "@playwright/test";
 // and SVG geometry have no CSS clientWidth; native single-line text controls
 // scroll their editable value by design, and sr-only text is deliberately clipped.
 async function overflow(page: Page) {
-  return page.getByRole("region", { name: "Create with FIBO" }).evaluate(root => {
-    const elements = [root, ...root.querySelectorAll("*")];
+  return page.getByRole("region", { name: "Create with FIBO", includeHidden: true }).evaluate(root => {
+    const sheet = document.querySelector('[data-slot="sheet-content"]');
+    const elements = [root, ...root.querySelectorAll("*"), ...(sheet ? [sheet, ...sheet.querySelectorAll("*")] : [])];
     return elements.flatMap(node => {
       if (!(node instanceof HTMLElement) || !node.clientWidth || !node.getClientRects().length
         || node.closest("[inert], [hidden], .sr-only, details:not([open]) > :not(summary)") || getComputedStyle(node).visibility !== "visible"
@@ -46,18 +47,30 @@ for (const width of [195, 320]) {
     await expect(create.getByText("No recent prompts in this session.")).toBeVisible();
     await assertReflow(page, "recent prompts open");
     await create.getByLabel("Recent prompts", { exact: true }).click();
-    await create.locator("#create-preview-negative-label").click();
-    await create.locator("#create-preview-vgl-label").click();
-    await expect(create.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
-    await create.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');
+    const opener = create.getByRole("button", { name: "Advanced", exact: true });
+    await opener.press("Enter");
+    const sheet = page.getByRole("dialog", { name: "Advanced" });
+    await expect(sheet).toBeVisible();
+    await sheet.locator("#create-preview-negative-label").click();
+    await sheet.locator("#create-preview-vgl-label").click();
+    await expect(sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
+    await sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');
     for (const selector of ["#create-preview-negative-label", "#create-preview-vgl-label"]) {
-      expect((await create.locator(selector).boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      expect((await sheet.locator(selector).boundingBox())?.height).toBeGreaterThanOrEqual(44);
     }
     await assertReflow(page, "advanced open with long VGL");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toHaveCount(0);
+    await expect(opener).toBeFocused();
     await page.goto("/create?recipe=" + fixtureJobId);
     await expect(create.getByRole("button", { name: "Remove source image" })).toBeVisible();
-    await expect(create.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
+    await opener.press("Enter");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
     await assertReflow(page, "restored edit source and recipe");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toHaveCount(0);
+    await expect(opener).toBeFocused();
     expect(io.every(call => ["GET history", "GET capabilities", "GET continuation source"].includes(call))).toBe(true);
   });
 }

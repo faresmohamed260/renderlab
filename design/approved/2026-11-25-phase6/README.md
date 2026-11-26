@@ -16,6 +16,8 @@ Images are placeholders and copy is illustrative. Sizes and colours are approxim
 - **Truthful controls only:** show only capabilities the hosted worker really supports. Reserved, hidden-until-supported slots: **image count** (multi-output) and an **Inspiration** tile in References. **Negative prompt is parked** (local Fibo 2.0 Studio test, 2026-11-25, showed no reliable effect on Edit Turbo).
 - **Loading:** `*-skeleton.png`. App chrome (header, nav, composer shell) renders instantly; only content areas show a shimmer skeleton. Skeletons never imply job progress (UI-019). Reduced motion: static placeholder, no shimmer.
 
+**Contrast correction (2026-11-25):** Generate gradient endpoints are darkened to `#6d50d1` → `#9841bd` for at least 4.5:1 white-text contrast; [DESIGN_LANGUAGE_V2.md](../../../docs/ui/DESIGN_LANGUAGE_V2.md) is the token authority.
+
 ## Not decided here
 Motion choreography and spring assignments (needs reviewable motion evidence), Landing, Settings, the Admin dashboard, and the exact Activity-replacement edge cases. Phone variants of Library are not drawn yet.
 

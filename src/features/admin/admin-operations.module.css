@@ -453,6 +453,52 @@
   line-height: 1.5;
 }
 
+.observeDiagnostic {
+  padding: var(--rl-space-16);
+  border-color: var(--rl-border-subtle);
+  background: var(--rl-surface-panel-layered);
+  overflow-wrap: anywhere;
+}
+
+.observeDiagnostic .diagnosticTitle {
+  color: var(--rl-text-primary);
+  font-family: var(--rl-type-family);
+  font-size: var(--rl-type-label);
+  font-weight: var(--rl-weight-heading);
+  letter-spacing: normal;
+  line-height: var(--rl-leading-label);
+  text-transform: none;
+}
+
+.observeDescription,
+.observeDiagnostic .diagnosticEntry {
+  color: var(--rl-text-quiet);
+  font-size: var(--rl-type-caption);
+  line-height: var(--rl-leading-caption);
+}
+
+.observeDescription {
+  margin: 0 0 var(--rl-space-12);
+}
+
+.observeDashboard time { font-variant-numeric: tabular-nums; }
+
+.observeDescription:last-child {
+  margin-bottom: 0;
+}
+
+.observeDiagnostic .diagnosticEntry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(48%);
+  gap: var(--rl-space-8);
+}
+
+.observeDiagnostic .diagnosticEntry dd {
+  min-width: 0;
+  color: var(--rl-text-primary);
+  text-align: end;
+}
+
 .healthDetailBlock {
   margin-top: 1.25rem;
 }
@@ -673,4 +719,57 @@
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* Round 3: read-only Observe overview; the existing register remains intact. */
+.observeTabs {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--rl-space-4);
+  min-width: 0;
+}
+.observeTab { min-height: var(--rl-hit-preferred); border-radius: var(--rl-radius-pill); max-width: 100%; }
+.observeTabs .observeTab[aria-current="location"] { background: var(--rl-surface-selected); color: var(--rl-text-primary); }
+.laterTab { padding: var(--rl-space-8); color: var(--rl-text-quiet); font-size: var(--rl-type-label); overflow-wrap: anywhere; }
+.observeDashboard { display: grid; min-width: 0; gap: var(--rl-space-16); scroll-margin-top: 6rem; }
+.observeStats, .observePanels, .observeLockedGrid { display: grid; min-width: 0; gap: var(--rl-space-16); }
+.observeStats { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.observePanels { grid-template-columns: minmax(0,3fr) minmax(0,2fr); }
+.observeLockedGrid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.observeStat, .observePanel, .observeLocked {
+  display: grid; align-content: start; gap: var(--rl-space-8);
+  min-width: 0; margin: 0; padding: var(--rl-space-24);
+  color: var(--rl-text-primary); background: var(--rl-surface-panel-layered);
+  border: 1px solid var(--rl-border-subtle); border-radius: var(--rl-radius-panel);
+  backdrop-filter: var(--rl-material-panel); box-shadow: var(--rl-elevation-panel);
+  overflow-wrap: anywhere;
+}
+.observeValue { font-size: var(--rl-type-display); line-height: 1.12; font-weight: var(--rl-weight-heading); font-variant-numeric: tabular-nums; }
+.observeNote { margin: 0; color: var(--rl-text-secondary); font-size: var(--rl-type-caption); line-height: var(--rl-leading-body); }
+.observePanel h2, .observeLocked h2 { margin: 0; font-size: var(--rl-type-body); font-weight: var(--rl-weight-heading); line-height: var(--rl-leading-label); }
+.observeChart { display: grid; gap: var(--rl-space-16); padding-block: var(--rl-space-16); }
+.observeBarRow { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: var(--rl-space-8); font-size: var(--rl-type-label); color: var(--rl-text-secondary); }
+.observeBarRow > span:nth-child(2) { text-align: end; font-variant-numeric: tabular-nums; }
+.observeTrack { grid-column: 1/-1; height: var(--rl-space-16); border-radius: var(--rl-radius-micro); background: var(--rl-surface-control); }
+.observeBar { height: 100%; border-radius: inherit; background: var(--rl-accent-primary); }
+.observeTable { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: var(--rl-type-caption); text-align: start; }
+.observeTable :is(th,td) { text-align: start; padding: var(--rl-space-8) var(--rl-space-4); border-bottom: 1px solid var(--rl-border-subtle); overflow-wrap: anywhere; }
+.observeTable thead { color: var(--rl-text-secondary); }
+.observeTable th { font-weight: var(--rl-weight-label); }
+.observeTable td { font-variant-numeric: tabular-nums; }
+.observeLocked { border-style: dashed; background: var(--rl-surface-control); box-shadow: none; }
+.observeLockTitle { display: flex; align-items: start; justify-content: space-between; gap: var(--rl-space-8); }
+.observeLockTitle svg { flex-shrink: 0; color: var(--rl-text-secondary); }
+.row[id] { scroll-margin-top: 6rem; }
+@media (max-width: 1050px) {
+  .observeStats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .observePanels { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 620px) {
+  .observeStats,.observeLockedGrid { grid-template-columns: minmax(0,1fr); }
+  .observeStat,.observePanel,.observeLocked { padding: var(--rl-space-12); }
+  .observeValue { font-size: var(--rl-type-page); }
+}
+@media (max-width: 280px) {
+  .observeStat,.observePanel,.observeLocked { padding: var(--rl-space-8); }
+  .observeTabs { gap: 0; }
+  .observeTab { padding-inline: var(--rl-space-8); }
 }
