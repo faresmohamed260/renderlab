@@ -1,5 +1,7 @@
 # Phase 6 final acceptance — main d30572ca and polish 9591218a (2026-11-26)
 
+> **Correction (2026-11-27):** the Create rows below that call the desktop composition acceptable, and the accepted phone deviation, were wrong. The shipped Create did not match the approved comps. UI-093 supersedes UI-092; see the [UI rebuild acceptance](2026-11-27-ui-rebuild-acceptance.md).
+
 **Head-engineer acceptance record. It authorizes no production release, deployment, migration, generation spend or Admin control.** Production remains Batch G (`34efe0b84ac1d950581d7b371b65bbf331852e89`, [current.json](../production/current.json)). The [pre-flight checklist](2026-11-26-phase6-production-preflight.md) governs any later release.
 
 ## Source and automated evidence
