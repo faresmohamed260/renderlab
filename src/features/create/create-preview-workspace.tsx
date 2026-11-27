@@ -353,6 +353,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
       if (active.current || preparing.current) throw new Error("Create is busy.");
       applyContinuation(draft, loaded);
       setHistoryOpen(false);
+      setToolbarPopover(null);
     },
     onPrompt: (value) => { if (!busy && !continuationPending) { setPrompt(value); setHistoryOpen(false); } },
     onSessionResult: (entry) => { void selectHistoryResult(entry.id); },

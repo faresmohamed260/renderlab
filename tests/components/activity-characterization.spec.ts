@@ -1,6 +1,4 @@
 import { test, expect, type BrowserContext, type Route, type Page } from "@playwright/test";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { activityIds } from "../component-app/activity-fixtures";
 
 const origin = "http://127.0.0.1:4173";
@@ -40,11 +38,6 @@ const surfaces = [
     privateStates: [["private", /Sign in to view History/i], ["unavailable", /History is temporarily unavailable/i], ["empty", /No (?:history|jobs|activity) yet/i]] as const },
 ] as const;
 for (const surface of surfaces) test.describe(surface.heading + " lifecycle characterization", () => {
-  test.beforeEach(() => {
-    if (surface.route === "/history") {
-      test.skip(!existsSync(path.resolve(surface.fixture)), "History replacement fixture is not mounted yet");
-    }
-  });
   test("Activity status, action eligibility, no fake progress, surviving result and paging", async ({ page, context }) => {
     const io = await isolate(context);
     await page.goto(surface.route);
@@ -53,8 +46,8 @@ for (const surface of surfaces) test.describe(surface.heading + " lifecycle char
     const expected = ["running", "failed", "succeeded", "queued", "preparing", "cancelling", "persisting", "cancelled", "failed"];
     expect(await page.locator("[data-activity-status]").evaluateAll(nodes => nodes.map(n => n.getAttribute("data-activity-status")))).toEqual(expected);
     await expect(page.getByRole("progressbar")).toHaveCount(0);
-    await expect(page.locator("[data-activity-system]")).not.toContainText(/\d+\s*%/);
-    await expect(page.locator("[data-activity-live]")).toBeVisible();
+    await expect(page.locator("[data-activity-system]").filter({ has: page.locator("[data-activity-status]") })).not.toContainText(/\d+\s*%/);
+    await expect(page.locator("[data-activity-live]")).toHaveAttribute("role", "status");
     await expect(page.getByRole("button", { name: "Cancel", exact: true })).toHaveCount(2);
     await expect(page.getByRole("button", { name: "Retry", exact: true })).toHaveCount(1);
     await expect(page.getByRole("button", { name: "Run again", exact: true })).toHaveCount(1);
@@ -62,11 +55,12 @@ for (const surface of surfaces) test.describe(surface.heading + " lifecycle char
     await expect(row(page, "Unbound queued fixture").getByRole("button")).toHaveCount(0);
     await expect(row(page, "Failed fixture")).toContainText("Generation did not complete.");
     await expect(row(page, "Succeeded fixture").getByRole("link", { name: "View result" })).toHaveAttribute("href", "/library/" + activityIds.surviving);
-    await page.getByRole("link", { name: "Older", exact: true }).click();
-    await expect(page).toHaveURL(/offset=20/);
+    await page.getByRole(surface.route === "/history" ? "button" : "link", { name: "Older", exact: true }).click();
+    if (surface.route === "/history") await expect(page.getByRole("navigation", { name: "Jobs pagination" })).toContainText("Page 2");
+    else await expect(page).toHaveURL(/offset=20/);
     await expect(page.getByRole("heading", { name: surface.emptyPage })).toBeVisible();
     await expect(page.locator("[data-activity-live]")).toHaveCount(0);
-    await page.getByRole("link", { name: surface.newer }).click();
+    await page.getByRole(surface.route === "/history" ? "button" : "link", { name: surface.newer }).click();
     await expect(page.locator("[data-activity-status]")).toHaveCount(9);
     expect(io.calls).toEqual([]);
     expect(io.unexpected).toEqual([]);

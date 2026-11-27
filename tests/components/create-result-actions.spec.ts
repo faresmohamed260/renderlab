@@ -31,12 +31,12 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     const create = page.getByRole("region", { name: "Create with FIBO" });
     const result = create.locator("[data-create-history-image]");
     await expect(result).toHaveCount(1);
-    await create.getByRole("button", { name: "Text to Image", exact: true }).click();
+    await create.getByRole("button", { name: "Text to image", exact: true }).click();
     await create.getByRole("textbox", { name: "Prompt", exact: true }).fill("Different next draft");
     await result.click();
     await expect(result).toHaveAttribute("aria-current", "true");
     const canvas = create.getByRole("region", { name: "Canvas" });
-    const metadata = canvas.getByRole("region", { name: "Prompt used" });
+    const metadata = canvas.getByRole("region", { name: "Prompt used for this result" });
     await expect(metadata).toContainText(fixtureAsset.prompt);
     await expect.soft(metadata).toContainText("1:1");
     await expect.soft(metadata).not.toContainText(/Seed 0|4 steps/);
@@ -44,7 +44,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     await expect(metadata).not.toContainText("Different next draft");
     const actions = canvas.getByRole("group", { name: "Result actions", exact: true });
     await expect.soft(actions).toBeVisible();
-    await expect.soft(actions.getByRole("button", { name: "Use as source" })).toBeVisible();
+    await expect.soft(actions.getByRole("button", { name: "Edit this image" })).toBeVisible();
     await expect.soft(actions.getByRole("link", { name: "Download image" })).toBeVisible();
     const star = actions.getByRole("button", { name: "Favorite", exact: true });
     await expect(star).toHaveAttribute("aria-pressed", "false");

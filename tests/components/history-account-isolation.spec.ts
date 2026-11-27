@@ -24,6 +24,7 @@ test("History account switch resets session and paging; late old-owner jobs cann
   await page.route(/\/history\/data\?/, async route => {
     const params = new URL(route.request().url()).searchParams;
     const owner = params.get("owner");
+    if (params.get("kind") === "prompts") return route.fulfill({ json: { items: [], nextCursor: null } });
     const offset = Number(params.get("offset"));
     requests.push(owner + ":" + offset);
     if (owner === ownerA) await gate;
@@ -35,15 +36,13 @@ test("History account switch resets session and paging; late old-owner jobs cann
     await page.getByRole("button", { name: "Record fixture result" }).click();
     await expect(page.getByTestId("race-session-count")).toHaveText("1");
     await page.getByRole("button", { name: "Switch fixture account" }).click();
-    await expect(page.getByRole("button", { name: "This session" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByText("No results in this tab yet.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Private session fixture" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Jobs", exact: true }).click();
+    await expect(page.getByText("Finished images will appear here.")).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Private session fixture/ })).toHaveCount(0);
     await expect.poll(() => requests).toContain(ownerB + ":0");
-    await expect(page.getByText("New owner current job")).toBeVisible();
+    await expect(page.getByRole("article", { name: "New owner current job" })).toBeVisible();
     release();
     await expect(page.getByTestId("race-completed-reads")).toContainText(ownerA + ":jobs:20");
-    await expect(page.getByText("New owner current job")).toBeVisible();
+    await expect(page.getByRole("article", { name: "New owner current job" })).toBeVisible();
     await expect(page.getByText("Old owner private job")).toHaveCount(0);
   } finally { release(); }
 });
@@ -74,14 +73,11 @@ test("History logout resets selection, search, prompt cursors and session; a lat
   try {
     await page.goto("/history?state=race");
     await page.getByRole("button", { name: "Record fixture result" }).click();
-    await page.getByRole("button", { name: "This session" }).click();
-    await page.getByRole("button", { name: "Private session fixture" }).click();
+    await page.getByRole("button", { name: /^Private session fixture/ }).click();
     await expect(page.getByTestId("fixture-selection")).toHaveText("Private session fixture");
     await expect(page.getByTestId("race-selected-result")).toHaveText("Private session fixture");
-    await page.getByRole("button", { name: "Prompt history" }).click();
     await expect(page.getByText("Initial private prompt")).toBeVisible();
-    await page.getByRole("textbox", { name: "Search prompt history" }).fill("private search");
-    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await page.getByRole("textbox", { name: "Search prompts" }).fill("private search");
     await expect(page.getByText("Private search result")).toBeVisible();
     await page.getByRole("button", { name: "Older", exact: true }).click();
     await expect.poll(() => requests).toContain(ownerA + ":private search:" + cursor.id);
@@ -92,13 +88,12 @@ test("History logout resets selection, search, prompt cursors and session; a lat
     await expect(page.getByTestId("race-selected-result")).toBeEmpty();
     await expect(page.getByTestId("race-session-count")).toHaveText("0");
     await page.getByRole("button", { name: "Switch fixture account" }).click();
-    await expect(page.getByText("No results in this tab yet.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Private session fixture" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Prompt history" }).click();
-    await expect(page.getByRole("textbox", { name: "Search prompt history" })).toHaveValue("");
+    await expect(page.getByText("Finished images will appear here.")).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Private session fixture/ })).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: "Search prompts" })).toHaveValue("");
     await expect.poll(() => requests).toContain(ownerB + "::");
     await expect(page.getByText("Current owner prompt")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Newer", exact: true })).toBeDisabled();
+    await expect(page.getByRole("navigation", { name: "Prompt pages" })).toHaveCount(0);
     release();
     await expect(page.getByTestId("race-completed-reads")).toContainText(ownerA + ":prompts:private search:" + cursor.id);
     await expect(page.getByText("Current owner prompt")).toBeVisible();
@@ -117,6 +112,7 @@ for (const transition of ["account switch", "logout"] as const) {
     let newOwnerCancelled = false;
     await page.route(/\/history\/data\?/, async route => {
       const params = new URL(route.request().url()).searchParams;
+      if (params.get("kind") === "prompts") return route.fulfill({ json: { items: [], nextCursor: null } });
       const isOldOwner = params.get("owner") === ownerA;
       const source = activityFixtures[isOldOwner ? 0 : 4];
       const summary = isOldOwner ? "Old owner running job" : "New owner preparing job";
@@ -139,12 +135,10 @@ for (const transition of ["account switch", "logout"] as const) {
 
     try {
       await page.goto("/history?state=race");
-      await page.getByRole("button", { name: "This session" }).click();
       await page.getByRole("button", { name: "Record fixture result" }).click();
-      await page.getByRole("button", { name: "Private session fixture" }).click();
+      await page.getByRole("button", { name: /^Private session fixture/ }).click();
       await expect(page.getByTestId("race-selected-result")).toHaveText("Private session fixture");
-      await page.getByRole("button", { name: "Jobs", exact: true }).click();
-      await expect(page.getByText("Old owner running job")).toBeVisible();
+      await expect(page.getByRole("article", { name: "Old owner running job" })).toBeVisible();
       await page.getByRole("button", { name: "Cancel", exact: true }).click();
       await cancelDialog(page).getByRole("button", { name: "Cancel generation" }).click();
       await expect(cancelDialog(page).getByRole("button", { name: "Cancelling…" })).toBeDisabled();
@@ -160,9 +154,8 @@ for (const transition of ["account switch", "logout"] as const) {
         await expect(page.getByRole("heading", { name: "Sign in to view History" })).toBeVisible();
         await page.getByRole("button", { name: "Switch fixture account" }).click();
       }
-      await expect(page.getByText("No results in this tab yet.")).toBeVisible();
-      await page.getByRole("button", { name: "Jobs", exact: true }).click();
-      await expect(page.getByText("New owner preparing job")).toBeVisible();
+      await expect(page.getByText("Finished images will appear here.")).toBeVisible();
+      await expect(page.getByRole("article", { name: "New owner preparing job" })).toBeVisible();
       const cancel = page.getByRole("button", { name: "Cancel", exact: true });
       await expect(cancel).toBeEnabled();
       await cancel.click();
@@ -185,7 +178,7 @@ for (const transition of ["account switch", "logout"] as const) {
   });
 }
 
-for (const { tab, kind, privateRow } of [
+for (const { kind, privateRow } of [
   { tab: "Jobs", kind: "jobs", privateRow: "Previously loaded private job" },
   { tab: "Prompt history", kind: "prompts", privateRow: "Previously loaded private prompt" },
 ]) {
@@ -202,20 +195,20 @@ for (const { tab, kind, privateRow } of [
           : prompts(privateRow) });
       }
     });
-    await page.goto("/history?state=action-race");
-    if (kind === "prompts") await page.getByRole("button", { name: tab, exact: true }).click();
+    await page.goto("/history?state=action-race&phone=1");
+    await page.getByRole("button", { name: "Open History" }).click();
     await expect(page.getByText(privateRow)).toBeVisible();
-    await page.getByRole("button", { name: "This session" }).click();
 
+    await page.getByRole("button", { name: "Done" }).click();
     denied = true;
-    await page.getByRole("button", { name: tab, exact: true }).click();
-    const history = page.getByRole("region", { name: "Create history" });
+    await page.getByRole("button", { name: "Open History" }).click();
+    const history = page.getByRole("dialog", { name: "History" });
     const alert = history.getByRole("alert");
     await expect(alert).toHaveCount(1);
     await expect(alert).toContainText("History could not be loaded. Try again.");
     await expect(page.getByText(privateRow)).toHaveCount(0);
-    await expect(page.getByRole("region", { name: "Create history" })).not.toContainText("fixture-origin-metadata-denial");
-    if (kind === "prompts") await expect(page.getByRole("button", { name: "Use prompt" })).toHaveCount(0);
+    await expect(history).not.toContainText("fixture-origin-metadata-denial");
+    if (kind === "prompts") await expect(history.getByRole("button", { name: privateRow })).toHaveCount(0);
 
     denied = false;
     await alert.getByRole("button", { name: "Try again" }).click();

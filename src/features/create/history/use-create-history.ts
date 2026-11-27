@@ -118,7 +118,7 @@ export function useCreateHistory(options: HistoryOptions) {
     offset, olderJobs: () => { if (jobsValue?.page.hasMore) setOffset(offset + jobsValue.page.limit); },
     newerJobs: () => setOffset(Math.max(0, offset - (jobsValue?.page.limit ?? pageSize))),
     prompts: promptsValue, promptsPending: prompts?.key !== promptsKey || prompts.pending, promptsError: prompts?.key === promptsKey ? prompts.error : undefined,
-    search, setSearch: (value: string) => { setSearch(value.trim()); setCursor(undefined); setPriorCursors([]); },
+    search, setSearch: (value: string) => { setSearch(value); setCursor(undefined); setPriorCursors([]); },
     olderPrompts: () => { if (promptsValue?.nextCursor) { setPriorCursors([...priorCursors, cursor]); setCursor(promptsValue.nextCursor); } },
     newerPrompts: () => { if (priorCursors.length) { setCursor(priorCursors.at(-1)); setPriorCursors(priorCursors.slice(0, -1)); } },
     hasNewerPrompts: priorCursors.length > 0,

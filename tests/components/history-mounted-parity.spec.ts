@@ -45,16 +45,15 @@ test("mounted phone History hides its background, restores focus and resets on a
   await trigger.click();
   const sheet = page.getByRole("dialog", { name: "History" });
   await expect(sheet).toBeVisible();
-  await sheet.getByRole("button", { name: "This session" }).click();
-  await sheet.getByRole("button", { name: "Fixture result" }).click();
+  await sheet.getByRole("button", { name: /^Fixture result/ }).click();
   await expect(page.getByTestId("fixture-selection")).toHaveText("Fixture result");
   await page.keyboard.press("Escape");
   await expect(sheet).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await page.getByRole("button", { name: "Switch fixture account" }).click();
   await trigger.click();
-  await expect(sheet.getByText("No results in this tab yet.")).toBeVisible();
-  await expect(sheet.getByRole("button", { name: "Fixture result" })).toHaveCount(0);
+  await expect(sheet.getByText("Finished images will appear here.")).toBeVisible();
+  await expect(sheet.getByRole("button", { name: /^Fixture result/ })).toHaveCount(0);
 });
 
 test("History exposes job operation, page recovery and the private Settings entry", async ({ page }) => {
@@ -65,10 +64,10 @@ test("History exposes job operation, page recovery and the private Settings entr
   await succeeded.getByRole("button", { name: "Reuse settings", exact: true }).click();
   await expect(page.getByTestId("fixture-draft")).toHaveText("Editable succeeded prompt");
 
-  await page.getByRole("link", { name: "Older", exact: true }).click();
+  await page.getByRole("button", { name: "Older", exact: true }).click();
   await expect(page.getByRole("heading", { name: "No visible jobs on this page" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Jobs pagination" })).toContainText("Page 2");
-  await page.getByRole("link", { name: "Newer jobs" }).click();
+  await page.getByRole("button", { name: "Newer jobs" }).click();
   await expect(succeeded).toBeVisible();
 
   await page.goto("/history?state=private");
