@@ -176,4 +176,3 @@
   .sheet .seedRow > label:first-child { flex: 0 0 100%; width: auto; }
 }
 
-.generate kbd::after { content: attr(data-keys); }
