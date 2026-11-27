@@ -129,7 +129,7 @@ for (const viewport of viewports) {
         if (sheetGeometry.violations.length) actual[state + "/sheet"] = sheetGeometry.violations;
         console.log("OVERFLOW_ACCEPTANCE " + viewport.width + " " + state + "/sheet " + JSON.stringify(sheetGeometry));
         const selectors = ['[data-slot="sheet-content"]', '[class*="__settings"]', '[class*="__stepsRow"]', "input#create-preview-steps"];
-        expect(await advancedSheet.evaluate(el => el.scrollHeight > el.clientHeight ? el.offsetWidth-el.clientWidth : 0), "Actual narrow Advanced scrollbar").toBeGreaterThan(0);
+        expect(await advancedSheet.evaluate(el => el.scrollHeight > el.clientHeight && el instanceof HTMLElement ? el.offsetWidth-el.clientWidth : 0), "Actual narrow Advanced scrollbar").toBeGreaterThan(0);
         for (const selector of selectors) {
           const locator = page.locator(selector);
           await expect(locator, state + " " + selector).toHaveCount(1);
