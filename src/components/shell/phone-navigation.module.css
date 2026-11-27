@@ -67,3 +67,12 @@
 .logo[data-slot="button"] { flex:none; min-inline-size:130px; inline-size:130px; padding:0 8px; gap:10px; }
 .createLogo[data-slot="button"] { min-inline-size:148px; inline-size:148px; }
 @media(max-width:240px) { .logo[data-slot="button"] { min-inline-size:0; width:auto; max-width:100%; } }
+
+/* Keep the approved chrome on 195px reflow without squeezing a hit target. */
+@media(max-width:240px) {
+  .mobileNavigation { flex:1 1 auto; }
+  .logo[data-slot="button"], .createLogo[data-slot="button"] { inline-size:100%; min-inline-size:0; padding-inline:4px; gap:4px; font-size:13px; }
+  .logo svg { width:20px; height:20px; }
+  .settingsIcon { display:none; }
+  .profile { gap:6px; padding-inline:8px; }
+}

@@ -10,6 +10,8 @@ export type CreateCommand = Readonly<{
   shortcut?: string;
   group: string;
   enabled: boolean;
+  /** Actual feature-owned disclosure state, if this command opens one. */
+  expanded?: boolean;
   run: () => void | Promise<void>;
 }>;
 

@@ -9,29 +9,16 @@ test("phone shell navigation text has actual composited contrast", async ({ page
   await page.goto("/create");
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   const header = page.locator(".preview-navigation-header");
-  // Current main uses the legacy disclosure; the authorized phone Sheet
-  // replaces it in #724. Exercise the real variant present, never both.
-  const legacy = header.getByRole("button", { name: "RenderLab sections: Create", exact: true });
-  const sidebarTrigger = header.getByRole("button", { name: "RenderLab — Open navigation", exact: true });
-  const isLegacy = await legacy.isVisible();
-  const trigger = isLegacy ? legacy : sidebarTrigger;
+  const trigger = header.getByRole("button", { name: "RenderLab — Open navigation menu", exact: true });
   await expect(trigger).toBeVisible();
   await trigger.press("Enter");
-  const panel = isLegacy ? page.getByRole("navigation", { name: "RenderLab navigation" }) :
-    page.getByRole("dialog", { name: "RenderLab navigation" });
+  const panel = page.getByRole("dialog", { name: "RenderLab" });
   await expect(panel).toBeVisible();
   const current = panel.getByRole("link", { name: "Create", exact: true });
   await expect(current).toHaveAttribute("aria-current", "page");
   const rows = [];
-  const samples = isLegacy ? [
-    ["Workspace group", panel.getByText("Workspace", { exact: true })],
-    ["Media & history group", panel.getByText("Media & history", { exact: true })],
-  ] as const : [];
-  for (const [label, locator] of samples) {
-    await expect(locator).toBeVisible();
-    rows.push(await collectTextContrast(page, locator, "open", label));
-  }
-  for (const label of ["Create", "Library", "Activity"]) {
+  rows.push(await collectTextContrast(page, panel.getByRole("heading", { name: "RenderLab" }).getByText("RenderLab", { exact: true }), "open", "Navigation heading"));
+  for (const label of ["Create", "Library"]) {
     const link = panel.getByRole("link", { name: label, exact: true });
     await expect(link).toBeVisible();
     rows.push(await collectTextContrast(page, link, "open", label));

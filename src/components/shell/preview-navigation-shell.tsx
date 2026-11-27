@@ -103,7 +103,7 @@ const isSettingsRoute = (pathname: string) => pathname === settingsPath || pathn
 // Existing isolated review routes render the same production surfaces.
 function shellRoute(pathname: string) {
   if (pathname === "/round3-settings") return "/settings";
-  if (pathname === "/round3-library") return "/library";
+  if (pathname === "/round3-library" || pathname === "/loading-review/library") return "/library";
   if (pathname === "/loading-review/create" || pathname === "/create-result-review" || pathname.startsWith("/create-history-")) return "/create";
   return pathname;
 }
@@ -294,7 +294,7 @@ function PhoneNavigation({ pathname, accountId, accountEmail, profile, showAdmin
   return <div className={styles.mobileNavigation}>
     <Sheet open={open} onOpenChange={changeOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="lg" className={styles.logo + (pathname.startsWith("/create") ? " " + styles.createLogo : "")} aria-label="Open navigation menu">
+        <Button variant="ghost" size="lg" className={styles.logo + (pathname.startsWith("/create") ? " " + styles.createLogo : "")} aria-label="RenderLab — Open navigation menu">
           <RenderLabMark className="size-7" /><span>RenderLab</span>
         </Button>
       </SheetTrigger>
@@ -366,6 +366,7 @@ function RegistryHeaderAction({ id, phone = false, pathname }: { id: "open-queue
   if (!command && !globalQueue) return null;
   return <Button type="button" variant="ghost" className={phone ? "rebuild-phone-action" : "rebuild-queue-pill"}
     aria-label={id === "open-history" ? "Session and prompt history" : id === "library-search" ? "Search the Library" : "Queue"}
+    aria-expanded={id === "library-search" ? command?.expanded : undefined}
     onClick={() => { if (globalQueue) router.push("/create?queue=1"); else if (command) void command.run(); }}>
     {id === "open-history" ? <Clock size={20} aria-hidden="true" /> : id === "library-search" ? <Search size={20} aria-hidden="true" /> : "Queue"}
   </Button>;
@@ -414,7 +415,7 @@ export function PreviewNavigationShell({ children, accountId, profile = null, ac
           <div className="rebuild-loading-desktop-actions" aria-hidden="true"><span /><span /><span /></div>
         </div>
         {surface === "create" && <><RegistryHeaderAction id="open-history" pathname={pathname} phone /><span className="rebuild-loading-history" aria-hidden="true" /></>}
-        {surface === "library" && <RegistryHeaderAction id="library-search" pathname={pathname} phone />}
+        {surface === "library" && <><RegistryHeaderAction id="library-search" pathname={pathname} phone /><span className="rebuild-loading-library-search" aria-hidden="true" data-library-loading-slot="search-toggle" /></>}
       </header>
       <div className="preview-navigation-content" inert={phoneModalOpen} aria-hidden={phoneModalOpen || undefined}>{children}</div>
     </div>
