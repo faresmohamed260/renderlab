@@ -59,6 +59,7 @@ export function LibraryInspector({
         {created ? <><dt>Created</dt><dd><time dateTime={asset.createdAt}>{created}</time></dd></> : null}
         {shape ? <><dt>Shape</dt><dd>{shape}</dd></> : null}
       </dl>}
+      {!phone ? <Link className={styles.quietViewerLink} href={`/library/${encodeURIComponent(asset.id)}`}>Open Viewer</Link> : null}
     </>;
   }
   function actions(manage: ReactNode, compact = false, rename?: ReactNode) {
@@ -83,7 +84,7 @@ export function LibraryInspector({
         {phone ? rename : null}
         </div>
         {compact ? (
-          <div className="grid min-w-0 grid-cols-3 gap-2">
+          <div className={styles.inspectorQuickRow}>
             <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} compact />
             {manage}
           </div>
@@ -91,7 +92,7 @@ export function LibraryInspector({
           <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} />
           {manage}
         </> : null}
-        <Link className={styles.quietViewerLink} href={`/library/${encodeURIComponent(asset.id)}`}>Open Viewer</Link>
+        {phone ? <Link className={styles.quietViewerLink} href={`/library/${encodeURIComponent(asset.id)}`}>Open Viewer</Link> : null}
       </div>
     );
   }

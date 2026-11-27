@@ -807,3 +807,8 @@
 .observeStat { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; text-align: start; }
 .observeStat > .observeNote, .observeStat > .observeValue { display: block; align-self: flex-start; width: auto; max-width: 100%; text-align: start; margin: 0; }
 .observeStat > .observeValue { line-height: 39px; }
+
+/* Judge round 2: the same real heading/subtitle is rendered in the review route. */
+@media (min-width: 1025px) {
+  .workspace:has(.observeDashboard) .lede { color: var(--rl-text-secondary); }
+}

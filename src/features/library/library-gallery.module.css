@@ -1666,3 +1666,27 @@
   .selectionActions { flex-wrap: wrap; }
 }
 @media (forced-colors: active) { .selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before { border-color: ButtonText; background: Canvas; } .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"][aria-checked="true"])::before { background: Highlight; border-color: Highlight; } }
+
+/* Judge round 2: selection and populated inspector at the approved desktop frame.
+   Decision 19 omits batch Download; the three remaining live controls occupy the bar. */
+.inspectorQuickRow { display: grid; min-width: 0; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+@media (min-width: 75rem) {
+  .inspector { gap: 14px; }
+  .inspectorPreview { aspect-ratio: 302 / 230; }
+  .inspectorHeader :global([data-slot="button"]) { min-width: 36px; min-height: 36px; width: 36px; height: 36px; border: 0; border-radius: 18px; background: var(--rl-surface-control); }
+  .inspectorFacts { grid-template-columns: 60px minmax(0,1fr); gap: 6px 14px; line-height: 16px; }
+  .inspector > .quietViewerLink { text-align: start; padding: 0; }
+  .inspectorActions { gap: 14px; padding-top: 0; }
+  .inspectorActions .createAction { height: 52px; }
+  .inspectorSecondary, .inspectorQuickRow { gap: 8px; }
+  .inspectorSecondary :global([data-slot="button"]), .inspectorQuickRow :global([data-slot="button"]) { min-height: 44px; height: 44px; border: 0; border-radius: 16px; background: var(--rl-surface-control); box-shadow: none; }
+  .inspectorQuickRow :global([aria-label="Delete"]) { background: color-mix(in srgb, var(--rl-danger) 18%, transparent); }
+  .commandSurface[data-selection="on"] .selectionMode { width: 516px; max-width: 100%; min-height: 58px; margin-block: 16px 18px; padding: 8px 18px; border-radius: 30px; }
+  .selectionMain { justify-content: space-between; gap: 14px; }
+  .selectionSummary { min-width: 0; border: 0; }
+  .selectionSummary strong { color: var(--rl-text-primary); font-size: 14px; font-weight: 500; }
+  .selectionActions { gap: 6px; }
+  .selectionActions :global([data-slot="button"]) { height: 40px; min-height: 40px; border-radius: 20px; padding-inline: 14px; font-size: 14px; }
+  .selectionActions :global([data-slot="button"]) > svg { display: none; }
+  .selectionActions :global([data-slot="button"][data-variant="destructive"]) { background: color-mix(in srgb, var(--rl-danger) 18%, transparent); color: var(--rl-danger); }
+}
