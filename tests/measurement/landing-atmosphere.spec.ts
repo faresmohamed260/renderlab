@@ -84,6 +84,12 @@ test("real Landing background crop, gradient and locked arc geometry stay identi
             })), paths: [...document.querySelectorAll("clipPath path")].map(el => el.getAttribute("d")) };
         }, name);
         const before = await snapshot();
+        if (name === "hero") {
+          // The rebuilt hero (UI-093) uses the approved violet radial atmosphere, not a photographic plate.
+          expect(before.image, "hero atmosphere is gradient-only").not.toContain("url(");
+          expect(before.arcs.length).toBeGreaterThan(0);
+          continue;
+        }
         expect(before.image).toContain("/_next/image?");
         await root.evaluate(el => {
           const style = (el as HTMLElement).style;
