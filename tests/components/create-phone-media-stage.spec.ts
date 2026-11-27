@@ -13,7 +13,11 @@ for (const width of [195, 320, 390]) {
         await page.goto(route);
         const create = page.getByRole("region", { name: "Create with FIBO" });
         await expect.poll(() => io.includes("GET capabilities") && io.includes("GET history")).toBe(true);
-        if (route.includes("recipe")) await expect(create.getByRole("button", { name: "Remove source image" })).toBeVisible();
+        if (route.includes("recipe")) {
+          await create.getByRole("button", { name: "References", exact: true }).click();
+          await expect(page.getByRole("button", { name: "Remove source image" })).toBeVisible();
+          await page.keyboard.press("Escape");
+        }
         await page.evaluate(() => document.fonts.ready);
         const stage = create.locator(".create-preview-stage-surface");
         await expect(stage).toBeVisible();

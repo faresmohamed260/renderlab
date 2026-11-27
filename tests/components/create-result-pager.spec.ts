@@ -41,17 +41,25 @@ for (const width of [195, 320, 390, 1440]) {
       const workspace = page.getByRole("region", { name: "Create with FIBO" });
       const rail = workspace.locator("[data-create-history-image]");
       await expect.poll(() => capabilities && history).toBe(true);
-      await expect(rail).toHaveCount(2);
+      const sheet = page.getByRole("dialog", { name: "History" });
+      const historyButton = page.getByRole("button", { name: "Session and prompt history" });
+      const visibleRail = width < 701 ? sheet.locator("[data-create-history-image]") : rail;
+      if (width < 701) await historyButton.click();
+      await expect(visibleRail).toHaveCount(2);
+      if (width < 701) await sheet.getByRole("button", { name: "Done" }).click();
       await page.evaluate(() => document.fonts.ready);
       const pager = workspace.locator("[data-create-result-pager]");
       await expect(pager).toHaveCount(0);
       await workspace.focus();
       for (const [key, index] of [["]", 0], ["]", 1], ["[", 0]] as const) {
         await page.keyboard.press(key);
-        await expect(rail.nth(index)).toHaveAttribute("aria-current", "true");
+        await expect(workspace.locator("[data-create-shortcut-announcement]")).toHaveText("Result " + (index + 1) + " of 2");
+        if (width < 701) await historyButton.click();
+        await expect(visibleRail.nth(index)).toHaveAttribute("aria-current", "true");
+        if (width < 701) { await sheet.getByRole("button", { name: "Done" }).click(); await expect(historyButton).toBeFocused(); await workspace.focus(); }
         await expect(workspace.locator("[data-create-shortcut-announcement]")).toHaveText("Result " + (index + 1) + " of 2");
         await expect(pager).toBeVisible();
-        await expect(pager).toContainText("Result " + (index + 1) + " of 2");
+        await expect(pager).toContainText((index + 1) + " of 2");
         const dots = pager.locator("[data-create-result-dot]");
         if (width < 701) {
           await expect(dots).toHaveCount(2);

@@ -509,7 +509,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
       {canReuseResult && <Button type="button" variant="ghost" onClick={reuse}>Reuse settings</Button>}
       <Button type="button" variant="ghost" aria-keyshortcuts="U" onClick={edit}>Edit this image</Button>
       {favorite}{download}
-      {resultPosition && <span className={stageStyles.desktopCount}>{resultPosition.index+1} of {resultPosition.count}</span>}
+      {resultPosition && <span aria-hidden="true" data-create-result-pager="" className={stageStyles.desktopCount}>{resultPosition.index+1} of {resultPosition.count}</span>}
     </div>;
   }
   function resultMetadata() {

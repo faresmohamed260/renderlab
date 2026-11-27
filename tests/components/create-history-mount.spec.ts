@@ -2,6 +2,14 @@ import { test, expect } from "./isolated-io";
 import { activityIds } from "../component-app/activity-fixtures";
 import type { Page } from "@playwright/test";
 
+test.use({ extraHTTPHeaders: { "x-renderlab-fixture-shell": "owner" } });
+const history = (page: Page) => page.getByRole("button", { name: "Session and prompt history" });
+async function openJobs(page: Page, width: number) {
+  if (width < 1025) { await history(page).click(); return page.getByRole("dialog", { name: "History" }); }
+  await page.getByRole("button", { name: "Queue", exact: true }).click();
+  return page.getByRole("dialog", { name: "Queue" });
+}
+
 async function expectDraft(page: Page, expected: string) {
   const prompt = page.getByRole("textbox", { name: "Prompt", exact: true });
   await expect(prompt).toBeVisible();
@@ -14,26 +22,23 @@ for (const width of [195, 320, 390, 1440]) for (const reducedMotion of ["reduce"
     await page.setViewportSize({ width, height: width === 195 ? 422 : 900 });
     await page.emulateMedia({ reducedMotion });
     await page.goto("/create-history-mount");
-    if (width !== 1440) await page.getByRole("button", { name: "Open History" }).click();
-    const panel = page.getByRole("region", { name: "Create history" });
+    const panel = await openJobs(page, width);
     await expect(panel).toBeVisible();
-    await panel.getByRole("button", { name: "Jobs", exact: true }).click();
-    await expect(panel.getByText("Fixture failed job")).toBeVisible();
+    await expect(panel.getByRole("article", { name: "Fixture failed job" })).toBeVisible();
     await panel.getByRole("button", { name: "Reuse", exact: true }).click();
     if (width !== 1440) await expect(page.getByRole("dialog", { name: "History" })).toHaveCount(0);
     await expectDraft(page, "Fixture editable draft");
     await expect(page.getByRole("button", { name: "Generate" })).toBeVisible();
     expect(io).not.toContain("GET history");
-    if (width !== 1440) await page.getByRole("button", { name: "Open History" }).click();
-    await panel.getByRole("button", { name: "Prompt history" }).click();
-    await expect(panel.getByText("Fixture saved prompt")).toBeVisible();
-    await panel.getByRole("button", { name: "Use prompt" }).click();
+    if (width !== 1440) await history(page).click();
+    const prompts = width === 1440 ? page.getByRole("region", { name: "Create history" }) : panel;
+    await prompts.getByRole("button", { name: "Fixture saved prompt" }).click();
     await expectDraft(page, "Fixture saved prompt");
     await page.goto("/create-history-mount?account=guest");
-    if (width !== 1440) await page.getByRole("button", { name: "Open History" }).click();
+    await openJobs(page, width);
     await expect(panel.getByText("Sign in to view History")).toBeVisible();
     await expect(panel.getByText("Fixture failed job")).toHaveCount(0);
-    await expect(panel.getByText("Fixture saved prompt")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Fixture saved prompt", exact: true })).toHaveCount(0);
   });
 }
 
@@ -54,9 +59,7 @@ for (const width of [390, 1440]) {
       await route.fulfill({ status: 202, json: { ok: true, job: { id: action === "cancel" ? id : action === "retry" ? activityIds.retry : activityIds["run-again"], status: action === "cancel" ? "cancelling" : "queued" } } });
     });
     await page.goto("/create-history-mount?matrix=1");
-    if (width === 390) await page.getByRole("button", { name: "Open History" }).click();
-    const panel = page.getByRole("region", { name: "Create history" });
-    await panel.getByRole("button", { name: "Jobs", exact: true }).click();
+    const panel = await openJobs(page, width);
     const rows = panel.locator("[data-activity-status]");
     await expect(rows).toHaveCount(9);
     expect(await rows.evaluateAll(nodes => nodes.map(node => node.getAttribute("data-activity-status")))).toEqual(["running", "failed", "succeeded", "queued", "preparing", "cancelling", "persisting", "cancelled", "failed"]);
@@ -96,12 +99,11 @@ for (const width of [390, 1440]) {
     expect(calls).toEqual(["cancel", "retry", "run-again"]);
     expect(io).not.toContain("GET history");
     await page.goto("/create-history-mount?matrix=1&account=other");
-    if (width === 390) await page.getByRole("button", { name: "Open History" }).click();
-    await panel.getByRole("button", { name: "Jobs", exact: true }).click();
+    await openJobs(page, width);
     await expect(panel.getByText("No jobs yet")).toBeVisible();
     await expect(rows).toHaveCount(0);
     await page.goto("/create-history-mount?matrix=1&account=guest");
-    if (width === 390) await page.getByRole("button", { name: "Open History" }).click();
+    await openJobs(page, width);
     await expect(panel.getByText("Sign in to view History")).toBeVisible();
     await expect(rows).toHaveCount(0);
   });

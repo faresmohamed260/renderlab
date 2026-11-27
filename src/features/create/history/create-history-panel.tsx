@@ -56,8 +56,8 @@ function PrivateHistory() {
   </div>;
 }
 export function Jobs({ state, jobsHref }: { state: CreateHistoryState; jobsHref?: (offset: number) => string }) {
+  if (!state.accountAvailable || state.jobsPrivate) return <PrivateHistory />;
   if (!state.jobs && state.jobsPending) return <Loading />;
-  if (state.jobsPrivate) return <PrivateHistory />;
   const limit = state.jobs?.page.limit ?? 20;
   const newer = Math.max(0, state.offset - limit);
   const older = state.offset + limit;
@@ -70,9 +70,10 @@ export function Jobs({ state, jobsHref }: { state: CreateHistoryState; jobsHref?
         ? "Continue to older jobs. Deleted results are omitted automatically."
         : "Your generation history will appear here after you start a render."}</p>
     </div>}
-    {state.jobs?.items.map(job => <article key={job.id} data-activity-status={job.status} className={styles.job}>
+    {state.jobs?.items.map(job => <article key={job.id} aria-label={job.summary} data-activity-status={job.status} className={styles.job}>
       <span className={styles.jobIcon} data-failed={job.status === "failed"} aria-hidden="true">{job.status === "failed" ? <AlertCircle size={18} /> : <span />}</span>
       <div className={styles.jobText}>
+        <span className="sr-only">{job.summary} · {operationLabel[job.operation]}</span>
         <p title={job.summary}>{job.status === "failed" ? "Didn't finish" : statusLabel[job.status]}</p>
         <p className={styles.quiet} title={operationLabel[job.operation]}>{job.error ? job.error.message + " · " : job.status === "running" ? "Started " : ""}<time dateTime={job.startedAt ?? job.createdAt}>{relativeTime(job.startedAt ?? job.createdAt)}</time></p>
       </div>
@@ -118,14 +119,14 @@ function Results({ results, disabled }: Pick<RailProps, "results" | "disabled">)
 }
 function Prompts({ state, recent, disabled, onReusePrompt, onRemovePrompt, onClearPrompts }: RailProps) {
   const id = useId();
-  const [draft, setDraft] = useState(state.search);
+  const draft = state.search;
   const local = recent.filter(value => value.toLowerCase().includes(draft.trim().toLowerCase()));
   const saved = state.prompts?.items.filter(item => !recent.includes(item.prompt)) ?? [];
   return <div className={styles.promptSection}>
     <div className={styles.heading}><h2>Prompt history</h2><span className={styles.reuseHint}>Click to reuse</span>{recent.length > 0 && <Button type="button" variant="ghost" size="icon-sm" className={styles.quietIcon} disabled={disabled} aria-label="Clear recent prompts" onClick={onClearPrompts}><Trash2 size={14} /></Button>}</div>
     <form className={styles.search} onSubmit={event => { event.preventDefault(); state.setSearch(draft); }}>
       <Search size={16} aria-hidden="true" /><label htmlFor={id} className="sr-only">Search prompts</label>
-      <Input id={id} value={draft} onChange={event => { const value = event.target.value; setDraft(value); state.setSearch(value); }} maxLength={128} placeholder="Search prompts" />
+      <Input id={id} value={draft} onChange={event => { const value = event.target.value; state.setSearch(value); }} maxLength={128} placeholder="Search prompts" />
     </form>
     <div className={styles.prompts}>
       {local.map(value => <div className={styles.promptRow} key={value}><Button type="button" variant="ghost" disabled={disabled} className={styles.prompt} onClick={() => onReusePrompt(value)}><span>{value}</span></Button><Button type="button" variant="ghost" size="icon-sm" disabled={disabled} className={styles.quietIcon} aria-label={"Remove recent prompt: " + value} onClick={() => onRemovePrompt(value)}><X size={14} /></Button></div>)}
@@ -147,7 +148,7 @@ export function CreateHistoryPanel(props: RailProps) {
 export function CreateHistorySheet({ open, onOpenChange, trigger, ...props }: RailProps & { open: boolean; onOpenChange: (open: boolean) => void; trigger?: ReactNode }) {
   return <Sheet open={open} onOpenChange={onOpenChange}>
     {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-    <SheetContent side="bottom" showCloseButton={false} className={styles.sheet} data-create-shortcut-overlay="" onCloseAutoFocus={event => { event.preventDefault(); document.querySelector<HTMLElement>(".rebuild-phone-action")?.focus({ preventScroll: true }); }}>
+    <SheetContent side="bottom" showCloseButton={false} className={styles.sheet} data-create-shortcut-overlay="" onCloseAutoFocus={event => { if (trigger) return; event.preventDefault(); document.querySelector<HTMLElement>('button[aria-label="Session and prompt history"]')?.focus({ preventScroll: true }); }}>
       <div className={styles.handle} aria-hidden="true" />
       <div className={styles.sheetTitle}><SheetTitle>History</SheetTitle><SheetClose asChild><Button type="button" variant="ghost">Done</Button></SheetClose></div>
       <SheetDescription className="sr-only">Jobs, results from this tab, and saved prompts.</SheetDescription>

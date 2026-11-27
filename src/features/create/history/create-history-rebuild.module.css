@@ -66,3 +66,7 @@
 :global(.create-preview-workspace) .rail .quietIcon{background:transparent;width:28px}
 .sheet .reuseHint{font-size:0}
 .sheet .reuseHint::after{content:"Tap to reuse";font-size:12px}
+
+.sheet .quietIcon{width:44px;min-width:44px;height:44px;min-height:44px}
+.sheet .result{min-width:44px;min-height:44px}
+@media(max-width:320px){.sheet .heading{flex-wrap:wrap}.sheet .heading>span{white-space:normal}.sheet .results{grid-template-columns:repeat(2,minmax(0,1fr))}.sheet .job{gap:6px}.sheet .jobText{min-width:44px}.sheet .jobActions{max-width:100%}.sheet .jobActions button,.sheet .jobActions a{white-space:normal;overflow-wrap:anywhere;max-width:100%}.sheet .search{padding-inline:8px}.sheet .search input{width:100%}}
