@@ -40,9 +40,12 @@ export async function expectSource(page: Page) {
   await closeReferences(page);
 }
 export async function openPalette(page: Page) {
-  await page.keyboard.press("Control+k");
   const dialog = page.getByRole("dialog", { name: "Search actions" });
-  await expect(dialog).toBeVisible();
+  // The shortcut listener attaches on hydration; press again only while the palette is closed.
+  await expect(async () => {
+    if (!(await dialog.isVisible())) await page.keyboard.press("Control+k");
+    await expect(dialog).toBeVisible({ timeout: 1500 });
+  }).toPass({ timeout: 10_000 });
   return dialog;
 }
 export async function paletteAction(page: Page, name: string) {
