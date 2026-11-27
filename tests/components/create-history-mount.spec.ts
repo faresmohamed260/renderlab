@@ -38,7 +38,7 @@ for (const width of [195, 320, 390, 1440]) for (const reducedMotion of ["reduce"
     await openJobs(page, width);
     await expect(panel.getByText("Sign in to view History")).toBeVisible();
     await expect(panel.getByText("Fixture failed job")).toHaveCount(0);
-    await expect(panel.getByText("Fixture saved prompt")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Fixture saved prompt", exact: true })).toHaveCount(0);
   });
 }
 

@@ -192,7 +192,7 @@ for (const { kind, privateRow } of [
       } else {
         await route.fulfill({ json: params.get("kind") === "jobs"
           ? jobs(kind === "jobs" ? privateRow : "Fixture job", 0)
-          : prompts(privateRow) });
+          : prompts(kind === "prompts" ? privateRow : "Unrelated fixture prompt") });
       }
     });
     await page.goto("/history?state=action-race&phone=1");

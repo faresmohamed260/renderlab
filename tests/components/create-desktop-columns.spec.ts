@@ -17,7 +17,7 @@ test("desktop Create orders History, Canvas and controls without replacing the c
   expect(a && b && c).toBeTruthy();
   expect(a!.x + a!.width).toBeLessThanOrEqual(b!.x);
   expect(b!.x + b!.width).toBeLessThanOrEqual(c!.x);
-  const generate = form.getByRole("button", { name: "Text to image", exact: true });
+  const generate = form.getByRole("radio", { name: "Text to image", exact: true });
   await generate.click();
   const prompt = form.getByRole("textbox", { name: "Prompt", exact: true });
   await prompt.fill("A synthetic composition");
@@ -26,7 +26,7 @@ test("desktop Create orders History, Canvas and controls without replacing the c
   await expect(prompt).toHaveValue("A synthetic composition");
   await expect(history).not.toBeVisible();
   await page.setViewportSize({ width: 1440, height: 900 });
-  await expect(generate).toHaveAttribute("aria-pressed", "true");
+  await expect(generate).toBeChecked();
   await expect(prompt).toHaveValue("A synthetic composition");
   await page.goto("/create?recipe=" + fixtureJobId);
   await expect(form.getByRole("button", { name: "Remove source image" })).toBeVisible();

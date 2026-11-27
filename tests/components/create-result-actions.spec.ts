@@ -31,7 +31,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     const create = page.getByRole("region", { name: "Create with FIBO" });
     const result = create.locator("[data-create-history-image]");
     await expect(result).toHaveCount(1);
-    await create.getByRole("button", { name: "Text to image", exact: true }).click();
+    await create.getByRole("radio", { name: "Text to image", exact: true }).click();
     await create.getByRole("textbox", { name: "Prompt", exact: true }).fill("Different next draft");
     await result.click();
     await expect(result).toHaveAttribute("aria-current", "true");

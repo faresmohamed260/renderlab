@@ -32,3 +32,16 @@
   max-inline-size:100%; border:0; outline:0; container-type:normal;
 }
 .stageRegion { inline-size:100%; max-inline-size:100%; min-inline-size:0; block-size:auto; }
+
+/* At zoomed/narrow widths the floating composer cannot coexist with the
+ * minimum usable stage. Reflow the grid tracks rather than clipping either.
+ * Keep the approved 390x844 phone geometry unchanged. */
+@media(max-width:700px){
+  .workspace:global(.create-preview-workspace){box-sizing:border-box;max-inline-size:100dvw;min-inline-size:0}
+  .workspace .grid:global(.create-preview-grid){inline-size:100%;max-inline-size:100%;min-inline-size:0}
+}
+@media(max-width:340px),(max-width:700px) and (max-height:560px){
+  .workspace:global(.create-preview-workspace) .grid > :global(.create-preview-controls){
+    position:relative;inset:auto;z-index:auto;inline-size:100%;max-inline-size:100%;min-inline-size:0;
+  }
+}

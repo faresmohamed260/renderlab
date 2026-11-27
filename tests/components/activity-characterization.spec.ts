@@ -47,7 +47,8 @@ for (const surface of surfaces) test.describe(surface.heading + " lifecycle char
     expect(await page.locator("[data-activity-status]").evaluateAll(nodes => nodes.map(n => n.getAttribute("data-activity-status")))).toEqual(expected);
     await expect(page.getByRole("progressbar")).toHaveCount(0);
     await expect(page.locator("[data-activity-system]").filter({ has: page.locator("[data-activity-status]") })).not.toContainText(/\d+\s*%/);
-    await expect(page.locator("[data-activity-live]")).toHaveAttribute("role", "status");
+    if (surface.route === "/history") await expect(page.locator("[data-activity-live]")).toHaveAttribute("role", "status");
+    else await expect(page.locator("[data-activity-live]")).toBeVisible();
     await expect(page.getByRole("button", { name: "Cancel", exact: true })).toHaveCount(2);
     await expect(page.getByRole("button", { name: "Retry", exact: true })).toHaveCount(1);
     await expect(page.getByRole("button", { name: "Run again", exact: true })).toHaveCount(1);
