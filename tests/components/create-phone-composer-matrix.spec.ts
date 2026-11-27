@@ -1,3 +1,4 @@
+import { advancedTrigger, expectSource } from "./composer-review-helpers";
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 
@@ -9,12 +10,13 @@ for (const motion of ["reduce", "no-preference"] as const) {
       await page.goto("/create?recipe=" + fixtureJobId);
       const workspace = page.getByRole("region", { name: "Create with FIBO" });
       const form = workspace.locator(".create-preview-controls");
-      await expect(form.getByRole("button", { name: "Remove source image" })).toBeVisible();
-      const advanced = form.getByRole("button", { name: "Advanced", exact: true });
+      await expectSource(page);
+      const advanced = advancedTrigger(page);
       const inlineSeed = form.getByRole("textbox", { name: "Seed", exact: true });
       if (width === 1440) {
         await expect(inlineSeed).toHaveValue("1234");
-        await expect(advanced).toBeHidden();
+        await expect(advanced).toBeVisible();
+        await expect(advanced).toHaveAttribute("aria-expanded", "true");
         await expect(inlineSeed).toBeVisible();
         await expect(page.getByRole("dialog", { name: "Advanced" })).toHaveCount(0);
       } else {
@@ -47,7 +49,7 @@ for (const motion of ["reduce", "no-preference"] as const) {
         await expect(sheet).toHaveCount(0);
         await expect(advanced).toBeFocused();
       }
-      await expect(form.getByRole("button", { name: "Remove source image" })).toBeVisible();
+      await expectSource(page);
       await expect(workspace.locator(".create-preview-controls")).toHaveCount(1);
       expect(io.every(call => ["GET capabilities", "GET history", "GET continuation source"].includes(call))).toBe(true);
     });

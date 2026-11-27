@@ -1,3 +1,4 @@
+import { advancedTrigger } from "./composer-review-helpers";
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 
@@ -6,7 +7,7 @@ for (const width of [195, 390]) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: width === 195 ? 422 : 844 });
     await page.goto("/create?recipe=" + fixtureJobId);
-    await page.getByRole("button", { name: "Advanced", exact: true }).click();
+    await advancedTrigger(page).click();
     const sheet = page.getByRole("dialog", { name: "Advanced" });
     await expect(sheet).toBeVisible();
     const layout = await sheet.evaluate(el => {

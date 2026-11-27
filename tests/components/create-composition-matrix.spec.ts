@@ -1,3 +1,4 @@
+import { selectMode, isPhone } from "./composer-review-helpers";
 import { test, expect } from "@playwright/test";
 import { emptyHistory, fixtureAsset } from "../component-app/fixtures";
 
@@ -15,7 +16,7 @@ for (const motion of ["reduce", "no-preference"] as const) {
       await page.setViewportSize({ width, height: width === 195 ? 422 : width === 1440 ? 900 : 844 });
       const desktop = width === 1440;
       // The size-contained desktop grid gets its block size from this shell.
-      if (desktop) await page.setExtraHTTPHeaders({ "x-renderlab-fixture-shell": "create" });
+      await page.setExtraHTTPHeaders({ "x-renderlab-fixture-shell": "create" });
       const unexpected: string[] = [];
       await context.route("**/*", async route => {
         const request = route.request(), url = new URL(request.url());
@@ -25,8 +26,8 @@ for (const motion of ["reduce", "no-preference"] as const) {
         if (url.pathname === "/api/generation/jobs" && !url.search) return route.fulfill({ json: { available: true, fiboAvailable: true, fiboMaskAvailable: true } });
         if (url.pathname === "/api/media/assets" && url.searchParams.get("origin") === "generated") return route.fulfill({ json: { ...emptyHistory, items: [fixtureAsset] } });
         if (url.pathname === "/api/media/assets/" + fixtureAsset.id + "/content") return route.fulfill({ contentType: "image/png", body: resultPng });
-        if (desktop && !url.search && url.pathname === "/api/account/profile") return route.fulfill({ json: { profile: { displayName: "Synthetic Member" } } });
-        if (desktop && !url.search && url.pathname === "/api/account/profile/avatar") return route.fulfill({ contentType: "image/png", body: resultPng });
+        if (!url.search && url.pathname === "/api/account/profile") return route.fulfill({ json: { profile: { displayName: "Synthetic Member" } } });
+        if (!url.search && url.pathname === "/api/account/profile/avatar") return route.fulfill({ contentType: "image/png", body: resultPng });
         if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/create-preview/")) {
           unexpected.push(url.pathname); return route.abort();
         }
@@ -37,8 +38,7 @@ for (const motion of ["reduce", "no-preference"] as const) {
       const form = workspace.locator(".create-preview-controls");
       const canvas = workspace.getByRole("region", { name: "Canvas", exact: true });
       const history = workspace.locator(".create-preview-history");
-      const selected = workspace.locator("[data-create-history-image]").first();
-      await expect(selected).toBeVisible();
+      const selected = page.locator("[data-create-history-image]:visible").first();
       await expect(canvas).toBeVisible();
       if (desktop) {
         await expect(page.locator(".preview-navigation-shell")).toBeVisible();
@@ -46,15 +46,18 @@ for (const motion of ["reduce", "no-preference"] as const) {
         expect(a.x + a.width).toBeLessThanOrEqual(b.x);
         expect(b.x + b.width).toBeLessThanOrEqual(c.x);
       }
-      await form.getByRole("button", { name: "Text to Image", exact: true }).click();
+      await selectMode(page, "generate");
       const prompt = form.getByRole("textbox", { name: "Prompt", exact: true });
       await prompt.fill("Unsubmitted draft");
       await expect(form.getByRole("button", { name: "Generate", exact: true })).toBeEnabled();
-      await expect(canvas.getByRole("region", { name: "Prompt used" })).toHaveCount(0);
+      await expect(canvas.getByRole("region", { name: "Prompt used for this result" })).toHaveCount(0);
+      if (isPhone(page)) await page.getByRole("button", { name: "Session and prompt history", exact: true }).click();
+      await expect(selected).toBeVisible();
       await selected.click();
-      await expect(selected).toHaveAttribute("aria-current", "true");
+      if (desktop) await expect(selected).toHaveAttribute("aria-current", "true");
+      else { await page.getByRole("button", { name: "Session and prompt history", exact: true }).click(); await expect(selected).toHaveAttribute("aria-current", "true"); await page.keyboard.press("Escape"); }
       if (desktop) {
-        const metadata = canvas.getByRole("region", { name: "Prompt used" });
+        const metadata = canvas.getByRole("region", { name: "Prompt used for this result" });
         await expect(metadata).toContainText(fixtureAsset.prompt);
         await expect(metadata).not.toContainText("Unsubmitted draft");
         const a = (await metadata.boundingBox())!, b = (await canvas.boundingBox())!;

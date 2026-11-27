@@ -1250,6 +1250,16 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   // These controlled fields have a single draft owner. On phones they are
   // rendered only in Advanced; wider layouts keep their existing inline access.
+  // Switching between adjacent composer disclosures must not consume the first
+  // click as an outside dismissal or restore focus over the newly open menu.
+  function preserveComposerPopoverFocus(kind: "references" | "mode" | "shape", event: Event) {
+    event.preventDefault();
+    queueMicrotask(() => {
+      const active = document.activeElement;
+      if (active?.isConnected && active !== document.body && active !== document.documentElement) return;
+      workspaceRoot.current?.querySelector<HTMLElement>('[data-composer-popover-trigger="' + kind + '"]')?.focus({ preventScroll: true });
+    });
+  }
   const structuredFields = (
     <div className={phoneStyles.structuredFields} key={mode}>
       <label className={phoneStyles.structuredRow} htmlFor="create-preview-vgl-enabled">
@@ -1511,8 +1521,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 ) : (
                   <Popover open={composerPopover === "references"} onOpenChange={open => setComposerPopover(current => open ? "references" : current === "references" ? null : current)}>
                     <PopoverTrigger asChild><Button type="button" variant="ghost" ref={phone ? sourceButton : undefined} className={phoneStyles.roundControl}
-                      aria-label="References" disabled={!admitted || busy}><Plus aria-hidden="true" /></Button></PopoverTrigger>
-                    <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="References">
+                      data-composer-popover-trigger="references" aria-label="References" disabled={!admitted || busy}><Plus aria-hidden="true" /></Button></PopoverTrigger>
+                    <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="References" onCloseAutoFocus={event => preserveComposerPopoverFocus("references", event)} onInteractOutside={event => { const target = event.detail.originalEvent.target; if (target instanceof Element && target.closest("[data-composer-popover-trigger]")) event.preventDefault(); }}>
                       <div className={phoneStyles.referenceHeading}><span>References · {files.filter(Boolean).length} of 4</span>
                         <Button type="button" variant="ghost" data-create-mask-trigger="" disabled={!admitted || busy || !masksEnabled || !files[0] || files.slice(1).some(Boolean)}
                           onClick={() => { setComposerPopover(null); setMaskAnnouncement(""); setMaskEditor("dialog"); }}>Select region</Button></div>
@@ -1550,10 +1560,10 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   </Popover>
                 )}
                 <Popover open={composerPopover === "mode"} onOpenChange={open => setComposerPopover(current => open ? "mode" : current === "mode" ? null : current)}>
-                  <PopoverTrigger asChild><Button type="button" variant="ghost" className={phoneStyles.phoneChip} disabled={busy} aria-label={"Mode: " + (mode === "generate" ? "text to image" : "edit image")}>
+                  <PopoverTrigger asChild><Button type="button" variant="ghost" className={phoneStyles.phoneChip} disabled={busy} data-composer-popover-trigger="mode" aria-label={"Mode: " + (mode === "generate" ? "text to image" : "edit image")}>
                     {mode === "generate" ? "Text" : "Edit"} <ChevronDown aria-hidden="true" />
                   </Button></PopoverTrigger>
-                  <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="Mode">
+                  <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="Mode" onCloseAutoFocus={event => preserveComposerPopoverFocus("mode", event)} onInteractOutside={event => { const target = event.detail.originalEvent.target; if (target instanceof Element && target.closest("[data-composer-popover-trigger]")) event.preventDefault(); }}>
                     <ToggleGroup type="single" orientation="vertical" value={mode} className={phoneStyles.menuChoices} onValueChange={value => {
                       if (value === "generate") { setMaskEditor(undefined); setMode("generate"); }
                       else if (value === "edit") setMode("edit");
@@ -1564,8 +1574,8 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                   </PopoverContent>
                 </Popover>
                 <Popover open={composerPopover === "shape"} onOpenChange={open => setComposerPopover(current => open ? "shape" : current === "shape" ? null : current)}>
-                  <PopoverTrigger asChild><Button type="button" variant="ghost" className={phoneStyles.phoneChip} disabled={busy} aria-label={"Shape " + shapeLabel}>{shapeLabel}</Button></PopoverTrigger>
-                  <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="Shape">
+                  <PopoverTrigger asChild><Button type="button" variant="ghost" className={phoneStyles.phoneChip} disabled={busy} data-composer-popover-trigger="shape" aria-label={"Shape " + shapeLabel}>{shapeLabel}</Button></PopoverTrigger>
+                  <PopoverContent data-create-shortcut-overlay="" side="top" align="start" className={phoneStyles.phonePopover} aria-label="Shape" onCloseAutoFocus={event => preserveComposerPopoverFocus("shape", event)} onInteractOutside={event => { const target = event.detail.originalEvent.target; if (target instanceof Element && target.closest("[data-composer-popover-trigger]")) event.preventDefault(); }}>
                     <ToggleGroup type="single" orientation="vertical" value={selectedShape} className={phoneStyles.menuChoices}
                       onValueChange={value => { selectShape(value); setComposerPopover(null); }}>
                       {shapeOptions.map(ratio => <ToggleGroupItem key={ratio} value={ratio}
