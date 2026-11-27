@@ -1891,3 +1891,19 @@
   .rebuild-landing-header { height:auto; min-height:70px; flex-wrap:wrap; justify-content:space-between; }
   .preview-navigation-shell[data-signed-in-landing] [data-landing-section="hero"] { padding-block-start:124px; }
 }
+
+@media(max-width:240px) {
+  .preview-navigation-header[data-p6-desktop="true"] { inline-size:100%; min-inline-size:0; padding-inline:8px; gap:6px; }
+  .preview-navigation-header[data-p6-desktop="true"] > .rebuild-phone-action[data-slot="button"] { margin-inline-start:0; }
+}
+
+/* Library uses the real header on loading routes. Reserve Search chrome without
+   presenting a fake interactive control until the feature registers its action. */
+.rebuild-loading-library-search { display:none; }
+@media(max-width:700px) {
+  .preview-navigation-shell:has([data-route-loading="library"]) .rebuild-loading-library-search {
+    display:block; flex:0 0 44px; width:44px; height:44px; margin-inline-start:auto;
+    border-radius:50%; background:linear-gradient(90deg,rgb(255 255 255 / 6%),rgb(255 255 255 / 13%) 50%,rgb(255 255 255 / 6%));
+  }
+  .preview-navigation-shell:has([data-route-loading="library"]) .rebuild-phone-action { display:none; }
+}

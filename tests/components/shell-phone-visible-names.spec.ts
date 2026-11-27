@@ -32,14 +32,14 @@ for (const motion of ["reduce", "no-preference"] as const) {
     await expect.soft(logo).toHaveAccessibleName(/RenderLab/i);
     await scan("closed");
     await logo.press("Enter");
-    const dialog = page.getByRole("dialog", { name: "RenderLab navigation" });
+    const dialog = page.getByRole("dialog", { name: "RenderLab" });
     await expect(dialog).toBeVisible();
-    const close = dialog.getByRole("button", { name: "Close navigation" });
+    const close = dialog.getByRole("button", { name: "Close menu" });
     await expect(close).toBeFocused();
     const profile = dialog.locator("[data-shell-profile]");
     await expect(profile).toBeVisible();
     const visibleLabel = (await profile.innerText()).replace(/\s+/g, " ").trim();
-    expect(visibleLabel).toContain("Settings");
+    expect(visibleLabel).toContain("RenderLab account"); await expect(profile).toHaveAttribute("href", "/settings");
     await expect.soft(profile).toHaveAccessibleName(new RegExp(visibleLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
     await scan("open");
     await page.keyboard.press("Escape");

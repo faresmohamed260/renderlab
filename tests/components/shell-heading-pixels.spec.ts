@@ -5,18 +5,18 @@ import sharp from "sharp";
 // Public Landing deliberately omits the legacy shell (#792). Test the retained signed-in variant.
 test.use({ extraHTTPHeaders: { "x-renderlab-fixture-shell": "member" } });
 
-test("Workspace label is not overpainted by a bright neighbor", async ({ page }) => {
+test("Create label is not overpainted by a bright neighbor", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/create");
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
-  const trigger = page.getByRole("button", { name: /^RenderLab sections:/ });
+  const trigger = page.getByRole("button", { name: /RenderLab.*Open navigation/ });
   // The fixture root still mounts the retained legacy disclosure.
   await expect(trigger).toBeVisible();
   await trigger.press("Enter");
-  const label = page.getByRole("navigation", { name: "RenderLab navigation" }).getByText("Workspace", { exact: true });
+  const label = page.getByRole("dialog", { name: "RenderLab" }).getByRole("link", { name: "Create", exact: true });
   await expect(label).toBeVisible();
-  const row = await collectTextContrast(page, label, "open", "Workspace");
+  const row = await collectTextContrast(page, label, "open", "Create");
   const box = await label.evaluate(el => {
     const range = document.createRange();
     range.selectNodeContents(el);
@@ -59,21 +59,25 @@ test("Workspace label is not overpainted by a bright neighbor", async ({ page })
 });
 
 
-test("legacy phone disclosure reserves space below the visible trigger focus ring", async ({ page }) => {
+test("phone sidebar preserves close focus ring clearance above the first navigation row", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  const trigger = page.getByRole("button", { name: /^RenderLab sections:/ });
+  await page.goto("/create");
+  const trigger = page.getByRole("button", { name: /RenderLab.*Open navigation/ });
   await expect(trigger).toBeVisible();
   await trigger.press("Enter");
-  const heading = page.getByRole("navigation", { name: "RenderLab navigation" }).getByText("Workspace", { exact: true });
+  const heading = page.getByRole("dialog", { name: "RenderLab" }).getByRole("link", { name: "Create", exact: true });
   await expect(heading).toBeVisible();
-  const ring = await trigger.evaluate(el => {
+  const close = page.getByRole("dialog", { name: "RenderLab" }).getByRole("button", { name: "Close menu" });
+  await expect(close).toBeFocused();
+  const ring = await close.evaluate(el => {
     const s = getComputedStyle(el), r = el.getBoundingClientRect();
     return { bottom: r.bottom, outline: parseFloat(s.outlineWidth) || 0, offset: parseFloat(s.outlineOffset) || 0 };
   });
   const headingRect = await heading.boundingBox();
   console.log("SHELL_FOCUS_RING_CLEARANCE " + JSON.stringify({ ring, headingRect }));
   expect(headingRect!.y).toBeGreaterThanOrEqual(ring.bottom + Math.max(0, ring.outline + ring.offset));
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
 });

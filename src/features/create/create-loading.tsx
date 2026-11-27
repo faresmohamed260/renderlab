@@ -1,8 +1,8 @@
 import { ArrowUp } from "lucide-react";
 import styles from "./create-loading.module.css";
 
-function Placeholder({ className = "", width, height, radius }: { className?: string; width?: number | string; height?: number; radius?: number }) {
-  return <div className={styles.placeholder + " " + className} style={{ width, height, borderRadius: radius }} />;
+function Placeholder({ className = "", width, height, radius, region }: { className?: string; width?: number | string; height?: number; radius?: number; region?: string }) {
+  return <div data-slot="skeleton" data-loading-region={region} className={styles.placeholder + " " + className} style={{ width, height, borderRadius: radius }} />;
 }
 
 export function CreateLoading() {
@@ -26,11 +26,11 @@ export function CreateLoading() {
           </div>
         </div>
         <div className={styles.center}>
-          <Placeholder className={styles.stage} />
+          <Placeholder className={styles.stage} region="stage" />
           <div className={styles.actions}>{[104,140,132,44,44].map((width,index) => <Placeholder key={index} width={width} height={44} radius={22} />)}</div>
           <div className={styles.promptCard + " rl-glass-panel"}><Placeholder width={150} height={12} radius={6} /><Placeholder height={15} radius={7} /><Placeholder width="75%" height={15} radius={7} /></div>
         </div>
-        <div className={styles.composer + " rl-glass-panel"}>
+        <div data-loading-region="composer" className={styles.composer + " rl-glass-panel"}>
           <Placeholder height={48} radius={24} />
           <Placeholder height={132} radius={20} />
           <div className={styles.references}>{[0,1,2].map(index => <Placeholder key={index} width={64} height={64} radius={18} />)}</div>
@@ -40,9 +40,9 @@ export function CreateLoading() {
         </div>
       </div>
       <div className={styles.phone} aria-hidden="true">
-        <Placeholder className={styles.phoneStage} />
+        <Placeholder className={styles.phoneStage} region="stage" />
         <div className={styles.dots}>{[18,6,6].map((width,index) => <Placeholder key={index} width={width} height={6} radius={3} />)}</div>
-        <div className={styles.phoneComposer}>
+        <div data-loading-region="composer" className={styles.phoneComposer}>
           <div className={styles.staticPrompt}>Describe your image…</div>
           <div className={styles.phoneControls}>
             {[44,76,56,44].map((width,index) => <div className={styles.staticPill} key={index} style={{width}} />)}
