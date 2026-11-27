@@ -65,8 +65,10 @@ const api = "/create-preview/";
 const slotMarker = (index: number) => "\uE000" + index + "\uE001";
 const slotMarkers = /\uE000([0-3])\uE001/g;
 const slots = ["Source", "Reference 2", "Reference 3", "Reference 4"];
-type Result = { promptUsed?: string; assetId?: string; isFavorite?: boolean; width?: number; height?: number; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
+type Result = { reviewLabel?: string; createdAt?: string; promptUsed?: string; assetId?: string; isFavorite?: boolean; width?: number; height?: number; image_data: string; aspect?: number; seed: number; filename?: string; json_instruction?: string; source?: File; batchId?: string; run?: RunSettings };
 type Workflow = "edit" | "generate";
+/** Initial presentation for the isolated component-app judge route; never supplied by the production route. */
+export type CreateResultReview = { results: readonly Result[]; prompt: string };
 type StageBookmark = { id: string; mode: Workflow; count: number; aspect?: number; expires: number; filename?: string };
 type QueuedRender = { bookmark: StageBookmark; run?: RunSettings };
 type Poll = { canCancel?: boolean; cancelling?: boolean; state?: "pending" | "running" | "finished"; finished: boolean; images: Result[]; imageOffset?: number; preview?: string; previewBlur?: number; caption?: string; error?: string };
@@ -151,7 +153,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null, historyActions }: { historyActions?: HistoryReadActions; initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
+export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps, advancedPrompt, masksEnabled: configuredMasksEnabled = false, hostedOnly = false, hostedModel, hostedAccountKey, savedEditsAccount, initialAspectRatio = "1:1", initialContinuation = null, initialContinuationError = null, historyActions, initialReview }: { initialReview?: CreateResultReview; historyActions?: HistoryReadActions; initialContinuation?: CreateContinuationPlan | null; initialContinuationError?: string | null; admitted: boolean; hostedOnly?: boolean; hostedModel?: { id: GenerationModel; label: string }; hostedAccountKey?: string; savedEditsAccount?: string; initialAspectRatio?: PresetAspectRatio; masksEnabled?: boolean; advancedPrompt: boolean; extendedSetup: boolean; variableSteps: boolean }) {
   const hosted = hostedOnly || !!hostedModel;
   const [hostedCapabilities, setHostedCapabilities] = useState<HostedCreateCapabilities>();
   const [capabilityReadFailed, setCapabilityReadFailed] = useState(false);
@@ -175,7 +177,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const bookmarkKey = hostedModel && hostedAccountKey ? "renderlab:hosted-fibo-stage:" + hostedAccountKey
     : admitted && savedEditsAccount ? "renderlab:wf-stage:" + savedEditsAccount : undefined;
   const [stageReady, setStageReady] = useState(!bookmarkKey);
-  const [mode, setMode] = useState<Workflow>("edit");
+  const [mode, setMode] = useState<Workflow>(initialReview ? "generate" : "edit");
   const [editAspectRatio, setEditAspectRatio] = useState<AspectRatio>("original");
   const [continuationPending, setContinuationPending] = useState(!!initialContinuation);
   const [continuationError, setContinuationError] = useState(initialContinuationError);
@@ -193,7 +195,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const [maskAnnouncement, setMaskAnnouncement] = useState("");
   const [files, setFiles] = useState<(File | undefined)[]>([]);
   const mask = mode === "edit" && selection?.source === files[0] ? selection?.mask : undefined;
-  const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>({ edit: emptyDraft, generate: emptyDraft });
+  const [drafts, setDrafts] = useState<Record<Workflow, PromptDraft>>(() => ({ edit: emptyDraft, generate: initialReview ? { ...emptyDraft, prompt: initialReview.prompt, seed: String(initialReview.results[0]?.seed ?? 42), randomize: false } : emptyDraft }));
   const { prompt: promptDraft, negativePrompt, vgl, generatedVgl, vglOpen, seed, randomize, imageCount: draftImageCount } = drafts[mode];
   const imageCount = multiOutputEnabled ? draftImageCount : "1";
   let missingPromptImage = false;
@@ -328,14 +330,14 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
   const queueCount = Number(busy) + waiting.length;
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historySelection, setHistorySelection] = useState<{ image: Result }>();
-  const [result, setResult] = useState<Result>();
+  const [result, setResult] = useState<Result | undefined>(() => initialReview?.results[0]);
   const [turns, setTurns] = useState<Record<Workflow, StageTurn<Result>[]>>({ edit: [], generate: [] });
   const [liveFrame, setLiveFrame] = useState<string>();
   const [liveBlur, setLiveBlur] = useState<number>();
   const [liveCaption, setLiveCaption] = useState<string>();
   const [runningBatch, setRunningBatch] = useState<Result[]>([]);
   const [inspected, setInspected] = useState<Result>();
-  const [sessionHistory, setHistory] = useState<Result[]>([]);
+  const [sessionHistory, setHistory] = useState<Result[]>(() => [...(initialReview?.results ?? [])]);
   const [savedEdits, setSavedEdits] = useState<Result[]>([]);
   const [savingEdits, setSavingEdits] = useState(false);
   const [savedStatus, setSavedStatus] = useState("");
@@ -355,6 +357,13 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
     onPrompt: (value) => { if (!busy && !continuationPending) { setPrompt(value); setHistoryOpen(false); } },
     onSessionResult: (entry) => { void selectHistoryResult(entry.id); },
   });
+  // The isolated review route seeds the same in-memory, account-scoped session store used by completed results.
+  useEffect(() => {
+    if (!initialReview) return;
+    for (const image of [...initialReview.results].reverse()) {
+      if (image.assetId && image.createdAt) historyRead.recordResult({ id: image.assetId, label: image.reviewLabel ?? image.run?.prompt ?? "Generated result", createdAt: image.createdAt });
+    }
+  }, [initialReview, historyRead.recordResult]);
   const historySelectionRequest = useRef<AbortController | null>(null);
   useEffect(() => () => historySelectionRequest.current?.abort(), [hostedAccountKey, admitted]);
   const matchesImage = (image: Result, item: Result) => image.batchId === item.batchId && image.filename === item.filename;
@@ -524,6 +533,11 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
 
   async function selectHistoryResult(id: string) {
     if (!admitted || busy || !hostedJobId.test(id)) return;
+    if (initialReview) {
+      const image = sessionHistory.find(item => item.assetId === id);
+      if (image) { setMaskEditor(undefined); setHistorySelection({ image }); setHistoryOpen(false); }
+      return;
+    }
     historySelectionRequest.current?.abort();
     const controller = new AbortController();
     historySelectionRequest.current = controller;
