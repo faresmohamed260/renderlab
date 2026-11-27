@@ -175,3 +175,5 @@
   .sheet .seedRow { flex-wrap: wrap; row-gap: 6px; }
   .sheet .seedRow > label:first-child { flex: 0 0 100%; width: auto; }
 }
+
+.generate kbd::after { content: attr(data-keys); }
