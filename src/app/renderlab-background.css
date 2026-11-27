@@ -1869,8 +1869,8 @@
 @media (min-width:701px) {
   .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation { padding-inline:0; padding-block:0; margin:0; }
   .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation > .rebuild-desktop-brand {
-    display:flex; align-items:center; justify-content:flex-start; flex:0 0 124px;
-    inline-size:124px; block-size:26px; min-inline-size:124px; min-block-size:26px;
+    display:flex; align-items:center; justify-content:flex-start; flex:0 0 auto;
+    inline-size:max-content; block-size:26px; min-inline-size:124px; min-block-size:26px;
     margin:0; padding-inline:0; padding-block:0; gap:10px; border:0;
     color:var(--rl-text-primary); font:600 17px/1 var(--font-sans, Inter),ui-sans-serif,system-ui,sans-serif;
     letter-spacing:-.16px; white-space:nowrap;
