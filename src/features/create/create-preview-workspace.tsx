@@ -1605,8 +1605,7 @@ export function CreatePreviewWorkspace({ admitted, extendedSetup, variableSteps,
                 title={blocker || (shortcuts.enabled ? shortcuts.modifierHint + " + Enter" : undefined)} aria-describedby={blocker ? "create-preview-blocker" : undefined}>
                 <Sparkles aria-hidden="true" className={phoneStyles.desktopIcon} /><ArrowUp aria-hidden="true" className={phoneStyles.phoneIcon} />
                 <span className={phoneStyles.generateLabel}>{enqueueing ? "Adding…" : busy ? desktop ? "Queue render" : "Rendering…" : "Generate"}</span>
-                {/* Hint is generated content so the visible label stays "Generate" (WCAG 2.5.3 Label in Name). */}
-                {shortcuts.enabled && <kbd aria-hidden="true" data-keys={shortcuts.modifierHint + " Enter"} />}
+                {shortcuts.enabled && <kbd aria-hidden="true">{shortcuts.modifierHint} Enter</kbd>}
               </Button>
             </div>
           </div>
