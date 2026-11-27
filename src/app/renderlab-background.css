@@ -1600,8 +1600,6 @@
     min-inline-size: 0;
     padding-block: 13px;
   }
-  .p6-desktop-brand [data-renderlab-mark] { inline-size: 24px; block-size: 24px; }
-  .p6-desktop-brand { gap: var(--rl-space-8, 8px); padding-inline: var(--rl-space-12, 12px); color: var(--rl-text-primary, var(--color-text)); }
   .p6-desktop-links { position: absolute; inset-inline-start: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: var(--rl-space-4, 4px); }
   .p6-desktop-links .p6-desktop-link { min-block-size: var(--rl-hit-preferred, 44px); border-radius: var(--rl-radius-pill, 999px); color: var(--rl-text-secondary, var(--color-text-muted)); padding-inline: var(--rl-space-12, 12px); }
   .p6-desktop-links .p6-desktop-link[aria-current="page"] { color: var(--rl-text-primary, var(--color-text)); background: var(--rl-surface-selected, var(--color-surface-3)); }
@@ -1760,8 +1758,6 @@
 @media (min-width:701px) {
   .preview-navigation-header[data-p6-desktop="true"] { height:68px; align-items:center; --preview-header-gutter:28px; padding-inline:28px; pointer-events:auto; }
   .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation { display:flex; align-items:center; padding:0; }
-  .p6-desktop-brand { display:flex; align-items:center; gap:10px; min-block-size:26px; padding:0; color:var(--rl-text-primary); font:600 17px/1 var(--rl-type-family); letter-spacing:-.16px; }
-  .p6-desktop-brand [data-renderlab-mark] { width:26px; height:26px; }
   .p6-desktop-links { top:22px; gap:34px; }
   .p6-desktop-links .p6-desktop-link { display:flex; align-items:flex-start; position:relative; min-block-size:27px; padding:0; border-radius:0; font:400 15px/20px var(--rl-type-family); color:rgb(245 245 247 / 68%); }
   .p6-desktop-links .p6-desktop-link[aria-current="page"] { color:var(--rl-text-primary); background:none; font-weight:500; }
@@ -1821,8 +1817,6 @@
 
 /* Judge round 1: explicit shell geometry; no feature-owned layout changes. */
 @media (min-width:701px) {
-  .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation > .p6-desktop-brand { flex:0 0 124px; width:124px; height:26px; min-height:26px; padding:0; gap:10px; }
-  .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation > .p6-desktop-brand [data-renderlab-mark] { flex:0 0 26px; width:26px; height:26px; }
   .preview-navigation-header[data-p6-desktop="true"] > .rebuild-header-actions { flex:none; align-items:center; gap:10px; }
   .rebuild-header-actions > .rebuild-queue-pill[data-slot="button"] { flex:0 0 76px; width:76px; min-width:76px; height:40px; min-height:40px; padding:0; border:0; border-radius:20px; background:var(--rl-surface-control); color:var(--rl-text-primary); font:500 14px/14px var(--rl-type-family); }
   .rebuild-header-actions > .preview-account-card { flex:0 0 40px; }
@@ -1860,4 +1854,40 @@
   .rebuild-landing-brand svg { width:20px; height:20px; }
   .rebuild-landing-actions { gap:4px; }
   .rebuild-landing-actions .rebuild-landing-create[data-slot="button"] { font-size:12px; padding:0 6px; }
+}
+
+/* Round 2 / defect 6: one desktop brand rule. The old p6 rule
+   added a logical 12px inline inset; there is no inner padding. */
+@media (min-width:701px) {
+  .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation { padding-inline:0; padding-block:0; margin:0; }
+  .preview-navigation-header[data-p6-desktop="true"] > .p6-desktop-navigation > .rebuild-desktop-brand {
+    display:flex; align-items:center; justify-content:flex-start; flex:0 0 124px;
+    inline-size:124px; block-size:26px; min-inline-size:124px; min-block-size:26px;
+    margin:0; padding-inline:0; padding-block:0; gap:10px; border:0;
+    color:var(--rl-text-primary); font:600 17px/1 var(--font-sans, Inter),ui-sans-serif,system-ui,sans-serif;
+    letter-spacing:-.16px; white-space:nowrap;
+  }
+  .rebuild-desktop-brand > [data-renderlab-mark] { display:block; flex:0 0 26px; inline-size:26px; block-size:26px; }
+}
+.rebuild-landing-actions > .rebuild-queue-pill[data-slot="button"] {
+  flex:none; inline-size:76px; min-inline-size:76px; block-size:40px; min-block-size:40px;
+  padding:0; border:0; border-radius:20px; background:var(--rl-surface-control);
+  color:var(--rl-text-primary); font:500 14px/14px var(--rl-type-family);
+}
+@media (max-width:900px) {
+  .rebuild-landing-actions { gap:6px; }
+  .rebuild-landing-actions > .rebuild-queue-pill[data-slot="button"] { inline-size:60px; min-inline-size:60px; min-block-size:44px; font-size:13px; }
+  .rebuild-landing-brand { padding-inline:8px; gap:8px; }
+}
+@media (max-width:360px) {
+  .rebuild-landing-header { padding-inline:8px; gap:4px; }
+  .rebuild-landing-brand { padding-inline:6px; gap:4px; font-size:13px; }
+  .rebuild-landing-brand svg { width:20px; height:20px; }
+  .rebuild-landing-actions { gap:4px; }
+  .rebuild-landing-actions > .rebuild-queue-pill[data-slot="button"] { inline-size:50px; min-inline-size:50px; font-size:12px; }
+  .rebuild-landing-actions .rebuild-landing-create[data-slot="button"] { padding-inline:6px; font-size:12px; }
+}
+@media (max-width:280px) {
+  .rebuild-landing-header { height:auto; min-height:70px; flex-wrap:wrap; justify-content:space-between; }
+  .preview-navigation-shell[data-signed-in-landing] [data-landing-section="hero"] { padding-block-start:124px; }
 }

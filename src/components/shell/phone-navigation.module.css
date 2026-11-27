@@ -56,9 +56,9 @@
 .admin::before { content:""; display:block; height:1px; margin:0 16px 10px; background:rgb(255 255 255 / 10%); }
 .adminLabel { padding:0; font:600 12px/19px var(--rl-type-family); color:rgb(245 245 247 / 58%); text-transform:uppercase; letter-spacing:.48px; }
 .profile { min-height:72px; height:72px; padding:12px; gap:12px; border-radius:24px; border:1px solid rgb(255 255 255 / 10%); background:var(--rl-surface-control); }
-.profileText { font-size:15px; font-weight:600; }
+.profileText { font-size:15px; font-weight:600; line-height:19.5px; letter-spacing:-.16px; }
 .profileText > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.profileMeta { font-size:13px; font-weight:400; }
+.profileMeta { font-size:13px; font-weight:400; line-height:16.9px; color:rgb(245 245 247 / 66%); }
 .settingsIcon { width:44px; height:44px; display:grid; place-items:center; border-radius:50%; background:rgb(255 255 255 / 9%); }
 :global([data-slot="sheet-overlay"]):has(+ .sidebar) { background:rgb(7 6 11 / 62%); }
 @supports (backdrop-filter:blur(1px)) { .sidebar { background:rgb(26 21 46 / 88%); backdrop-filter:blur(40px) saturate(1.5); } .logo { backdrop-filter:blur(28px) saturate(1.6); } }

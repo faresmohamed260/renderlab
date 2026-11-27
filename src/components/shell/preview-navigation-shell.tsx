@@ -104,7 +104,7 @@ const isSettingsRoute = (pathname: string) => pathname === settingsPath || pathn
 function shellRoute(pathname: string) {
   if (pathname === "/round3-settings") return "/settings";
   if (pathname === "/round3-library") return "/library";
-  if (pathname === "/loading-review/create" || pathname.startsWith("/create-history-")) return "/create";
+  if (pathname === "/loading-review/create" || pathname === "/create-result-review" || pathname.startsWith("/create-history-")) return "/create";
   return pathname;
 }
 
@@ -234,8 +234,8 @@ const destinations = [
 ];
 
 
-function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, setOpenPath }: {
-  pathname: string; accountId: string | null; profile: ShellProfile | null; showAdmin: boolean;
+function PhoneNavigation({ pathname, accountId, accountEmail, profile, showAdmin, openPath, setOpenPath }: {
+  pathname: string; accountId: string | null; accountEmail: string | null; profile: ShellProfile | null; showAdmin: boolean;
   openPath: string | null; setOpenPath: (path: string | null) => void;
 }) {
   const open = openPath === pathname;
@@ -303,7 +303,7 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
         onCloseAutoFocus={event => {
           if (matchMedia("(min-width: 701px)").matches) {
             event.preventDefault();
-            document.querySelector<HTMLAnchorElement>(".p6-desktop-brand")?.focus();
+            document.querySelector<HTMLAnchorElement>(".rebuild-desktop-brand")?.focus();
           }
         }}>
         <div className={styles.heading}>
@@ -325,7 +325,7 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
         <Button asChild variant="secondary" size="lg" className={styles.profile}>
           <Link data-shell-profile="" href={settingsPath} onNavigate={closeImmediately} aria-current={isSettingsRoute(pathname) ? "page" : undefined}>
             <ProfileAvatar profile={accountId ? profile : null} size={46} />
-            <span className={styles.profileText}><span>{name}</span></span>
+            <span className={styles.profileText}><span>{name}</span>{accountId && accountEmail && <span className={styles.profileMeta}>{accountEmail}</span>}</span>
             <span className={styles.settingsIcon}><Settings size={20} aria-hidden="true" /></span>
           </Link>
         </Button>
@@ -371,7 +371,7 @@ function RegistryHeaderAction({ id, phone = false, pathname }: { id: "open-queue
   </Button>;
 }
 
-export function PreviewNavigationShell({ children, accountId, profile = null, showAdmin = false }: { children: ReactNode; accountId: string | null; hostedProfile?: boolean; profile?: ShellProfile | null; showAdmin?: boolean }) {
+export function PreviewNavigationShell({ children, accountId, profile = null, accountEmail = null, showAdmin = false }: { children: ReactNode; accountId: string | null; accountEmail?: string | null; hostedProfile?: boolean; profile?: ShellProfile | null; showAdmin?: boolean }) {
   const rawPathname = usePathname();
   const pathname = shellRoute(rawPathname);
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
@@ -388,6 +388,7 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
         <Link href="/" className="rebuild-landing-brand" aria-label="RenderLab home"><RenderLabMark className="size-8" /><span>RenderLab</span></Link>
         <div className="rebuild-landing-actions">
           <Button asChild variant="ghost" className="rebuild-landing-create"><Link href="/create">Open Create</Link></Button>
+          <RegistryHeaderAction id="open-queue" pathname={pathname} />
           <PreviewAccountMenu key={accountId} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={false} />
         </div>
       </header>
@@ -399,16 +400,16 @@ export function PreviewNavigationShell({ children, accountId, profile = null, sh
     <div className="preview-navigation-shell" data-shell-surface={surface}>
       {utility && <UtilitySidebar pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} />}
       <header className={"preview-navigation-header " + styles.applicationHeader} data-p6-desktop="true">
-        <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} openPath={phoneOpenPath} setOpenPath={setPhoneOpenPath} />
+        <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} accountEmail={accountEmail} profile={profile} showAdmin={showAdmin} openPath={phoneOpenPath} setOpenPath={setPhoneOpenPath} />
         <div className="p6-desktop-navigation">
-          <Link href="/" className="p6-desktop-brand" aria-label="RenderLab home"><RenderLabMark className="size-[26px]" /><span>RenderLab</span></Link>
+          <Link href="/" className="rebuild-desktop-brand" aria-label="RenderLab home"><RenderLabMark className="size-[26px]" /><span>RenderLab</span></Link>
           <nav aria-label="Primary navigation" className="p6-desktop-links">
             {destinations.slice(1).map(({ href, label }) => <Link key={href} className="p6-desktop-link" href={href} aria-current={current?.href === href ? "page" : undefined}>{label}</Link>)}
           </nav>
         </div>
         <div className="rebuild-header-actions">
           <CommandPalette showAdmin={Boolean(showAdmin && accountId)} pathname={pathname} />
-          <RegistryHeaderAction id="open-queue" pathname={pathname} />
+          {!utility && <RegistryHeaderAction id="open-queue" pathname={pathname} />}
           <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={false} />
           <div className="rebuild-loading-desktop-actions" aria-hidden="true"><span /><span /><span /></div>
         </div>
