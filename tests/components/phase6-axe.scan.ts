@@ -144,13 +144,13 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
     try{
       await page.goto(origin+"/round3-settings");
       await expect(page.getByRole("heading",{name:"Settings",exact:true})).toBeVisible();
-      await expect(page.getByText("review@example.invalid",{exact:true}).first()).toBeVisible();
+      await expect(page.getByText("review@example.invalid",{exact:true}).locator("visible=true").first()).toBeVisible();
       await measure(page,"settings");
       if(viewport.width===390){
         const nav=page.getByRole("button",{name:"Open navigation"});
         await expect(nav).toBeVisible();
         await nav.press("Enter");
-        const sidebar=page.getByRole("dialog",{name:"RenderLab navigation"});
+        const sidebar=page.getByRole("dialog",{name:"RenderLab",exact:true});
         await expect(sidebar).toBeVisible();
         await expect(sidebar.getByRole("navigation",{name:"Workspace navigation"})).toBeVisible();
         await measure(page,"sidebar");
@@ -168,7 +168,8 @@ for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
       const tile=page.getByRole("link",{name:"Open First image image Nov 24",exact:true});
       await expect(tile).toBeVisible();
       await measure(page,"library-grid");
-      await page.getByRole("button",{name:"Select",exact:true}).press("Enter");
+      // Desktop has a Select toggle; phone selects through the tile circles directly.
+      if(viewport.width!==390)await page.getByRole("button",{name:"Select",exact:true}).press("Enter");
       const checkbox=page.getByRole("checkbox",{name:"Select First image"});
       await expect(checkbox).not.toBeChecked();
       await measure(page,"library-selection-empty");

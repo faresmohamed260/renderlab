@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, FolderOpen, ImageIcon, Search, Star, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, FolderOpen, ImageIcon, Search, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -186,7 +186,6 @@ export function LibraryView({
           href={libraryHref(tab, kind, searchQuery, sort, !favoriteOnly, selectedCollectionId)}
           aria-current={favoriteOnly ? "page" : undefined}
         >
-          <Star aria-hidden="true" data-icon="inline-start" className={favoriteOnly ? "fill-current" : undefined} />
           Favorites
         </LibraryNavigationLink>
       </Button>
@@ -195,7 +194,7 @@ export function LibraryView({
   const sourceControls = (
     <nav className={styles.sourceSwitch} aria-label="Library sections">
       {tabs.map((section) => {
-        const active = tab === section.value;
+        const active = tab === section.value && !favoriteOnly;
         return (
           <Fragment key={section.value}>
           {section.value === "uploads" ? <div className="hidden min-[75rem]:grid">{favoriteControl}</div> : null}
@@ -235,7 +234,7 @@ export function LibraryView({
           name="q"
           defaultValue={searchQuery ?? ""}
           maxLength={MEDIA_ASSET_SEARCH_MAX_LENGTH}
-          placeholder="Search Library"
+          placeholder="Search your library"
           className={styles.searchInput}
         />
       </label>
@@ -289,7 +288,7 @@ export function LibraryView({
                 href={collectionHrefs[collection.id]}
                 aria-current={selectedCollectionId === collection.id ? "page" : undefined}
               >
-                <FolderOpen aria-hidden="true" data-icon="inline-start" />
+                <span className={styles.collectionSwatch} aria-hidden="true" />
                 <span className="truncate">{collection.name}</span>
               </LibraryNavigationLink>
             </Button>
@@ -302,6 +301,10 @@ export function LibraryView({
   const sortControl = (
     <LibrarySortToggle
       sort={sort}
+      kind={kind}
+      kindHrefs={{ all: libraryHref(tab, "all", searchQuery, sort, favoriteOnly, selectedCollectionId), image: libraryHref(tab, "image", searchQuery, sort, favoriteOnly, selectedCollectionId), video: libraryHref(tab, "video", searchQuery, sort, favoriteOnly, selectedCollectionId) }}
+      tab={tab}
+      sourceHrefs={{ creatives: libraryHref("creatives", kind, searchQuery, sort, favoriteOnly, selectedCollectionId), uploads: libraryHref("uploads", kind, searchQuery, sort, favoriteOnly, selectedCollectionId) }}
       newestHref={libraryHref(tab, kind, searchQuery, "newest", favoriteOnly, selectedCollectionId)}
       oldestHref={libraryHref(tab, kind, searchQuery, "oldest", favoriteOnly, selectedCollectionId)}
     />

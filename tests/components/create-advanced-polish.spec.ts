@@ -1,3 +1,4 @@
+import { advancedTrigger, expectSource } from "./composer-review-helpers";
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 
@@ -8,18 +9,18 @@ for (const motion of ["reduce", "no-preference"] as const) {
       await page.setViewportSize({ width, height: width === 195 ? 422 : 844 });
       await page.goto("/create?recipe=" + fixtureJobId);
       const workspace = page.getByRole("region", { name: "Create with FIBO" });
-      const trigger = workspace.getByRole("button", { name: "Advanced", exact: true });
+      const trigger = advancedTrigger(page);
       await trigger.click();
       const dialog = page.getByRole("dialog", { name: "Advanced" });
       await expect(dialog).toBeVisible();
       await expect.poll(() => dialog.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
       const seed = dialog.getByRole("textbox", { name: "Seed", exact: true });
-      const randomize = dialog.getByRole("checkbox", { name: "Randomize seed each time" });
+      const randomize = dialog.getByRole("button", { name: "Randomize seed each time" });
       await expect(seed).toHaveValue("1234");
       await seed.scrollIntoViewIfNeeded();
       const geometry = await seed.evaluate(el => {
-        const label = el.parentElement?.querySelector("label");
-        const field = el.closest(".create-preview-render-field");
+        const label = el.parentElement?.querySelector('button[aria-label="Randomize seed each time"]');
+        const field = el.parentElement;
         const seedRect = el.getBoundingClientRect(), labelRect = label?.getBoundingClientRect();
         const fieldRect = field?.getBoundingClientRect();
         return { seed: seedRect.toJSON(), randomize: labelRect?.toJSON(), field: fieldRect?.toJSON(),
@@ -28,6 +29,7 @@ for (const motion of ["reduce", "no-preference"] as const) {
       });
       console.log("ADVANCED_POLISH " + JSON.stringify({ viewportWidth: width, motion, ...geometry }));
       expect(geometry.seed.height).toBeGreaterThanOrEqual(44);
+      expect((await dialog.getByRole("slider", { name: /Steps/ }).boundingBox())?.height).toBeGreaterThanOrEqual(44);
       expect(geometry.seed.width).toBeGreaterThanOrEqual(24);
       expect(geometry.randomize?.width).toBeGreaterThanOrEqual(44);
       expect(geometry.randomize?.height).toBeGreaterThanOrEqual(44);
@@ -36,9 +38,12 @@ for (const motion of ["reduce", "no-preference"] as const) {
       expect(geometry.fieldBackground).not.toBe("rgba(0, 0, 0, 0)");
       await seed.fill("5678");
       await expect(seed).toHaveValue("5678");
-      await randomize.check();
+      await expect(randomize).toHaveAttribute("aria-pressed", "false");
+      await randomize.click();
+      await expect(randomize).toHaveAttribute("aria-pressed", "true");
       await expect(seed).toBeDisabled();
-      await randomize.uncheck();
+      await randomize.click();
+      await expect(randomize).toHaveAttribute("aria-pressed", "false");
       await expect(seed).toHaveValue("5678");
       await dialog.getByRole("button", { name: "Reset to defaults" }).click();
       await expect(seed).toHaveValue("42");
@@ -47,7 +52,7 @@ for (const motion of ["reduce", "no-preference"] as const) {
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
       await expect(trigger).toBeFocused();
-      await expect(workspace.getByRole("button", { name: "Remove source image" })).toBeVisible();
+      await expectSource(page);
       expect(io.every(call => ["GET capabilities", "GET history", "GET continuation source"].includes(call))).toBe(true);
     });
   }

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { registerCreateCommand } from "@/lib/create-commands";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { Check, CheckSquare2, Eye, FolderOpen, Grid2X2, Grid3X3, Minus, Plus, Search, Star, Trash2, Video, X } from "lucide-react";
+import { Check, CheckSquare2, Eye, FolderOpen, Grid2X2, Grid3X3, Heart, Minus, Plus, Star, Trash2, Video, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -151,6 +152,15 @@ export function LibraryBatchSelection({
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
+  useEffect(() => registerCreateCommand({
+    id: "library-search", label: "Search the Library", keywords: ["library", "search", "media"],
+    shortcut: "Ctrl+F", group: "Library", enabled: true,
+    expanded: narrow ? searchOpen : undefined,
+    run: () => {
+      if (narrow) setSearchOpen(open => !open);
+      else searchContainer.current?.querySelector<HTMLInputElement>("input[type=search]")?.focus({ preventScroll: true });
+    },
+  }), [narrow, searchOpen]);
   const inspectTrigger = useRef<HTMLAnchorElement>(null);
   const phoneInspectorTrigger = useRef<HTMLAnchorElement>(null);
   const galleryHeading = useRef<HTMLHeadingElement>(null);
@@ -160,6 +170,7 @@ export function LibraryBatchSelection({
   const [hiddenDeletedIds, setHiddenDeletedIds] = useState<Set<string>>(() => new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const selectTrigger = useRef<HTMLButtonElement>(null);
+  const selectionOrigin = useRef<HTMLElement | null>(null);
   const returnToSelect = useRef(false);
   const returnAfterCancel = useRef(false);
   const [deleting, setDeleting] = useState(false);
@@ -190,7 +201,26 @@ export function LibraryBatchSelection({
   const busy = deleting || organizingAction !== null;
   const selectedCollection = collections.find((collection) => collection.id === organizeCollectionId) ?? null;
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing || event.repeat || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [role=dialog]"))) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f" && !event.shiftKey) {
+        event.preventDefault();
+        if (narrow && !searchOpen) setSearchOpen(true);
+        else searchContainer.current?.querySelector<HTMLInputElement>("input[type=search]")?.focus({ preventScroll: true });
+      } else if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.key.toLowerCase() === "s" && !busy && visibleItems.length > 0) {
+        event.preventDefault();
+        selectTrigger.current?.click();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [narrow, searchOpen, busy, visibleItems.length]);
+
   function enterSelectionMode() {
+    if (document.activeElement instanceof HTMLElement) selectionOrigin.current = document.activeElement;
     setFeedback(null);
     setDeleteError(null);
     setOrganizationError(null);
@@ -210,8 +240,8 @@ export function LibraryBatchSelection({
   useEffect(() => {
     if (selectionMode || !returnAfterCancel.current) return;
     returnAfterCancel.current = false;
-    selectTrigger.current?.focus({ preventScroll: true });
-  }, [selectionMode]);
+    (narrow ? selectionOrigin.current ?? galleryHeading.current : selectTrigger.current)?.focus({ preventScroll: true });
+  }, [selectionMode, narrow]);
 
   function toggleAsset(assetId: string, checked: boolean) {
     setFeedback(null);
@@ -397,19 +427,20 @@ export function LibraryBatchSelection({
             <div ref={searchContainer} className={styles.searchCell} data-phone-search-open={searchOpen}>{searchControls}</div>
             <div className={styles.sourceCell}>{sourceControls}</div>
             {!narrow ? organizationControls : null}
+            <div className={styles.railShortcuts}><span><kbd>Ctrl F</kbd> Search</span><span><kbd>S</kbd> Select</span></div>
           </aside>
 
           <div className={styles.centerToolbar}>
             <div className={styles.desktopContext}>
               <h3 ref={galleryHeading} tabIndex={-1}>{viewTitle}</h3>
-              {showCount ? <span>{itemCountLabel(visibleItems.length)} on this page</span> : null}
+              {showCount ? <span>{itemCountLabel(visibleItems.length)}<small className={styles.pageCountQualifier}> on this page</small></span> : null}
             </div>
             <div className={styles.actionCell}>
-              {narrow ? <Button type="button" variant="ghost" size="icon-lg" aria-label="Search the Library" aria-expanded={searchOpen} onClick={() => setSearchOpen(open => !open)}><Search aria-hidden="true" /></Button> : null}
               {uploadAction}
               {visibleItems.length || items.length ? (
                 <Button
                   ref={selectTrigger}
+                  className={styles.selectTrigger}
                   type="button"
                   variant="secondary"
                   size="sm"
@@ -420,13 +451,12 @@ export function LibraryBatchSelection({
                   aria-disabled={busy || visibleItems.length === 0 || undefined}
                   aria-pressed={selectionMode}
                 >
-                  <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-                  Select
+                  {selectionMode ? "Done" : "Select"}
                 </Button>
               ) : null}
             </div>
             <div className={styles.kindCell}>
-              {narrow ? <section className={styles.phoneFilters} aria-label="Library filters">{kindControls}{organizationControls}</section> : kindControls}
+              {narrow ? <section className={styles.phoneFilters} aria-label="Library filters">{kindControls}{organizationControls}</section> : null}
             </div>
             <div className={styles.sortWrap}>{sortControl}</div>
             {visibleItems.length > 0 ? (
@@ -458,23 +488,19 @@ export function LibraryBatchSelection({
             <div className={`${styles.selectionSummary} min-[75rem]:!min-w-0 min-[75rem]:!pr-2`}>
               <span className={styles.selectionEyebrow}>SELECTION</span>
               <strong role="status" aria-live="polite">
-                {selectedCount === 0 ? (narrow ? "Select media" : "Select media on this page") : narrow ? `${selectedCount} selected` : `${selectedCount} selected`}
+                {selectedCount === 0 ? "Select media" : `${selectedCount} selected`}
               </strong>
               <small className="min-[75rem]:hidden">{itemCountLabel(visibleItems.length)} visible</small>
             </div>
 
-            <div className={`${styles.selectionActions} min-[75rem]:items-start! min-[75rem]:[&>[data-slot=button]]:h-[var(--rl-hit-preferred)]! min-[75rem]:[&>[data-slot=button]]:min-h-[var(--rl-hit-preferred)]!`}>
-              <Button type="button" variant="ghost" size="sm" onClick={togglePageSelection} disabled={busy}>
-                <CheckSquare2 aria-hidden="true" data-icon="inline-start" />
-                <span className={`${styles.selectionLabel} min-[75rem]:sr-only`}>{allSelected ? "Clear page" : `Select page (${visibleItems.length})`}</span>
-              </Button>
+            <div className={styles.selectionActions}>
               {<Button type="button" variant="ghost" size="sm" disabled={selectedCount === 0 || busy} onClick={() => void setSelectedFavorite(true)}>
-                <Star aria-hidden="true" data-icon="inline-start" /> <span className={styles.selectionLabel}>Favorite</span>
+                <Heart aria-hidden="true" data-icon="inline-start" /> <span className={styles.selectionLabel}>Favorite</span>
               </Button>}
               <CollapsibleTrigger asChild>
-                <Button type="button" variant={organizeOpen ? "secondary" : "ghost"} size="sm" disabled={selectedCount === 0 || busy}>
+                <Button type="button" variant={organizeOpen ? "secondary" : "ghost"} size="sm" disabled={busy}>
                   <FolderOpen aria-hidden="true" data-icon="inline-start" />
-                  <span className={styles.selectionLabel}>Organize</span>
+                  <span className={styles.selectionLabel}>Add to collection</span>
                 </Button>
               </CollapsibleTrigger>
               <AlertDialog
@@ -489,15 +515,15 @@ export function LibraryBatchSelection({
                 <AlertDialogTrigger asChild>
                   <Button type="button" variant="destructive" size="sm" disabled={selectedCount === 0 || busy}>
                     <Trash2 aria-hidden="true" data-icon="inline-start" />
-                    <span className={styles.selectionLabel}>Delete {selectedCount || ""}</span>
+                    <span className={styles.selectionLabel}>Delete</span>
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent onCloseAutoFocus={(event) => {
+                <AlertDialogContent className="rl-glass-panel" onCloseAutoFocus={(event) => {
                   if (!returnToSelect.current) return;
                   // Full success leaves selection mode, hiding the original trigger.
                   event.preventDefault();
                   returnToSelect.current = false;
-                  selectTrigger.current?.focus({ preventScroll: true });
+                  (narrow ? galleryHeading.current : selectTrigger.current)?.focus({ preventScroll: true });
                 }}>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
@@ -523,15 +549,13 @@ export function LibraryBatchSelection({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              <Button type="button" variant="ghost" size="sm" onClick={cancelSelection} disabled={busy}>
-                <X aria-hidden="true" data-icon="inline-start" />
-                <span className={`${styles.selectionLabel} min-[75rem]:sr-only`}>Cancel</span>
-              </Button>
+
             </div>
           </div>
 
           <CollapsibleContent className={styles.organizeContent}>
             <div className={`${styles.organizeDeck} grid gap-4 md:grid-cols-2`}>
+              <div className="flex flex-wrap gap-2 md:col-span-2"><Button type="button" variant="ghost" size="sm" onClick={togglePageSelection} disabled={busy}><CheckSquare2 aria-hidden="true" data-icon="inline-start" />{allSelected ? "Clear page" : `Select page (${visibleItems.length})`}</Button><Button type="button" variant="ghost" size="sm" onClick={cancelSelection} disabled={busy}><X aria-hidden="true" data-icon="inline-start" />Cancel selection</Button></div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-text">Favorites</p>
                 <p className="mt-1 text-xs leading-5 text-text-muted">Set one explicit Favorite state for every selected item.</p>
@@ -597,7 +621,7 @@ export function LibraryBatchSelection({
           </Alert>
         ) : null}
 
-        <div hidden={items.length === 0} className={styles.mediaHead} data-library-media-head="true">
+        <div hidden={items.length === 0 || !dropHint} className={styles.mediaHead} data-library-media-head="true">
           <div className={styles.mediaContext}>
             <span className={styles.mediaEyebrow}>{mediaContextLabel}</span>
             <strong>{selectionMode ? `${selectedCount} of ${visibleItems.length} selected` : itemCountLabel(visibleItems.length)}</strong>
@@ -651,14 +675,14 @@ export function LibraryBatchSelection({
                   </Link>
                 </Button>
 
-                {selectionMode ? (
+                {selectionMode || narrow ? (
                   <div className={styles.selectionCheckboxWrap}>
                     <Checkbox
                       className="kinetic-selection-checkbox size-11"
                       aria-label={`Select ${title}`}
                       checked={selected}
                       disabled={busy}
-                      onCheckedChange={(checked) => toggleAsset(asset.id, checked === true)}
+                      onCheckedChange={(checked) => { if (!selectionMode) enterSelectionMode(); toggleAsset(asset.id, checked === true); }}
                     />
                   </div>
                 ) : null}
@@ -674,8 +698,9 @@ export function LibraryBatchSelection({
           event.preventDefault();
           const target = phoneInspectorTrigger.current ?? inspectTrigger.current;
           if (target?.isConnected) target.focus({ preventScroll: true });
-          else (selectTrigger.current ?? galleryHeading.current)?.focus({ preventScroll: true });
+          else (narrow ? galleryHeading.current : selectTrigger.current ?? galleryHeading.current)?.focus({ preventScroll: true });
         }}>
+          <div className={styles.sheetHandle} aria-hidden="true" />
           <SheetTitle className="sr-only">Media inspector</SheetTitle>
           <SheetDescription className="sr-only">Details and actions for selected Library media.</SheetDescription>
           <LibraryInspector phone key={inspected.id} asset={inspected} reuseRecipeJobId={inspected.generationJobId === reuseRecipeJobId ? reuseRecipeJobId : null} onClose={() => dismissInspector()} onDeleted={() => dismissInspector(inspected.id)} />

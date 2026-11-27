@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { animated, useReducedMotion, useSpring } from "@react-spring/web";
-import { ExternalLink, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import styles from "@/features/library/library-gallery.module.css";
 import { MediaViewerManageActions, MediaViewerQuickActions } from "@/features/library/media-viewer-actions";
@@ -27,7 +27,9 @@ export function LibraryInspector({
   const title = asset.displayName || asset.originalFilename || `${asset.origin === "uploaded" ? "Uploaded" : "Generated"} ${asset.kind}`;
   const edit = continuationActionForMedia(asset.kind, "edit-image");
   const editHref = edit ? `/create?${new URLSearchParams({ source: asset.id, action: edit.id })}` : null;
-  const dimensions = asset.width && asset.height ? `${asset.width} × ${asset.height}` : null;
+  const width = asset.width;
+  const height = asset.height;
+  const shape = width && height ? (() => { let a = width, b = height; while (b) { const remainder = a % b; a = b; b = remainder; } return `${width / a}:${height / a}`; })() : null;
   const date = new Date(asset.createdAt);
   const created = Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
   const reducedMotion = useReducedMotion();
@@ -52,57 +54,54 @@ export function LibraryInspector({
         </Button>
       </div>
       {editor}
-      {asset.prompt ? <p className={styles.inspectorPrompt}>{asset.prompt}</p> : null}
-      <dl className={styles.inspectorFacts}>
+      {asset.prompt ? <div className={styles.promptBlock}>{phone ? <span>Prompt</span> : null}<p className={styles.inspectorPrompt}>{asset.prompt}</p></div> : null}
+      {phone ? <p className={styles.inspectorFactsLine}>{shape ? <span>{shape}</span> : null}{shape && created ? " · " : null}{created ? <time dateTime={asset.createdAt}>Created {created}</time> : null}</p> : <dl className={styles.inspectorFacts}>
         {created ? <><dt>Created</dt><dd><time dateTime={asset.createdAt}>{created}</time></dd></> : null}
-        <dt>Media type</dt><dd>{asset.kind === "image" ? "Image" : "Video"}</dd>
-        {dimensions ? <><dt>Dimensions</dt><dd>{dimensions}</dd></> : null}
-      </dl>
+        {shape ? <><dt>Shape</dt><dd>{shape}</dd></> : null}
+      </dl>}
+      {!phone ? <Link className={styles.quietViewerLink} href={`/library/${encodeURIComponent(asset.id)}`}>Open Viewer</Link> : null}
     </>;
   }
-  function actions(manage: ReactNode, compact = false) {
+  function actions(manage: ReactNode, compact = false, rename?: ReactNode) {
     return (
       <div className={styles.inspectorActions}>
         {editHref ? (
           <Button asChild size="lg" className={styles.createAction}>
             <Link href={editHref} prefetch={false} aria-description={phone ? "Edit image" : undefined}>
+              {phone ? <Sparkles aria-hidden="true" data-icon="inline-start" /> : null}
               <span>Open in Create</span>
-              {!phone ? <>{" "}<span className={styles.editLabel}>Edit image</span></> : null}
             </Link>
           </Button>
         ) : null}
+        {phone ? <><MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} stacked />{manage}</> : null}
+        <div className={styles.inspectorSecondary}>
         {reuseRecipeJobId ? (
           <Button asChild variant="secondary" size="lg">
             <Link href={`/create?recipe=${encodeURIComponent(reuseRecipeJobId)}`} prefetch={false}>Reuse settings</Link>
           </Button>
         ) : null}
-        <Button asChild variant="ghost" size="lg">
-          <Link href={`/library/${encodeURIComponent(asset.id)}`}>
-            <ExternalLink aria-hidden="true" data-icon="inline-start" />
-            Open Viewer
-          </Link>
-        </Button>
+        {editHref ? <Button asChild variant="secondary" size="lg"><Link href={editHref} prefetch={false}>Edit image</Link></Button> : null}
+        {phone ? rename : null}
+        </div>
         {compact ? (
-          <div className="grid min-w-0 grid-cols-3 gap-2">
+          <div className={styles.inspectorQuickRow}>
             <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} compact />
             {manage}
           </div>
-        ) : <>
+        ) : !phone ? <>
           <MediaViewerQuickActions assetId={asset.id} isFavorite={asset.isFavorite} />
           {manage}
-        </>}
+        </> : null}
+        {phone ? <Link className={styles.quietViewerLink} href={`/library/${encodeURIComponent(asset.id)}`}>Open Viewer</Link> : null}
       </div>
     );
   }
   const manageProps = { assetId: asset.id, displayName: asset.displayName, fallbackTitle: title, onDeleted };
   return <>
     {preview}
-    {phone ? <>
-      {details()}
-      {actions(<MediaViewerManageActions {...manageProps} />)}
-    </> : <MediaViewerManageActions {...manageProps} renderLayout={({ rename, editor, remove }) => <>
-      {details(rename, editor)}
-      {actions(remove, true)}
-    </>} />}
+    <MediaViewerManageActions {...manageProps} stacked={phone} renderLayout={({ rename, editor, remove }) => <>
+      {details(phone ? undefined : rename, editor)}
+      {actions(remove, !phone, phone ? rename : undefined)}
+    </>} />
   </>;
 }

@@ -23,6 +23,7 @@ export type HistoryTransport = {
 export type HistoryOptions = {
   accountKey: string | null;
   visible: boolean;
+  combined?: boolean;
   initialTab?: HistoryTab;
   initialOffset?: number;
   transport: HistoryTransport;

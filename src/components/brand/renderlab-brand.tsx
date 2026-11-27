@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 type RenderLabMarkTone = "brand" | "mono";
@@ -9,10 +10,19 @@ export function RenderLabMark({
   className?: string;
   tone?: RenderLabMarkTone;
 }) {
-  const topLeftFill = tone === "brand" ? "url(#renderlab-mark-top-left)" : "currentColor";
-  const upperRightFill = tone === "brand" ? "url(#renderlab-mark-upper-right)" : "currentColor";
-  const bottomLeftFill = tone === "brand" ? "url(#renderlab-mark-bottom-left)" : "currentColor";
-  const bottomRightFill = tone === "brand" ? "url(#renderlab-mark-bottom-right)" : "currentColor";
+  // Gradient ids must be unique per rendered mark. The shell renders the mark
+  // more than once and the first copy can sit inside a display:none region (the
+  // phone navigation on desktop); duplicate ids make every copy resolve its
+  // fills to that hidden copy, which paints nothing.
+  const gradientScope = `renderlab-mark-${useId()}`;
+  const topLeftId = `${gradientScope}-top-left`;
+  const upperRightId = `${gradientScope}-upper-right`;
+  const bottomLeftId = `${gradientScope}-bottom-left`;
+  const bottomRightId = `${gradientScope}-bottom-right`;
+  const topLeftFill = tone === "brand" ? `url(#${topLeftId})` : "currentColor";
+  const upperRightFill = tone === "brand" ? `url(#${upperRightId})` : "currentColor";
+  const bottomLeftFill = tone === "brand" ? `url(#${bottomLeftId})` : "currentColor";
+  const bottomRightFill = tone === "brand" ? `url(#${bottomRightId})` : "currentColor";
 
   return (
     <svg
@@ -25,23 +35,23 @@ export function RenderLabMark({
     >
       {tone === "brand" ? (
         <defs>
-          <linearGradient id="renderlab-mark-top-left" x1="0" y1="0" x2="56" y2="0" gradientUnits="userSpaceOnUse">
+          <linearGradient id={topLeftId} x1="0" y1="0" x2="56" y2="0" gradientUnits="userSpaceOnUse">
             <stop offset="0" stopColor="#D4F1FF" />
             <stop offset=".48" stopColor="#9DBAFF" />
             <stop offset="1" stopColor="#6F79F8" />
           </linearGradient>
-          <radialGradient id="renderlab-mark-upper-right" cx="122" cy="28" r="94" gradientUnits="userSpaceOnUse">
+          <radialGradient id={upperRightId} cx="122" cy="28" r="94" gradientUnits="userSpaceOnUse">
             <stop offset="0" stopColor="#F7C7F1" />
             <stop offset=".34" stopColor="#D38AF2" />
             <stop offset=".62" stopColor="#8C69F6" />
             <stop offset="1" stopColor="#637AF4" />
           </radialGradient>
-          <linearGradient id="renderlab-mark-bottom-left" x1="24" y1="73" x2="24" y2="132" gradientUnits="userSpaceOnUse">
+          <linearGradient id={bottomLeftId} x1="24" y1="73" x2="24" y2="132" gradientUnits="userSpaceOnUse">
             <stop offset="0" stopColor="#347BF2" />
             <stop offset=".55" stopColor="#469EF7" />
             <stop offset="1" stopColor="#73D7FF" />
           </linearGradient>
-          <linearGradient id="renderlab-mark-bottom-right" x1="72" y1="92" x2="122" y2="132" gradientUnits="userSpaceOnUse">
+          <linearGradient id={bottomRightId} x1="72" y1="92" x2="122" y2="132" gradientUnits="userSpaceOnUse">
             <stop offset="0" stopColor="#7084F3" />
             <stop offset=".45" stopColor="#3568E8" />
             <stop offset="1" stopColor="#315CDF" />

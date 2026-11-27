@@ -137,7 +137,7 @@ for (const viewport of viewports) for (const reducedMotion of preferences) {
           name: phone ? "RenderLab — Open navigation" : "Account menu: Synthetic Member",
           exact: true,
         });
-        const dialog = page.getByRole("dialog", { name: "RenderLab navigation", exact: true });
+        const dialog = page.getByRole("dialog", { name: "RenderLab", exact: true });
         const desktopSettings = header.getByRole("link", { name: "Settings", exact: true });
         await expect(trigger).toBeVisible();
         await trigger.focus();

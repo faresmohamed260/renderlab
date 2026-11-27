@@ -1,147 +1,178 @@
-/* Phone-only composer card; keep normal flow at small heights and with the
- * software keyboard. Do not overlay the result, mask editor or focus targets. */
-.composer .advancedTrigger { display: none; }
-.inlineStructured { display: flow-root; }
+/* Composer-only geometry from design/spec/create-desktop.json 66–100,
+ * create-phone.json 20–31 and advanced-sheet-phone.json 3–20.
+ * Shared grid placement is owned by Rail/Stage. */
+.composer:global(.create-preview-controls) {
+  box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;
+  gap: 16px; min-width: 0; padding: 20px; border-radius: var(--rl-radius-panel);
+  background: var(--rl-surface-panel-layered); border: 1px solid var(--rl-border-subtle);
+  box-shadow: var(--rl-elevation-panel);
+  backdrop-filter: var(--rl-material-panel);
+}
+.fields { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.modeGroup:global([data-slot="toggle-group"]) { position: relative; display: flex; width: 100%; gap: 0; padding: 2px 4px; border-radius: 24px; background: rgb(0 0 0 / 32%); }
+.modeHighlight { position: absolute; pointer-events: none; inset: 2px auto 2px 4px; width: calc((100% - 8px) / 2); border-radius: 20px; background: rgb(255 255 255 / 14%); }
+.modeGroup > button:global([data-slot="toggle-group-item"]) { position: relative; flex: 1; min-width: 0; height: 44px; min-height: 44px; border: 0; border-radius: 20px; background: transparent; color: rgb(245 245 247 / 72%); font-family: inherit; line-height: 1; font-size: 14px; font-weight: 500; }
+.modeGroup > button:global([data-state="on"]) { background: transparent; color: var(--rl-on-accent); }
+.promptSection { min-width: 0; }
+.promptHeading, .referenceHeading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: rgb(245 245 247 / 68%); font-size: 13px; font-weight: 500; min-width: 0; }
+.promptHints { display: flex; align-items: center; gap: 6px; }
+.promptHints kbd { padding: 3px 7px; border-radius: 6px; font-family: inherit; font-weight: 400; line-height: 14px; font-size: 11px; color: rgb(245 245 247 / 75%); background: rgb(255 255 255 / 10%); }
+.composer .promptSection :global(#create-preview-prompt) { display: block; width: 100%; height: 112px; min-height: 112px; max-height: 112px; box-sizing: border-box; padding: 14px 16px; margin: 0; resize: none; overflow: auto; border: 0; border-radius: 20px; background: rgb(255 255 255 / 6%); color: var(--rl-text-primary); font-family: inherit; font-size: 16px; font-weight: 400; line-height: 1.4; box-shadow: none; }
+.composer .promptSection :global(.create-preview-rich-prompt[data-empty="true"])::before { inset: 14px 16px auto; }
+.composer .promptSection :global(#create-preview-prompt):focus-visible { outline: var(--rl-focus-width) solid var(--rl-focus); outline-offset: var(--rl-focus-offset); }
+.references { min-width: 0; }
+.referenceHeading > button { height: 32px; min-height: 32px; padding: 0 12px; border: 0; border-radius: 16px; background: var(--rl-surface-control); color: rgb(245 245 247 / 88%); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.referenceTiles { display: flex; flex-wrap: wrap; gap: 10px; }
+.referenceTile { position: relative; width: 64px; height: 64px; flex: none; }
+.referenceTile > button:first-child { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; padding: 0; border: 0; border-radius: 18px; overflow: hidden; background: var(--rl-surface-control); color: rgb(245 245 247 / 80%); }
+.referenceTile > button:first-child > img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.referenceTile > button.addTile { border: 1.5px dashed rgb(255 255 255 / 28%); background: transparent; }
+.referenceTile > button.addTile > svg { width: 22px; height: 22px; stroke-width: 1.8; }
+.referenceTile > button.removeReference { position: absolute; inset: -6px 4px auto auto; width: 26px; height: 26px; min-width: 26px; min-height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgb(16 15 21 / 60%); color: var(--rl-on-accent); }
+.referenceTile[data-drag-over="true"] > button:first-child { outline: 2px solid var(--rl-focus); outline-offset: 2px; }
+.sectionLabel { margin-bottom: 8px; font-size: 13px; font-weight: 500; color: rgb(245 245 247 / 68%); }
+.shapes:global([data-slot="toggle-group"]) { display: flex; width: 100%; flex-wrap: nowrap; gap: 6px; padding: 0; background: transparent; overflow-x: auto; scrollbar-width: thin; }
+.shapes > button:global([data-slot="toggle-group-item"]) { box-sizing: border-box; flex: 0 0 auto; min-width: 0; min-height: 36px; height: 36px; padding: 0; border: 0; border-radius: 18px; background: var(--rl-surface-control); color: rgb(245 245 247 / 85%); font-size: 13px; font-weight: 500; line-height: 1; }
+/* Five preset pills use the measured widths. Edit's approved Original
+ * occupies 64px; the other five tighten to 40/44/50/44/50 plus 5×4px
+ * gaps = 312px, within the judge's measured 316px. On narrower tablet
+ * columns, scroll the same single row rather than wrap or truncate labels. */
+.shapes > button:nth-child(1) { width: 43px; }
+.shapes > button:nth-child(2), .shapes > button:nth-child(4) { width: 49px; }
+.shapes > button:nth-child(3), .shapes > button:nth-child(5) { width: 54px; }
+.shapes:global([data-slot="toggle-group"]):has(> button:nth-child(6)) { gap: 4px; }
+.shapes:has(> button:nth-child(6)) > button:nth-child(1) { width: 64px; }
+.shapes:has(> button:nth-child(6)) > button:nth-child(2) { width: 40px; }
+.shapes:has(> button:nth-child(6)) > button:nth-child(3), .shapes:has(> button:nth-child(6)) > button:nth-child(5) { width: 44px; }
+.shapes:has(> button:nth-child(6)) > button:nth-child(4), .shapes:has(> button:nth-child(6)) > button:nth-child(6) { width: 50px; }
+.shapes > button:focus-visible { outline-offset: -2px; }
+.shapes > button:global([data-state="on"]) { background: var(--rl-on-accent); color: #14121c; font-weight: 600; }
+.desktopAdvanced { border-radius: 20px; background: rgb(255 255 255 / 5%); padding: 6px 16px 14px; min-width: 0; }
+.advancedHeading { display: flex; width: 100%; height: 46px; min-height: 46px; justify-content: space-between; padding: 0; border: 0; background: transparent; font-size: 14px; font-weight: 500; }
+.advancedHeading > svg { width: 16px; height: 16px; }
+.advancedHeading > svg[data-expanded="false"] { transform: rotate(-90deg); }
+.advancedFields:not([hidden]) { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.seedRow, .stepsRow { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 13px; }
+.seedRow > label:first-child, .stepsRow > label { width: 52px; flex: none; color: rgb(245 245 247 / 68%); }
+.composer .seedRow :global(#create-preview-seed), .sheet .seedRow :global(#create-preview-seed) { min-width: 0; flex: 1; height: 38px; min-height: 38px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--rl-surface-control); color: var(--rl-text-primary); font-family: inherit; font-size: 14px; box-shadow: none; }
+.composer .randomize, .sheet .randomize { position: relative; display: grid; place-items: center; width: 38px; min-width: 38px; height: 38px; min-height: 38px; flex: none; padding: 0; border: 0; border-radius: 12px; background: var(--rl-surface-control); color: var(--rl-text-primary); cursor: pointer; }
+.randomize > svg { width: 17px; height: 17px; pointer-events: none; }
+.composer .randomize[aria-pressed="true"], .sheet .randomize[aria-pressed="true"] { background: var(--rl-surface-selected); }
+.randomize:focus-visible { outline: var(--rl-focus-width) solid var(--rl-focus); outline-offset: var(--rl-focus-offset); }
+.randomize:disabled { opacity: .5; cursor: not-allowed; }
+.stepsRow > input[type="range"] { flex: 1; margin-block: -12px; min-width: 0; height: 44px; min-height: 44px; padding: 0; border: 0; box-shadow: none; background: transparent; accent-color: #8575f5; }
+.stepsRow > output { width: 18px; flex: none; text-align: right; color: var(--rl-text-primary); }
+.dock { min-width: 0; margin-top: auto; }
+.workerNote { color: var(--rl-text-quiet); font-size: 12px; overflow-wrap: anywhere; margin-bottom: 8px; }
+.workerNote:empty { display: none; }
+.actionRow { display: flex; align-items: center; min-width: 0; }
+.phoneActions, .phoneIcon { display: none; }
+.composer .generate:global(.create-preview-generate) { box-sizing: border-box; display: flex; flex: 0 0 100%; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 56px; min-height: 56px; min-block-size: 56px; padding: 0 14px; border: 0; border-radius: 20px; background: var(--rl-gradient-primary); color: var(--rl-on-accent); font-size: 16px; font-weight: 600; box-shadow: 0 14px 40px rgb(124 108 242 / 45%), inset 0 1px 0 rgb(255 255 255 / 28%); }
+.generate > svg { flex: none; width: 19px; height: 19px; }
+.generateLabel { line-height: 1; }
+.composer .generate .phoneIcon { display: none; }
+.composer .generate kbd { flex: none; margin: 0 0 0 6px; padding: 4px 7px; white-space: nowrap; border: 0; border-radius: 7px; background: rgb(0 0 0 / 22%); color: var(--rl-on-accent); font-size: 11px; font-weight: 500; line-height: 1; }
+.composer .generate:global(.create-preview-generate):disabled { background: var(--rl-surface-disabled); color: var(--rl-text-disabled); box-shadow: none; }
+.phonePopover { width: max-content; max-width: calc(100vw - 24px); padding: 12px; border-radius: 20px; background: var(--rl-surface-overlay); color: var(--rl-text-primary); }
+.menuChoices:global([data-slot="toggle-group"]) { display: flex; flex-direction: column; width: 100%; gap: 4px; background: transparent; padding: 0; }
+.menuChoices > button { width: 100%; min-height: 44px; justify-content: flex-start; border-radius: 14px; }
 @media (max-width: 700px) {
-  /* Hide inline fields even before the first client media-query update. */
-  .composer .inlineStructured, .composer .inlineAdvanced { display: none; }
-  .composer:global(.create-preview-controls) {
-    border-radius: var(--rl-radius-sheet);
-    border: 1px solid var(--rl-border-subtle);
-    background: var(--rl-surface-panel-layered);
-    box-shadow: var(--rl-elevation-panel);
-    backdrop-filter: var(--rl-material-panel);
-    padding-block-end: max(var(--rl-space-16), env(safe-area-inset-bottom));
-  }
-  .composer .advancedTrigger {
-    display: flex;
-    inline-size: 100%;
-    min-block-size: var(--rl-hit-preferred);
-    margin-block-end: var(--rl-space-8);
-  }
+  .composer:global(.create-preview-controls) { position: fixed; inset: auto 12px max(32px, env(safe-area-inset-bottom)) 12px; z-index: 20; min-height: 150px; height: auto; width: auto; max-width: none; padding: 12px 14px 12px 18px; gap: 4px; border-radius: 32px; background: rgb(255 255 255 / 8%); border-color: rgb(255 255 255 / 14%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 24px 60px rgb(0 0 0 / 50%); backdrop-filter: blur(32px) saturate(1.7); overflow: visible; }
+  .fields { gap: 0; }
+  .modeGroup:global([data-slot="toggle-group"]), .shapeSection, .references, .desktopAdvanced { display: none; }
+  .promptHeading > label, .promptHints > kbd { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .promptHeading { margin: 0; }
+  .promptHints { margin-left: auto; }
+  .composer .promptSection :global(#create-preview-prompt) { height: 68px; min-height: 68px; max-height: 68px; background: transparent; padding: 0; border-radius: 0; font-size: 17px; line-height: 1.35; letter-spacing: -.01em; }
+  .composer .promptSection :global(.create-preview-rich-prompt[data-empty="true"])::before { inset: 0; }
+  .actionRow { gap: 8px; flex-wrap: wrap; justify-content: space-between; }
+  .phoneActions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+  .phoneActions .roundControl, .phoneActions .phoneChip { box-sizing: border-box; flex: none; height: 44px; min-height: 44px; border-radius: 22px; border: 0; background: rgb(255 255 255 / 12%); color: var(--rl-text-primary); font-size: 14px; font-weight: 500; }
+  .phoneActions .roundControl { width: 44px; min-width: 44px; padding: 0; border-radius: 50%; }
+  .phoneActions .roundControl > svg { width: 20px; height: 20px; stroke-width: 1.8; }
+  .phoneActions .phoneChip { min-width: 0; padding: 0; gap: 6px; line-height: 1; }
+  /* Match the comp's fixed 44 / 75 / 50 / 44 tracks and 8px gaps.
+     Original remains fully named and fits its 50px track at 12px. */
+  .phoneActions .phoneChip[aria-label^="Mode:"] { width: 75px; }
+  .phoneActions .phoneChip[aria-label^="Shape "] { width: 50px; }
+  .phoneActions .phoneChip[aria-label="Shape Original"] { font-size: 12px; }
+  .phoneActions .phoneChip[aria-label^="Mode:"] > svg { margin-inline-start: 0; }
+  .phoneActions .phoneChip > svg { width: 12px; height: 12px; stroke-width: 2.4; }
+  .composer .generate:global(.create-preview-generate) { flex: none; margin-inline-start: auto; width: 52px; min-width: 52px; height: 52px; min-height: 52px; min-block-size: 52px; padding: 0; border-radius: 50%; background: linear-gradient(180deg,#8575f5,#6251c7); box-shadow: 0 8px 24px rgb(98 81 199 / 50%), inset 0 1px 0 rgb(255 255 255 / 30%); }
+  .composer .generate:global(.create-preview-generate):disabled { background: var(--rl-surface-disabled); box-shadow: none; }
+  .generate .desktopIcon, .generate .generateLabel, .composer .generate kbd { display: none; }
+  .composer .generate .phoneIcon { display: block; width: 22px; height: 22px; stroke-width: 2.2; }
 }
 .sheet:global([data-slot="sheet-content"]) {
-  /* The portalled surface owns its anchor. Do not rely on utility generation
-   * or static positioning inside the scrolled composer. */
-  position: fixed;
-  inset: auto 0 0;
-  margin: 0;
-  inline-size: 100%;
-  max-inline-size: 100%;
-  min-inline-size: 0;
-  box-sizing: border-box;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  overscroll-behavior: contain;
-  max-block-size: 85dvh;
-  padding-block-end: max(var(--rl-space-16), env(safe-area-inset-bottom));
+  position: fixed; inset: auto 0 0; margin: 0; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
+  height: min(544px, 85dvh); max-height: 85dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 8px 16px max(20px,env(safe-area-inset-bottom));
+  overscroll-behavior: contain; border-radius: 34px 34px 0 0; border: 0; border-top: 1px solid rgb(255 255 255 / 14%);
+  background: rgb(26 21 46 / 90%); color: var(--rl-text-primary); backdrop-filter: blur(40px) saturate(1.5); box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), 0 -30px 80px rgb(0 0 0 / 50%);
 }
-.heading { display: flex; align-items: center; justify-content: space-between; gap: var(--rl-space-8); min-inline-size: 0; }
-.heading > * { min-inline-size: 0; }
-.heading > button { min-block-size: var(--rl-hit-preferred); flex-shrink: 0; }
-.sheet > * { flex-shrink: 0; min-inline-size: 0; max-inline-size: 100%; overflow-wrap: anywhere; }
-.settings { display: grid; min-inline-size: 0; grid-template-columns: minmax(0, 1fr); gap: var(--rl-space-16); }
-.settings :global(.create-preview-seed) { display: flex; gap: var(--rl-space-8); min-inline-size: 0; align-items: center; }
-.settings :global(.create-preview-seed) input[type="text"] { min-inline-size: 0; flex: 1; }
-.settings :global(.create-preview-seed-dice) { flex: 0 0 auto; min-inline-size: var(--rl-hit-preferred); min-block-size: var(--rl-hit-preferred); }
-.settings :global(.create-preview-steps) {
-  display: grid;
-  row-gap: var(--rl-space-12);
-  min-inline-size: 0;
-  color: var(--rl-text-secondary);
-  font-size: var(--rl-type-label);
-}
-/* Keep the label and numeric output on the same explicit foreground, including the portalled sheet. */
-.settings :global(.create-preview-steps) > span { color: var(--rl-text-primary); }
-.settings :global(.create-preview-steps) output { color: var(--rl-text-primary); }
-.settings :global(.create-preview-steps) input { box-sizing: border-box; inline-size: 100%; min-inline-size: 0; max-inline-size: 100%; min-block-size: var(--rl-hit-preferred); }
-.settings :global(.create-preview-extra) summary { min-block-size: var(--rl-hit-preferred); padding-block: var(--rl-space-12); cursor: pointer; overflow-wrap: anywhere; }
-.settings textarea { inline-size: 100%; max-inline-size: 100%; min-inline-size: 0; resize: vertical; }
-.settings :global(.create-preview-caption) { color: var(--rl-text-secondary); overflow-wrap: anywhere; }
+.handle { align-self: center; width: 36px; height: 5px; flex: none; border-radius: 3px; background: rgb(255 255 255 / 30%); }
+.heading { display: flex; align-items: center; justify-content: space-between; height: 40px; flex: none; min-width: 0; }
+.heading > :is(h1,h2,h3) { margin: 0; font-size: 22px; font-weight: 700; line-height: normal; }
+.heading > button { height: 44px; min-height: 44px; padding: 0 6px; border: 0; background: transparent; color: #b5a9ff; font-size: 16px; font-weight: 600; }
+.sheet > p { margin: 0 4px; color: rgb(245 245 247 / 66%); font-size: 13px; line-height: 1.45; }
+.settings { padding: 0 16px; border-radius: 24px; background: rgb(255 255 255 / 6%); min-width: 0; }
+.settings .seedRow, .settings .stepsRow { min-height: 60px; font-size: 15px; }
+.settings .seedRow > label:first-child, .settings .stepsRow > label { width: 56px; color: rgb(245 245 247 / 78%); }
+.settings .seedRow :global(#create-preview-seed) { height: 44px; min-height: 44px; border-radius: 14px; background: rgb(255 255 255 / 8%); font-size: 15px; padding: 0 14px; }
+.settings .randomize { width: 44px; height: 44px; border-radius: 22px; background: rgb(255 255 255 / 8%); }
+.settings .randomize[aria-pressed="true"] { background: var(--rl-surface-selected); }
+.settings .randomize > svg { width: 18px; height: 18px; }
+.settings .stepsRow { border-top: 1px solid rgb(255 255 255 / 8%); }
+.settings .stepsRow > output { width: 20px; }
+.settings .stepsRow > input[type="range"] { margin-block: 0; }
+.settings textarea { width: 100%; min-width: 0; resize: vertical; }
+.sheet > button:last-child { margin-top: auto; min-height: 50px; height: 50px; flex: none; border: 0; border-radius: 18px; background: rgb(255 255 255 / 9%); color: var(--rl-text-primary); font-size: 15px; font-weight: 500; }
 
-/* Portal controls cannot inherit the composer's sized button treatment. */
-.sheet:global([data-slot="sheet-content"]) > button,
-.sheet:global([data-slot="sheet-content"]) .heading > button {
-  min-block-size: var(--rl-hit-preferred, 44px);
-  flex-shrink: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
+/* Judge decisions 13–17: original stays first in edit mode, manual VGL
+ * is explicitly enabled, and only this sheet receives its lighter scrim. */
+.structuredFields { min-width: 0; }
+.structuredRow { display: flex; align-items: center; gap: 10px; min-height: 24px; color: rgb(245 245 247 / 85%); font-size: 13px; line-height: 1.4; cursor: pointer; }
+.structuredRow > button:global([data-slot="checkbox"]) { width: 18px; height: 18px; min-width: 18px; min-height: 18px; border-radius: 2px; background: var(--rl-on-accent); border: 1px solid var(--rl-border-subtle); color: var(--rl-on-accent); }
+.structuredRow > button:global([data-state="checked"]) { background: var(--rl-accent-primary); border-color: var(--rl-accent-primary); }
+.structuredRow > button:disabled { opacity: .5; cursor: not-allowed; }
+.structuredEditor { padding-block: 8px; min-width: 0; }
+.structuredEditor textarea { width: 100%; min-width: 0; min-height: 100px; resize: vertical; font: 12px/1.5 ui-monospace, Consolas, monospace; }
+.settings .structuredRow { min-height: 61px; border-top: 1px solid rgb(255 255 255 / 8%); justify-content: space-between; gap: 10px; color: rgb(245 245 247 / 90%); font-size: 15px; }
+.settings .structuredRow > button:global([data-slot="checkbox"]) { order: 1; width: 26px; height: 26px; min-width: 26px; min-height: 26px; margin-inline: 9px; }
+.settings .seedRow, .settings .stepsRow { box-sizing: content-box; height: 60px; }
+:global([data-slot="sheet-overlay"]):has(+ .sheet) { background: rgb(7 6 11 / 58%); z-index: calc(var(--rl-z-navigation) + 1); }
+.sheet:global([data-slot="sheet-content"]) { z-index: calc(var(--rl-z-navigation) + 2); }
+.phoneActions .roundControl[aria-label="Advanced settings"] > svg { width: 19px; height: 19px; }
+.composer .generate:global(.create-preview-generate):not(:disabled):active { background: var(--rl-gradient-pressed); }
+@media (hover: hover) and (pointer: fine) {
+  .composer .generate:global(.create-preview-generate):not(:disabled):hover:not(:active) { background: var(--rl-gradient-hover); }
+}
+@media (max-width: 700px) {
+  .composer .generate:global(.create-preview-generate):not(:disabled):active { background: linear-gradient(180deg,#8575f5,#6251c7); }
 }
 
+.composer .advancedHeading { color: var(--rl-text-primary); }
+.promptHeading, .referenceHeading, .sectionLabel { line-height: 16px; }
+.settings .seedRow, .settings .stepsRow { line-height: 1.25; }
 
-/* The shared Sheet is portalled outside the workspace, so composer-specific
- * seed styles are not inherited. Use the same semantic roles on this surface
- * and reserve a separate, operable randomize target instead of overlaying it. */
-.sheet:global([data-slot="sheet-content"]) {
-  gap: var(--rl-space-16);
-  padding-inline: var(--rl-space-16);
-  border-radius: var(--rl-radius-sheet) var(--rl-radius-sheet) 0 0;
-  background: var(--rl-surface-overlay);
-  color: var(--rl-text-primary);
+/* Retain the existing 44px target guarantee on the rebuilt composer.
+ * At real 200% phone zoom, reflow the narrow settings card without clipping. */
+@media (max-width: 320px) {
+  .settings { padding-inline: 8px; }
+  .settings .seedRow, .settings .stepsRow { gap: 6px; }
+  .settings .seedRow > label:first-child, .settings .stepsRow > label { width: 40px; }
+  .settings .seedRow :global(#create-preview-seed) { padding-inline: 6px; min-width: 24px; }
+  .settings .structuredRow { min-width: 0; height: auto; }
+  .settings .structuredRow > span { min-width: 0; overflow-wrap: anywhere; }
 }
-.heading > :is(h1, h2, h3) {
-  font-size: var(--rl-type-section);
-  font-weight: var(--rl-weight-heading);
-  line-height: var(--rl-leading-label);
+/* Keep the native range's narrow painted track, with a 44px interaction box.
+ * The negative desktop margin preserves the measured Advanced row rhythm. */
+@media (max-width: 240px) {
+  .sheet .heading > :is(h1,h2,h3) { font-size: 19px; min-width: 0; }
+  .sheet .heading > button { min-width: 44px; padding-inline: 4px; font-size: 14px; }
 }
-.sheet > p {
-  color: var(--rl-text-secondary);
-  font-size: var(--rl-type-label);
-  line-height: var(--rl-leading-label);
+/* 200% zoom (about 195 CSS px): put the Seed label above the field so the field keeps a usable target. */
+@media (max-width: 260px) {
+  .sheet .seedRow { flex-wrap: wrap; row-gap: 6px; }
+  .sheet .seedRow > label:first-child { flex: 0 0 100%; width: auto; }
 }
-.settings {
-  padding: var(--rl-space-8);
-  border-radius: var(--rl-radius-panel);
-  background: var(--rl-surface-panel-layered);
-}
-.settings :global(.create-preview-render-field) > label {
-  color: var(--rl-text-secondary);
-  font-size: var(--rl-type-label);
-}
-.settings :global(.create-preview-seed) > input[type="text"] {
-  box-sizing: border-box;
-  min-block-size: var(--rl-hit-preferred);
-  inline-size: 0;
-  padding-inline: var(--rl-space-12);
-  border-radius: var(--rl-radius-control);
-  background: var(--rl-surface-raised);
-  color: var(--rl-text-primary);
-  font-size: var(--rl-type-label);
-}
-.settings :global(.create-preview-seed) > input[type="text"]:disabled {
-  background: var(--rl-surface-disabled);
-  color: var(--rl-text-disabled);
-  opacity: 1;
-}
-.settings :global(.create-preview-seed-dice) {
-  position: relative;
-  inset: auto;
-  inline-size: var(--rl-hit-preferred);
-  block-size: var(--rl-hit-preferred);
-  border-radius: var(--rl-radius-pill);
-  background: var(--rl-surface-control);
-  color: var(--rl-text-secondary);
-}
-.settings :global(.create-preview-seed-dice):has(input:checked) {
-  background: var(--rl-surface-selected);
-  color: var(--rl-text-selected);
-}
-.settings :global(.create-preview-seed-dice):has(input:focus-visible),
-.settings :global(.create-preview-seed) > input[type="text"]:focus-visible {
-  outline: var(--rl-focus-width) solid var(--rl-focus);
-  outline-offset: var(--rl-focus-offset);
-}
-.settings textarea {
-  min-block-size: var(--rl-hit-preferred);
-  background: var(--rl-surface-raised);
-  color: var(--rl-text-primary);
-  border-radius: var(--rl-radius-control);
-  padding: var(--rl-space-8);
-}
-.sheet:global([data-slot="sheet-content"]) > button:last-child {
-  margin-block-start: auto;
-  background: var(--rl-surface-raised);
-  color: var(--rl-text-primary);
-  border-radius: var(--rl-radius-control);
-}
+

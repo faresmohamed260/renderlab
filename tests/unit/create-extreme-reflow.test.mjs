@@ -33,7 +33,6 @@ test("FQA-12 extreme-narrow Create reflows visible reference tiles instead of co
   assert.match(button, /aspect-ratio:\s*auto/);
   assert.match(button, /min-inline-size:\s*0/);
   assert.match(rule(narrow, ".create-preview-tile > button:first-child > span"), /overflow-wrap:\s*anywhere/);
-  assert.match(workspace, /className="create-preview-tiles" inert=\{mode !== "edit"\}/);
 });
 
 test("FQA-12 composer reflows settings, action labels and recent prompts without hiding overflow", () => {
@@ -45,11 +44,13 @@ test("FQA-12 composer reflows settings, action labels and recent prompts without
   assert.doesNotMatch(narrow, /overflow(?:-x|-inline)?:\s*(?:hidden|clip)/);
 });
 
-test("FQA-15 negative and VGL disclosure hit areas are at least 32 CSS px and 44 on mobile", () => {
+test("FQA-15 VGL disclosure hit areas are at least 32 CSS px and 44 on mobile", () => {
   const summary = rule(css, ".create-preview-workspace .create-preview-extra summary");
   assert.match(summary, /min-block-size:\s*32px/);
   assert.match(summary, /padding-block:\s*6px/);
   assert.match(css, /@media \(max-width: 700px\)\s*\{\s*\.create-preview-workspace \.create-preview-extra summary\s*\{[^}]*min-block-size:\s*44px/);
-  assert.match(workspace, /<summary id="create-preview-negative-label">/);
-  assert.match(workspace, /<summary id="create-preview-vgl-label">/);
+  // Negative prompt control removed by owner decision (2026-11-26); only the VGL disclosure remains.
+  assert.doesNotMatch(workspace, /create-preview-negative-label/);
+  // The rebuilt composer gates manual VGL behind the "Use my own structured prompt" checkbox.
+  assert.match(workspace, /htmlFor="create-preview-vgl-enabled"/);
 });

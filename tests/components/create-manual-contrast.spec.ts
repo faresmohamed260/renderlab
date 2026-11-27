@@ -2,6 +2,7 @@ import { test, expect, type Page, type Locator } from "@playwright/test";
 import { emptyHistory, fixtureAsset, fixtureImage } from "../component-app/fixtures";
 import { collectTextContrast, measurePixels, type ContrastRow } from "./composited-contrast";
 import sharp from "sharp";
+import { openHistory, closeHistory, historyTrigger, openAdvanced, advancedTrigger, manualPrompt, iconContrast } from "./ui-lead-create-journey";
 
 // The shared collector deliberately excludes input/placeholder glyphs. For this
 // feature's actual input, hide only glyph paint, preserve its layout/backdrop,
@@ -34,27 +35,12 @@ async function placeholderContrast(page: Page, field: Locator, state: string): P
     detail: measured.unstable ? "Unstable actual backdrop" : "Actual placeholder glyph footprint on rendered surface" };
 }
 
-const labels = [
-  ["Queue", ".create-preview-toolbar-trigger[data-slot=popover-trigger]:nth-child(1)"],
-  ["Shortcuts", ".create-preview-toolbar-trigger[data-slot=popover-trigger]:nth-child(2)"],
-  ["Image setup", "#create-preview-setup"],
-  ["Source", 'button[aria-label="Choose source image"] > span'],
-  ["Reference 2", 'button[aria-label="Choose reference 2 image"] > span'],
-  ["Reference 3", 'button[aria-label="Choose reference 3 image"] > span'],
-  ["Reference 4", 'button[aria-label="Choose reference 4 image"] > span'],
-  ["Prompt label", "#create-preview-main-prompt-label"],
-  ["Manual VGL JSON", "#create-preview-vgl-label"],
-  ["Steps label", ".create-preview-steps > span"],
-  ["Steps output", ".create-preview-steps output"],
-  ["History heading", "#create-preview-history-title"],
-] as const;
-
-for (const { width, route } of [{ width: 390, route: "/create" }, { width: 390, route: "/" }, { width: 1440, route: "/create" }]) {
-  test("assigned Create contrast rows on actual member surfaces at " + width + " " + route, async ({ browser }) => {
+for (const { width, variant } of [{ width:390,variant:"create" },{ width:390,variant:"owner" },{ width:1440,variant:"create" }]) {
+  test("assigned Create contrast rows on actual member surfaces at " + width + " " + variant, async ({ browser }) => {
     test.setTimeout(120_000);
     const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 },
-      colorScheme: "dark", reducedMotion: "reduce", serviceWorkers: "block",
-      extraHTTPHeaders: { "x-renderlab-fixture-shell": "create" } });
+      colorScheme:"dark", reducedMotion:"reduce", serviceWorkers:"block",
+      extraHTTPHeaders:{"x-renderlab-fixture-shell":variant} });
     const unexpected: string[] = [], errors: string[] = [];
     await context.route("**/*", async route => {
       const request = route.request(), url = new URL(request.url());
@@ -72,113 +58,132 @@ for (const { width, route } of [{ width: 390, route: "/create" }, { width: 390, 
       return route.continue();
     });
     try {
-      const page = await context.newPage();
-      page.on("pageerror", error => errors.push(error.message));
-      await page.goto(route);
-      await expect(page.locator("[data-create-history-image]")).toHaveCount(1);
-      await page.evaluate(() => document.fonts.ready.then(() => undefined));
-      const rows: ContrastRow[] = [];
-      const modalNavigation = width === 390 && route === "/create";
-      for (const state of ["create-shell", modalNavigation ? "shell-dismissed" : "shell-disclosure"]) {
-        if (state === "shell-disclosure" || state === "shell-dismissed") {
-          const trigger = page.locator("header button[aria-expanded]:visible").first();
-          await trigger.press("Enter");
-          await expect(trigger).toHaveAttribute("aria-expanded", "true");
-          if (modalNavigation) {
-            const dialog = page.getByRole("dialog", { name: "RenderLab navigation" });
+      const page=await context.newPage();
+      page.on("pageerror",error=>errors.push(error.message));
+      await page.goto("/create");
+      const phone=width===390;
+      const workspace=page.getByRole("region",{name:"Create with FIBO"});
+      const header=page.locator(".preview-navigation-header");
+      const rows: ContrastRow[]=[];
+      const history=await openHistory(page);
+      await expect(history.locator("[data-create-history-image]")).toHaveCount(1);
+      await closeHistory(page);
+      await page.evaluate(()=>document.fonts.ready.then(()=>undefined));
+      const text=async (target:Locator,state:string,label:string)=>{
+        await expect(target).toBeVisible();
+        const row=await collectTextContrast(page,target,state,label); rows.push(row); console.log("CREATE_MANUAL_CONTRAST "+JSON.stringify({width,...row}));
+      };
+      const icon=async(target:Locator,state:string,label:string)=>{
+        const row=await iconContrast(page,target,state,label); rows.push(row); console.log("CREATE_MANUAL_CONTRAST "+JSON.stringify({width,...row}));
+      };
+      for (const state of ["create-shell","shell-dismissed"]) {
+        if(state==="shell-dismissed") {
+          if(phone) {
+            const trigger=header.getByRole("button",{name:/RenderLab.*Open navigation/,includeHidden:true});
+            await trigger.press("Enter");
+            const dialog=page.getByRole("dialog",{name:"RenderLab"});
             await expect(dialog).toBeVisible();
-            // Radix hides the siblings of the modal's ancestor path. The
-            // shell itself can be nested inside a hidden fixture wrapper;
-            // the contract is inaccessible background, not a specific node.
-            const logo = page.getByRole("button", { name: "RenderLab — Open navigation", exact: true });
-            const workspace = page.getByRole("region", { name: "Create with FIBO" });
-            const queue = page.locator('.create-preview-toolbar-trigger[data-slot=popover-trigger]:nth-child(1)');
-            const hiddenBy = (element: Locator) => element.evaluate(el =>
-              el.closest('[aria-hidden="true"]')?.tagName ?? null);
-            const hiddenLogo = await hiddenBy(trigger);
-            const hiddenQueue = await hiddenBy(queue);
-            console.log("CREATE_MODAL_ISOLATION " + JSON.stringify({ hiddenLogo, hiddenQueue }));
-            expect(hiddenLogo).not.toBeNull();
-            expect(hiddenQueue).not.toBeNull();
-            await expect(logo).toHaveCount(0);
+            const hiddenBy=(element:Locator)=>element.evaluate(el=>el.closest('[aria-hidden="true"]')?.tagName??null);
+            const historyButton=header.locator('.rebuild-phone-action');
+            expect(await hiddenBy(trigger)).not.toBeNull();
+            expect(await hiddenBy(historyButton)).not.toBeNull();
             await expect(workspace).toHaveCount(0);
-            await expect(dialog.getByRole("button", { name: "Close navigation" })).toBeFocused();
-            for (const key of ["Tab", "Tab", "Shift+Tab"]) {
+            await expect(dialog.getByRole("button",{name:"Close menu"})).toBeFocused();
+            for(const key of ["Tab","Tab","Shift+Tab"]){
               await page.keyboard.press(key);
-              expect(await dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+              expect(await dialog.evaluate(el=>el.contains(document.activeElement))).toBe(true);
             }
-            await queue.evaluate(el => (el as HTMLElement).focus({ preventScroll: true }));
-            await expect.poll(() => dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+            await historyButton.evaluate(el=>(el as HTMLElement).focus({preventScroll:true}));
+            await expect.poll(()=>dialog.evaluate(el=>el.contains(document.activeElement))).toBe(true);
             await page.keyboard.press("Escape");
             await expect(dialog).toHaveCount(0);
             await expect(trigger).toBeFocused();
-            await expect(trigger).toHaveAttribute("aria-expanded", "false");
-            await expect(logo).toBeVisible();
+            await expect(trigger).toHaveAttribute("aria-expanded","false");
             await expect(workspace).toBeVisible();
             expect(await hiddenBy(trigger)).toBeNull();
-            expect(await hiddenBy(queue)).toBeNull();
-          }
-        }
-        const advancedNames = ["Manual VGL JSON", "Steps label", "Steps output"];
-        const advancedOpener = page.getByRole("button", { name: "Advanced", exact: true });
-        const advancedSheet = page.getByRole("dialog", { name: "Advanced" });
-        let advancedOpen = false;
-        for (const [name, selector] of labels) {
-          if (width === 390 && advancedNames.includes(name) && !advancedOpen) {
-            await advancedOpener.press("Enter");
-            await expect(advancedSheet).toBeVisible();
-            await expect.poll(() => advancedSheet.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
-            advancedOpen = true;
-          } else if (advancedOpen && !advancedNames.includes(name)) {
-            await page.keyboard.press("Escape");
-            await expect(advancedSheet).toHaveCount(0);
-            await expect(advancedOpener).toBeFocused();
-            advancedOpen = false;
-          }
-          if (state !== "create-shell" && (name === "Queue" || name === "Shortcuts")) {
-            const target = page.locator(selector);
-            await target.scrollIntoViewIfNeeded();
-            const paint = await target.evaluate(el => {
-              const ranges = [...el.childNodes].filter(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()).flatMap(node => {
-                const range = document.createRange();
-                range.selectNodeContents(node);
-                return [...range.getClientRects()];
+            expect(await hiddenBy(historyButton)).toBeNull();
+          } else {
+            const account=header.getByRole("button",{name:/Account menu/});
+            await account.press("Enter");
+            await expect(account).toHaveAttribute("aria-expanded","true");
+            const menu=header.locator('.preview-account-menu[aria-hidden="false"]');
+            await expect(menu).toBeVisible();
+            // Real header labels must remain unobscured while the floating
+            // disclosure is open; it may overlay page content by design.
+            for(const [label,target] of [
+              ["Queue",header.getByRole("button",{name:"Queue",exact:true})],
+              ["Search actions",header.getByRole("button",{name:/Search actions/}).getByText("Search actions",{exact:true})]
+            ] as const) {
+              const paint=await target.evaluate(el=>{
+                const rect=el.getBoundingClientRect();
+                return [.15,.5,.85].map(f=>{const hit=document.elementFromPoint(rect.left+rect.width*f,rect.top+rect.height/2);return !!hit&&el.contains(hit);});
               });
-              const panel = document.querySelector('.preview-section-panel[data-open="true"], .preview-account-menu[aria-hidden="false"]');
-              const panelRect = panel?.getBoundingClientRect();
-              const points = ranges.flatMap(r => [0.15, 0.5, 0.85].map(fraction => {
-                const x = r.left + r.width * fraction, y = r.top + r.height / 2;
-                const top = document.elementFromPoint(x, y);
-                return { x, y, hit: top?.getAttribute("class"), ownTarget: Boolean(top && el.contains(top)),
-                  insideDisclosure: Boolean(panelRect && x >= panelRect.left && x <= panelRect.right && y >= panelRect.top && y <= panelRect.bottom) };
-              }));
-              return { target: el.getBoundingClientRect().toJSON(), panel: panelRect?.toJSON() ?? null, points };
-            });
-            console.log("CREATE_TOOLBAR_PAINT " + JSON.stringify({ viewportWidth: width, name, ...paint }));
-            expect(paint.points.length, name + " actual text ranges").toBeGreaterThan(0);
-            expect(paint.points.every(point => point.ownTarget && !point.insideDisclosure), name + " glyph area must remain clear of the disclosure").toBe(true);
+              expect(paint.every(Boolean),label+" unobscured while account menu open").toBe(true);
+              await text(target,"account open",label);
+            }
+            await page.keyboard.press("Escape");
+            await expect(account).toBeFocused();
+            await expect(account).toHaveAttribute("aria-expanded","false");
           }
-          const row = await collectTextContrast(page, advancedOpen ? advancedSheet.locator(selector) : page.locator(selector), state, name + " " + selector);
-          rows.push(row);
-          console.log("CREATE_MANUAL_CONTRAST " + JSON.stringify({ width, ...row }));
         }
-        const prompt = await placeholderContrast(page, page.locator("#create-preview-prompt"), state);
-        rows.push(prompt);
-        console.log("CREATE_MANUAL_CONTRAST " + JSON.stringify({ width, ...prompt }));
-        const blocker = await page.locator("#create-preview-blocker").evaluate(el => {
-          const s = getComputedStyle(el), r = el.getBoundingClientRect();
-          return { text: el.textContent, position: s.position, clip: s.clip, clipPath: s.clipPath,
-            width: r.width, height: r.height, describedBy: document.querySelector('[aria-describedby="create-preview-blocker"]') !== null };
+        if(phone) {
+          const logo=header.getByRole("button",{name:/RenderLab.*Open navigation/});
+          await text(logo.getByText("RenderLab",{exact:true}),state,"Brand");
+          await icon(historyTrigger(page).locator("svg"),state,"History");
+          await text(workspace.getByRole("button",{name:/^Mode:/}),state,"Mode");
+          await text(workspace.getByRole("button",{name:/^Shape /}),state,"Shape");
+          const refs=workspace.getByRole("button",{name:"References",exact:true});
+          await icon(refs.locator("svg"),state,"References");
+          await refs.press("Enter");
+          const popover=page.locator('[data-slot="popover-content"][aria-label="References"]');
+          await expect(popover).toBeVisible();
+          await text(popover.getByText(/References ·/),state,"References heading");
+          await icon(popover.getByRole("button",{name:"Add a reference image"}).locator("svg"),state,"Add reference");
+          await text(popover.getByRole("button",{name:"Select region"}),state,"Select region");
+          await page.keyboard.press("Escape");
+          await expect(refs).toBeFocused();
+        } else {
+          await text(header.getByRole("button",{name:"Queue",exact:true}),state,"Queue");
+          const search=header.getByRole("button",{name:/Search actions/});
+          await text(search.getByText("Search actions",{exact:true}),state,"Search actions");
+          await text(search.locator("kbd"),state,"Search shortcut");
+          await text(workspace.getByText("Shape",{exact:true}),state,"Shape");
+          const refs=workspace.getByRole("region",{name:"References"});
+          await text(refs.getByText(/References ·/),state,"References heading");
+          await icon(refs.getByRole("button",{name:"Add a reference image"}).locator("svg"),state,"Add reference");
+          await text(refs.getByRole("button",{name:"Select region"}),state,"Select region");
+          await text(workspace.locator("#create-preview-main-prompt-label"),state,"Prompt label");
+        }
+        rows.push(await placeholderContrast(page,page.locator("#create-preview-prompt"),state));
+        const blocker=await page.locator("#create-preview-blocker").evaluate(el=>{
+          const r=el.getBoundingClientRect();
+          return {width:r.width,height:r.height,describedBy:document.querySelector('[aria-describedby="create-preview-blocker"]')!==null};
         });
-        console.log("CREATE_MANUAL_BLOCKER " + JSON.stringify({ viewportWidth: width, state, ...blocker }));
         expect(blocker.describedBy).toBe(true);
         expect(blocker.width).toBeLessThanOrEqual(1);
         expect(blocker.height).toBeLessThanOrEqual(1);
+        const panel=await openHistory(page);
+        await text(panel.getByRole("heading",{name:"This session"}),state,"History heading");
+        await text(panel.getByRole("heading",{name:"Prompt history"}),state,"Prompt history heading");
+        await closeHistory(page);
+        const advanced=await openAdvanced(page);
+        await text(advanced.locator('label[for="create-preview-seed"]'),state,"Seed label");
+        await text(advanced.locator('label[for="create-preview-steps"]'),state,"Steps label");
+        await text(advanced.locator("output"),state,"Steps output");
+        await text(advanced.getByText("Use my own structured prompt",{exact:true}),state,"Structured prompt label");
+        if(!await manualPrompt(page).isChecked()) await manualPrompt(page).check();
+        await expect(advanced.getByRole("textbox",{name:"Manual VGL JSON"})).toBeVisible();
+        await manualPrompt(page).uncheck();
+        if(phone){
+          await page.keyboard.press("Escape");
+          await expect(advanced).toHaveCount(0);
+          await expect(advancedTrigger(page)).toBeFocused();
+        }
       }
-      // Keep unresolved cases explicit, not a passing contrast verdict.
-      expect(rows.filter(row => row.status !== "PASS"), "Unresolved or failing measured Create contrast").toEqual([]);
+      for(const row of rows) console.log("CREATE_MANUAL_CONTRAST "+JSON.stringify({width,...row}));
+      expect(rows.filter(row=>row.status!=="PASS"),"Unresolved or failing measured Create contrast").toEqual([]);
       expect(unexpected).toEqual([]);
       expect(errors).toEqual([]);
-    } finally { await context.close(); }
+    } finally {await context.close();}
   });
 }

@@ -1522,3 +1522,184 @@
     transition-timing-function: var(--rl-ease-out);
   }
 }
+
+/* UI rebuild — measured Library desktop and phone surfaces. Shared material
+   roles remain owned by the UI Lead. */
+.promptBlock { display: grid; gap: 4px; min-width: 0; }
+.promptBlock > span { color: var(--rl-text-secondary); font-size: 13px; }
+.inspectorSecondary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.inspectorSecondary > :only-child { grid-column: 1 / -1; }
+@media (min-width: 75rem) {
+  .workspace { padding: 8px 24px 16px; background: transparent; }
+  .layout { height: max(42rem, calc(100svh - 92px)); grid-template-columns: minmax(220px,260px) minmax(0,1fr) minmax(290px,340px); }
+  .discovery { padding: 18px 14px; gap: 16px; }
+  .inspector { padding: 18px; gap: 12px; }
+  .sourceSwitch, .collectionList { gap: 6px; }
+  .sourceSwitch :global([data-slot="button"]), .collectionList :global([data-slot="button"]) { min-height: 44px; border-radius: 14px; }
+  .searchForm { min-height: 42px; border-radius: 21px; }
+  .centerToolbar { min-height: 62px; padding-block: 4px 18px; gap: 10px; }
+  .desktopContext h3 { font-size: 22px; line-height: 28px; }
+  .desktopContext span { font-size: 14px; }
+  .centerToolbar .kindCell { flex: 0 1 auto; order: 0; }
+  .centerToolbar .actionCell :global([data-slot="button"]), .sortWrap :global([data-slot="button"]) { min-height: 40px; border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); }
+  .density { padding: 4px; gap: 2px; border-radius: 20px; background: var(--rl-surface-control); }
+  .density :global([data-slot="button"]) { min-height: 32px; width: 35px; height: 32px; border-radius: var(--rl-radius-pill); }
+  .cardLink, .cardShell[data-pointer="active"] .cardLink { border: 0; border-radius: 20px; }
+  .cardShell[data-selected="true"] .cardLink, .cardShell[data-inspected="true"] .cardLink { outline: 3px solid var(--rl-border-action-selection); outline-offset: -3px; }
+  .inspectAction[data-slot="button"] { opacity: 0; }
+  .cardShell:focus-within .inspectAction[data-slot="button"], .cardShell[data-inspected="true"] .inspectAction[data-slot="button"] { opacity: 1; }
+  @media (hover: hover) and (pointer: fine) { .cardShell:hover .inspectAction[data-slot="button"] { opacity: 1; } }
+  .commandSurface[data-selection="on"] .selectionMode { min-height: 58px; margin-block: 16px 18px; padding: 8px 12px; border-radius: var(--rl-radius-pill); }
+  .selectionActions :global([data-slot="button"]) { min-height: 40px; border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); }
+  .inspectorPreview { aspect-ratio: 302 / 230; border-radius: 22px; }
+  .inspectorHeader h3 { font-size: 18px; line-height: 24px; }
+  .inspectorPrompt, .inspectorFacts { font-size: 13px; line-height: 19px; }
+  .inspectorActions .createAction { min-height: 52px; border-radius: 18px; }
+  .inspectorSecondary :global([data-slot="button"]) { min-height: 44px; }
+}
+@media (max-width: 760px) {
+  .workspace { padding-inline: 12px; background: transparent; }
+  .workspace::before, .workspace::after { content: none; }
+  .title { font-size: 30px; line-height: 36px; }
+  .mediaGrid { gap: 10px; }
+  .cardLink { border: 0; border-radius: 22px; }
+  .phoneFilters, .phoneFilters .kindSwitch, .phoneFilters .organizationCell { gap: 8px; }
+  .phoneFilters :global([data-slot="button"]) { min-height: 44px; padding-inline: 16px; }
+  .selectionCheckboxWrap { inset: 1px 1px auto auto; }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before { width: 30px; height: 30px; }
+  .inspectAction[data-slot="button"] { opacity: 0; }
+  .cardShell:focus-within .inspectAction[data-slot="button"] { opacity: 1; }
+  .commandSurface[data-selection="on"] .selectionMode { min-height: 66px; padding: 8px 12px; bottom: max(18px, env(safe-area-inset-bottom)); border-radius: 33px; }
+  .selectionActions :global([data-slot="button"]) { min-height: 48px; width: 48px; background: var(--rl-surface-control); }
+  .phoneInspector { height: 92dvh; max-height: 92dvh; padding: 8px 16px max(16px,env(safe-area-inset-bottom)); border-radius: 34px 34px 0 0; background: var(--rl-surface-overlay-layered); backdrop-filter: var(--rl-material-overlay); }
+  .sheetHandle { width: 36px; height: 5px; border-radius: var(--rl-radius-pill); margin: 0 auto 4px; background: var(--rl-text-quiet); opacity: .5; order: -2; flex-shrink: 0; }
+  .phoneInspector .inspectorHeader { min-height: 44px; order: -1; }
+  .phoneInspector .inspectorHeader h3 { font-size: 20px; line-height: 28px; }
+  .phoneInspector .inspectorPreview { height: min(300px, 36dvh); max-height: none; aspect-ratio: auto; border-radius: 26px; }
+  .phoneInspector .inspectorPrompt { font-size: 15px; line-height: 22px; }
+  .phoneInspector .inspectorFacts { font-size: 12px; }
+  .phoneInspector .inspectorActions :global([data-slot="button"]) { min-height: 52px; border-radius: 18px; justify-content: start; }
+  .phoneInspector .inspectorActions .createAction { justify-content: start; }
+}
+
+/* Library rail and inspector actions use existing live collection/search state. */
+.collectionHeading, .railShortcuts { display: none; }
+.collectionSwatch { flex: none; width: 14px; height: 14px; border-radius: 5px; background: var(--rl-accent-decorative-start); }
+@media (min-width: 75rem) {
+  .collectionHeading { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; color: var(--rl-text-secondary); font-size: 13px; font-weight: 600; }
+  .discovery .collectionHeading :global([data-slot="button"]) { min-height: 32px; width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: var(--rl-radius-pill); background: var(--rl-surface-control); }
+  .collectionMenuTrigger { display: none !important; }
+  .organizationCell { gap: 12px; }
+  .collectionList { gap: 6px; }
+  .railShortcuts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; color: var(--rl-text-secondary); font-size: 12px; }
+  .railShortcuts kbd { margin-right: 4px; padding: 3px 6px; border-radius: 6px; background: var(--rl-surface-control); font: inherit; }
+}
+.phoneInspector .inspectorActions > .inspectorSecondary { margin-top: 4px; grid-template-columns: minmax(0,1fr); }
+.phoneInspector .inspectorActions .inspectorSecondary > :global([data-slot="button"]) { min-height: 44px; }
+
+/* Judge round 1 — decisions 18–20 and 23, defects 1–7. */
+.sortTrigger { position: relative; }
+.sortIcon, .phoneMenuGroup { display: none; }
+.kindDot { position: absolute; width: 6px; height: 6px; top: 6px; right: 6px; border-radius: 50%; background: var(--rl-accent-decorative-start); }
+.quietViewerLink { color: var(--rl-text-secondary); font-size: 13px; text-align: center; padding-block: 8px; }
+.inspectorFactsLine { margin: 0; color: var(--rl-text-secondary); font-size: 12px; line-height: 15px; }
+@media (min-width: 75rem) {
+  .discovery .sourceSwitch :global([data-slot="button"]) { border: 0; box-shadow: none; min-height: 44px; height: 44px; width: 100%; border-radius: 18px; background: transparent; padding-inline: 14px; }
+  .discovery .sourceSwitch :global([data-slot="button"][aria-current="page"]) { background: var(--rl-surface-hover); }
+  .sourceSwitch { gap: 6px; }
+  .centerToolbar { flex-wrap: nowrap; gap: 10px; }
+  .centerToolbar .kindCell { display: none; }
+  .centerToolbar .desktopContext { flex: 1 1 0; min-width: 0; }
+  .centerToolbar .actionCell { flex: none; }
+  .centerToolbar .selectTrigger[data-slot="button"] { width: 74px; height: 40px; border: 0; box-shadow: none; }
+  .sortWrap .sortTrigger[data-slot="button"] { width: 133px; height: 40px; padding-inline: 12px; border: 0; box-shadow: none; justify-content: space-between; }
+  .density { width: 78px; flex: none; padding: 0; gap: 2px; }
+  .density :global([data-slot="button"]) { width: 38px; height: 40px; border: 0; box-shadow: none; }
+  .selectionActions { flex-wrap: nowrap; gap: 8px; }
+  .selectionActions :global([data-slot="button"]) { height: 40px; border: 0; }
+}
+@media (max-width: 1199px) {
+  .workspace { padding: 0 12px 80px; }
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls { grid-template-columns: minmax(0,1fr) auto 44px; grid-template-rows: 44px auto; gap: 4px 8px; align-items: center; }
+  .defaultControls > .contextBlock { grid-area: 1 / 1; margin-inline-start: 6px; }
+  .title { font-size: 30px; line-height: 36px; }
+  .desktopContext { grid-area: 1 / 2; justify-content: end; font-size: 13px; }
+  .desktopContext span { text-align: end; }
+  .pageCountQualifier { display: block; font-size: 10px; line-height: 12px; }
+  .sourceCell, .density, .selectTrigger { display: none !important; }
+  .actionCell { grid-area: 4 / 1 / 5 / -1; justify-content: start; }
+  .actionCell:has(> .selectTrigger:only-child), .actionCell:empty { display: none; }
+  .sortWrap { grid-area: 1 / 3; background: transparent; }
+  .sortWrap .sortTrigger[data-slot="button"] { height: 44px; min-height: 44px; width: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--rl-surface-control); }
+  .sortIcon { display: block; width: 20px; height: 20px; }
+  .sortText, .sortChevron, .desktopMenuGroup { display: none; }
+  .phoneMenuGroup { display: block; }
+  .kindCell { grid-area: 2 / 1 / 3 / -1; }
+  .searchCell { grid-area: 3 / 1 / 4 / -1; }
+  .phoneFilters { gap: 8px; padding: 0; margin: 4px 0 0; scrollbar-width: none; }
+  .phoneFilters .kindSwitch, .phoneFilters .organizationCell { gap: 8px; }
+  .phoneFilters :global([data-slot="button"]) { min-height: 44px; height: 44px; border: 0; box-shadow: none; padding-inline: 16px; border-radius: 22px; }
+  .phoneFilters :global([aria-current="page"]) { background: var(--rl-surface-selected); }
+  .phoneFilters .collectionManager :global([data-slot="button"]) { height: auto; white-space: normal; }
+  .phoneFilters .collectionMenuTrigger { white-space: nowrap; }
+  .phoneFilters:has(.collectionManager[data-state="open"]) { flex-wrap: wrap; overflow: visible; }
+  .phoneFilters:has(.collectionManager[data-state="open"]) .organizationCell { flex-wrap: wrap; width: 100%; }
+  .phoneFilters .collectionManager { max-width: calc(100vw - 32px); }
+  .gallery { margin-top: 14px; }
+  .cardLink { border-radius: 26px; }
+  .cardShell:has(.selectionCheckboxWrap) .inspectAction[data-slot="button"] { opacity: 0; }
+  .cardShell:focus-within .inspectAction[data-slot="button"] { opacity: 1; }
+  .selectionCheckboxWrap { inset: 1px 1px auto auto; }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before { width: 30px; height: 30px; background: transparent; border: 2px solid var(--rl-on-accent); }
+  .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"][aria-checked="true"])::before { background: var(--rl-accent-primary); }
+  .selectionActions { flex-wrap: nowrap; gap: 6px; }
+  .selectionActions :global([data-slot="button"]) { width: 48px; height: 48px; min-height: 48px; }
+  .phoneInspector .inspectorActions { gap: 8px; }
+}
+@media (max-width: 280px) {
+  .defaultControls, .commandSurface[data-selection="on"] .defaultControls { grid-template-columns: minmax(0,1fr) 44px; grid-template-rows: auto auto auto auto; }
+  .desktopContext { grid-area: 2 / 1 / 3 / -1; justify-content: start; }
+  .sortWrap { grid-area: 1 / 2; }
+  .kindCell { grid-area: 3 / 1 / 4 / -1; }
+  .searchCell { grid-area: 4 / 1 / 5 / -1; }
+  .actionCell { grid-area: 5 / 1 / 6 / -1; }
+  .selectionActions { flex-wrap: wrap; }
+}
+@media (forced-colors: active) { .selectionCheckboxWrap :global(.kinetic-selection-checkbox)::before { border-color: ButtonText; background: Canvas; } .selectionCheckboxWrap :global(.kinetic-selection-checkbox[data-state="checked"][aria-checked="true"])::before { background: Highlight; border-color: Highlight; } }
+
+/* Judge round 2: selection and populated inspector at the approved desktop frame.
+   Decision 19 omits batch Download; the three remaining live controls occupy the bar. */
+.inspectorQuickRow { display: grid; min-width: 0; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+@media (min-width: 75rem) {
+  .inspector { gap: 14px; }
+  .inspectorPreview { aspect-ratio: 302 / 230; }
+  .inspectorHeader :global([data-slot="button"]) { min-width: 36px; min-height: 36px; width: 36px; height: 36px; border: 0; border-radius: 18px; background: var(--rl-surface-control); }
+  .inspectorFacts { grid-template-columns: 60px minmax(0,1fr); gap: 6px 14px; line-height: 16px; }
+  .inspector > .quietViewerLink { text-align: start; padding: 0; }
+  .inspectorActions { gap: 14px; padding-top: 0; }
+  .inspectorActions .createAction { height: 52px; }
+  .inspectorSecondary, .inspectorQuickRow { gap: 8px; }
+  .inspectorSecondary :global([data-slot="button"]), .inspectorQuickRow :global([data-slot="button"]) { min-height: 44px; height: 44px; border: 0; border-radius: 16px; background: var(--rl-surface-control); box-shadow: none; }
+  .inspectorQuickRow :global([aria-label="Delete"]) { background: color-mix(in srgb, var(--rl-danger) 18%, transparent); }
+  .commandSurface[data-selection="on"] .selectionMode { width: 516px; max-width: 100%; min-height: 58px; margin-block: 16px 18px; padding: 8px 18px; border-radius: 30px; }
+  .selectionMain { justify-content: space-between; gap: 14px; }
+  .selectionSummary { min-width: 0; border: 0; }
+  .selectionSummary strong { color: var(--rl-text-primary); font-size: 14px; font-weight: 500; }
+  .selectionActions { gap: 6px; }
+  .selectionActions :global([data-slot="button"]) { height: 40px; min-height: 40px; border-radius: 20px; padding-inline: 14px; font-size: 14px; }
+  .selectionActions :global([data-slot="button"]) > svg { display: none; }
+  .selectionActions :global([data-slot="button"][data-variant="destructive"]) { background: color-mix(in srgb, var(--rl-danger) 18%, transparent); color: var(--rl-danger); }
+}
+
+/* Preserve all disclosure controls in the floating selection surface at the
+   minimum supported viewport; scrolling must not clip or overlap the controls. */
+@media (max-width: 1199px) {
+  .commandSurface[data-selection="on"] .selectionMode[data-state="open"] {
+    max-height: min(75dvh, calc(100dvh - 80px));
+    align-items: stretch;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .selectionMode[data-state="open"] > * { flex-shrink: 0; min-width: 0; }
+  .organizeDeck :global([data-slot="button"]) { white-space: normal; min-width: 0; }
+}

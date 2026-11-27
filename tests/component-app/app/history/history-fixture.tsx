@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CreateHistoryPanel, CreateHistorySheet } from "@/features/create/history/create-history-panel";
+import { CreateHistoryPanel, CreateHistorySheet, Jobs } from "@/features/create/history/create-history-panel";
 import { useCreateHistory } from "@/features/create/history/use-create-history";
 import type { HistoryTransport, JobsReadResult, PromptPage } from "@/features/create/history/history-contract";
 import { createHistoryTransport } from "@/features/create/history/history-transport";
@@ -58,7 +58,7 @@ export function HistoryFixture({ offset, fixtureState, phone }: { offset: number
     },
     readPrompts: async () => ({ items: [], nextCursor: null }),
   };
-  const state = useCreateHistory({ accountKey: account, visible: phone ? open : true, initialTab: phone ? "session" : "jobs", initialOffset: offset,
+  const state = useCreateHistory({ accountKey: account, visible: phone ? open : true, initialTab: phone ? "session" : "jobs", initialOffset: offset, combined: true,
     transport, onReuseDraft: value => setDraft(value.prompt), onPrompt: setDraft, onSessionResult: result => setSelection(result.label) });
   function changeAccount(next: string | null) {
     setAccount(next);
@@ -68,9 +68,10 @@ export function HistoryFixture({ offset, fixtureState, phone }: { offset: number
 
   const record = state.recordResult;
   useEffect(() => { if (phone && account === "fixture-owner-A") record({ id: "fixture-result", label: "Fixture result", createdAt: "2026-11-25T00:00:00Z" }); }, [phone, account, record]);
+  const results = state.session.map(item => ({ ...item, current: state.selectedSessionResult?.id === item.id, onSelect: () => state.selectSessionResult(item) }));
   return <>
-    {phone ? <CreateHistorySheet state={state} open={open} onOpenChange={setOpen} trigger={<Button>Open History</Button>} /> :
-      <CreateHistoryPanel state={state} jobsHref={page => "/history" + (page ? "?offset=" + page : "")} />}
+    {phone ? <CreateHistorySheet state={state} results={results} recent={[]} onReusePrompt={setDraft} onRemovePrompt={() => undefined} onClearPrompts={() => undefined} open={open} onOpenChange={setOpen} trigger={<Button>Open History</Button>} /> :
+      <><h1>History</h1><section aria-label="Jobs" data-activity-system="jobs"><Jobs state={state} /></section><CreateHistoryPanel state={state} results={results} recent={[]} onReusePrompt={setDraft} onRemovePrompt={() => undefined} onClearPrompts={() => undefined} /></>}
     <Button data-testid="fixture-switch-account" onClick={() => changeAccount("fixture-owner-B")}>Switch fixture account</Button>
     {race && <>
       <Button data-testid="fixture-sign-out" onClick={() => changeAccount(null)}>Sign out fixture account</Button>

@@ -1,0 +1,256 @@
+{
+ "source": "design/approved/2026-11-25-phase6-round3/html/library-phone-inspector.html",
+ "render": "design/approved/2026-11-25-phase6-round3/renders/library-phone-inspector.png",
+ "viewport": "390x844",
+ "root": {
+  "w": 390,
+  "h": 844,
+  "bg": "none"
+ },
+ "elements": [
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "bgImage": "radial-gradient(70% 32% at 80% 6%, rgba(117, 94, 210, 0.42), rgba(117, 94, 210, 0) 70%), radial-gradient(60% 30% at 6% 86%, rgba(217, 100, 160, 0.2), rgba(217, 100, 160, 0) 70%)"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 12,
+   "y": 64,
+   "w": 178,
+   "h": 178,
+   "bgImage": "linear-gradient(160deg, rgb(111, 129, 150), rgb(217, 169, 138) 60%, rgb(192, 127, 93))",
+   "radius": "22px"
+  },
+  {
+   "tag": "span",
+   "depth": 1,
+   "x": 200,
+   "y": 64,
+   "w": 178,
+   "h": 178,
+   "bgImage": "linear-gradient(160deg, rgb(44, 62, 99), rgb(122, 108, 194) 60%, rgb(217, 143, 176))",
+   "radius": "22px"
+  },
+  {
+   "tag": "div",
+   "depth": 0,
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "bg": "rgba(7, 6, 11, 0.55)"
+  },
+  {
+   "tag": "section",
+   "depth": 0,
+   "x": 0,
+   "y": 70,
+   "w": 390,
+   "h": 774,
+   "ariaLabel": "Image details",
+   "bg": "rgba(26, 21, 46, 0.92)",
+   "radius": "34px 34px 0px 0px",
+   "border": "1px solid rgba(255, 255, 255, 0.14)",
+   "shadow": "rgba(255, 255, 255, 0.14) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.5) 0px -30px 80px 0px",
+   "backdropFilter": "blur(40px) saturate(1.5)",
+   "layout": "flex column gap 14px"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 177,
+   "y": 79,
+   "w": 36,
+   "h": 5,
+   "bg": "rgba(255, 255, 255, 0.3)",
+   "radius": "3px"
+  },
+  {
+   "tag": "h2",
+   "depth": 2,
+   "x": 16,
+   "y": 106,
+   "w": 151,
+   "h": 24,
+   "text": "Sandstone arch",
+   "font": "700 20px/normal -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 330,
+   "y": 96,
+   "w": 44,
+   "h": 44,
+   "text": "Done",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(181, 169, 255)"
+  },
+  {
+   "tag": "div",
+   "depth": 1,
+   "x": 16,
+   "y": 152,
+   "w": 358,
+   "h": 300,
+   "bgImage": "linear-gradient(160deg, rgb(111, 129, 150), rgb(217, 169, 138) 60%, rgb(192, 127, 93))",
+   "radius": "26px"
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 318,
+   "y": 396,
+   "w": 44,
+   "h": 44,
+   "ariaLabel": "Compare with source",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(255, 255, 255)",
+   "bg": "rgba(20, 16, 14, 0.42)",
+   "radius": "50%",
+   "border": "1px solid rgba(255, 255, 255, 0.2)",
+   "backdropFilter": "blur(24px)",
+   "layout": "flex"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 331,
+   "y": 409,
+   "w": 19,
+   "h": 19
+  },
+  {
+   "tag": "p",
+   "depth": 2,
+   "x": 16,
+   "y": 466,
+   "w": 358,
+   "h": 16,
+   "text": "Prompt",
+   "font": "500 13px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.72)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "p",
+   "depth": 2,
+   "x": 16,
+   "y": 486,
+   "w": 358,
+   "h": 44,
+   "text": "A quiet architectural study of a sandstone arch in a wide desert, warm evening light",
+   "font": "400 15px/21.75px -apple-system",
+   "color": "rgb(245, 245, 247)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "p",
+   "depth": 2,
+   "x": 16,
+   "y": 536,
+   "w": 358,
+   "h": 15,
+   "text": "4:3 · Created today",
+   "font": "400 12px/normal -apple-system",
+   "color": "rgba(245, 245, 247, 0.72)",
+   "letterSpacing": "-0.16px"
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 16,
+   "y": 565,
+   "w": 358,
+   "h": 52,
+   "text": "Open in Create",
+   "font": "600 13.3333px/normal Arial",
+   "color": "rgb(255, 255, 255)",
+   "bgImage": "linear-gradient(135deg, rgb(109, 80, 209), rgb(152, 65, 189))",
+   "radius": "18px",
+   "layout": "flex gap 12px"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 32,
+   "y": 581,
+   "w": 20,
+   "h": 20
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 16,
+   "y": 625,
+   "w": 358,
+   "h": 52,
+   "text": "Favorite",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.09)",
+   "radius": "18px",
+   "layout": "flex gap 12px"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 32,
+   "y": 641,
+   "w": 20,
+   "h": 20
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 16,
+   "y": 685,
+   "w": 358,
+   "h": 52,
+   "text": "Download",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(245, 245, 247)",
+   "bg": "rgba(255, 255, 255, 0.09)",
+   "radius": "18px",
+   "layout": "flex gap 12px"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 32,
+   "y": 701,
+   "w": 20,
+   "h": 20
+  },
+  {
+   "tag": "button",
+   "depth": 2,
+   "x": 16,
+   "y": 745,
+   "w": 358,
+   "h": 52,
+   "text": "Delete",
+   "font": "400 13.3333px/normal Arial",
+   "color": "rgb(255, 180, 180)",
+   "bg": "rgba(255, 255, 255, 0.09)",
+   "radius": "18px",
+   "layout": "flex gap 12px"
+  },
+  {
+   "tag": "svg",
+   "depth": 3,
+   "x": 32,
+   "y": 761,
+   "w": 20,
+   "h": 20
+  }
+ ]
+}

@@ -27,20 +27,30 @@ for (const width of [195, 320, 390, 1440]) {
       await expect(settings.getByRole("link", { name: "Change password" })).toHaveAttribute("href", "/settings/password");
       await expect(settings.getByRole("link", { name: "Manage preferences" })).toHaveAttribute("href", "/settings/preferences");
       await expect(settings.getByRole("link", { name: "Open Admin" })).toHaveAttribute("href", "/admin");
+      const sessions = settings.locator("#settings-sessions");
+      if (width !== 1440) {
+        const disclosure = sessions.getByRole("button", { name: /Active sessions/ });
+        await expect(disclosure).toHaveAttribute("aria-expanded", "false");
+        await disclosure.press("Enter");
+        await expect(disclosure).toHaveAttribute("aria-expanded", "true");
+      }
       for (const name of ["Sign out this device", "Sign out other devices", "Sign out everywhere", "Export account data"]) {
         await expect(settings.getByRole("button", { name, exact: true })).toBeEnabled();
       }
       await expect(settings.getByText("Fixture browser")).toBeVisible();
       await expect(settings.getByText("This device", { exact: true })).toBeVisible();
-      await expect(settings.getByText("Profile", { exact: true })).toHaveCount(1);
+      await expect(settings.locator("#settings-profile")).toBeVisible();
       await expect(settings.getByText("Active", { exact: true })).toBeVisible();
       await expect(settings.getByText("Enabled", { exact: true })).toBeVisible();
       const nav = page.getByRole("navigation", { name: "Settings sections" });
       if (width === 1440) {
         await expect(nav).toBeVisible();
-        const cards = await settings.locator(":scope > section").evaluateAll(els => els.slice(0, 2).map(el => ({ x: el.getBoundingClientRect().x, y: el.getBoundingClientRect().y })));
+        const cards = await settings.locator(":scope > #settings-profile, :scope > #settings-email").evaluateAll(els => els.map(el => ({ x: el.getBoundingClientRect().x, y: el.getBoundingClientRect().y })));
         expect(cards[1]!.x).toBeGreaterThan(cards[0]!.x);
-        await expect(settings).toHaveCSS("align-items", "start");
+        expect(Math.abs(cards[0]!.y - cards[1]!.y)).toBeLessThanOrEqual(1);
+        const profile = (await settings.locator("#settings-profile").boundingBox())!;
+        const email = (await settings.locator("#settings-email").boundingBox())!;
+        expect(Math.abs(profile.height - email.height)).toBeLessThanOrEqual(1);
         await expect(nav.getByRole("link", { name: "Data & Privacy" })).toHaveAttribute("href", "#settings-privacy");
       } else {
         await expect(nav).toBeHidden();
@@ -64,7 +74,7 @@ for (const width of [195, 320, 390, 1440]) {
       expect(overflow.width, JSON.stringify(overflow)).toBeLessThanOrEqual(width);
       await page.evaluate(() => document.fonts.ready);
       for (const label of ["Sign-in email", "Closed Beta access", "Multi-factor authentication"]) {
-        const row = await collectTextContrast(page, settings.getByText(label, { exact: true }), "settings", label);
+        const row = await collectTextContrast(page, settings.getByText(label, { exact: true }).filter({ visible: true }).last(), "settings", label);
         console.log("SETTINGS_CONTRAST " + JSON.stringify({ width, reducedMotion, ...row }));
         expect(row.status, label).toBe("PASS");
       }

@@ -1,0 +1,67 @@
+.frame:global(.create-preview-stage-frame){position:relative;inset:auto;width:100%;height:auto;min-width:0;display:block;container-type:normal;place-items:initial}
+.frame .document:global(.create-preview-stage-document){width:100%;min-width:0;position:relative}
+.frame .document .surface:global(.create-preview-stage-surface){position:relative;inset:auto;width:100%;height:min(540px,60dvh);aspect-ratio:auto;border-radius:32px;box-shadow:0 0 0 1px rgb(255 255 255 / 7%),0 40px 110px rgb(80 60 180 / 35%);background:var(--rl-surface-panel-layered)}
+.frame .surface :global(.create-preview-stage-media){position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto}
+.frame .surface :global(.create-preview-stage-media) img{width:100%;height:100%;object-fit:cover}
+.frame .surface[data-empty=true]{background:var(--rl-surface-panel-layered)}
+.desktopActions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;min-width:0}
+.desktopActions>button,.desktopActions>a,.desktopActions .iconAction{height:44px;min-height:44px;padding:0 18px;border:0;border-radius:22px;background:rgb(255 255 255 / 8%);color:var(--rl-text-primary);font-size:14px;font-weight:500;line-height:1;box-shadow:none}
+.desktopActions .iconAction{width:44px;min-width:44px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.desktopActions .iconAction svg{width:20px;height:20px}
+.desktopCount{margin-left:auto;font-size:13px;color:var(--rl-text-quiet);white-space:nowrap}
+.promptCard{margin-top:14px;padding:18px 22px;min-width:0;border-radius:26px;background:var(--rl-surface-panel-layered);border:1px solid var(--rl-border-subtle);backdrop-filter:var(--rl-material-panel);box-shadow:inset 0 1px 0 var(--rl-panel-highlight);color:var(--rl-text-primary)}
+.promptCard h2{font-size:12px;font-weight:500;line-height:15px;color:var(--rl-text-quiet);margin:0 0 6px}
+.promptCard p{margin:0 0 12px;font-size:16px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--rl-text-secondary)}
+.chips span{padding:5px 10px;border-radius:12px;background:rgb(255 255 255 / 8%);line-height:15px}
+.extraActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.phoneActions{position:absolute;z-index:4;right:14px;bottom:14px;display:flex;align-items:center;gap:8px}
+.phoneActions .iconAction{width:44px;height:44px;min-height:44px;min-width:44px;padding:0;border-radius:50%;border:1px solid rgb(255 255 255 / 20%);background:rgb(20 16 14 / 40%);backdrop-filter:blur(24px) saturate(1.6);color:white;box-shadow:none}
+.phoneActions .iconAction svg{width:19px;height:19px}
+.more{display:flex;flex-direction:column;gap:4px;min-width:180px}
+.more button,.more a{justify-content:flex-start;min-height:44px}
+@media(max-width:760px){
+.frame .document .surface:global(.create-preview-stage-surface){height:clamp(220px,calc(100dvh - 284px),560px);border-radius:34px;box-shadow:0 0 0 1px rgb(255 255 255 / 8%),0 30px 80px rgb(80 60 180 / 45%)}
+}
+@media(max-width:300px){.phoneActions{gap:4px;right:8px;bottom:8px;max-width:calc(100% - 16px);flex-wrap:wrap;justify-content:flex-end}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active){.phoneActions .iconAction{background:var(--rl-surface-overlay);backdrop-filter:none}}
+
+/* Round 2: the old container-query frame uses logical dimensions and size
+ * containment. Override those exact properties, not only width/height, so an
+ * empty document cannot collapse to a 1px intrinsic column. Keep its upload
+ * control inside the same measured surface as a completed result. */
+.frame:global(.create-preview-stage-frame)[data-rebuilt-stage] {
+  position:relative; inset:auto; display:block; inline-size:100%; block-size:auto;
+  min-inline-size:0; min-block-size:0; max-inline-size:100%;
+  container-type:normal; contain:none; overflow:visible; border:0;
+}
+.frame[data-rebuilt-stage] > .document:global(.create-preview-stage-document) {
+  position:relative; display:block; inline-size:100%; block-size:auto;
+  min-inline-size:0; min-block-size:0; max-inline-size:100%; container-type:normal;
+}
+.frame[data-rebuilt-stage] .document .surface:global(.create-preview-stage-surface) {
+  position:relative; inset:auto; display:grid; place-items:center;
+  inline-size:100%; block-size:min(540px,60dvh); min-block-size:min(540px,60dvh);
+  min-inline-size:0; max-inline-size:100%; aspect-ratio:auto; overflow:hidden;
+  border:0; border-radius:32px; isolation:isolate;
+}
+.frame[data-rebuilt-stage] .surface[data-empty=true] {
+  background:var(--rl-surface-panel-layered);
+  box-shadow:inset 0 0 0 1px var(--rl-border-subtle),inset 0 1px 0 var(--rl-panel-highlight),0 40px 110px rgb(80 60 180 / 35%);
+  backdrop-filter:var(--rl-material-panel);
+}
+.frame[data-rebuilt-stage] .surface[data-empty=true] > :global(.create-preview-canvas-upload) {
+  position:absolute; inset:0; display:grid; place-content:center; justify-items:center;
+  inline-size:100%; block-size:100%; min-inline-size:0; min-block-size:0;
+  border:0; border-radius:inherit; background:transparent; box-shadow:none;
+  color:var(--rl-text-secondary); font-size:14px; line-height:1.4; text-align:center;
+}
+.frame[data-rebuilt-stage] .surface[data-empty=true] > :global(.create-preview-caption) {
+  margin:0; max-inline-size:100%; color:var(--rl-text-secondary); font-size:14px; text-align:center;
+}
+@media(max-width:760px) {
+  .frame[data-rebuilt-stage] .document .surface:global(.create-preview-stage-surface) {
+    block-size:clamp(220px,calc(100dvh - 284px),560px);
+    min-block-size:clamp(220px,calc(100dvh - 284px),560px); border-radius:34px;
+  }
+}

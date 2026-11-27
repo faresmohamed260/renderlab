@@ -52,7 +52,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {preview && <div className="renderlab-reference-atmosphere" aria-hidden="true">
           <div className="renderlab-reference-wash" />
         </div>}
-        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} showAdmin={showAdmin} profile={profile} hostedProfile={envString("NODE_ENV") === "development" && envFlag("RENDERLAB_HOSTED_CREATE")}>{children}</PreviewNavigationShell> : children}
+        {preview ? <PreviewNavigationShell accountId={account?.id ?? null} accountEmail={account?.email ?? null} showAdmin={showAdmin} profile={profile} hostedProfile={envString("NODE_ENV") === "development" && envFlag("RENDERLAB_HOSTED_CREATE")}>{children}</PreviewNavigationShell> : children}
       </body>
     </html>
   );

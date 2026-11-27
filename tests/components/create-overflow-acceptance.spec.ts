@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { emptyHistory, fixtureAsset, fixtureImage } from "../component-app/fixtures";
 import known from "./create-overflow-baseline.json";
+import { assertMode, selectMode, openHistory, closeHistory, advancedTrigger, openAdvanced, manualPrompt } from "./ui-lead-create-journey";
 
 const origin = "http://127.0.0.1:4173";
 const viewports = [{ width: 195, height: 422 }, { width: 320, height: 844 }, { width: 390, height: 844 }, { width: 1440, height: 900 }] as const;
@@ -29,9 +30,15 @@ async function geometry(page: Page) {
     if (!shell || !grid) throw new Error("Production shell/composer not mounted");
     const sheet = document.querySelector('[data-slot="sheet-content"]');
     const roots = [shell, ...(sheet && !shell.contains(sheet) ? [sheet] : [])];
+    const clipped = (el: Element) => {
+      for (let node: Element | null = el; node; node = node.parentElement) {
+        if (getComputedStyle(node).clipPath === "inset(50%)") return true;
+      }
+      return false;
+    };
     const visible = (el: Element): el is HTMLElement => el instanceof HTMLElement && el.clientWidth > 0 &&
       el.getClientRects().length > 0 && !el.closest("[inert],[hidden],.sr-only,details:not([open]) > :not(summary)") &&
-      getComputedStyle(el).visibility === "visible";
+      getComputedStyle(el).visibility === "visible" && !clipped(el);
     // A stable, disambiguated DOM address: prefer unique ID or component class;
     // repeated elements are located by their same-class ordinal in this shell.
     const address = (el: HTMLElement) => {
@@ -46,7 +53,12 @@ async function geometry(page: Page) {
     const doc = document.documentElement;
     if (doc.scrollWidth > doc.clientWidth) violations.push({ selector: "html", kind: "scroll", pixels: doc.scrollWidth - doc.clientWidth });
     for (const el of roots.flatMap(root => [root, ...root.querySelectorAll("*")]).filter(visible)) {
-      if (!el.matches("input:not([type=range]),select") && el.scrollWidth > el.clientWidth) {
+      const css = getComputedStyle(el);
+      // The comp deliberately truncates noninteractive history/title text. A
+      // one-line ellipsis is not a scrollable layout box; full name remains on
+      // the containing button. Do not exempt other overflow.
+      const intentionalEllipsis = css.textOverflow === "ellipsis" && css.overflowX === "hidden" && css.whiteSpace === "nowrap" && !el.querySelector("button,a,input,select,textarea");
+      if (!intentionalEllipsis && !el.matches("input:not([type=range]),select") && el.scrollWidth > el.clientWidth) {
         violations.push({ selector: address(el), kind: "scroll", pixels: el.scrollWidth - el.clientWidth });
       }
       if (el.matches("input[type=range]") && el.parentElement) {
@@ -98,14 +110,14 @@ for (const viewport of viewports) {
       const result = await geometry(page);
       expect(result.viewport).toEqual([viewport.width, viewport.height]);
       expect(result.gutter, "Classic scrollbar space must be present; do not silently test overlay/hidden scrollbars").toBeGreaterThan(0);
-      if (viewport.width === 195) expect(result.gridGutter, "The narrow scroll container must actually reserve scrollbar space").toBeGreaterThan(0);
+      // The rebuilt grid no longer owns scrolling; the modal check below measures its actual scrollbar.
       if (result.violations.length) actual[state] = result.violations;
       console.log("OVERFLOW_ACCEPTANCE " + viewport.width + " " + state + " " + JSON.stringify(result));
       // A missing overflow entry must not mean that the corresponding UI vanished.
       // On 195px, retain the original control addresses and prove the Steps
       // slider inside its approved Advanced sheet in each existing state.
-      if (viewport.width === 195) {
-        const advancedOpener = page.getByRole("button", { name: "Advanced", exact: true });
+      if (viewport.width === 195 && !await page.getByRole("dialog", { name: "History" }).isVisible()) {
+        const advancedOpener = advancedTrigger(page);
         const advancedSheet = page.getByRole("dialog", { name: "Advanced" });
         const wasOpen = await advancedSheet.isVisible();
         if (!wasOpen) {
@@ -116,7 +128,8 @@ for (const viewport of viewports) {
         const sheetGeometry = await geometry(page);
         if (sheetGeometry.violations.length) actual[state + "/sheet"] = sheetGeometry.violations;
         console.log("OVERFLOW_ACCEPTANCE " + viewport.width + " " + state + "/sheet " + JSON.stringify(sheetGeometry));
-        const selectors = [".create-preview-dock", ".create-preview-settings", ".create-preview-steps", "input#create-preview-steps"];
+        const selectors = ['[data-slot="sheet-content"]', '[class*="__settings"]', '[class*="__stepsRow"]', "input#create-preview-steps"];
+        expect(await advancedSheet.evaluate(el => el.scrollHeight > el.clientHeight && el instanceof HTMLElement ? el.offsetWidth-el.clientWidth : 0), "Actual narrow Advanced scrollbar").toBeGreaterThan(0);
         for (const selector of selectors) {
           const locator = page.locator(selector);
           await expect(locator, state + " " + selector).toHaveCount(1);
@@ -151,10 +164,10 @@ for (const viewport of viewports) {
         await range.press(increment ? "ArrowRight" : "ArrowLeft");
         const after = before + (increment ? 1 : -1);
         await expect(range).toHaveValue(String(after));
-        await expect(page.locator(".create-preview-steps output")).toHaveText(String(after));
+        await expect(advancedSheet.locator("output")).toHaveText(String(after));
         await range.press(increment ? "ArrowLeft" : "ArrowRight");
         await expect(range).toHaveValue(String(before));
-        await expect(page.locator(".create-preview-steps output")).toHaveText(String(before));
+        await expect(advancedSheet.locator("output")).toHaveText(String(before));
         console.log("OVERFLOW_CONTROL_PROOF " + state + " " + JSON.stringify({ boxes, hit, before, after, restored: before }));
         if (!wasOpen) {
           await page.keyboard.press("Escape");
@@ -171,31 +184,28 @@ for (const viewport of viewports) {
       const create = page.getByRole("region", { name: "Create with FIBO" });
       await expect(page.locator(".preview-navigation-shell > .preview-navigation-content > main > .create-preview-workspace")).toBeVisible();
       await expect.poll(() => capabilitiesRead > beforeCaps && historyRead > beforeHistory).toBe(true);
-      await expect(create.locator("[data-create-history-image]")).toHaveCount(count);
-      if (!count) await expect(create.getByText("Finished images will appear here.")).toBeVisible();
-      const edit = create.getByRole("button", { name: "Image Editing", exact: true });
-      const generate = create.getByRole("button", { name: "Text to Image", exact: true });
-      await expect(edit).toHaveAttribute("aria-pressed", "true");
+      const history = await openHistory(page);
+      await expect(history.locator("[data-create-history-image]")).toHaveCount(count);
+      if (!count) await expect(history.getByText("Finished images will appear here.")).toBeVisible();
+      await closeHistory(page);
+      await assertMode(page, "edit");
       await measure(variant.name + "/edit");
-      await generate.click();
+      await selectMode(page, "generate");
       await create.getByRole("textbox", { name: "Prompt", exact: true }).fill("A synthetic prompt with long words");
       await expect(create.getByRole("button", { name: "Generate", exact: true })).toBeEnabled();
       await measure(variant.name + "/generate");
-      await create.getByLabel("Recent prompts", { exact: true }).click();
-      await expect(create.getByText("No recent prompts in this session.")).toBeVisible();
+      const promptHistory = await openHistory(page);
+      await expect(promptHistory.getByText("Prompt history", { exact: true })).toBeVisible();
+      await expect(promptHistory.getByText("No matching prompts.")).toBeVisible();
+      await promptHistory.getByRole("textbox", { name: "Search prompts" }).fill("synthetic");
       await measure(variant.name + "/recents");
-      await create.getByLabel("Recent prompts", { exact: true }).click();
+      await promptHistory.getByRole("textbox", { name: "Search prompts" }).fill("");
+      await closeHistory(page);
       const phone = viewport.width <= 700;
-      const advancedOpener = create.getByRole("button", { name: "Advanced", exact: true });
+      const advancedOpener = advancedTrigger(page);
       const advancedSheet = page.getByRole("dialog", { name: "Advanced" });
-      if (phone) {
-        await advancedOpener.press("Enter");
-        await expect(advancedSheet).toBeVisible();
-        await expect.poll(() => advancedSheet.evaluate(el => Math.abs(el.getBoundingClientRect().bottom - innerHeight))).toBeLessThan(1);
-      }
-      const advanced = phone ? advancedSheet : create;
-      await advanced.locator("#create-preview-negative-label").click();
-      await advanced.locator("#create-preview-vgl-label").click();
+      const advanced = await openAdvanced(page);
+      await manualPrompt(page).check();
       await expect(advanced.getByText(autoVgl ? "Generated VGL is advertised by the server but not available in this workspace. Enter manual JSON instead." : "Generated VGL is unavailable. Enter manual JSON instead.", { exact: true })).toBeVisible();
       await advanced.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');
       await measure(variant.name + "/advanced");

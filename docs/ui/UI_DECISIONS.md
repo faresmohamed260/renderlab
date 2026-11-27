@@ -780,8 +780,17 @@ Create's UI-069 drag-only reference overlay also gets one bounded composition co
 **Consequences:** Admin uses existing confirmed-dispatch percentile bars (15-minute window), confirmation sample count and aggregate reservation status counts instead of illustrative 24-hour chart and individual job rows, per the accepted comp addendum. Preserve unavailable, empty, zero and lower-bound distinctions. Admin controls, Limits/Access expansion, new endpoints/queries/migrations and motion approval are outside this decision. No production authorization.
 
 ### UI-092 — Phone Create composer stays in flow; compact composer is a follow-up
-**Status:** Accepted
+**Status:** Superseded
 **Date:** 2026-11-26
+**Superseded by:** UI-093
 **Decision:** Head-engineer decision (the owner may reopen it). At phone widths (max-width 700px) the Create composer remains a normal-flow card below the result stage, as shipped with the Phase 6 compact Advanced sheet. The approved phone comp's compact composer (prompt row, add, mode, ratio, tune and a round Generate on the first screen) is not implemented and is recorded as a deviation from `design/approved/2026-11-25-phase6/renders/create-phone.png`.
 **Reason:** Measured on main `d30572ca` at 390x844 the Image Editing composer is 612 px tall (mode toggle, Image setup tiles, prompt, Advanced, notes, Generate), so no stage size, grid change or sticky bar can place both the prompt and Generate on the first screen at 320x700 without overlapping controls. The attempted CSS-only fix (#849) collapsed the stage, overflowed the composer and covered Generate, and was closed unmerged. The comp's layout requires moving reference tiles, mode and ratio into popovers or sheets.
 **Consequences:** Prompt and Generate stay reachable by scrolling the Create grid (verified by the existing mounted suites; Generate sizing and contrast are covered at five widths). Any compact-composer work is a separately planned structural change that migrates the existing mounted assertions with equivalent reachability and operability proof, as for the compact Advanced migration. See the [Phase 6 final acceptance](../audits/2026-11-26-phase6-final-acceptance.md).
+
+### UI-093 — The shipped Phase 6 UI is rebuilt to the approved comps
+**Status:** Accepted
+**Date:** 2026-11-27
+**Supersedes:** UI-092
+**Decision:** Owner decision. The Phase 6 UI shipped on main did not follow the approved comps (notably Create). The whole UI was rebuilt on integration branch `ui-rebuild` with the approved comps and their measured specs (`design/spec/*.json`, [rebuild brief](UI_REBUILD_BRIEF.md)) as the specification, judged screen by screen against rendered output, and approved by the owner on 2026-11-27. This supersedes UI-092: the phone Create composer is the approved floating composer over a full-screen stage.
+**Reason:** A screen is accepted only when rendered output matches the comp, not when checks are green.
+**Consequences:** Owner decisions carried into the build: no Activity link in navigation (the page stays; #813 remains the owner's decision); Ctrl K command palette built (Create and navigation commands, no separate Shortcuts popover); negative prompt removed; image count and Inspiration hidden until the hosted backend supports them (multi-output is planned separately); Library kind filter and sort live in the "Newest first" menu on desktop and as a chip row on phone; Compare is omitted where no result pair exists; References appear only in Edit mode; Queue is a global header pill. Truthful-data exceptions are unchanged (Admin shows measured values with locked controls). Any later component redesign still needs owner approval.

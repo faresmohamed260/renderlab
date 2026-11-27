@@ -1,6 +1,8 @@
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 import type { Page } from "@playwright/test";
+import { assertMode, selectMode, openHistory, closeHistory, advancedTrigger, manualPrompt } from "./ui-lead-create-journey";
+test.use({ extraHTTPHeaders: { "x-renderlab-fixture-shell": "create" } });
 
 // Inspect all rendered layout boxes, not merely root overflow. Inline text
 // and SVG geometry have no CSS clientWidth; native single-line text controls
@@ -9,10 +11,15 @@ async function overflow(page: Page) {
   return page.getByRole("region", { name: "Create with FIBO", includeHidden: true }).evaluate(root => {
     const sheet = document.querySelector('[data-slot="sheet-content"]');
     const elements = [root, ...root.querySelectorAll("*"), ...(sheet ? [sheet, ...sheet.querySelectorAll("*")] : [])];
+    const clipped = (el: Element) => {
+      for (let node: Element | null = el; node; node = node.parentElement) if (getComputedStyle(node).clipPath === "inset(50%)") return true;
+      return false;
+    };
     return elements.flatMap(node => {
       if (!(node instanceof HTMLElement) || !node.clientWidth || !node.getClientRects().length
         || node.closest("[inert], [hidden], .sr-only, details:not([open]) > :not(summary)") || getComputedStyle(node).visibility !== "visible"
-        || node.matches("input:not([type=range]), select")) return [];
+        || node.matches("input:not([type=range]), select") || clipped(node)) return [];
+      const css = getComputedStyle(node); if (css.textOverflow === "ellipsis" && css.overflowX === "hidden" && css.whiteSpace === "nowrap" && !node.querySelector("button,a,input,select,textarea")) return [];
       if (node.scrollWidth <= node.clientWidth) return [];
       return [{ tag: node.tagName, classes: node.className, id: node.id,
         clientWidth: node.clientWidth, scrollWidth: node.scrollWidth,
@@ -30,32 +37,29 @@ async function assertReflow(page: Page, state: string) {
 for (const width of [195, 320]) {
   test("Create composer has no internal horizontal overflow across states at " + width + " CSS px", async ({ page, io }) => {
     await page.setViewportSize({ width, height: 422 });
-    await page.goto("/");
+    await page.goto("/create");
     const create = page.getByRole("region", { name: "Create with FIBO" });
-    const edit = create.getByRole("button", { name: "Image Editing", exact: true });
-    const generate = create.getByRole("button", { name: "Text to Image", exact: true });
-    await expect(edit).toHaveAttribute("aria-pressed", "true");
+    await assertMode(page, "edit");
     await expect.poll(() => io.includes("GET capabilities")).toBe(true);
     await assertReflow(page, "empty edit");
-    await generate.click();
-    await expect(generate).toHaveAttribute("aria-pressed", "true");
+    await selectMode(page, "generate");
     await assertReflow(page, "empty text-to-image");
     await create.getByRole("textbox", { name: "Prompt", exact: true }).fill("A synthetic prompt with long words");
     await expect(create.getByRole("button", { name: "Generate", exact: true })).toBeEnabled();
     await assertReflow(page, "ready text-to-image");
-    await create.getByLabel("Recent prompts", { exact: true }).click();
-    await expect(create.getByText("No recent prompts in this session.")).toBeVisible();
-    await assertReflow(page, "recent prompts open");
-    await create.getByLabel("Recent prompts", { exact: true }).click();
-    const opener = create.getByRole("button", { name: "Advanced", exact: true });
+    const history = await openHistory(page);
+    await expect(history.getByText("No matching prompts.")).toBeVisible();
+    await history.getByRole("textbox", { name: "Search prompts" }).fill("synthetic");
+    await assertReflow(page, "prompt history open");
+    await closeHistory(page);
+    const opener = advancedTrigger(page);
     await opener.press("Enter");
     const sheet = page.getByRole("dialog", { name: "Advanced" });
     await expect(sheet).toBeVisible();
-    await sheet.locator("#create-preview-negative-label").click();
-    await sheet.locator("#create-preview-vgl-label").click();
+    await manualPrompt(page).check();
     await expect(sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
     await sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true }).fill('{"scene":"' + "longtoken".repeat(24) + '"}');
-    for (const selector of ["#create-preview-negative-label", "#create-preview-vgl-label"]) {
+    for (const selector of ['label[for="create-preview-vgl-enabled"]']) {
       expect((await sheet.locator(selector).boundingBox())?.height).toBeGreaterThanOrEqual(44);
     }
     await assertReflow(page, "advanced open with long VGL");
@@ -63,9 +67,16 @@ for (const width of [195, 320]) {
     await expect(sheet).toHaveCount(0);
     await expect(opener).toBeFocused();
     await page.goto("/create?recipe=" + fixtureJobId);
-    await expect(create.getByRole("button", { name: "Remove source image" })).toBeVisible();
+    const references = create.getByRole("button", { name: "References", exact: true });
+    await expect.poll(() => io.includes("GET continuation source")).toBe(true);
+    await expect(create.getByRole("img", { name: "Source image" })).toBeVisible();
+    await references.click();
+    await expect(page.getByRole("button", { name: "Remove source image" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(references).toBeFocused();
     await opener.press("Enter");
     await expect(sheet).toBeVisible();
+    if (!(await manualPrompt(page).isChecked())) await manualPrompt(page).check();
     await expect(sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true })).toBeVisible();
     await assertReflow(page, "restored edit source and recipe");
     await page.keyboard.press("Escape");
@@ -78,9 +89,9 @@ for (const width of [195, 320]) {
 test("narrow native prompt preserves typing, clipboard replacement and Chromium IME composition", async ({ page, context, io }) => {
   await page.setViewportSize({ width: 195, height: 422 });
   await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "http://127.0.0.1:4173" });
-  await page.goto("/");
+  await page.goto("/create");
   const create = page.getByRole("region", { name: "Create with FIBO" });
-  await create.getByRole("button", { name: "Text to Image", exact: true }).click();
+  await selectMode(page, "generate");
   const prompt = create.getByRole("textbox", { name: "Prompt", exact: true });
   await expect(prompt).toHaveJSProperty("tagName", "TEXTAREA");
   await expect(prompt).toHaveAttribute("maxlength", "4000");
@@ -105,8 +116,8 @@ test("narrow native prompt preserves typing, clipboard replacement and Chromium 
   await prompt.pressSequentially("!");
   await expect(prompt).toHaveValue("paste\nsecond line\n你!");
   await assertReflow(page, "typed, pasted and composed prompt");
-  await create.getByRole("button", { name: "Image Editing", exact: true }).click();
-  await create.getByRole("button", { name: "Text to Image", exact: true }).click();
+  await selectMode(page, "edit");
+  await selectMode(page, "generate");
   await expect(prompt).toHaveValue("paste\nsecond line\n你!");
   await expect(create.getByRole("button", { name: "Generate", exact: true })).toBeEnabled();
   await expect.poll(() => io.includes("GET capabilities")).toBe(true);

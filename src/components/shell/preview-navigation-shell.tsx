@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Activity, CircleHelp, House, Images, Menu, Settings, Shield, SlidersHorizontal, Sparkles, UserRound, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { CircleHelp, Clock, House, Images, Search, Settings, Shield, SlidersHorizontal, Sparkles, UserRound, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { RenderLabMark } from "@/components/brand/renderlab-brand";
 
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger, SheetContent, SheetClose, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { springOptions } from "@/lib/ui/spring-roles";
 import styles from "./phone-navigation.module.css";
+import { CommandPalette } from "./command-palette";
+import { useCreateCommands } from "@/lib/create-commands";
 
 const pillTop = 17;
 const pillHeight = 40;
@@ -97,7 +99,14 @@ function usePreviewReducedMotion() {
 }
 
 const settingsPath = "/settings";
-const isSettingsRoute = (pathname: string) => pathname === settingsPath || pathname.startsWith(settingsPath + "/");
+const isSettingsRoute = (pathname: string) => pathname === settingsPath || pathname.startsWith(settingsPath + "/") || pathname === "/round3-settings";
+// Existing isolated review routes render the same production surfaces.
+function shellRoute(pathname: string) {
+  if (pathname === "/round3-settings") return "/settings";
+  if (pathname === "/round3-library" || pathname === "/loading-review/library") return "/library";
+  if (pathname === "/loading-review/create" || pathname === "/create-result-review" || pathname.startsWith("/create-history-")) return "/create";
+  return pathname;
+}
 
 const accountOptions = [
   { label: "Personalization", icon: SlidersHorizontal },
@@ -222,17 +231,11 @@ const destinations = [
   { href: "/", label: "Home", icon: House },
   { href: "/create", label: "Create", icon: Sparkles },
   { href: "/library", label: "Library", icon: Images },
-  { href: "/activity", label: "Activity", icon: Activity },
-];
-
-const navigationGroups = [
-  { title: "Workspace", destinations: destinations.slice(0, 2) },
-  { title: "Media & history", destinations: destinations.slice(2, 4) },
 ];
 
 
-function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, setOpenPath }: {
-  pathname: string; accountId: string | null; profile: ShellProfile | null; showAdmin: boolean;
+function PhoneNavigation({ pathname, accountId, accountEmail, profile, showAdmin, openPath, setOpenPath }: {
+  pathname: string; accountId: string | null; accountEmail: string | null; profile: ShellProfile | null; showAdmin: boolean;
   openPath: string | null; setOpenPath: (path: string | null) => void;
 }) {
   const open = openPath === pathname;
@@ -291,8 +294,8 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
   return <div className={styles.mobileNavigation}>
     <Sheet open={open} onOpenChange={changeOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="lg" className={styles.logo} aria-label="RenderLab — Open navigation">
-          <RenderLabMark className="size-6" /><span>RenderLab</span>
+        <Button variant="ghost" size="lg" className={styles.logo + (pathname.startsWith("/create") ? " " + styles.createLogo : "")} aria-label="RenderLab — Open navigation menu">
+          <RenderLabMark className="size-7" /><span>RenderLab</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" showCloseButton={false} className={styles.sidebar}
@@ -300,12 +303,12 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
         onCloseAutoFocus={event => {
           if (matchMedia("(min-width: 701px)").matches) {
             event.preventDefault();
-            document.querySelector<HTMLAnchorElement>(".p6-desktop-brand")?.focus();
+            document.querySelector<HTMLAnchorElement>(".rebuild-desktop-brand")?.focus();
           }
         }}>
         <div className={styles.heading}>
-          <SheetTitle className={styles.title}><RenderLabMark tone="mono" className="size-6" /><span>RenderLab navigation</span></SheetTitle>
-          <SheetClose asChild><Button variant="secondary" size="icon-lg" className={styles.close} aria-label="Close navigation"><X aria-hidden="true" /></Button></SheetClose>
+          <SheetTitle className={styles.title}><RenderLabMark className="size-[30px]" /><span>RenderLab</span></SheetTitle>
+          <SheetClose asChild><Button variant="secondary" size="icon-lg" className={styles.close} aria-label="Close menu"><X aria-hidden="true" /></Button></SheetClose>
         </div>
         <SheetDescription className={styles.description}>Choose a workspace or open account settings.</SheetDescription>
         <nav aria-label="Workspace navigation" className={styles.links}>
@@ -321,9 +324,9 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
         </nav>
         <Button asChild variant="secondary" size="lg" className={styles.profile}>
           <Link data-shell-profile="" href={settingsPath} onNavigate={closeImmediately} aria-current={isSettingsRoute(pathname) ? "page" : undefined}>
-            <UserRound aria-hidden="true" />
-            <span className={styles.profileText}><span>{name}</span>{" "}<span className={styles.profileMeta}>Settings</span></span>
-            <Settings aria-hidden="true" className={styles.settingsIcon} />
+            <ProfileAvatar profile={accountId ? profile : null} size={46} />
+            <span className={styles.profileText}><span>{name}</span>{accountId && accountEmail && <span className={styles.profileMeta}>{accountEmail}</span>}</span>
+            <span className={styles.settingsIcon}><Settings size={20} aria-hidden="true" /></span>
           </Link>
         </Button>
       </SheetContent>
@@ -331,147 +334,88 @@ function PhoneNavigation({ pathname, accountId, profile, showAdmin, openPath, se
   </div>;
 }
 
-export function PreviewNavigationShell({ children, accountId, profile = null, showAdmin = false }: { children: ReactNode; accountId: string | null; hostedProfile?: boolean; profile?: ShellProfile | null; showAdmin?: boolean }) {
-  const pathname = usePathname();
+function ProfileAvatar({ profile, size }: { profile: ShellProfile | null; size: number }) {
+  const [failed, setFailed] = useState(false);
+  return <span className="rebuild-profile-avatar" style={{ width: size, height: size }}>
+    {profile?.avatarUrl && !failed
+      ? <Image src={profile.avatarUrl} width={size} height={size} alt="" unoptimized onError={() => setFailed(true)} />
+      : <UserRound size={20} aria-hidden="true" />}
+  </span>;
+}
+
+function UtilitySidebar({ pathname, accountId, profile, showAdmin }: { pathname: string; accountId: string | null; profile: ShellProfile | null; showAdmin: boolean }) {
+  const links = [...destinations.slice(1), { href: settingsPath, label: "Settings", icon: Settings },
+    ...(showAdmin && accountId ? [{ href: "/admin", label: "Admin", icon: Shield }] : [])];
+  return <aside className="rebuild-utility-sidebar">
+    <Link href="/" className="rebuild-utility-brand" aria-label="RenderLab home"><RenderLabMark className="size-[30px]" /><span>RenderLab</span></Link>
+    <nav aria-label="Primary navigation">
+      {links.map(({ href, label, icon: Icon }) => <Link key={href} href={href}
+        aria-current={pathname === href || pathname.startsWith(href + "/") ? "page" : undefined}><Icon size={20} aria-hidden="true" />{label}</Link>)}
+    </nav>
+    <Link href={settingsPath} className="rebuild-utility-profile" data-shell-profile="" aria-label="Account settings">
+      <ProfileAvatar profile={accountId ? profile : null} size={38} />
+      <span><strong>{accountId ? profile?.displayName || "RenderLab account" : "Guest"}</strong><small>{showAdmin && accountId ? "Owner" : "Settings"}</small></span>
+    </Link>
+  </aside>;
+}
+
+function RegistryHeaderAction({ id, phone = false, pathname }: { id: "open-queue" | "open-history" | "library-search"; phone?: boolean; pathname: string }) {
+  const router = useRouter();
+  const command = useCreateCommands().find(item => item.id === id && item.enabled);
+  const globalQueue = id === "open-queue" && !pathname.startsWith("/create");
+  if (!command && !globalQueue) return null;
+  return <Button type="button" variant="ghost" className={phone ? "rebuild-phone-action" : "rebuild-queue-pill"}
+    aria-label={id === "open-history" ? "Session and prompt history" : id === "library-search" ? "Search the Library" : "Queue"}
+    aria-expanded={id === "library-search" ? command?.expanded : undefined}
+    onClick={() => { if (globalQueue) router.push("/create?queue=1"); else if (command) void command.run(); }}>
+    {id === "open-history" ? <Clock size={20} aria-hidden="true" /> : id === "library-search" ? <Search size={20} aria-hidden="true" /> : "Queue"}
+  </Button>;
+}
+
+export function PreviewNavigationShell({ children, accountId, profile = null, accountEmail = null, showAdmin = false }: { children: ReactNode; accountId: string | null; accountEmail?: string | null; hostedProfile?: boolean; profile?: ShellProfile | null; showAdmin?: boolean }) {
+  const rawPathname = usePathname();
+  const pathname = shellRoute(rawPathname);
   const current = destinations.find(({ href }) => pathname === href || (href !== "/" && pathname.startsWith(href + "/")));
-  const legacy = pathname === "/";
-  // Preserve isolation throughout the phone modal's lifetime, including its
-  // closing spring. Live-region ancestor paths can survive Radix hideOthers.
+  const landing = pathname === "/";
+  const surface = landing ? "landing" : isSettingsRoute(pathname) ? "settings" : pathname.startsWith("/admin") ? "admin" : current?.label.toLowerCase() ?? "other";
+  const utility = surface === "settings" || surface === "admin";
   const [phoneOpenPath, setPhoneOpenPath] = useState<string | null>(null);
-  const phoneModalOpen = !legacy && phoneOpenPath === pathname;
-  const sectionLabel = isSettingsRoute(pathname) ? "Settings" : current?.label ?? "RenderLab";
-  const [openPath, setOpenPath] = useState<string | null>(null);
-  const open = openPath === pathname;
-  const pinnedPath = useRef<string | null>(null);
-  const id = useId();
-  const shellRoot = useRef<HTMLDivElement>(null);
-  const disclosure = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const reduced = usePreviewReducedMotion();
-  const reveal = useSpring({ progress: open ? 1 : 0, config: navigationSpring, immediate: reduced });
+  const phoneModalOpen = !landing && phoneOpenPath === pathname;
 
-  useEffect(() => {
-    const node = disclosure.current;
-    if (!node) return;
-    const measure = () => {
-      if (node.offsetHeight > 0) node.style.setProperty("--preview-section-header-block", node.offsetHeight + "px");
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [pathname]);
-
-  // The Create toolbar is a separate route surface. Its desktop negative
-  // margin aligns it with the header, but an expanded header disclosure can
-  // paint over the controls on either viewport. Measure the actual footprint;
-  // CSS reserves clearance only while that disclosure is open.
-  useEffect(() => {
-    const root = shellRoot.current;
-    if (!root) return;
-    const header = root.querySelector<HTMLElement>(".preview-navigation-header");
-    const section = header?.querySelector<HTMLElement>(".preview-section-panel");
-    const account = header?.querySelector<HTMLElement>(".preview-account-menu");
-    if (!header) return;
-    const measure = () => {
-      root.style.setProperty("--create-section-menu-clearance", Math.max(0, (section?.offsetHeight ?? 0) - header.offsetHeight) + "px");
-      root.style.setProperty("--create-account-menu-clearance", Math.max(0, (account?.offsetHeight ?? 0) - header.offsetHeight) + "px");
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(header);
-    if (section) observer.observe(section);
-    if (account) observer.observe(account);
-    return () => observer.disconnect();
-  }, [pathname]);
-
-  function close() {
-    pinnedPath.current = null;
-    setOpenPath(null);
-  }
-
-  useEffect(() => {
-    if (!open) return;
-    function outside(event: PointerEvent) {
-      if (event.target instanceof Node && !disclosure.current?.contains(event.target)) close();
-    }
-    function escape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (disclosure.current?.contains(document.activeElement)) trigger.current?.focus();
-      close();
-    }
-    document.addEventListener("pointerdown", outside);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("pointerdown", outside);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [open]);
-
-  // The public Landing owns its approved brand and sign-in header. Keep the
-  // existing account menu for signed-in visitors and all workspace routes.
-  if (legacy && !accountId) return <>{children}</>;
+  if (landing && !accountId) return <>{children}</>;
+  if (landing) return (
+    <div className="preview-navigation-shell" data-shell-surface="landing" data-signed-in-landing="">
+      <header className="preview-navigation-header rebuild-landing-header">
+        <Link href="/" className="rebuild-landing-brand" aria-label="RenderLab home"><RenderLabMark className="size-8" /><span>RenderLab</span></Link>
+        <div className="rebuild-landing-actions">
+          <Button asChild variant="ghost" className="rebuild-landing-create"><Link href="/create">Open Create</Link></Button>
+          <RegistryHeaderAction id="open-queue" pathname={pathname} />
+          <PreviewAccountMenu key={accountId} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={false} />
+        </div>
+      </header>
+      <div className="preview-navigation-content">{children}</div>
+    </div>
+  );
 
   return (
-    <div ref={shellRoot} className="preview-navigation-shell">
-      <header className={"preview-navigation-header" + (legacy ? "" : " " + styles.applicationHeader)} data-p6-desktop={legacy ? undefined : "true"}>
-        {!legacy && <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} openPath={phoneOpenPath} setOpenPath={setPhoneOpenPath} />}
-        {!legacy && <div className="p6-desktop-navigation">
-          <Button asChild variant="ghost" size="lg" className="p6-desktop-brand"><Link href="/" aria-label="RenderLab home"><RenderLabMark className="size-6" /><span>RenderLab</span></Link></Button>
+    <div className="preview-navigation-shell" data-shell-surface={surface}>
+      {utility && <UtilitySidebar pathname={pathname} accountId={accountId} profile={profile} showAdmin={showAdmin} />}
+      <header className={"preview-navigation-header " + styles.applicationHeader} data-p6-desktop="true">
+        <PhoneNavigation key={"phone:" + (accountId ?? "guest")} pathname={pathname} accountId={accountId} accountEmail={accountEmail} profile={profile} showAdmin={showAdmin} openPath={phoneOpenPath} setOpenPath={setPhoneOpenPath} />
+        <div className="p6-desktop-navigation">
+          <Link href="/" className="rebuild-desktop-brand" aria-label="RenderLab home"><RenderLabMark className="size-[26px]" /><span>RenderLab</span></Link>
           <nav aria-label="Primary navigation" className="p6-desktop-links">
-            {destinations.slice(1).map(({ href, label }) => <Button asChild key={href} variant="ghost" size="lg" className="p6-desktop-link"><Link href={href} aria-current={current?.href === href ? "page" : undefined}>{label}</Link></Button>)}
+            {destinations.slice(1).map(({ href, label }) => <Link key={href} className="p6-desktop-link" href={href} aria-current={current?.href === href ? "page" : undefined}>{label}</Link>)}
           </nav>
-        </div>}
-        {legacy && <div ref={disclosure} className="preview-section-disclosure"
-          onPointerEnter={(event) => { if (event.pointerType === "mouse") setOpenPath(pathname); }}
-          onPointerLeave={(event) => {
-            // Route selection restores trigger focus; that alone must not lock a hover preview.
-            const focused = document.activeElement;
-            const focusInPanel = focused !== trigger.current && event.currentTarget.contains(focused);
-            if (event.pointerType === "mouse" && pinnedPath.current !== pathname && !focusInPanel) close();
-          }}
-          onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) close();
-          }}
-          onKeyDown={(event) => {
-            if (event.key !== "Escape" || !open) return;
-            event.preventDefault();
-            trigger.current?.focus();
-            close();
-          }}>
-          <Button ref={trigger} type="button" variant="ghost" className="preview-section-trigger"
-            aria-label={"RenderLab sections: " + sectionLabel}
-            aria-expanded={open} aria-controls={id} onClick={() => {
-              if (open && pinnedPath.current === pathname) close();
-              else {
-                pinnedPath.current = pathname;
-                setOpenPath(pathname);
-              }
-            }}>
-            <RenderLabMark className="size-6" />
-            <span>{sectionLabel}</span>
-            <Menu size={12} aria-hidden="true" />
-          </Button>
-          <animated.nav id={id} className="preview-section-panel" aria-label="RenderLab navigation"
-            aria-hidden={!open} inert={!open} data-open={open}
-            style={{ opacity: reveal.progress.to([0, 1], [0, 1], "clamp") }}>
-            <MenuSilhouette id={id + "-shape"} trigger={trigger} progress={reveal.progress} />
-            {navigationGroups.map((group) => (
-              <animated.section key={group.title} className="preview-section-group"
-                style={{ opacity: reveal.progress.to([0.84, 1], [0, 1], "clamp") }}>
-                <p className="preview-section-title">{group.title}</p>
-                {group.destinations.map(({ href, label, icon: Icon }) => (
-                  <Link key={href} href={href} aria-current={current?.href === href ? "page" : undefined}
-                    onNavigate={() => { trigger.current?.focus({ preventScroll: true }); close(); }}>
-                    <Icon size={18} aria-hidden="true" />
-                    {label}
-                  </Link>
-                ))}
-              </animated.section>
-            ))}
-          </animated.nav>
-        </div>}
-        <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={legacy} />
+        </div>
+        <div className="rebuild-header-actions">
+          <CommandPalette showAdmin={Boolean(showAdmin && accountId)} pathname={pathname} />
+          {!utility && <RegistryHeaderAction id="open-queue" pathname={pathname} />}
+          <PreviewAccountMenu key={"desktop:" + (accountId ?? "guest")} accountId={accountId} profile={profile} showAdmin={showAdmin} legacy={false} />
+          <div className="rebuild-loading-desktop-actions" aria-hidden="true"><span /><span /><span /></div>
+        </div>
+        {surface === "create" && <><RegistryHeaderAction id="open-history" pathname={pathname} phone /><span className="rebuild-loading-history" aria-hidden="true" /></>}
+        {surface === "library" && <><RegistryHeaderAction id="library-search" pathname={pathname} phone /><span className="rebuild-loading-library-search" aria-hidden="true" data-library-loading-slot="search-toggle" /></>}
       </header>
       <div className="preview-navigation-content" inert={phoneModalOpen} aria-hidden={phoneModalOpen || undefined}>{children}</div>
     </div>
