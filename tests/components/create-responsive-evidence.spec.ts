@@ -128,9 +128,9 @@ for (const width of [195, 320, 390, 768, 1440]) {
         const structuredLabel = workspace.locator(`label[for="create-preview-vgl-enabled"]`);
         const structuredBox = await structuredLabel.boundingBox();
         expect(structuredBox!.height).toBeGreaterThanOrEqual(24);
-        await structuredLabel.locator("span").click();
+        await structuredLabel.getByText("Use my own structured prompt", { exact: true }).click();
         await expect(structured).toBeChecked();
-        await structuredLabel.locator("span").click();
+        await structuredLabel.getByText("Use my own structured prompt", { exact: true }).click();
         await expect(structured).not.toBeChecked();
         await textMode.focus();
         await page.keyboard.press("ArrowRight");
