@@ -1,4 +1,5 @@
 import { AdminOperations } from "@/features/admin/admin-operations";
+import { AdminIntro } from "@/features/admin/admin-intro";
 import styles from "@/features/admin/admin-operations.module.css";
 import type { AdminDashboardSnapshot, AdminHealthSnapshot } from "@/lib/api/admin-contract";
 
@@ -123,7 +124,7 @@ function snapshot(state: string | undefined): AdminDashboardSnapshot {
 export default async function AdminFixturePage({ searchParams }: { searchParams: Promise<{ state?: string }> }) {
   return (
     <section className={styles.workspace}>
-      <h1 className={styles.title}>Admin</h1>
+      <AdminIntro />
       <AdminOperations snapshot={snapshot((await searchParams).state)} actorUserId="synthetic-admin-fixture" />
     </section>
   );

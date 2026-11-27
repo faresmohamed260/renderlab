@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AdminOperations } from "@/features/admin/admin-operations";
+import { AdminIntro } from "@/features/admin/admin-intro";
 import styles from "@/features/admin/admin-operations.module.css";
 import { getCurrentRenderLabAdminAuthorization } from "@/server/admin/admin-auth";
 import { getAdminDashboard } from "@/server/admin/admin-operations";
@@ -32,20 +33,6 @@ function diagnosticQueryFromSearchParams(params: AdminSearchParams): AdminDiagno
     lookbackHours: Number.isFinite(lookback) ? lookback : undefined,
     limit: Number.isFinite(limit) ? limit : undefined,
   };
-}
-
-function AdminIntro({ unavailable = false }: { unavailable?: boolean }) {
-  return (
-    <header className={styles.intro}>
-      <p className={styles.eyebrow}>Privileged operations</p>
-      <h1 className={styles.title}>Admin</h1>
-      <p className={styles.lede}>
-        {unavailable
-          ? "Admin operations are temporarily unavailable."
-          : "Authorized admins only. Read-only health first; new controls need approval."}
-      </p>
-    </header>
-  );
 }
 
 export default async function AdminPage({

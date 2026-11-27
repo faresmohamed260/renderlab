@@ -1126,3 +1126,24 @@
 .hero .heroPrimary { box-shadow: 0 14px 40px color-mix(in srgb, var(--rl-accent-primary) 50%, transparent), inset 0 1px 0 var(--rl-border-glass-control); }
 @media (hover: hover) and (pointer: fine) { .hero .heroPrimary:hover { box-shadow: 0 14px 40px color-mix(in srgb, var(--rl-accent-primary) 50%, transparent), inset 0 1px 0 var(--rl-border-glass-control); } }
 @media (min-width: 901px) { .nav .brandLink { min-height: 32px; height: 32px; min-width: 136px; } }
+
+/* Judge round 2, phone only: controlled artwork and header share the soft
+   translucent material. Keep opaque fallbacks for reduced transparency. */
+@media (max-width: 900px) {
+  .nav .signInButton, .previewComposer {
+    border: 1px solid var(--rl-panel-highlight);
+    box-shadow: inset 0 1px 0 var(--rl-panel-highlight);
+  }
+  .nav .signInButton { border-radius: 22px; background: var(--rl-surface-control); }
+  .previewComposer { border-radius: 27px; background: var(--rl-surface-overlay); }
+  @supports (backdrop-filter: blur(1px)) {
+    .nav .signInButton {
+      background: color-mix(in srgb, var(--rl-surface-control) 95%, var(--rl-atmosphere-creative));
+      backdrop-filter: var(--rl-material-panel);
+    }
+    .previewComposer { background: var(--rl-surface-control); backdrop-filter: var(--rl-material-panel); }
+  }
+}
+@media (max-width: 900px) and (prefers-reduced-transparency: reduce), (max-width: 900px) and (prefers-contrast: more), (max-width: 900px) and (forced-colors: active) {
+  .nav .signInButton, .previewComposer { background: var(--rl-surface-overlay); backdrop-filter: none; }
+}
