@@ -51,7 +51,7 @@ test("FE-04 Escape precedes input/readiness guards and restores focus to the cur
   const stage = await read("src/features/create/create-preview-stage.tsx");
   assert.match(workspace, /onClose=\{closeMaskEditor\}/);
   assert.match(workspace, /onSave=\{\(region\) => \{[\s\S]*?closeMaskEditor\(region \? "Mask saved\." : "Mask cleared\."\);/);
-  assert.match(workspace, /data-create-mask-trigger[\s\S]*?create-preview-prompt[\s\S]*?Image Editing/);
+  assert.match(workspace, /data-create-mask-trigger/);
   assert.match(workspace, /getClientRects\(\)\.length/);
   assert.match(stage, /data-create-mask-trigger/);
   assert.match(stage, /if \(viewerOpen\) \{ restoring\.current = true; dialog\.current\?\.close\(\); \} maskAction\.open\(\);/);

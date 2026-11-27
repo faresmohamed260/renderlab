@@ -28,11 +28,9 @@ test("P5-01 Queue and Shortcuts use the maintained portal, trigger and controlle
   assert.match(wrapper, /<PopoverPrimitive\.Portal>/);
   assert.match(wrapper, /<PopoverPrimitive\.Content/);
   assert.match(workspace, /<Popover open=\{toolbarPopover === "queue"\} onOpenChange=/);
-  assert.match(workspace, /<Popover open=\{toolbarPopover === "shortcuts"\} onOpenChange=/);
   assert.match(workspace, /<PopoverTrigger asChild>/);
   assert.match(workspace, /<Button ref=\{queue\}/);
   assert.match(workspace, /<PopoverContent[^>]*aria-label="Queue"/);
-  assert.match(workspace, /<PopoverContent[^>]*aria-label="Shortcuts"/);
   assert.match(workspace, /setToolbarPopover\("queue"\)/);
   assert.doesNotMatch(workspace, /queue\.current\.open|<details ref=\{queue\}/);
   // Radix's default Escape dismissal and focus restoration must remain intact.

@@ -57,10 +57,12 @@ test("P5-01 production workspace gates all visible and alternate attachment path
   assert.match(workspace, /if \(file && !inspirationEnabled\) return/);
   assert.match(workspace, /index === 4 && !inspirationEnabled/);
   assert.match(workspace, /target === 4 \|\| \(target === "canvas" && mode === "generate"\)/);
-  assert.match(workspace, /inspirationEnabled \? <div className="create-preview-tile"/);
+  // Inspiration stays hidden until the hosted capability is advertised (rebuild: no tile; the stage shows the notice instead).
+  assert.match(workspace, /browseUnavailableReason=\{mode === "generate" && !inspirationEnabled/);
   assert.match(workspace, /browseUnavailableReason=\{/);
   assert.match(stage, /browseUnavailableReason \? <p/);
-  assert.match(workspace, /multiOutputEnabled \? <Input id="create-preview-count"/);
+  // Image count is hidden in the rebuilt UI; the submitted count stays pinned to 1 unless multi-output is advertised.
+  assert.match(workspace, /const imageCount = multiOutputEnabled \? draftImageCount : "1"/);
   // Negative prompt control removed by owner decision (2026-11-26); the submit gate below still never sends it unless the capability is advertised.
   assert.doesNotMatch(workspace, /create-preview-negative-label/);
   assert.match(workspace, /negativeConditioningEnabled \? negativePrompt\.trim\(\) : ""/);

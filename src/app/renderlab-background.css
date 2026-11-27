@@ -1,30 +1,30 @@
 /* Approved Violet Studio atmosphere: fixed to the comp viewport, not scroll height. */
 .renderlab-gradient {
   --bg: var(--rl-canvas);
-  --rl-current-atmosphere: var(--rl-atmosphere-scene);
+  --atmosphere-current: var(--rl-atmosphere-scene);
   position: relative;
   isolation: isolate;
   display: flow-root;
   min-block-size: 100dvh;
   background: var(--bg);
 }
-.renderlab-gradient:has([data-shell-surface="library"]) { --rl-current-atmosphere: var(--rl-atmosphere-library); }
-.renderlab-gradient:has([data-shell-surface="settings"], [data-shell-surface="admin"]) { --rl-current-atmosphere: var(--rl-atmosphere-utility); }
-.renderlab-gradient:has([data-landing-experience]) { --rl-current-atmosphere: var(--rl-atmosphere-landing); }
+.renderlab-gradient:has([data-shell-surface="library"]) { --atmosphere-current: var(--rl-atmosphere-library); }
+.renderlab-gradient:has([data-shell-surface="settings"], [data-shell-surface="admin"]) { --atmosphere-current: var(--rl-atmosphere-utility); }
+.renderlab-gradient:has([data-landing-experience]) { --atmosphere-current: var(--rl-atmosphere-landing); }
 .renderlab-reference-atmosphere {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: clip;
   pointer-events: none;
-  background: var(--rl-current-atmosphere);
+  background: var(--atmosphere-current);
 }
 .renderlab-reference-wash { display: none; }
 @media (max-width: 700px) {
   .renderlab-gradient,
   .renderlab-gradient:has([data-shell-surface="library"]),
-  .renderlab-gradient:has([data-shell-surface="settings"], [data-shell-surface="admin"]) { --rl-current-atmosphere: var(--rl-atmosphere-phone); }
-  .renderlab-gradient:has([data-landing-experience]) { --rl-current-atmosphere: var(--rl-atmosphere-landing-phone); }
+  .renderlab-gradient:has([data-shell-surface="settings"], [data-shell-surface="admin"]) { --atmosphere-current: var(--rl-atmosphere-phone); }
+  .renderlab-gradient:has([data-landing-experience]) { --atmosphere-current: var(--rl-atmosphere-landing-phone); }
 }
 
 /* Use the shared wash, not a second effect clipped by the legacy Home hero. */
@@ -1794,14 +1794,14 @@
 /* Loading-only static header slots match the comp without shimmer in chrome. */
 .rebuild-loading-history { display:none; }
 @media (min-width:701px) {
-  .renderlab-gradient:has([data-route-loading="create"]) { --rl-current-atmosphere:radial-gradient(45% 45% at 78% 6%,var(--rl-atmosphere-creative),transparent 70%),radial-gradient(40% 45% at 8% 96%,var(--rl-atmosphere-pink),transparent 70%); }
+  .renderlab-gradient:has([data-route-loading="create"]) { --atmosphere-current:radial-gradient(45% 45% at 78% 6%,var(--rl-atmosphere-creative),transparent 70%),radial-gradient(40% 45% at 8% 96%,var(--rl-atmosphere-pink),transparent 70%); }
   .preview-navigation-shell:has([data-route-loading="create"]) .rebuild-header-actions { min-width:294px; height:40px; justify-content:flex-end; }
 }
 @media (max-width:700px) {
   .preview-navigation-shell:has([data-route-loading="create"]) .rebuild-loading-history { display:block; width:44px; height:44px; flex:none; border-radius:50%; background:linear-gradient(90deg,rgb(255 255 255 / 6%),rgb(255 255 255 / 13%) 50%,rgb(255 255 255 / 6%)); }
   .preview-navigation-shell:has([data-route-loading="create"]) .rebuild-phone-action { display:none; }
 }
-@media (prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active) { .renderlab-gradient:has([data-route-loading="create"]) { --rl-current-atmosphere:none; } }
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more),(forced-colors:active) { .renderlab-gradient:has([data-route-loading="create"]) { --atmosphere-current:none; } }
 
 /* Static loading chrome: match the three measured desktop slots, with no
    interactive fake controls; navigation and Ctrl/Cmd+K remain available. */

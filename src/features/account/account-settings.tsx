@@ -318,7 +318,7 @@ export function AccountSettings({
           </RegisterRow>
 
           <RegisterRow index="04" title="Active sessions" id="settings-sessions">
-            <button type="button" className={styles.phoneSessionToggle} aria-expanded={sessionExpanded} aria-controls="settings-session-details" onClick={() => setSessionExpanded(open => !open)}><span><strong>Active sessions</strong><small>{sessions ? `${sessions.length} ${sessions.length === 1 ? "device" : "devices"}` : "Session details unavailable"}</small></span><ChevronRight aria-hidden="true" /></button>
+            <Button type="button" variant="ghost" className={styles.phoneSessionToggle} aria-expanded={sessionExpanded} aria-controls="settings-session-details" onClick={() => setSessionExpanded(open => !open)}><span><strong>Active sessions</strong><small>{sessions ? `${sessions.length} ${sessions.length === 1 ? "device" : "devices"}` : "Session details unavailable"}</small></span><ChevronRight aria-hidden="true" /></Button>
             <div id="settings-session-details" className={styles.sessionStack} data-expanded={sessionExpanded}>
               <div className={styles.valueStack}>
                 <p className={styles.valueLabel}>Active RenderLab sessions</p>
