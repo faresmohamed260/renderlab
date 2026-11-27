@@ -1,3 +1,4 @@
+import { advancedTrigger, expectSource } from "./composer-review-helpers";
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 
@@ -7,8 +8,8 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/create?recipe=" + fixtureJobId);
     const workspace = page.getByRole("region", { name: "Create with FIBO" });
-    await expect(workspace.getByRole("button", { name: "Remove source image" })).toBeVisible();
-    const opener = workspace.getByRole("button", { name: "Advanced", exact: true });
+    await expectSource(page);
+    const opener = advancedTrigger(page);
     await opener.scrollIntoViewIfNeeded();
     await opener.focus();
     const before = await opener.evaluate(el => {

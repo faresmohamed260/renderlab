@@ -1,3 +1,4 @@
+import { advancedTrigger, expectSource } from "./composer-review-helpers";
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
 import type { Page } from "@playwright/test";
@@ -19,8 +20,8 @@ async function drain(page: Page) {
 async function prime(page: Page) {
   await page.goto("/create?recipe=" + fixtureJobId);
   const workspace = page.getByRole("region", { name: "Create with FIBO" });
-  await expect(workspace.getByRole("button", { name: "Remove source image" })).toBeVisible();
-  const opener = workspace.getByRole("button", { name: "Advanced", exact: true });
+  await expectSource(page);
+  const opener = advancedTrigger(page);
   await expect(opener).toBeVisible();
   // Continuous sampling, including teardown and the next unforced click.
   // No stability wait or diagnostic round trip between the close checks and reopen.
@@ -33,7 +34,7 @@ async function prime(page: Page) {
       : null;
     const sample = () => {
       const element = original.isConnected ? original : Array.from(document.querySelectorAll("button")).find(
-        node => node.getAttribute("aria-label") === "Advanced" || node.textContent?.trim() === "Advanced"
+        node => node.getAttribute("aria-label") === "Advanced settings" || node.textContent?.trim() === "Advanced"
       ) ?? null;
       const rect = element?.getBoundingClientRect();
       const hit = rect ? document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2) : null;
@@ -80,7 +81,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
     await page.emulateMedia({ reducedMotion });
     await page.setViewportSize({ width: 390, height: 844 });
     const workspace = page.getByRole("region", { name: "Create with FIBO" });
-    const opener = workspace.getByRole("button", { name: "Advanced", exact: true });
+    const opener = advancedTrigger(page);
     const sheet = page.getByRole("dialog", { name: "Advanced" });
     const failures: { cycle: number; stage: string; error: string }[] = [];
     let attempted = 0;
