@@ -1,6 +1,7 @@
 import { test, expect } from "./isolated-io";
 import { collectTextContrast } from "./composited-contrast";
 import type { Locator } from "@playwright/test";
+import { isPhone, assertMode, modeChoice, modeTrigger, advancedTrigger, iconContrast } from "./ui-lead-create-journey";
 
 async function hitSquare(control: Locator, label: string) {
   await expect(control).toBeEnabled();
@@ -33,45 +34,61 @@ for (const width of [195, 320, 390, 768, 1440]) {
       await expect.poll(() => io.includes("GET capabilities") && io.includes("GET history")).toBe(true);
       await page.evaluate(() => document.fonts.ready);
       const workspace = page.getByRole("region", { name: "Create with FIBO" });
-      const textMode = workspace.getByRole("button", { name: "Text to Image", exact: true });
-      const editMode = workspace.getByRole("button", { name: "Image Editing", exact: true });
-      // Sample the actual React Spring mode highlight on a motion preference
-      // change path; do not disable animations or rely on a screenshot alone.
-      await expect(editMode).toHaveAttribute("aria-pressed", "true");
-      const highlight = workspace.locator(".create-preview-mode-highlight");
-      await expect.poll(() => highlight.evaluate(el => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41)).toBeGreaterThan(0);
-      const motion = await highlight.evaluate(async el => {
-        const offset = () => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41;
-        const start = offset();
-        const button = el.parentElement?.querySelector<HTMLButtonElement>('button[aria-label="Text to Image"]');
-        if (!button) throw Error("Missing Text to Image mode control");
-        button.click();
-        const frames: number[] = [];
-        for (let i = 0; i < 12; i++) {
-          await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-          frames.push(offset());
+      const phone = isPhone(page);
+      const textMode = modeChoice(page, "generate");
+      const editMode = modeChoice(page, "edit");
+      await assertMode(page, "edit");
+      if (!phone) {
+        const highlight = workspace.locator('[class*="__modeHighlight"]');
+        await expect.poll(() => highlight.evaluate(el => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41)).toBeGreaterThan(0);
+        const motion = await highlight.evaluate(async el => {
+          const offset = () => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41;
+          const start = offset();
+          const button = el.parentElement?.querySelector<HTMLButtonElement>('button[aria-label="Text to image"]');
+          if (!button) throw Error("Missing Text to image mode control");
+          button.click();
+          const frames: number[] = [];
+          for (let i = 0; i < 12; i++) {
+            await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+            frames.push(offset());
+          }
+          return { start, frames };
+        });
+        await assertMode(page, "generate");
+        await expect.poll(() => highlight.evaluate(el => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41)).toBe(0);
+        if (reducedMotion === "reduce") expect.soft(motion.frames.every(x => Math.abs(x) <= .1 || Math.abs(x-motion.start) <= .1)).toBe(true);
+        console.log("CREATE_RESPONSIVE_MODE_MOTION " + JSON.stringify({ width, reducedMotion, ...motion }));
+      } else {
+        const chip = modeTrigger(page);
+        await chip.press("Enter");
+        await expect(textMode).toBeVisible();
+        await expect(editMode).toHaveAttribute("aria-checked", "true");
+        if (reducedMotion === "reduce") {
+          const transform = await textMode.evaluate(el => getComputedStyle(el.closest('[data-slot="popover-content"]')!).transform);
+          expect.soft(transform === "none" || new DOMMatrixReadOnly(transform).isIdentity).toBe(true);
         }
-        return { start, frames };
-      });
-      await expect(textMode).toHaveAttribute("aria-pressed", "true");
-      await expect.poll(() => highlight.evaluate(el => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41)).toBe(0);
-      if (reducedMotion === "reduce") {
-        expect.soft(motion.frames.every(x => Math.abs(x) <= 0.1 || Math.abs(x - motion.start) <= 0.1), "no intermediate reduced-motion mode displacement").toBe(true);
+        await textMode.press("Space");
+        await assertMode(page, "generate");
+        await expect(chip).toBeFocused();
       }
-      console.log("CREATE_RESPONSIVE_MODE_MOTION " + JSON.stringify({ width, reducedMotion, ...motion }));
       const prompt = workspace.getByRole("textbox", { name: "Prompt", exact: true });
       const generate = workspace.getByRole("button", { name: "Generate", exact: true });
       await expect(generate).toBeDisabled();
-      const disabled = await collectTextContrast(page, generate, "disabled", "Generate");
+      const generateLabel = generate.locator('[class*="__generateLabel"]');
+      const generateIcon = generate.locator('[class*="__phoneIcon"]');
+      const disabled = phone ? await iconContrast(page, generateIcon, "disabled", "Generate arrow") : await collectTextContrast(page, generateLabel, "disabled", "Generate");
+      const promptContrast = phone ? await collectTextContrast(page, prompt, "empty", "Prompt placeholder", "placeholder") : await collectTextContrast(page, workspace.locator("#create-preview-main-prompt-label"), "enabled", "Prompt label");
       await prompt.fill("Measured synthetic draft");
       await expect(generate).toBeEnabled();
       const geometry = await workspace.evaluate(el => {
         const grid = el.querySelector<HTMLElement>(".create-preview-grid")!;
         const visible = (node: HTMLElement) => node.getClientRects().length > 0 &&
-          !node.closest("[inert],[hidden],.sr-only,details:not([open]) > :not(summary)") &&
+          !node.closest("[inert],[hidden],[aria-hidden=true],.sr-only,details:not([open]) > :not(summary)") &&
           getComputedStyle(node).visibility === "visible";
         const targets = [...el.querySelectorAll<HTMLElement>("button:not(:disabled),a[href],summary,input:not(:disabled):not([type=hidden]),select:not(:disabled),textarea:not(:disabled),[contenteditable=true]")].filter(visible).map(node => {
-          const box = node.getBoundingClientRect();
+          // An explicitly associated label is part of a native checkbox hit target.
+          const label = node.getAttribute("role") === "checkbox" && node.id ? el.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(node.id)}"]`) : null;
+          const box = (label?.control === node ? label : node).getBoundingClientRect();
           return { label: node.getAttribute("aria-label") ?? node.getAttribute("id") ?? node.innerText.trim().slice(0, 60),
             width: box.width, height: box.height };
         });
@@ -87,46 +104,70 @@ for (const width of [195, 320, 390, 768, 1440]) {
       expect.soft(geometry.below24).toEqual([]);
       expect(geometry.targets.length).toBeGreaterThan(0);
       await page.mouse.move(0, 0);
-      const contrast = [disabled, await collectTextContrast(page, generate, "enabled", "Generate"),
-        await collectTextContrast(page, textMode.getByText("Text to image", { exact: true }), "selected", "Text to Image"),
-        await collectTextContrast(page, editMode.getByText("Image Editing", { exact: true }), "unselected", "Image Editing")];
+      const contrast = [disabled, promptContrast, phone ? await iconContrast(page, generateIcon, "enabled", "Generate arrow") : await collectTextContrast(page, generateLabel, "enabled", "Generate")];
+      const critical = [await hitSquare(generate, "Generate")];
+      if (phone) {
+        critical.push(await hitSquare(modeTrigger(page), "Mode"));
+        critical.push(await hitSquare(advancedTrigger(page), "Advanced"));
+        contrast.push(await collectTextContrast(page, modeTrigger(page), "selected", "Text mode chip"));
+        await modeTrigger(page).press("Enter");
+        await expect(textMode).toHaveAttribute("aria-checked", "true");
+        critical.push(await hitSquare(textMode, "Text to image"), await hitSquare(editMode, "Edit image"));
+        contrast.push(await collectTextContrast(page, textMode, "selected", "Text to image"), await collectTextContrast(page, editMode, "unselected", "Edit image"));
+        await textMode.focus();
+        await page.keyboard.press("ArrowDown");
+        await expect(editMode).toBeFocused();
+        await page.keyboard.press("ArrowUp");
+        await expect(textMode).toBeFocused();
+        await page.keyboard.press("Escape");
+        await expect(modeTrigger(page)).toBeFocused();
+      } else {
+        critical.push(await hitSquare(textMode, "Text to image"), await hitSquare(editMode, "Edit image"));
+        contrast.push(await collectTextContrast(page, textMode, "selected", "Text to image"), await collectTextContrast(page, editMode, "unselected", "Edit image"));
+        const structured = workspace.getByRole("checkbox", { name: "Use my own structured prompt" });
+        const structuredLabel = workspace.locator(`label[for="create-preview-vgl-enabled"]`);
+        const structuredBox = await structuredLabel.boundingBox();
+        expect(structuredBox!.height).toBeGreaterThanOrEqual(24);
+        await structuredLabel.getByText("Use my own structured prompt", { exact: true }).click();
+        await expect(structured).toBeChecked();
+        await structuredLabel.getByText("Use my own structured prompt", { exact: true }).click();
+        await expect(structured).not.toBeChecked();
+        await textMode.focus();
+        await page.keyboard.press("ArrowRight");
+        await expect(editMode).toBeFocused();
+        await page.keyboard.press("ArrowLeft");
+        await expect(textMode).toBeFocused();
+      }
       if (await generate.locator("kbd").isVisible()) contrast.push(await collectTextContrast(page, generate.locator("kbd"), "enabled", "Generate shortcut"));
-      contrast.push(await collectTextContrast(page, workspace.locator("#create-preview-main-prompt-label"), "enabled", "Prompt label"));
       for (const row of contrast) {
-        expect.soft(row.ratio).not.toBeNull();
-        expect.soft(row.ratio ?? 0).toBeGreaterThanOrEqual(4.5);
+        expect.soft(row.status, row.sample + ": " + row.detail).toBe("PASS");
+        expect.soft(row.ratio ?? 0, row.sample).toBeGreaterThanOrEqual(row.minimum);
       }
       console.log("CREATE_RESPONSIVE_CONTRAST " + JSON.stringify({ width, reducedMotion, rows: contrast }));
-      const critical = [await hitSquare(textMode, "Text to Image"), await hitSquare(editMode, "Image Editing"), await hitSquare(generate, "Generate")];
-      if (width < 701) critical.push(await hitSquare(workspace.getByRole("button", { name: "Advanced", exact: true }), "Advanced"));
       for (const row of critical) {
         expect.soft(row.width, row.label + " preferred width").toBeGreaterThanOrEqual(44);
         expect.soft(row.height, row.label + " preferred height").toBeGreaterThanOrEqual(44);
       }
       console.log("CREATE_RESPONSIVE_HIT " + JSON.stringify({ width, reducedMotion, rows: critical }));
-      await textMode.focus();
-      await page.keyboard.press("Tab");
-      await expect(editMode).toBeFocused();
-      await page.keyboard.press("Shift+Tab");
-      await expect(textMode).toBeFocused();
       await workspace.focus();
       await page.keyboard.press("/");
       await expect(prompt).toBeFocused();
-      const shortcuts = workspace.getByRole("button", { name: "Shortcuts", exact: true });
-      await shortcuts.press("Enter");
-      const toggle = page.getByRole("switch", { name: "Keyboard shortcuts" });
-      await expect(toggle).toBeVisible();
-      await toggle.focus();
-      await page.keyboard.press("Space");
-      await expect(toggle).toHaveAttribute("aria-checked", "false");
-      await page.keyboard.press("Escape");
-      await expect(toggle).toHaveCount(0);
-      await expect(shortcuts).toBeFocused();
+      await workspace.focus();
+      await page.keyboard.press("Control+k");
+      const palette = page.getByRole("dialog", { name: "Search actions" });
+      await expect(palette).toBeVisible();
+      const search = palette.getByRole("combobox", { name: "Search actions" });
+      await search.fill("Disable keyboard shortcuts");
+      await expect(palette.getByRole("option", { name: "Disable keyboard shortcuts", exact: true })).toBeVisible();
+      await search.press("Enter");
+      await expect(palette).toHaveCount(0);
+      await expect(workspace).toBeFocused();
+      await expect(prompt).not.toHaveAttribute("aria-keyshortcuts", "/");
       await workspace.focus();
       await page.keyboard.press("/");
       await expect(workspace).toBeFocused();
       if (width < 701) {
-        const advanced = workspace.getByRole("button", { name: "Advanced", exact: true });
+        const advanced = advancedTrigger(page);
         await advanced.press("Enter");
         const sheet = page.getByRole("dialog", { name: "Advanced" });
         await expect(sheet).toBeVisible();
