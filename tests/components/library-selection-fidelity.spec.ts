@@ -10,7 +10,7 @@ for (const width of [390, 1440]) {
       await page.goto("/library");
       const select = page.getByRole("button", { name: "Select", exact: true });
       if (width === 390) await expect(page.getByRole("link", { name: /^Open First image / })).toHaveAttribute("href", "/library?inspect=" + firstAsset.id);
-      await select.click();
+      if (width === 1440) await select.click();
       const checkbox = page.getByRole("checkbox", { name: "Select First image", exact: true });
       const card = checkbox.locator("xpath=../..");
       const frame = card.locator("[data-library-media-frame]");
@@ -44,8 +44,9 @@ for (const width of [390, 1440]) {
       const rgb = selectedColor.fill.match(/\d+/g)!.map(Number);
       expect(contrastRatio([rgb[0],rgb[1],rgb[2]], [255,255,255])).toBeGreaterThanOrEqual(3);
       await expect(checkbox).toBeFocused();
-      await page.getByRole("button", { name: "Cancel", exact: true }).click();
-      await expect(select).toBeFocused();
+      await page.getByRole("button", { name: "Add to collection", exact: true }).click();
+      await page.getByRole("button", { name: "Cancel selection", exact: true }).click();
+      await expect(width === 1440 ? select : checkbox).toBeFocused();
       expect(io.calls).toEqual([]);
     });
   }

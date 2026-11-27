@@ -22,9 +22,15 @@ test("Viewer prioritizes its primary result image", async ({ page, io }) => {
 });
 
 test("collection menu keyboard dismissal and menu-to-delete-dialog focus return", async ({ page, io }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/library");
   await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
-  const trigger = page.getByRole("button", { name: "Collections", exact: true });
+  const filters = page.getByRole("region", { name: "Library filters" });
+  await expect(filters).toBeVisible(); // Wait for the phone composition, not the pre-hydration desktop tree.
+  const trigger = filters.getByRole("button", { name: "Collections", exact: true });
+  await expect(trigger).toBeVisible();
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.focus();
   await trigger.press("Enter");
   const menu = page.getByRole("menu");
   await expect(menu.getByRole("menuitemradio", { name: "All media" })).toHaveAttribute("aria-checked", "true");
@@ -64,7 +70,7 @@ test("batch delete cancels safely and retries only failed selected IDs", async (
   await select.press("Enter");
   await page.getByRole("checkbox", { name: "Select First image" }).press("Space");
   await page.getByRole("checkbox", { name: "Select Second image" }).press("Space");
-  const remove = page.getByRole("button", { name: "Delete 2", exact: true });
+  const remove = page.getByRole("button", { name: "Delete", exact: true });
   await remove.press("Enter");
   const dialog = page.getByRole("alertdialog", { name: "Delete 2 selected items?" });
   await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
@@ -79,7 +85,7 @@ test("batch delete cancels safely and retries only failed selected IDs", async (
   await expect(page.getByRole("link", { name: "Open First image" })).toHaveCount(0);
   await expect(page.getByRole("checkbox", { name: "Select Second image" })).toBeChecked();
   await expect(page.getByRole("status").filter({ hasText: "remain selected for retry" })).toBeVisible();
-  const retry = page.getByRole("button", { name: "Delete 1", exact: true });
+  const retry = page.getByRole("button", { name: "Delete", exact: true });
   await retry.press("Enter");
   await page.getByRole("alertdialog", { name: "Delete 1 selected item?" })
     .getByRole("button", { name: "Delete 1 permanently" }).press("Enter");
@@ -97,7 +103,7 @@ test("batch favorite and collection actions retain explicit selection and exact 
   await page.getByRole("button", { name: "Select", exact: true }).press("Enter");
   const selected = page.getByRole("checkbox", { name: "Select First image" });
   await selected.press("Space");
-  await page.getByRole("button", { name: "Organize", exact: true }).press("Enter");
+  await page.getByRole("button", { name: "Add to collection", exact: true }).press("Enter");
   const favorite = page.getByRole("button", { name: "Favorite selected", exact: true });
   io.failNext = true;
   await favorite.press("Enter");

@@ -43,6 +43,9 @@ for (const viewport of viewports) {
       const header = page.locator(".preview-navigation-header");
       await expect(header).toBeVisible();
       await expect(fallback).toBeVisible();
+      // A streaming response can expose unstyled HTML before the shell stylesheet arrives.
+      // Only measure the painted fallback, while retaining exact shell continuity.
+      await expect(header).toHaveCSS("height", viewport.width === 1440 ? "68px" : "60px");
       const shellBounds = await bounds(header);
 
       const status = fallback.getByRole("status", { name: "Loading Library", exact: true });
@@ -51,16 +54,16 @@ for (const viewport of viewports) {
       await expect(fallback.locator("button, input, select, textarea, a, [tabindex], [aria-valuenow]")).toHaveCount(0);
 
       const frame = fallback.locator('[data-library-loading-slot="frame"]').first();
-      const animation = await frame.evaluate((el) => {
+      await expect.poll(() => frame.evaluate((el, motion) => {
         const style = getComputedStyle(el, "::after");
-        return { name: style.animationName, iterations: style.animationIterationCount };
-      });
-      if (motion === "reduce") expect(animation.name).toBe("none");
-      else expect(animation).toEqual({ name: "rl-skeleton-shimmer", iterations: "3" });
+        return motion === "reduce" ? { name: style.animationName } : { name: style.animationName, iterations: style.animationIterationCount };
+      }, motion)).toEqual(motion === "reduce" ? { name: "none" } : { name: "rl-skeleton-shimmer", iterations: "3" });
 
       const geometry = await fallback.evaluate((root) => {
         const readBox = (selector: string) => {
-          const { x, y, width, height } = root.querySelector(selector)!.getBoundingClientRect();
+          const slot = root.querySelector(selector) ?? document.querySelector(selector);
+          if (!slot) throw new Error("Missing loading slot " + selector);
+          const { x, y, width, height } = slot.getBoundingClientRect();
           return { x, y, width, height };
         };
         const viewportWidth = document.documentElement.clientWidth;

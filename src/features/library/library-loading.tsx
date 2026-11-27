@@ -33,7 +33,6 @@ export function LibraryLoading({ showInspectorPreview, showUpload }: {
           <div className={styles.toolbar}>
             <div className={styles.galleryTitle}><Skeleton /></div>
             <div className={styles.actions}>
-              <Skeleton className={styles.phoneSearch} data-library-loading-slot="search-toggle" />
               {showUpload && <Skeleton className={styles.field} />}
               <Skeleton className={styles.field} />
             </div>
