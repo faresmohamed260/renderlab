@@ -170,3 +170,8 @@
   .sheet .heading > :is(h1,h2,h3) { font-size: 19px; min-width: 0; }
   .sheet .heading > button { min-width: 44px; padding-inline: 4px; font-size: 14px; }
 }
+/* 200% zoom (about 195 CSS px): put the Seed label above the field so the field keeps a usable target. */
+@media (max-width: 260px) {
+  .sheet .seedRow { flex-wrap: wrap; row-gap: 6px; }
+  .sheet .seedRow > label:first-child { flex: 0 0 100%; width: auto; }
+}
