@@ -5,6 +5,7 @@ for (const motion of ["reduce", "no-preference"] as const) {
   test("Approved phone Library hierarchy and compact initial grid: " + motion, async ({ page, io }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: motion });
+    await page.context().setExtraHTTPHeaders({ "x-renderlab-fixture-shell": "member" });
     await page.goto("/library");
     const title = page.getByRole("heading", { name: "Library", exact: true });
     const search = page.getByRole("button", { name: "Search the Library", exact: true });
@@ -24,11 +25,14 @@ for (const motion of ["reduce", "no-preference"] as const) {
     expect(g!.y).toBeLessThanOrEqual(240);
     await expect(page.getByText("2 items on this page", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /^Open First image / })).toHaveAttribute("href", "/library?inspect=" + firstAsset.id);
+    await expect(search).toHaveAttribute("aria-expanded", "false");
     await search.click();
+    await expect(search).toHaveAttribute("aria-expanded", "true");
     await expect(page.getByRole("searchbox", { name: "Search Library" })).toBeFocused();
     await search.click();
     await expect(page.getByRole("search")).toBeHidden();
-    await expect(page.getByRole("button", { name: "Select", exact: true })).toBeVisible();
+    await expect(search).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByRole("checkbox", { name: "Select First image", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     expect(io.calls).toEqual([]);
   });

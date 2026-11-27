@@ -155,8 +155,9 @@ export function LibraryBatchSelection({
   useEffect(() => registerCreateCommand({
     id: "library-search", label: "Search the Library", keywords: ["library", "search", "media"],
     shortcut: "Ctrl+F", group: "Library", enabled: true,
+    expanded: narrow ? searchOpen : undefined,
     run: () => {
-      if (narrow && !searchOpen) setSearchOpen(true);
+      if (narrow) setSearchOpen(open => !open);
       else searchContainer.current?.querySelector<HTMLInputElement>("input[type=search]")?.focus({ preventScroll: true });
     },
   }), [narrow, searchOpen]);
@@ -169,6 +170,7 @@ export function LibraryBatchSelection({
   const [hiddenDeletedIds, setHiddenDeletedIds] = useState<Set<string>>(() => new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const selectTrigger = useRef<HTMLButtonElement>(null);
+  const selectionOrigin = useRef<HTMLElement | null>(null);
   const returnToSelect = useRef(false);
   const returnAfterCancel = useRef(false);
   const [deleting, setDeleting] = useState(false);
@@ -218,6 +220,7 @@ export function LibraryBatchSelection({
   }, [narrow, searchOpen, busy, visibleItems.length]);
 
   function enterSelectionMode() {
+    if (document.activeElement instanceof HTMLElement) selectionOrigin.current = document.activeElement;
     setFeedback(null);
     setDeleteError(null);
     setOrganizationError(null);
@@ -237,7 +240,7 @@ export function LibraryBatchSelection({
   useEffect(() => {
     if (selectionMode || !returnAfterCancel.current) return;
     returnAfterCancel.current = false;
-    (narrow ? galleryHeading.current : selectTrigger.current)?.focus({ preventScroll: true });
+    (narrow ? selectionOrigin.current ?? galleryHeading.current : selectTrigger.current)?.focus({ preventScroll: true });
   }, [selectionMode, narrow]);
 
   function toggleAsset(assetId: string, checked: boolean) {

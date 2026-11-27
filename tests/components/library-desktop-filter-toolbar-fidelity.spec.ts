@@ -9,7 +9,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     const all = discovery.getByRole("link", { name: "All media", exact: true });
     const favorites = discovery.getByRole("link", { name: "Favorites", exact: true });
     const uploads = discovery.getByRole("link", { name: "Uploads", exact: true });
-    const collections = discovery.getByRole("button", { name: "Collections", exact: true });
+    const collections = discovery.getByRole("button", { name: "Manage collections", exact: true });
     for (const item of [all,favorites,uploads,collections]) await expect(item).toBeVisible();
     const rows = await Promise.all([all,favorites,uploads,collections].map(item => item.boundingBox()));
     expect(rows[0]!.y).toBeLessThan(rows[1]!.y);
@@ -20,8 +20,8 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     await page.getByRole("checkbox", { name: "Select First image", exact: true }).click();
     const toolbar = page.locator("[data-library-selection-mode]");
     const favorite = toolbar.getByRole("button", { name: "Favorite", exact: true });
-    const organize = toolbar.getByRole("button", { name: "Organize", exact: true });
-    const remove = toolbar.getByRole("button", { name: "Delete 1", exact: true });
+    const organize = toolbar.getByRole("button", { name: "Add to collection", exact: true });
+    const remove = toolbar.getByRole("button", { name: "Delete", exact: true });
     for (const item of [favorite,organize,remove]) await expect(item).toBeVisible();
     const [f,o,d,t] = await Promise.all([favorite.boundingBox(),organize.boundingBox(),remove.boundingBox(),toolbar.boundingBox()]);
     expect(f!.x).toBeLessThan(o!.x);
@@ -29,8 +29,9 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     expect(Math.abs(f!.y-d!.y)).toBeLessThanOrEqual(2);
     expect(t!.height).toBeLessThanOrEqual(88);
     await expect(toolbar.getByRole("button", { name: /download/i })).toHaveCount(0);
+    await organize.click();
     await expect(toolbar.getByRole("button", { name: /select page/i })).toBeVisible();
-    await toolbar.getByRole("button", { name: "Cancel", exact: true }).click();
+    await toolbar.getByRole("button", { name: "Cancel selection", exact: true }).click();
     await expect(select).toBeFocused();
     expect(io.calls).toEqual([]);
   });

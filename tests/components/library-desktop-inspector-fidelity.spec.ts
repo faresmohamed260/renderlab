@@ -22,7 +22,12 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     await expect(download).toHaveAttribute("href", "/api/media/assets/" + firstAsset.id + "/download");
     const [t,r,p,v,f,d,x] = await Promise.all([title,rename,primary,viewer,favorite,download,remove].map(item => item.boundingBox()));
     expect(Math.abs(t!.y+t!.height/2-r!.y-r!.height/2)).toBeLessThanOrEqual(12);
-    expect(p!.y+p!.height).toBeLessThanOrEqual(v!.y);
+    expect(v!.y+v!.height).toBeLessThanOrEqual(p!.y);
+    const edit = panel.getByRole("link", { name: "Edit image", exact: true });
+    await expect(edit).toHaveAttribute("href", "/create?source=" + firstAsset.id + "&action=edit-image");
+    const e = (await edit.boundingBox())!;
+    expect(p!.y+p!.height).toBeLessThanOrEqual(e.y);
+    expect(e.y+e.height).toBeLessThanOrEqual(f!.y);
     expect(f!.x).toBeLessThan(d!.x);
     expect(d!.x).toBeLessThan(x!.x);
     expect(Math.abs(f!.y-x!.y)).toBeLessThanOrEqual(2);

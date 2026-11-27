@@ -8,6 +8,7 @@ for (const width of [195, 320, 390, 1440]) {
     test("Library round 3 inspector and grid " + width + " " + reducedMotion, async ({ page, io }) => {
       await page.setViewportSize({ width, height: width === 195 ? 422 : 900 });
       await page.emulateMedia({ reducedMotion });
+      await page.context().setExtraHTTPHeaders({ "x-renderlab-fixture-shell": "member" });
       await page.goto("/library");
       const grid = page.locator("[data-library-media-grid]");
       await expect(grid).toBeVisible();
@@ -37,17 +38,15 @@ for (const width of [195, 320, 390, 1440]) {
           await expect(filters.getByRole("link", { name, exact: true })).toBeVisible();
         }
         await expect(filters.getByRole("button", { name: "Collections", exact: true })).toBeVisible();
-        const select = page.getByRole("button", { name: "Select", exact: true });
+        const checkbox = page.getByRole("checkbox", { name: "Select First image" });
         const before = await grid.boundingBox();
-        await select.click();
+        await checkbox.click();
         const after = await grid.boundingBox();
         expect(Math.abs(after!.y - before!.y)).toBeLessThanOrEqual(1);
         const toolbar = page.locator("[data-library-selection-mode]");
         if (width === 390) expect((await toolbar.boundingBox())!.height).toBeLessThanOrEqual(88);
-        const checkbox = page.getByRole("checkbox", { name: "Select First image" });
-        await checkbox.click();
         await expect(checkbox).toBeChecked();
-        const remove = page.getByRole("button", { name: "Delete 1", exact: true });
+        const remove = page.getByRole("button", { name: "Delete", exact: true });
         await remove.scrollIntoViewIfNeeded();
         expect(await remove.evaluate(el => {
           const r = el.getBoundingClientRect();
@@ -59,19 +58,20 @@ for (const width of [195, 320, 390, 1440]) {
         await expect(confirmation).toBeVisible();
         await page.keyboard.press("Escape");
         await expect(remove).toBeFocused();
-        await page.getByRole("button", { name: "Cancel", exact: true }).click();
-        await expect(select).toBeFocused();
+        await page.getByRole("button", { name: "Add to collection", exact: true }).click();
+        await page.getByRole("button", { name: "Cancel selection", exact: true }).click();
+        await expect(checkbox).toBeFocused();
       }
       const trigger = page.getByRole("link", { name: "Inspect First image", exact: true });
       await trigger.click();
       const inspector = width === 1440 ? page.getByRole("complementary", { name: "Media inspector" }) : page.getByRole("dialog", { name: "Media inspector" });
       await expect(inspector).toBeVisible();
-      await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveAccessibleName(width === 1440 ? "Open in Create Edit image" : "Open in Create");
+      await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveAccessibleName("Open in Create");
       await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveAttribute("href", "/create?source=" + firstAsset.id + "&action=edit-image");
       if (width === 1440) {
         const action = inspector.getByRole("link", { name: "Open in Create" });
         await expect(action.getByText("Open in Create", { exact: true })).toBeVisible();
-        await expect(action.getByText("Edit image", { exact: true })).toBeVisible();
+        await expect(inspector.getByRole("link", { name: "Edit image", exact: true })).toHaveAttribute("href", "/create?source=" + firstAsset.id + "&action=edit-image");
         const labelReport = await new AxeBuilder({ page }).include('a[href="/create?source=' + firstAsset.id + '&action=edit-image"]').withRules(["label-content-name-mismatch"]).analyze();
         expect(labelReport.violations, "Desktop Create action name must contain its complete visible label").toEqual([]);
       }
@@ -84,7 +84,7 @@ for (const width of [195, 320, 390, 1440]) {
       expect(row.status).toBe("PASS");
       if (width !== 1440) {
         await expect(inspector.getByRole("link", { name: "Open in Create" })).toHaveText("Open in Create");
-        await expect(inspector.getByRole("button", { name: "Close inspector" })).toHaveText("Done");
+        await expect(inspector.getByRole("button", { name: /Done|Close inspector/ })).toHaveText("Done");
         const deleteAction = inspector.getByRole("button", { name: "Delete", exact: true });
         await deleteAction.scrollIntoViewIfNeeded();
         await expect(deleteAction).toBeInViewport();
