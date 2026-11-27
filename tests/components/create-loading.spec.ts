@@ -1,4 +1,5 @@
-import { test, expect, type Locator } from "./isolated-io";
+import type { Locator } from "@playwright/test";
+import { test, expect } from "./isolated-io";
 
 async function box(element: Locator) {
   await expect(element).toBeVisible();
