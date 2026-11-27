@@ -1,5 +1,6 @@
 import { test, expect } from "./isolated-io";
 import { fixtureJobId } from "../component-app/fixtures";
+import { advancedTrigger, expectSource } from "./composer-review-helpers";
 import { collectTextContrast, type ContrastRow } from "./composited-contrast";
 
 test.use({ hasTouch: true, launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
@@ -12,14 +13,14 @@ for (const width of [195, 320, 390]) {
       await page.emulateMedia({ reducedMotion });
       await page.goto("/create?recipe=" + fixtureJobId);
       const workspace = page.getByRole("region", { name: "Create with FIBO" });
-      await expect(workspace.getByRole("button", { name: "Remove source image" })).toBeVisible();
+      await expectSource(page);
       await expect.poll(() => io.includes("GET capabilities")).toBe(true);
       await page.evaluate(() => document.fonts.ready);
-      const opener = workspace.getByRole("button", { name: "Advanced", exact: true });
+      const opener = advancedTrigger(page);
       const sheet = page.getByRole("dialog", { name: "Advanced" });
       const seed = sheet.getByRole("textbox", { name: "Seed", exact: true });
       const steps = sheet.getByRole("slider", { name: /Steps/ });
-      const randomize = sheet.getByRole("checkbox", { name: "Randomize seed each time" });
+      const randomize = sheet.getByRole("button", { name: "Randomize seed each time" });
       const vgl = sheet.getByRole("textbox", { name: "Manual VGL JSON", exact: true });
 
       // The compact closed composer exposes one entry point, not duplicate
@@ -35,31 +36,33 @@ for (const width of [195, 320, 390]) {
       await expect(seed).toHaveValue("1234");
       await expect(steps).toHaveValue("7");
       await expect(vgl).toBeVisible();
-      await expect(randomize).not.toBeChecked();
+      await expect(randomize).toHaveAttribute("aria-pressed", "false");
       await expect(seed).toHaveAttribute("maxlength", "10");
       await expect(seed).toHaveAttribute("inputmode", "numeric");
       await expect(steps).toHaveAttribute("min", "1");
       await expect(steps).toHaveAttribute("max", "8");
       await expect(steps).toHaveAttribute("step", "1");
       await seed.fill("5678");
-      await randomize.check();
+      await randomize.click();
+      await expect(randomize).toHaveAttribute("aria-pressed", "true");
       await expect(seed).toBeDisabled();
-      await randomize.uncheck();
+      await randomize.click();
+      await expect(randomize).toHaveAttribute("aria-pressed", "false");
       await expect(seed).toHaveValue("5678");
       await steps.focus();
       await steps.press("Home");
       await expect(steps).toHaveValue("1");
-      await expect(sheet.locator(".create-preview-steps output")).toHaveText("1");
+      await expect(sheet.locator('output[for="create-preview-steps"]')).toHaveText("1");
       await steps.press("End");
       await expect(steps).toHaveValue("8");
       await steps.press("ArrowLeft");
       await expect(steps).toHaveValue("7");
       await steps.press("ArrowLeft");
       await expect(steps).toHaveValue("6");
-      await expect(sheet.locator(".create-preview-steps output")).toHaveText("6");
+      await expect(sheet.locator('output[for="create-preview-steps"]')).toHaveText("6");
 
       const targets = [["Advanced", opener], ["Seed", seed], ["Steps", steps],
-        ["Randomize seed", sheet.locator(".create-preview-seed-dice")]] as const;
+        ["Randomize seed", randomize]] as const;
       const targetRows: { name: string; width: number; height: number; missed: number }[] = [];
       // Sheet controls are portalled, so use their actual visible surface.
       for (const [name, target] of targets.slice(1)) {
@@ -89,8 +92,8 @@ for (const width of [195, 320, 390]) {
         });
       });
       expect(overflow).toEqual([]);
-      const stepsPaint = await sheet.locator(".create-preview-steps").evaluate(el => {
-        const label = el.querySelector("span")!, input = el.querySelector("input")!;
+      const stepsPaint = await sheet.locator("div:has(> #create-preview-steps)").evaluate(el => {
+        const label = el.querySelector("label")!, input = el.querySelector("input")!;
         const css = getComputedStyle(input), labelCss = getComputedStyle(label);
         return { label: label.getBoundingClientRect().toJSON(), input: input.getBoundingClientRect().toJSON(),
           gap: input.getBoundingClientRect().top - label.getBoundingClientRect().bottom,
@@ -102,8 +105,8 @@ for (const width of [195, 320, 390]) {
       for (const [label, target, control] of [
         ["Seed label", sheet.locator('label[for="create-preview-seed"]'), undefined],
         ["Seed value", seed, "value"],
-        ["Steps label", sheet.locator(".create-preview-steps > span"), undefined],
-        ["Steps value", sheet.locator(".create-preview-steps output"), undefined],
+        ["Steps label", sheet.locator('label[for="create-preview-steps"]'), undefined],
+        ["Steps value", sheet.locator('output[for="create-preview-steps"]'), undefined],
       ] as const) {
         await target.scrollIntoViewIfNeeded();
         contrasts.push(await collectTextContrast(page, target, "phone-advanced", label, control));
