@@ -635,8 +635,8 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
 
   function stageDocument() {
     return (
-        <div className={"create-preview-stage-document " + pagerStyles.document + " " + stageStyles.document}>
-        <div className={"create-preview-stage-surface " + stageStyles.surface} {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
+        <div className={"create-preview-stage-document " + pagerStyles.document + " " + stageStyles.document} data-rebuilt-stage-document="">
+        <div className={"create-preview-stage-surface " + stageStyles.surface} data-rebuilt-stage-surface="" {...dropTarget} data-empty={!shown && !busy} role="group" tabIndex={0}
           aria-label={label} aria-busy={busy || inputPending} data-portrait={ratio < 1}
           onClick={(event) => {
             if (event.target === event.currentTarget || event.target instanceof HTMLImageElement) {
@@ -677,7 +677,7 @@ export function CreatePreviewStage<T extends StageResult>({ historySelection, re
 
   return (
     <>
-      <div ref={frame} className={"create-preview-stage-frame " + stageStyles.frame} onKeyDown={stageKeys} data-batch={showBatch} data-pull-ready={phone && !busy && !viewerOpen}
+      <div ref={frame} className={"create-preview-stage-frame " + stageStyles.frame} data-rebuilt-stage="" onKeyDown={stageKeys} data-batch={showBatch} data-pull-ready={phone && !busy && !viewerOpen}
         style={{ "--stage-media-ratio": ratio } as CSSProperties}>
         {pull >= 12 && <div className="create-preview-stage-pull" style={{ translate: "0 " + Math.min(32, (pull - 12) / 2) + "px" }}>
           {pull >= 76 ? "Release to refresh" : "Pull to refresh"}

@@ -25,3 +25,10 @@
 .grid>:global(.create-preview-controls){grid-column:1;grid-row:2}
 .queueAnchor{right:12px;top:8px;width:44px;height:44px}
 }
+
+/* Reset inherited legacy canvas geometry in logical coordinates as well. */
+.grid > .canvas:global(.create-preview-canvas) {
+  inline-size:100%; block-size:auto; min-inline-size:0; min-block-size:0;
+  max-inline-size:100%; border:0; outline:0; container-type:normal;
+}
+.stageRegion { inline-size:100%; max-inline-size:100%; min-inline-size:0; block-size:auto; }
