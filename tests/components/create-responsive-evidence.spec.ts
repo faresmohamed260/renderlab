@@ -86,7 +86,9 @@ for (const width of [195, 320, 390, 768, 1440]) {
           !node.closest("[inert],[hidden],[aria-hidden=true],.sr-only,details:not([open]) > :not(summary)") &&
           getComputedStyle(node).visibility === "visible";
         const targets = [...el.querySelectorAll<HTMLElement>("button:not(:disabled),a[href],summary,input:not(:disabled):not([type=hidden]),select:not(:disabled),textarea:not(:disabled),[contenteditable=true]")].filter(visible).map(node => {
-          const box = node.getBoundingClientRect();
+          // An explicitly associated label is part of a native checkbox hit target.
+          const label = node.getAttribute("role") === "checkbox" && node.id ? el.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(node.id)}"]`) : null;
+          const box = (label?.control === node ? label : node).getBoundingClientRect();
           return { label: node.getAttribute("aria-label") ?? node.getAttribute("id") ?? node.innerText.trim().slice(0, 60),
             width: box.width, height: box.height };
         });
@@ -122,6 +124,14 @@ for (const width of [195, 320, 390, 768, 1440]) {
       } else {
         critical.push(await hitSquare(textMode, "Text to image"), await hitSquare(editMode, "Edit image"));
         contrast.push(await collectTextContrast(page, textMode, "selected", "Text to image"), await collectTextContrast(page, editMode, "unselected", "Edit image"));
+        const structured = workspace.getByRole("checkbox", { name: "Use my own structured prompt" });
+        const structuredLabel = workspace.locator(`label[for="create-preview-vgl-enabled"]`);
+        const structuredBox = await structuredLabel.boundingBox();
+        expect(structuredBox!.height).toBeGreaterThanOrEqual(24);
+        await structuredLabel.locator("span").click();
+        await expect(structured).toBeChecked();
+        await structuredLabel.locator("span").click();
+        await expect(structured).not.toBeChecked();
         await textMode.focus();
         await page.keyboard.press("ArrowRight");
         await expect(editMode).toBeFocused();

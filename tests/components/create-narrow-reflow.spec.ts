@@ -68,7 +68,9 @@ for (const width of [195, 320]) {
     await expect(opener).toBeFocused();
     await page.goto("/create?recipe=" + fixtureJobId);
     const references = create.getByRole("button", { name: "References", exact: true });
-    await references.press("Enter");
+    await expect.poll(() => io.includes("GET continuation source")).toBe(true);
+    await expect(create.getByRole("img", { name: "Source image" })).toBeVisible();
+    await references.click();
     await expect(page.getByRole("button", { name: "Remove source image" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(references).toBeFocused();

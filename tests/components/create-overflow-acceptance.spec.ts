@@ -167,7 +167,7 @@ for (const viewport of viewports) {
         await expect(advancedSheet.locator("output")).toHaveText(String(after));
         await range.press(increment ? "ArrowLeft" : "ArrowRight");
         await expect(range).toHaveValue(String(before));
-        await expect(page.locator(".create-preview-steps output")).toHaveText(String(before));
+        await expect(advancedSheet.locator("output")).toHaveText(String(before));
         console.log("OVERFLOW_CONTROL_PROOF " + state + " " + JSON.stringify({ boxes, hit, before, after, restored: before }));
         if (!wasOpen) {
           await page.keyboard.press("Escape");
