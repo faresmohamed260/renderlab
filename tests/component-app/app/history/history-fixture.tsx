@@ -69,8 +69,8 @@ export function HistoryFixture({ offset, fixtureState, phone }: { offset: number
   const record = state.recordResult;
   useEffect(() => { if (phone && account === "fixture-owner-A") record({ id: "fixture-result", label: "Fixture result", createdAt: "2026-11-25T00:00:00Z" }); }, [phone, account, record]);
   return <>
-    {phone ? <CreateHistorySheet state={state} open={open} onOpenChange={setOpen} trigger={<Button>Open History</Button>} /> :
-      <CreateHistoryPanel state={state} jobsHref={page => "/history" + (page ? "?offset=" + page : "")} />}
+    {phone ? <CreateHistorySheet state={state} results={[]} recent={[]} onReusePrompt={setDraft} onRemovePrompt={() => undefined} onClearPrompts={() => undefined} open={open} onOpenChange={setOpen} trigger={<Button>Open History</Button>} /> :
+      <CreateHistoryPanel state={state} results={[]} recent={[]} onReusePrompt={setDraft} onRemovePrompt={() => undefined} onClearPrompts={() => undefined} />}
     <Button data-testid="fixture-switch-account" onClick={() => changeAccount("fixture-owner-B")}>Switch fixture account</Button>
     {race && <>
       <Button data-testid="fixture-sign-out" onClick={() => changeAccount(null)}>Sign out fixture account</Button>
